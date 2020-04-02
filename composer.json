@@ -8,7 +8,7 @@
         "shopware/core": "~6"
     },
     "extra": {
-        "shopware-plugin-class": "Adyen\\Shopware\\AdyenPayment",
+        "shopware-plugin-class": "Adyen\\Shopware",
         "label": {
             "en-GB": "Adyen Payment"
         },
