@@ -22,9 +22,9 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Payment\PaymentMethods;
+namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Payment\Handlers\DummyPaymentMethodHandler;
+use Adyen\Shopware\Handlers\PaymentMethodHandler;
 
 class PaymentMethod implements PaymentMethodInterface
 {
@@ -55,7 +55,7 @@ class PaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return DummyPaymentMethodHandler::class;
+        return PaymentMethodHandler::class;
     }
 
     /**
@@ -85,7 +85,7 @@ class PaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return __DIR__  . 'https://live.adyen.com/hpp/img/pm/visa.png';
+        return 'https://live.adyen.com/hpp/img/pm/visa.png';
     }
 
     /**

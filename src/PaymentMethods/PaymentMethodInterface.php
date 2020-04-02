@@ -22,7 +22,7 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Payment\PaymentMethods;
+namespace Adyen\Shopware\PaymentMethods;
 
 interface PaymentMethodInterface
 {

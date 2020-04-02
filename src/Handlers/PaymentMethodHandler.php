@@ -22,7 +22,7 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Payment\Handlers;
+namespace Adyen\Shopware\Handlers;
 
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;

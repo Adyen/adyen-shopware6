@@ -22,11 +22,11 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Payment;
+namespace Adyen\Shopware;
 
-use Adyen\Payment\Handlers\PaymentMethodHandler;
-use Adyen\Payment\Helper\PaymentMethodsHelper;
-use Adyen\Payment\PaymentMethods\PaymentMethodInterface;
+use Adyen\Shopware\Handlers\PaymentMethodHandler;
+use Adyen\Shopware\Helper\PaymentMethodsHelper;
+use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;

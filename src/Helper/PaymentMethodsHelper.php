@@ -22,9 +22,9 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Payment\Helper;
+namespace Adyen\Shopware\Helper;
 
-use Adyen\Payment\PaymentMethods\PaymentMethod;
+use Adyen\Shopware\PaymentMethods\PaymentMethod;
 
 class PaymentMethodsHelper
 {
