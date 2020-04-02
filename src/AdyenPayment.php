@@ -24,7 +24,7 @@
 
 namespace Adyen\Payment;
 
-use Adyen\Payment\Handlers\DummyPaymentMethodHandler;
+use Adyen\Payment\Handlers\PaymentMethodHandler;
 use Adyen\Payment\Helper\PaymentMethodsHelper;
 use Adyen\Payment\PaymentMethods\PaymentMethodInterface;
 use Shopware\Core\Framework\Plugin;
@@ -98,7 +98,7 @@ class AdyenPayment extends Plugin
 
         // Fetch ID for update
         $paymentCriteria = (new Criteria())->addFilter(new EqualsFilter('handlerIdentifier',
-            DummyPaymentMethodHandler::class));
+            PaymentMethodHandler::class));
         $paymentIds = $paymentRepository->searchIds($paymentCriteria, Context::createDefaultContext());
 
         if ($paymentIds->getTotal() === 0) {
