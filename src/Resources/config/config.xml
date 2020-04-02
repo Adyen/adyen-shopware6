@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
+
+    <card>
+        <title>Minimal configuration</title>
+        <input-field type="text">
+            <name>merchantAccount</name>
+            <label>Merchant account</label>
+        </input-field>
+        <input-field type="password">
+            <name>apiKeyTest</name>
+            <label>API Key for test</label>
+        </input-field>
+        <input-field type="password">
+            <name>apiKeyLive</name>
+            <label>API Key for live</label>
+        </input-field>
+        <input-field type="bool">
+            <name>environment</name>
+            <label>Live environment</label>
+        </input-field>
+        <input-field type="text">
+            <name>liveEndpointUrlPrefix</name>
+            <label>Live endpoint URL prefix</label>
+        </input-field>
+        <input-field type="text">
+            <name>notificationUsername</name>
+            <label>Username for standard notifications</label>
+        </input-field>
+        <input-field type="password">
+            <name>notificationPassword</name>
+            <label>Password for standard notifications</label>
+        </input-field>
+        <input-field type="password">
+            <name>hmacTest</name>
+            <label>HMAC Key for test</label>
+        </input-field>
+        <input-field type="password">
+            <name>hmacLive</name>
+            <label>HMAC Key for live</label>
+        </input-field>
+    </card>
+</config>
