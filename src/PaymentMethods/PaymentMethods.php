@@ -22,11 +22,9 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Helper;
+namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\PaymentMethods\PaymentMethod;
-
-class PaymentMethodsHelper
+class PaymentMethods
 {
     const PAYMENT_METHODS = [
         PaymentMethod::class

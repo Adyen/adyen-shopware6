@@ -25,7 +25,7 @@
 namespace Adyen\Shopware;
 
 use Adyen\Shopware\Handlers\PaymentMethodHandler;
-use Adyen\Shopware\Helper\PaymentMethodsHelper;
+use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Context;
@@ -44,7 +44,7 @@ class AdyenPayment extends Plugin
 
     public function install(InstallContext $installContext): void
     {
-        foreach (PaymentMethodsHelper::PAYMENT_METHODS as $paymentMethod) {
+        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->addPaymentMethod(new $paymentMethod(), $installContext->getContext());
         }
     }
