@@ -24,31 +24,10 @@
 
 namespace Adyen\Shopware\Service;
 
-class Client extends \Adyen\Client
+class CheckoutUtilityService extends \Adyen\Service\CheckoutUtility
 {
-
-    /**
-     * Client constructor.
-     */
-    public function __construct()
+    public function __construct(ClientService $client)
     {
-        parent::__construct();
-
-        $apiKey = '';
-
-        try {
-            //TODO fetch/decrypt API key
-        } catch (\Exception $e) {
-            //TODO log error
-        }
-
-        $this->setXApiKey($apiKey);
-        $this->setAdyenPaymentSource("Module", "Version"); //TODO fetch data from the plugin
-        $this->setMerchantApplication("Module", "Version"); //TODO fetch data from the plugin
-        $this->setExternalPlatform("Platform", "Version"); //TODO fetch data from the platform
-        $this->setEnvironment("Env", "prefix"); //TODO fetch data from the plugin
-
-        //TODO use setLogger()
-        //TODO set $this->configuration
+        parent::__construct($client);
     }
 }

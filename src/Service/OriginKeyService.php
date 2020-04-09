@@ -29,7 +29,7 @@ use Adyen\Shopware\Models\OriginKeyModel;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Routing\Router;
 
-class OriginKey
+class OriginKeyService
 {
 
     /**
@@ -43,7 +43,7 @@ class OriginKey
     private $originKeyModel;
 
     /**
-     * @var CheckoutUtility
+     * @var CheckoutUtilityService
      */
     private $adyenCheckoutUtilityService;
 
@@ -55,12 +55,13 @@ class OriginKey
     /**
      * OriginKey constructor.
      * @param SystemConfigService $systemConfigService
-     * @param CheckoutUtility $adyenCheckoutUtilityService
+     * @param CheckoutUtilityService $adyenCheckoutUtilityService
      * @param \Adyen\Shopware\Models\OriginKeyModel $originKeyModel
+     * @param \Symfony\Component\Routing\Router $router
      */
     public function __construct(
         SystemConfigService $systemConfigService,
-        CheckoutUtility $adyenCheckoutUtilityService,
+        CheckoutUtilityService $adyenCheckoutUtilityService,
         OriginKeyModel $originKeyModel,
         Router $router
     ) {

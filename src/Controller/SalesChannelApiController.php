@@ -28,18 +28,18 @@ use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Adyen\Shopware\Service\OriginKey;
+use Adyen\Shopware\Service\OriginKeyService;
 
-class SalesChannelApi extends AbstractController
+class SalesChannelApiController extends AbstractController
 {
 
     /**
-     * @var OriginKey
+     * @var OriginKeyService
      */
     private $originKey;
 
     public function __construct(
-        OriginKey $originKey
+        OriginKeyService $originKey
     ) {
         $this->originKey = $originKey;
     }
