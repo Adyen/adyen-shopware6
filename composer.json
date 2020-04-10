@@ -2,7 +2,7 @@
     "name": "adyen/adyen-shopware6",
     "authors": [
         {
-            "name": "Adyen B.V."
+            "name": "Adyen"
         }
     ],
     "description": "Official Shopware 6 Plugin to connect to Payment Service Provider Adyen",
