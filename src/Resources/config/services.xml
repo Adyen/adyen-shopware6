@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <service id="Adyen\Shopware\Controller\SalesChannelApiController">
+            <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
+            <argument type="service" id="sales_channel_domain.repository"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\ClientService" autowire="true"/>
+        <service id="Adyen\Shopware\Models\OriginKeyModel" autowire="true"/>
+    </services>
+</container>

@@ -27,7 +27,6 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Shopware\Models\OriginKeyModel;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Symfony\Component\Routing\Router;
 
 class OriginKeyService
 {
@@ -48,48 +47,43 @@ class OriginKeyService
     private $adyenCheckoutUtilityService;
 
     /**
-     * @var Router
-     */
-    private $router;
-
-    /**
      * OriginKey constructor.
      * @param SystemConfigService $systemConfigService
      * @param CheckoutUtilityService $adyenCheckoutUtilityService
      * @param \Adyen\Shopware\Models\OriginKeyModel $originKeyModel
-     * @param \Symfony\Component\Routing\Router $router
      */
     public function __construct(
         SystemConfigService $systemConfigService,
         CheckoutUtilityService $adyenCheckoutUtilityService,
-        OriginKeyModel $originKeyModel,
-        Router $router
+        OriginKeyModel $originKeyModel
     ) {
         $this->systemConfigService = $systemConfigService;
         $this->originKeyModel = $originKeyModel;
         $this->adyenCheckoutUtilityService = $adyenCheckoutUtilityService;
-        $this->router = $router;
     }
 
     /**
      * Get origin key for a specific origin using the adyen api library client
+     * @param string $host
      * @return OriginKeyModel
      */
-    public function getOriginKeyForOrigin(): OriginKeyModel
+    public function getOriginKeyForOrigin(string $host): OriginKeyModel
     {
-        $params = array("originDomains" => array("host")); //TODO get host from Shopware configuration
+        $params = array("originDomains" => array($host));
 
         try {
             $response = $this->adyenCheckoutUtilityService->originKeys($params);
         } catch (AdyenException $e) {
+            die($e->getMessage());
             //TODO log error
         }
 
         $originKey = "";
 
-        if (!empty($response['originKeys']["host"])) { //TODO get domain from Shopware configuration
+        if (!empty($response['originKeys']["host"])) {
             $originKey = $response['originKeys']["host"];
         } else {
+            die("Empty host response");
             //TODO log error
         }
 
