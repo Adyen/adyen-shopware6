@@ -15,5 +15,9 @@
         <service id="Adyen\Shopware\Service\ClientService" autowire="true"/>
         <service id="Adyen\Shopware\Models\OriginKeyModel" autowire="true"/>
         <service id="Adyen\Shopware\Service\NotificationReceiverService" autowire="true"/>
+        <service id="Adyen\Shopware\Controller\NotificationReceiverController" autowire="true">
+            <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>
