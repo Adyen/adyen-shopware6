@@ -14,5 +14,6 @@
         <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true"/>
         <service id="Adyen\Shopware\Service\ClientService" autowire="true"/>
         <service id="Adyen\Shopware\Models\OriginKeyModel" autowire="true"/>
+        <service id="Adyen\Shopware\Service\NotificationReceiverService" autowire="true"/>
     </services>
 </container>
