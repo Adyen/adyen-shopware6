@@ -24,13 +24,12 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\AdyenException;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class NotificationReceiverService
 {
     public function process($salesChannelContext, $request)
     {
-        return new JsonResponse([]);
+        return new JsonResponse(['accepted']);
     }
 }
