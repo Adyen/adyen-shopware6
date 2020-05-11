@@ -22,15 +22,16 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Controller;
+namespace Adyen\Shopware\Storefront\Controller;
+
+use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Controller\StorefrontController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 
 use Adyen\Shopware\Service\NotificationReceiverService;
-use Shopware\Storefront\Controller\StorefrontController;
-use Symfony\Component\Routing\Annotation\Route;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use GuzzleHttp\Psr7\Request;
 
 class NotificationReceiverController extends StorefrontController
 {
@@ -44,14 +45,14 @@ class NotificationReceiverController extends StorefrontController
 
     /**
      * @RouteScope(scopes={"storefront"})
-     * @Route("store-api/v1/adyen/notification", name="adyen_notification", defaults={"csrf_protected": false}, methods={"POST"})
+     * @Route("/adyen/notification", name="adyen_notification", defaults={"csrf_protected": false}, methods={"POST"})
      *
-     * @param Request $request
      * @param SalesChannelContext $salesChannelContext
-     * @return Response
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function execute(Request $request, SalesChannelContext $salesChannelContext): JsonResponse
+    public function execute(SalesChannelContext $salesChannelContext, Request $request): JsonResponse
     {
-        return $this->notificationReceiverService->process($salesChannelContext, $request->request->all());
+        return $this->notificationReceiverService->process($salesChannelContext, $request);
     }
 }
