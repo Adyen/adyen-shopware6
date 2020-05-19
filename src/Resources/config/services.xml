@@ -29,6 +29,8 @@
             <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <tag name="controller.service_arguments"/>
         </service>
-
+        <service id="Adyen\Shopware\Notification\NotificationEntityDefinition">
+            <tag name="shopware.entity.definition" entity="adyen_notification" />
+        </service>
     </services>
 </container>
