@@ -29,6 +29,11 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\PriceField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
 class NotificationEntityDefinition extends EntityDefinition
@@ -57,7 +62,21 @@ class NotificationEntityDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
-            new StringField('technical_name', 'technicalName'),
+            new StringField('pspreference', 'pspReference'),
+            new StringField('original_reference', 'originalReference'),
+            new StringField('merchant_reference', 'merchantReference'),
+            new StringField('event_code', 'eventCode'),
+            new BoolField('success', 'success'),
+            new StringField('payment_method', 'paymentMethod'),
+            new PriceField('amount_value', 'amountValue'),
+            new StringField('amount_currency', 'amount_Currency'),
+            new StringField('reason', 'reason'),
+            new BoolField('live', 'live'),
+            new JsonField('additional_data', 'additionalData'),
+            new BoolField('done', 'done'),
+            new BoolField('processing', 'processing'),
+            new CreatedAtField(),
+            new UpdatedAtField()
         ]);
     }
 }
