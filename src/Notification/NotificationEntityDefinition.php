@@ -31,7 +31,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\PriceField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -68,8 +67,8 @@ class NotificationEntityDefinition extends EntityDefinition
             new StringField('event_code', 'eventCode'),
             new BoolField('success', 'success'),
             new StringField('payment_method', 'paymentMethod'),
-            new PriceField('amount_value', 'amountValue'),
-            new StringField('amount_currency', 'amount_Currency'),
+            new StringField('amount_value', 'amountValue'),
+            new StringField('amount_currency', 'amountCurrency'),
             new StringField('reason', 'reason'),
             new BoolField('live', 'live'),
             new JsonField('additional_data', 'additionalData'),
