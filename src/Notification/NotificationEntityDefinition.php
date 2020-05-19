@@ -33,7 +33,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
 class NotificationEntityDefinition extends EntityDefinition
 {
-    public const ENTITY_NAME = 'notification_entity';
+    public const ENTITY_NAME = 'adyen_notification';
 
     /**
      * @return string
