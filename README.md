@@ -7,6 +7,7 @@ We strongly encourage you to join us in contributing to this repository so every
 * Resolved bug fixes and issues
 * Any general improvements
 
+Read our [**contribution guidelines**](CONTRIBUTING.md) to find out how.
 
 # Adyen Payment plugin for Shopware 6
 Use Adyen's plugin for Shopware 6 to offer frictionless payments online, in-app, and in-store.
@@ -16,10 +17,6 @@ The plugin integrates card component(Secured Fields) using Adyen Checkout for al
 
 ## Requirements
 This plugin supports Shopware 6. For Shopware 5 support please see our Shopware 5 repository.
-
-
-
-Read our [**contribution guidelines**](CONTRIBUTING.md) to find out how.
 
 ## Installation and configuration
 Please use the [official documentation]() of the plugin 
