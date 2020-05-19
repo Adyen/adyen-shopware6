@@ -1,5 +1,5 @@
-# This plugin is currently under development. 
-# Please do not use this project until the first official release!
+**This plugin is currently under development. 
+Please do not use this project until the first official release!**
 
 ## Contributing
 We strongly encourage you to join us in contributing to this repository so everyone can benefit from:
