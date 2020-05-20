@@ -31,6 +31,7 @@ use Adyen\Shopware\Exception\MerchantAccountCodeException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\AdyenException;
 use Adyen\Util\HmacSignature;
+use Symfony\Component\HttpFoundation\Request;
 
 class NotificationReceiverService
 {
@@ -67,12 +68,12 @@ class NotificationReceiverService
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
      */
-    public function process($notificationItems)
+    public function process(Request $requestObject)
     {
-        return new JsonResponse($this->configurationService->getApiKey());
+        $request = $requestObject->request->all();
 
         // Validate if notification is not empty
-        if (empty($notificationItems)) {
+        if (empty($request)) {
             $message = 'Notification is empty';
             //TODO log notification message $logger->addAdyenNotification($message);
             return new JsonResponse(
@@ -83,31 +84,33 @@ class NotificationReceiverService
             );
         }
 
-        //TODO get plugin mode
-        $pluginMode = 'test';
+        $pluginMode = $this->configurationService->getEnvironment();
 
-        if (!empty($notificationItems['live']) && $this->validateNotificationMode($notificationItems['live'], $pluginMode)) {
+        if (!empty($request['live']) && $this->validateNotificationMode($request['live'], $pluginMode)) {
             $acceptedMessage = '[accepted]';
 
-            foreach ($notificationItems['notificationItems'] as $notificationItem) {
+            foreach ($request['notificationItems'] as $notificationItem) {
                 if (!$this->processNotification($notificationItem['NotificationRequestItem'])) {
                     throw new AuthorizationException();
                 }
             }
 
-            $cronCheckTest = $notificationItems['notificationItems'][0]['NotificationRequestItem']['pspReference'];
+            $cronCheckTest = $request['notificationItems'][0]['NotificationRequestItem']['pspReference'];
 
             // Run the query for checking unprocessed notifications, do this only for test notifications coming from
             // the Adyen Customer Area
             if ($this->isTestNotification($cronCheckTest)) {
-                $unprocessedNotifications = $this->adyenNotification->getNumberOfUnprocessedNotifications();
+                // TODO get number of Unprocessed notifications
+                /*$unprocessedNotifications = $this->adyenNotification->getNumberOfUnprocessedNotifications();
                 if ($unprocessedNotifications > 0) {
                     $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
-                }
+                }*/
             }
             //TODO log notification message $logger->addAdyenNotification('The result is accepted');
 
-            return $this->returnAccepted($acceptedMessage);
+            return new JsonResponse(
+                $this->returnAccepted($acceptedMessage)
+            );
         } else {
             $message = 'Mismatch between Live/Test modes of Shopware store and the Adyen platform';
             //TODO log notification message $logger->addAdyenNotification($message);
@@ -150,6 +153,7 @@ class NotificationReceiverService
         }
 
         // Validate if username and password is sent
+        // TODO retrieve PHP_AUTH_USER and PHP_AUTH_PW from request
         if ((!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']))) {
             if ($isTestNotification) {
                 $message = 'PHP_AUTH_USER or PHP_AUTH_PW is not in the request.';
@@ -170,6 +174,7 @@ class NotificationReceiverService
         }
 
         // Validate the username and password
+        // TODO use request to retrieve PHP_AUTH_USER and PHP_AUTH_PW from request
         $usernameCmp = hash_equals($userName, $_SERVER['PHP_AUTH_USER']);
         $passwordCmp = hash_equals($password, $_SERVER['PHP_AUTH_PW']);
         if ($usernameCmp === false || $passwordCmp === false) {
@@ -198,11 +203,10 @@ class NotificationReceiverService
      */
     protected function processNotification($notification)
     {
-        // TODO get these configuration values
-        $merchantAccount = $this->systemConfigService->get('AdyenPayment.config.merchantAccount');
-        $hmacKey = $this->systemConfigService->get('AdyenPayment.config.merchantAccount');
-        $userName = $this->systemConfigService->get('AdyenPayment.config.notificationUsername');
-        $password = $this->systemConfigService->get('AdyenPayment.config.notificationPassword');
+        $merchantAccount = $this->configurationService->getMerchantAccount();
+        $hmacKey = $this->configurationService->getHmacKey();
+        $userName = $this->configurationService->getNotificationUsername();
+        $password = $this->configurationService->getNotificationPassword();
 
         // validate the notification
         if ($this->isAuthenticated($notification, $merchantAccount, $hmacKey, $userName, $password)) {
