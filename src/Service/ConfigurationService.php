@@ -28,7 +28,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ConfigurationService
 {
-    const BUNDLE_NAME = 'AdyenPlugin';
+    const BUNDLE_NAME = 'AdyenPayment';
 
     /**
      * @var SystemConfigService
