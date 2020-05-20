@@ -1,6 +1,15 @@
-# Contribution guidelines
+# Contributing to the Adyen Shopware 6 plugin
+👍🎉 First off, thanks for taking the time to contribute! 🎉👍
 
-## How to contribute step-by-step
+The following is a set of guidelines for contributing to the Adyen Shopware 6 plugin and its packages, which are hosted 
+in the [Adyen Organization](https://github.com/adyen) on GitHub. These are mostly guidelines, not rules. Use your best 
+judgment, and feel free to propose changes to this document in a pull request.
+
+## Code of Conduct
+This project and everyone participating in it is governed by the [Adyen Code of Conduct](CODE_OF_CONDUCT.md). 
+By participating, you are expected to uphold this code.
+
+## Code Contribution
 
 1. Fork the `Adyen/adyen-shopware6` repository.
 2. Create a new branch from `develop` in your fork. This makes it easier for you to keep track of your changes.
