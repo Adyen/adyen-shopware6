@@ -27,6 +27,7 @@ namespace Adyen\Shopware\Service;
 use Adyen\Shopware\Exception\AuthenticationException;
 use Adyen\Shopware\Exception\AuthorizationException;
 use Adyen\Shopware\Exception\HMACKeyValidationException;
+use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Exception\MerchantAccountCodeException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\AdyenException;
@@ -71,6 +72,8 @@ class NotificationReceiverService
     public function process(Request $requestObject)
     {
         $request = $requestObject->request->all();
+        $basicAuthUser = $requestObject->server->get('PHP_AUTH_USER');
+        $basicAuthPassword = $requestObject->server->get('PHP_AUTH_PW');
 
         // Validate if notification is not empty
         if (empty($request)) {
@@ -84,22 +87,31 @@ class NotificationReceiverService
             );
         }
 
+        // Checks if notification is a test notification
+        $isTestNotification = $this->isTestNotification($request);
+
+        // Authorize notification
+        if (!$this->isAuthorized($isTestNotification, $basicAuthUser, $basicAuthPassword)) {
+            throw new AuthorizationException();
+        }
+
+        // Is the plugin configured to live environment
         $pluginMode = $this->configurationService->getEnvironment();
 
+        // Validate notification and process the notification items
         if (!empty($request['live']) && $this->validateNotificationMode($request['live'], $pluginMode)) {
             $acceptedMessage = '[accepted]';
 
+            // Process each notification item
             foreach ($request['notificationItems'] as $notificationItem) {
-                if (!$this->processNotification($notificationItem['NotificationRequestItem'])) {
-                    throw new AuthorizationException();
+                if (!$this->processNotificationItem($notificationItem['NotificationRequestItem'])) {
+                    throw new ValidationException();
                 }
             }
 
-            $cronCheckTest = $request['notificationItems'][0]['NotificationRequestItem']['pspReference'];
-
             // Run the query for checking unprocessed notifications, do this only for test notifications coming from
             // the Adyen Customer Area
-            if ($this->isTestNotification($cronCheckTest)) {
+            if ($isTestNotification) {
                 // TODO get number of Unprocessed notifications
                 /*$unprocessedNotifications = $this->adyenNotification->getNumberOfUnprocessedNotifications();
                 if ($unprocessedNotifications > 0) {
@@ -124,40 +136,27 @@ class NotificationReceiverService
     }
 
     /**
-     * Authentication of the notification
+     * Validation of the notification
+     * Testing the notification against the plugin environment and the HMAC signature
      *
      * @param $notification
      * @param $merchantAccount
      * @param $hmacKey
-     * @param $userName
-     * @param $password
      * @return bool
      * @throws AdyenException
-     * @throws AuthenticationException
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
      */
-    protected function isAuthenticated($notification, $merchantAccount, $hmacKey, $userName, $password)
+    protected function isValidated($notification, $merchantAccount, $hmacKey)
     {
         // Check if the notification is a test notification
-        $isTestNotification = $this->isTestNotification($notification['pspReference']);
+        $isTestNotification = $this->isTestNotificationPspReference($notification['pspReference']);
 
         // Validate if notification or configuration merchant account value is missing
         if (empty($notification['merchantAccountCode']) || empty($merchantAccount)) {
             if ($isTestNotification) {
                 $message = 'MerchantAccountCode or merchant account configuration is empty.';
                 throw new MerchantAccountCodeException($message);
-            }
-
-            return false;
-        }
-
-        // Validate if username and password is sent
-        // TODO retrieve PHP_AUTH_USER and PHP_AUTH_PW from request
-        if ((!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW']))) {
-            if ($isTestNotification) {
-                $message = 'PHP_AUTH_USER or PHP_AUTH_PW is not in the request.';
-                throw new AuthenticationException($message);
             }
 
             return false;
@@ -173,10 +172,38 @@ class NotificationReceiverService
             return false;
         }
 
+        // Notification is validated
+        return true;
+    }
+
+    /**
+     * Authorize notification based on Basic Authentication
+     *
+     * @param $isTestNotification
+     * @param $requestUser
+     * @param $requestPassword
+     * @return bool
+     * @throws AuthenticationException
+     */
+    private function isAuthorized($isTestNotification ,$requestUser, $requestPassword)
+    {
+        // Retrieve username and password from config
+        $userName = $this->configurationService->getNotificationUsername();
+        $password = $this->configurationService->getNotificationPassword();
+
+        // Validate if username and password is sent
+        if ((is_null($requestUser) || is_null($requestPassword))) {
+            if ($isTestNotification) {
+                $message = 'PHP_AUTH_USER or PHP_AUTH_PW is not in the request.';
+                throw new AuthenticationException($message);
+            }
+
+            return false;
+        }
+
         // Validate the username and password
-        // TODO use request to retrieve PHP_AUTH_USER and PHP_AUTH_PW from request
-        $usernameCmp = hash_equals($userName, $_SERVER['PHP_AUTH_USER']);
-        $passwordCmp = hash_equals($password, $_SERVER['PHP_AUTH_PW']);
+        $usernameCmp = hash_equals($userName, $requestUser);
+        $passwordCmp = hash_equals($password, $requestPassword);
         if ($usernameCmp === false || $passwordCmp === false) {
             if ($isTestNotification) {
                 $message = 'Username (PHP_AUTH_USER) and\or password (PHP_AUTH_PW) are not the same as ' .
@@ -187,51 +214,50 @@ class NotificationReceiverService
             return false;
         }
 
-        // Notification is authenticated
+        // The notification is authorized
         return true;
     }
 
     /**
      * Save notification into the database for cron job to execute notification
      *
-     * @param $notification
+     * @param $notificationItem
      * @return bool
+     * @throws AdyenException
      * @throws AuthenticationException
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
-     * @throws AdyenException
      */
-    protected function processNotification($notification)
+    protected function processNotificationItem($notificationItem)
     {
         $merchantAccount = $this->configurationService->getMerchantAccount();
         $hmacKey = $this->configurationService->getHmacKey();
-        $userName = $this->configurationService->getNotificationUsername();
-        $password = $this->configurationService->getNotificationPassword();
 
         // validate the notification
-        if ($this->isAuthenticated($notification, $merchantAccount, $hmacKey, $userName, $password)) {
+        if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)){
             // log the notification
             //TODO log notification message $logger->addAdyenNotification('The content of the notification item is: ' . print_r($notification, 1));
 
             // skip report notifications
-            if ($this->isReportNotification($notification['eventCode'])) {
-                //TODO log notification message $logger->addAdyenNotification('Notification is a REPORT notification from Adyen Customer Area');
-                return true;
-            }
+            {if ($this->isReportNotification($notificationItem['eventCode'])) {
+            //TODO log notification message $logger->addAdyenNotification('Notification is a REPORT notification from Adyen Customer Area');
+            return true;
+        }
+    }
 
-            // check if notification already exists
-            if (!$this->isTestNotification($notification['pspReference']) /* && TODO add isDuplicate function !$this->adyenNotification->isDuplicate(
+        // check if notification already exists
+        if (!$this->isTestNotificationPspReference($notificationItem['pspReference']) /* && TODO add isDuplicate function !$this->adyenNotification->isDuplicate(
                     $notification
                 )*/) {
-                // TODO insert notifications
-                //$this->adyenNotification->insertNotification($notification);
-                return true;
-            } else {
-                // duplicated so do nothing but return accepted to Adyen
-                //TODO log notification message $logger->addAdyenNotification('Notification is a TEST notification from Adyen Customer Area');
-                return true;
-            }
+            // TODO insert notifications
+            //$this->adyenNotification->insertNotification($notification);
+            return true;
+        } else {
+            // duplicated so do nothing but return accepted to Adyen
+            //TODO log notification message $logger->addAdyenNotification('Notification is a TEST notification from Adyen Customer Area');
+            return true;
         }
+    }
 
         return false;
     }
@@ -256,12 +282,32 @@ class NotificationReceiverService
     }
 
     /**
+     * Checks if the notification object was sent for testing purposes from the CA
+     *
+     * @param $notification
+     * @return bool
+     */
+    private function isTestNotification($notification)
+    {
+        // Get notification item from notification
+        if (empty($notification['notificationItems'][0])) {
+            return false;
+        }
+
+        // First item in the notification
+        $notificationItem = $notification['notificationItems'][0];
+
+        // Checks if psp reference is test
+        return $this->isTestNotificationPspReference($notificationItem['pspReference']);
+    }
+
+    /**
      * If notification is a test notification from Adyen Customer Area
      *
      * @param $pspReference
      * @return bool
      */
-    protected function isTestNotification($pspReference)
+    protected function isTestNotificationPspReference($pspReference)
     {
         if (strpos(strtolower($pspReference), 'test_') !== false
             || strpos(strtolower($pspReference), 'testnotification_') !== false
