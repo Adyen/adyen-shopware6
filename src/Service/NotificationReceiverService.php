@@ -295,7 +295,7 @@ class NotificationReceiverService
         }
 
         // First item in the notification
-        $notificationItem = $notification['notificationItems'][0];
+        $notificationItem = $notification['notificationItems'][0]['NotificationRequestItem'];
 
         // Checks if psp reference is test
         return $this->isTestNotificationPspReference($notificationItem['pspReference']);
