@@ -119,7 +119,7 @@ class NotificationReceiverService
 
             // Run the query for checking unprocessed notifications, do this only for test notifications coming from
             // the Adyen Customer Area
-            if ($this->isTestNotification($cronCheckTest)) {
+            if ($this->isTestNotification($notificationItem)) {
                 $unprocessedNotifications = $this->notificationService->getNumberOfUnprocessedNotifications();
                 if ($unprocessedNotifications > 0) {
                     $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
@@ -253,9 +253,8 @@ class NotificationReceiverService
     }
 
             // check if notification already exists
-            if (!$this->isTestNotification($notification['pspReference']) &&
-                !$this->notificationService->isDuplicateNotification($notification)) {
-                $this->notificationService->insertNotification($notification);
+            if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
+                $this->notificationService->insertNotification($notificationItem);
                 return true;
             } else {
                 // duplicated so do nothing but return accepted to Adyen
