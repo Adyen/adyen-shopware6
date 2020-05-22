@@ -36,10 +36,6 @@ contact our [support team](https://support.adyen.com/hc/en-us/requests/new?ticke
 ## Integration
 The plugin integrates card component(Secured Fields) using Adyen Checkout for all card payments.
 
-## Deprecation strategy
-Whenever a not private function or property is tagged deprecated, please be aware that in the next major release it will
- be permanently removed.
-
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
 <a href="https://github.com/Adyen/adyen-php-api-library" target="_blank">This library can be found here</a>
