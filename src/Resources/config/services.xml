@@ -32,5 +32,8 @@
         <service id="Adyen\Shopware\Notification\NotificationEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_notification" />
         </service>
+        <service id="Adyen\Shopware\Service\NotificationService">
+            <argument type="service" id="adyen_notification.repository"/>
+        </service>
     </services>
 </container>
