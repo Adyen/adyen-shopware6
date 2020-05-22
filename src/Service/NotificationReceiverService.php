@@ -47,17 +47,25 @@ class NotificationReceiverService
     private $configurationService;
 
     /**
+     * @var NotificationService
+     */
+    private $notificationService;
+
+    /**
      * NotificationReceiverService constructor.
      *
      * @param ConfigurationService $configurationService
      * @param HmacSignature $hmacSignature
+     * @param NotificationService $notificationService
      */
     public function __construct(
         ConfigurationService $configurationService,
-        HmacSignature $hmacSignature
+        HmacSignature $hmacSignature,
+        NotificationService $notificationService
     ) {
         $this->configurationService = $configurationService;
         $this->hmacSignature = $hmacSignature;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -112,11 +120,10 @@ class NotificationReceiverService
             // Run the query for checking unprocessed notifications, do this only for test notifications coming from
             // the Adyen Customer Area
             if ($isTestNotification) {
-                // TODO get number of Unprocessed notifications
-                /*$unprocessedNotifications = $this->adyenNotification->getNumberOfUnprocessedNotifications();
+                $unprocessedNotifications = $this->notificationService->getNumberOfUnprocessedNotifications();
                 if ($unprocessedNotifications > 0) {
                     $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
-                }*/
+                }
             }
             //TODO log notification message $logger->addAdyenNotification('The result is accepted');
 
@@ -245,19 +252,16 @@ class NotificationReceiverService
         }
     }
 
-        // check if notification already exists
-        if (!$this->isTestNotificationPspReference($notificationItem['pspReference']) /* && TODO add isDuplicate function !$this->adyenNotification->isDuplicate(
-                    $notification
-                )*/) {
-            // TODO insert notifications
-            //$this->adyenNotification->insertNotification($notification);
-            return true;
-        } else {
-            // duplicated so do nothing but return accepted to Adyen
-            //TODO log notification message $logger->addAdyenNotification('Notification is a TEST notification from Adyen Customer Area');
-            return true;
+            // check if notification already exists
+            if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
+                $this->notificationService->insertNotification($notificationItem);
+                return true;
+            } else {
+                // duplicated so do nothing but return accepted to Adyen
+                //TODO log notification message $logger->addAdyenNotification('Notification is a TEST notification from Adyen Customer Area');
+                return true;
+            }
         }
-    }
 
         return false;
     }
