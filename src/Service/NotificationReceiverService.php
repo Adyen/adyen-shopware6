@@ -119,7 +119,7 @@ class NotificationReceiverService
 
             // Run the query for checking unprocessed notifications, do this only for test notifications coming from
             // the Adyen Customer Area
-            if ($this->isTestNotification($notificationItem)) {
+            if ($isTestNotification) {
                 $unprocessedNotifications = $this->notificationService->getNumberOfUnprocessedNotifications();
                 if ($unprocessedNotifications > 0) {
                     $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
