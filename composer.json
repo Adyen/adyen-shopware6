@@ -10,8 +10,8 @@
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "require": {
-        "shopware/core": "~6",
-        "adyen/php-api-library": "^6.1"
+        "adyen/php-api-library": "^6.1",
+        "monolog/monolog": "1.25.3"
     },
     "extra": {
         "shopware-plugin-class": "Adyen\\Shopware\\AdyenPayment",
