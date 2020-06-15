@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Controller;
 
 use Adyen\Shopware\Service\PaymentMethodsService;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
@@ -55,14 +56,21 @@ class SalesChannelApiController extends AbstractController
      */
     private $domainRepository;
 
+    /**
+     * @var CartService
+     */
+    private $cartService;
+
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
-        EntityRepositoryInterface $domainRepository
+        EntityRepositoryInterface $domainRepository,
+        CartService $cartService
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->domainRepository = $domainRepository;
+        $this->cartService = $cartService;
     }
 
     /**
@@ -99,6 +107,11 @@ class SalesChannelApiController extends AbstractController
      */
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
+        $cart = $this->cartService->getCart($context->getToken(), $context);
+        var_dump($context->getCurrency()->getIsoCode());
+        // TODO: normalize price instead of multiplying by 100
+        var_dump((int)($cart->getPrice()->getTotalPrice() * 100));
+        die;
         return new JsonResponse($this->paymentMethodsService->getPaymentMethods());
     }
 
