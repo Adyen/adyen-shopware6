@@ -9,7 +9,6 @@
             <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
             <argument type="service" id="sales_channel_domain.repository"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true"/>
