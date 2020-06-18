@@ -21,6 +21,10 @@
         <service id="Adyen\Shopware\Service\CurrencyService" autowire="true">
             <argument type="service" id="currency.repository"/>
         </service>
+        <service id="Adyen\Shopware\Service\LocaleService" autowire="true">
+            <argument type="service" id="locale.repository"/>
+            <argument type="service" id="language.repository"/>
+        </service>
 
         <service id="Adyen\Util\HmacSignature" autowire="true"/>
         <service id="Adyen\Shopware\Service\ConfigurationService" autowire="true">
@@ -37,7 +41,7 @@
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Notification\NotificationEntityDefinition">
-            <tag name="shopware.entity.definition" entity="adyen_notification" />
+            <tag name="shopware.entity.definition" entity="adyen_notification"/>
         </service>
         <service id="Adyen\Shopware\Service\NotificationService">
             <argument type="service" id="adyen_notification.repository"/>

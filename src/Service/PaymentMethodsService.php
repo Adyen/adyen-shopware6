@@ -24,11 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
-use Adyen\Shopware\Service\ConfigurationService;
-use Petstore30\Order;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
-use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentMethodsService
@@ -49,6 +45,11 @@ class PaymentMethodsService
     private $currency;
 
     /**
+     * @var LocaleService
+     */
+    private $localeService;
+
+    /**
      * @var CartService
      */
     private $cartService;
@@ -57,12 +58,14 @@ class PaymentMethodsService
         CheckoutService $checkoutService,
         ConfigurationService $configurationService,
         CurrencyService $currency,
-        CartService $cartService
+        CartService $cartService,
+        LocaleService $localeService
     ) {
         $this->checkoutService = $checkoutService;
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
+        $this->localeService = $localeService;
     }
 
     public function getPaymentMethods(SalesChannelContext $context): array
@@ -90,7 +93,9 @@ class PaymentMethodsService
         $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
         $countryCode = $context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
         $shopperReference = $context->getCustomer()->getId();
-        $shopperLocale = $context->getCustomer()->getLanguage()->getLocale()->getCode();
+        $shopperLocale = $this->localeService->getLocaleFromLanguageId(
+            $context->getSalesChannel()->getLanguageId()
+        )->getCode();
 
         $requestData = array(
             "channel" => "Web",
