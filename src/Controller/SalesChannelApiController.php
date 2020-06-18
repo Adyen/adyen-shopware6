@@ -36,7 +36,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
 
-
 class SalesChannelApiController extends AbstractController
 {
 
@@ -53,16 +52,16 @@ class SalesChannelApiController extends AbstractController
     /**
      * @var EntityRepositoryInterface
      */
-    private $domainRepository;
+    private $entityRepository;
 
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
-        EntityRepositoryInterface $domainRepository
+        EntityRepositoryInterface $entityRepository
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->domainRepository = $domainRepository;
+        $this->entityRepository = $entityRepository;
     }
 
     /**
@@ -78,7 +77,6 @@ class SalesChannelApiController extends AbstractController
      */
     public function originKey(SalesChannelContext $context): JsonResponse
     {
-
         return new JsonResponse([
             $this->originKeyService
                 ->getOriginKeyForOrigin($this->getSalesChannelUrl($context))
@@ -99,7 +97,20 @@ class SalesChannelApiController extends AbstractController
      */
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
-        return new JsonResponse($this->paymentMethodsService->getPaymentMethods());
+
+        /** @var EntityRepositoryInterface $orderRepository */
+        $orderRepository = $this->container->get('order.repository');
+
+        /** @var \Shopware\Core\Framework\DataAbstractionLayer\EntityCollection $entities */
+        $entities = $orderRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('orderNumber', 10000)),
+            \Shopware\Core\Framework\Context::createDefaultContext()
+        );
+
+        /** @var \Shopware\Core\Framework\DataAbstractionLayer\Entity $order */
+        $order = $entities->first();
+
+        return new JsonResponse($this->paymentMethodsService->getPaymentMethods($order));
     }
 
     /**
@@ -113,7 +124,7 @@ class SalesChannelApiController extends AbstractController
         $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
         $criteria->setLimit(1);
 
-        $domainEntity = $this->domainRepository
+        $domainEntity = $this->entityRepository
             ->search($criteria, $context->getContext())
             ->first();
 
