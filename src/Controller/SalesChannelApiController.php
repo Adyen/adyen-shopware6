@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Controller;
 
 use Adyen\Shopware\Service\PaymentMethodsService;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
@@ -52,16 +53,23 @@ class SalesChannelApiController extends AbstractController
     /**
      * @var EntityRepositoryInterface
      */
-    private $entityRepository;
+    private $domainRepository;
+
+    /**
+     * @var CartService
+     */
+    private $cartService;
 
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
-        EntityRepositoryInterface $entityRepository
+        EntityRepositoryInterface $domainRepository,
+        CartService $cartService
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->entityRepository = $entityRepository;
+        $this->domainRepository = $domainRepository;
+        $this->cartService = $cartService;
     }
 
     /**
@@ -97,20 +105,12 @@ class SalesChannelApiController extends AbstractController
      */
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
-
-        /** @var EntityRepositoryInterface $orderRepository */
-        $orderRepository = $this->container->get('order.repository');
-
-        /** @var \Shopware\Core\Framework\DataAbstractionLayer\EntityCollection $entities */
-        $entities = $orderRepository->search(
-            (new Criteria())->addFilter(new EqualsFilter('orderNumber', 10000)),
-            \Shopware\Core\Framework\Context::createDefaultContext()
-        );
-
-        /** @var \Shopware\Core\Framework\DataAbstractionLayer\Entity $order */
-        $order = $entities->first();
-
-        return new JsonResponse($this->paymentMethodsService->getPaymentMethods($order));
+        $cart = $this->cartService->getCart($context->getToken(), $context);
+        var_dump($context->getCurrency()->getIsoCode());
+        // TODO: normalize price instead of multiplying by 100
+        var_dump((int)($cart->getPrice()->getTotalPrice() * 100));
+        die;
+        return new JsonResponse($this->paymentMethodsService->getPaymentMethods());
     }
 
     /**
@@ -124,7 +124,7 @@ class SalesChannelApiController extends AbstractController
         $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
         $criteria->setLimit(1);
 
-        $domainEntity = $this->entityRepository
+        $domainEntity = $this->domainRepository
             ->search($criteria, $context->getContext())
             ->first();
 
