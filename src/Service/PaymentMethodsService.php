@@ -91,7 +91,11 @@ class PaymentMethodsService
 
         $currency = $context->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
-        $countryCode = $context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
+        if ($context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso()) {
+            $countryCode = $context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
+        } else {
+            $countryCode = $context->getCustomer()->getActiveShippingAddress()->getCountry()->getIso();
+        }
         $shopperReference = $context->getCustomer()->getId();
         $shopperLocale = $this->localeService->getLocaleFromLanguageId(
             $context->getSalesChannel()->getLanguageId()
