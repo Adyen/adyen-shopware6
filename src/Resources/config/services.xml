@@ -16,14 +16,12 @@
         <service id="Adyen\Shopware\Service\ClientService" autowire="true"/>
         <service id="Adyen\Shopware\Models\OriginKeyModel" autowire="true"/>
 
-        <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
+            <argument type="service" id="sales_channel.repository"/>
+        </service>
         <service id="Adyen\Shopware\Service\CheckoutService" autowire="true"/>
         <service id="Adyen\Shopware\Service\CurrencyService" autowire="true">
             <argument type="service" id="currency.repository"/>
-        </service>
-        <service id="Adyen\Shopware\Service\LocaleService" autowire="true">
-            <argument type="service" id="locale.repository"/>
-            <argument type="service" id="language.repository"/>
         </service>
 
         <service id="Adyen\Util\HmacSignature" autowire="true"/>

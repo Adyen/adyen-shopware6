@@ -25,6 +25,9 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentMethodsService
@@ -45,27 +48,27 @@ class PaymentMethodsService
     private $currency;
 
     /**
-     * @var LocaleService
-     */
-    private $localeService;
-
-    /**
      * @var CartService
      */
     private $cartService;
 
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $salesChannelRepository;
+
     public function __construct(
+        EntityRepositoryInterface $salesChannelRepository,
         CheckoutService $checkoutService,
         ConfigurationService $configurationService,
         CurrencyService $currency,
-        CartService $cartService,
-        LocaleService $localeService
+        CartService $cartService
     ) {
+        $this->salesChannelRepository = $salesChannelRepository;
         $this->checkoutService = $checkoutService;
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
-        $this->localeService = $localeService;
     }
 
     public function getPaymentMethods(SalesChannelContext $context): array
@@ -80,7 +83,6 @@ class PaymentMethodsService
 
     private function buildPaymentMethodsRequestData(SalesChannelContext $context)
     {
-
         $cart = $this->cartService->getCart($context->getToken(), $context);
         $merchantAccount = $this->configurationService->getMerchantAccount();
 
@@ -88,6 +90,13 @@ class PaymentMethodsService
             //TODO log error
             return array();
         }
+
+        $salesChannelCriteria = new Criteria([$context->getSalesChannel()->getId()]);
+        $salesChannel = $this->salesChannelRepository->search(
+            $salesChannelCriteria->addAssociation('language.locale'),
+            Context::createDefaultContext())->first();
+        $shopperLocale = $salesChannel->getLanguage()->getLocale()->getCode();
+
 
         $currency = $context->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
@@ -97,9 +106,6 @@ class PaymentMethodsService
             $countryCode = $context->getCustomer()->getActiveShippingAddress()->getCountry()->getIso();
         }
         $shopperReference = $context->getCustomer()->getId();
-        $shopperLocale = $this->localeService->getLocaleFromLanguageId(
-            $context->getSalesChannel()->getLanguageId()
-        )->getCode();
 
         $requestData = array(
             "channel" => "Web",
@@ -115,5 +121,4 @@ class PaymentMethodsService
 
         return $requestData;
     }
-
 }
