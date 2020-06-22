@@ -20,9 +20,7 @@
             <argument type="service" id="sales_channel.repository"/>
         </service>
         <service id="Adyen\Shopware\Service\CheckoutService" autowire="true"/>
-        <service id="Adyen\Shopware\Service\CurrencyService" autowire="true">
-            <argument type="service" id="currency.repository"/>
-        </service>
+        <service id="Adyen\Util\Currency" autowire="true"/>
 
         <service id="Adyen\Util\HmacSignature" autowire="true"/>
         <service id="Adyen\Shopware\Service\ConfigurationService" autowire="true">

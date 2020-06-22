@@ -24,6 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
+use Adyen\Util\Currency;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -43,7 +44,7 @@ class PaymentMethodsService
     private $configurationService;
 
     /**
-     * @var CurrencyService
+     * @var Currency
      */
     private $currency;
 
@@ -61,7 +62,7 @@ class PaymentMethodsService
         EntityRepositoryInterface $salesChannelRepository,
         CheckoutService $checkoutService,
         ConfigurationService $configurationService,
-        CurrencyService $currency,
+        Currency $currency,
         CartService $cartService
     ) {
         $this->salesChannelRepository = $salesChannelRepository;
