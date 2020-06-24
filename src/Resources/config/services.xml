@@ -7,6 +7,7 @@
     <services>
         <service id="Adyen\Shopware\Controller\SalesChannelApiController">
             <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
             <argument type="service" id="sales_channel_domain.repository"/>
             <tag name="controller.service_arguments"/>
         </service>
@@ -14,6 +15,12 @@
         <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true"/>
         <service id="Adyen\Shopware\Service\ClientService" autowire="true"/>
         <service id="Adyen\Shopware\Models\OriginKeyModel" autowire="true"/>
+
+        <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
+            <argument type="service" id="sales_channel.repository"/>
+        </service>
+        <service id="Adyen\Shopware\Service\CheckoutService" autowire="true"/>
+        <service id="Adyen\Util\Currency" autowire="true"/>
 
         <service id="Adyen\Util\HmacSignature" autowire="true"/>
         <service id="Adyen\Shopware\Service\ConfigurationService" autowire="true">
@@ -30,7 +37,7 @@
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Notification\NotificationEntityDefinition">
-            <tag name="shopware.entity.definition" entity="adyen_notification" />
+            <tag name="shopware.entity.definition" entity="adyen_notification"/>
         </service>
         <service id="Adyen\Shopware\Service\NotificationService">
             <argument type="service" id="adyen_notification.repository"/>

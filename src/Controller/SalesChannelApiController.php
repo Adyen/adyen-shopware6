@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller;
 
+use Adyen\Shopware\Service\PaymentMethodsService;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
@@ -35,7 +36,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
 
-
 class SalesChannelApiController extends AbstractController
 {
 
@@ -45,30 +45,59 @@ class SalesChannelApiController extends AbstractController
     private $originKeyService;
 
     /**
+     * @var PaymentMethodsService
+     */
+    private $paymentMethodsService;
+
+    /**
      * @var EntityRepositoryInterface
      */
     private $domainRepository;
 
     public function __construct(
         OriginKeyService $originKeyService,
+        PaymentMethodsService $paymentMethodsService,
         EntityRepositoryInterface $domainRepository
     ) {
         $this->originKeyService = $originKeyService;
+        $this->paymentMethodsService = $paymentMethodsService;
         $this->domainRepository = $domainRepository;
     }
 
     /**
      * @RouteScope(scopes={"sales-channel-api"})
-     * @Route("/sales-channel-api/v1/adyen/origin-key", name="sales-channel-api.action.adyen.origin-key", methods={"GET"})
+     * @Route(
+     *     "/sales-channel-api/v1/adyen/origin-key",
+     *     name="sales-channel-api.action.adyen.origin-key",
+     *     methods={"GET"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @return JsonResponse
      */
     public function originKey(SalesChannelContext $context): JsonResponse
     {
-
         return new JsonResponse([
             $this->originKeyService
                 ->getOriginKeyForOrigin($this->getSalesChannelUrl($context))
                 ->getOriginKey()
         ]);
+    }
+
+    /**
+     * @RouteScope(scopes={"sales-channel-api"})
+     * @Route(
+     *     "/sales-channel-api/v1/adyen/payment-methods",
+     *     name="sales-channel-api.action.adyen.payment-methods",
+     *     methods={"GET"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function getPaymentMethods(SalesChannelContext $context): JsonResponse
+    {
+        return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
     }
 
     /**
