@@ -26,5 +26,8 @@
         "psr-4": {
             "Adyen\\Shopware\\": "src/"
         }
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.5"
     }
 }
