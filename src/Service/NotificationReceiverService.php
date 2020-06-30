@@ -243,11 +243,13 @@ class NotificationReceiverService
         // validate the notification
         if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)) {
             // log the notification
-            //TODO log notification message $logger->addAdyenNotification('The content of the notification item is: ' . print_r($notification, 1));
+            //TODO log notification message
+            // $logger->addAdyenNotification('The content of the notification item is: ' . print_r($notification, 1));
 
             // skip report notifications
             {if ($this->isReportNotification($notificationItem['eventCode'])) {
-            //TODO log notification message $logger->addAdyenNotification('Notification is a REPORT notification from Adyen Customer Area');
+                //TODO log notification message
+                //// $logger->addAdyenNotification('Notification is a REPORT notification from Adyen Customer Area');
                 return true;
             }
             }
@@ -258,7 +260,8 @@ class NotificationReceiverService
                 return true;
             } else {
                 // duplicated so do nothing but return accepted to Adyen
-                //TODO log notification message $logger->addAdyenNotification('Notification is a TEST notification from Adyen Customer Area');
+                //TODO log notification message
+                // $logger->addAdyenNotification('Notification is a TEST notification from Adyen Customer Area');
                 return true;
             }
         }

@@ -21,6 +21,7 @@
  *
  * Author: Adyen <shopware@adyen.com>
  */
+// phpcs:disable PSR1.Files.SideEffects
 
 namespace Adyen\Shopware;
 
