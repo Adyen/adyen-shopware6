@@ -56,7 +56,6 @@ class ClientService extends \Adyen\Client
             }
 
             $liveEndpointUrlPrefix = $this->systemConfigService->get('AdyenPayment.config.liveEndpointUrlPrefix');
-
         } catch (\Exception $e) {
             die($e->getMessage());
             //TODO log error

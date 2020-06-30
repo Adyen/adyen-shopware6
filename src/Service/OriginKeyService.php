@@ -88,6 +88,5 @@ class OriginKeyService
         }
 
         return $this->originKeyModel->setOriginKey($originKey);
-
     }
 }

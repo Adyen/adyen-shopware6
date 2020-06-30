@@ -192,7 +192,7 @@ class NotificationReceiverService
      * @return bool
      * @throws AuthenticationException
      */
-    private function isAuthorized($isTestNotification ,$requestUser, $requestPassword)
+    private function isAuthorized($isTestNotification, $requestUser, $requestPassword)
     {
         // Retrieve username and password from config
         $userName = $this->configurationService->getNotificationUsername();
@@ -241,16 +241,16 @@ class NotificationReceiverService
         $hmacKey = $this->configurationService->getHmacKey();
 
         // validate the notification
-        if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)){
+        if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)) {
             // log the notification
             //TODO log notification message $logger->addAdyenNotification('The content of the notification item is: ' . print_r($notification, 1));
 
             // skip report notifications
             {if ($this->isReportNotification($notificationItem['eventCode'])) {
             //TODO log notification message $logger->addAdyenNotification('Notification is a REPORT notification from Adyen Customer Area');
-            return true;
-        }
-    }
+                return true;
+            }
+            }
 
             // check if notification already exists
             if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
