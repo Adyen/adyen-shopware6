@@ -98,10 +98,10 @@ class PaymentMethodsService
         try {
             $requestData = $this->buildPaymentMethodsRequestData($context);
             if (!empty($requestData)) {
-                $this->loggerService->addAdyenResult(sprintf('/paymentMethods request sent to Adyen: %s',
+                $this->loggerService->addAdyenAPI(sprintf('/paymentMethods request sent to Adyen: %s',
                     json_encode($requestData)));
                 $responseData = $this->checkoutService->paymentMethods($requestData);
-                $this->loggerService->addAdyenResult(sprintf('/paymentMethods response from Adyen: %s',
+                $this->loggerService->addAdyenAPI(sprintf('/paymentMethods response from Adyen: %s',
                     json_encode($responseData)));
             }
         } catch (AdyenException $e) {
