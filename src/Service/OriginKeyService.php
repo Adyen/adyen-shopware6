@@ -47,6 +47,11 @@ class OriginKeyService
     private $adyenCheckoutUtilityService;
 
     /**
+     * @var LoggerService
+     */
+    private $loggerService;
+
+    /**
      * OriginKey constructor.
      * @param SystemConfigService $systemConfigService
      * @param CheckoutUtilityService $adyenCheckoutUtilityService
@@ -55,11 +60,13 @@ class OriginKeyService
     public function __construct(
         SystemConfigService $systemConfigService,
         CheckoutUtilityService $adyenCheckoutUtilityService,
-        OriginKeyModel $originKeyModel
+        OriginKeyModel $originKeyModel,
+        LoggerService $loggerService
     ) {
         $this->systemConfigService = $systemConfigService;
-        $this->originKeyModel = $originKeyModel;
         $this->adyenCheckoutUtilityService = $adyenCheckoutUtilityService;
+        $this->originKeyModel = $originKeyModel;
+        $this->loggerService = $loggerService;
     }
 
     /**
@@ -74,8 +81,8 @@ class OriginKeyService
         try {
             $response = $this->adyenCheckoutUtilityService->originKeys($params);
         } catch (AdyenException $e) {
+            $this->loggerService->addAdyenError($e->getMessage());
             die($e->getMessage());
-            //TODO log error
         }
 
         $originKey = "";
@@ -83,8 +90,8 @@ class OriginKeyService
         if (!empty($response['originKeys']["host"])) {
             $originKey = $response['originKeys']["host"];
         } else {
-            die("Empty host response");
-            //TODO log error
+            $this->loggerService->addAdyenError('Empty host response for OriginKey request');
+            die();
         }
 
         return $this->originKeyModel->setOriginKey($originKey);

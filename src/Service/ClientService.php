@@ -35,12 +35,22 @@ class ClientService extends \Adyen\Client
     private $systemConfigService;
 
     /**
+     * @var LoggerService
+     */
+    private $loggerService;
+
+    /**
      * Client constructor.
+     * @param SystemConfigService $systemConfigService
+     * @param LoggerService $loggerService
+     * @throws \Adyen\AdyenException
      */
     public function __construct(
-        SystemConfigService $systemConfigService
+        SystemConfigService $systemConfigService,
+        LoggerService $loggerService
     ) {
         $this->systemConfigService = $systemConfigService;
+        $this->loggerService = $loggerService;
 
         parent::__construct();
 
@@ -58,8 +68,8 @@ class ClientService extends \Adyen\Client
             $liveEndpointUrlPrefix = $this->systemConfigService->get('AdyenPayment.config.liveEndpointUrlPrefix');
 
         } catch (\Exception $e) {
-            die($e->getMessage());
-            //TODO log error
+            $this->loggerService->addAdyenError($e->getMessage());
+            die();
         }
 
         $this->setXApiKey($apiKey);
@@ -68,7 +78,6 @@ class ClientService extends \Adyen\Client
         $this->setExternalPlatform("Platform", "Version"); //TODO fetch data from the platform
         $this->setEnvironment($environment, $liveEndpointUrlPrefix);
 
-        //TODO use setLogger()
         //TODO set $this->configuration
     }
 }

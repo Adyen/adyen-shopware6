@@ -58,37 +58,70 @@ class PaymentMethodsService
      */
     private $salesChannelRepository;
 
+    /**
+     * @var LoggerService
+     */
+    private $loggerService;
+
+    /**
+     * PaymentMethodsService constructor.
+     * @param EntityRepositoryInterface $salesChannelRepository
+     * @param CheckoutService $checkoutService
+     * @param ConfigurationService $configurationService
+     * @param Currency $currency
+     * @param CartService $cartService
+     * @param LoggerService $loggerService
+     */
     public function __construct(
         EntityRepositoryInterface $salesChannelRepository,
         CheckoutService $checkoutService,
         ConfigurationService $configurationService,
         Currency $currency,
-        CartService $cartService
+        CartService $cartService,
+        LoggerService $loggerService
     ) {
         $this->salesChannelRepository = $salesChannelRepository;
         $this->checkoutService = $checkoutService;
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
+        $this->loggerService = $loggerService;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @return array
+     */
     public function getPaymentMethods(SalesChannelContext $context): array
     {
+        $responseData = array();
         try {
-            return $this->checkoutService->paymentMethods($this->buildPaymentMethodsRequestData($context));
+            $requestData = $this->buildPaymentMethodsRequestData($context);
+            if (!empty($requestData)) {
+                $this->loggerService->addAdyenResult(sprintf('/paymentMethods request sent to Adyen: %s',
+                    json_encode($requestData)));
+                $responseData = $this->checkoutService->paymentMethods($requestData);
+                $this->loggerService->addAdyenResult(sprintf('/paymentMethods response from Adyen: %s',
+                    json_encode($responseData)));
+            }
         } catch (AdyenException $e) {
-            //TODO: log this error message
-            die($e->getMessage());
+            $this->loggerService->addAdyenError($e->getMessage());
         }
+        return $responseData;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @return array
+     */
     private function buildPaymentMethodsRequestData(SalesChannelContext $context)
     {
         $cart = $this->cartService->getCart($context->getToken(), $context);
         $merchantAccount = $this->configurationService->getMerchantAccount();
 
         if (!$merchantAccount) {
-            //TODO log error
+            $this->loggerService->addAdyenError('No Merchant Account has been configured. ' .
+                'Go to the Adyen plugin configuration panel and finish the required setup.');
             return array();
         }
 

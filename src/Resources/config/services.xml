@@ -42,5 +42,8 @@
         <service id="Adyen\Shopware\Service\NotificationService">
             <argument type="service" id="adyen_notification.repository"/>
         </service>
+        <service id="Adyen\Shopware\Service\LoggerService">
+            <argument type="service" id="Shopware\Core\Framework\Log\LoggerFactory"/>
+        </service>
     </services>
 </container>

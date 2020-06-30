@@ -52,6 +52,11 @@ class NotificationReceiverService
     private $notificationService;
 
     /**
+     * @var LoggerService
+     */
+    private $loggerService;
+
+    /**
      * NotificationReceiverService constructor.
      *
      * @param ConfigurationService $configurationService
@@ -61,11 +66,13 @@ class NotificationReceiverService
     public function __construct(
         ConfigurationService $configurationService,
         HmacSignature $hmacSignature,
-        NotificationService $notificationService
+        NotificationService $notificationService,
+        LoggerService $loggerService
     ) {
         $this->configurationService = $configurationService;
         $this->hmacSignature = $hmacSignature;
         $this->notificationService = $notificationService;
+        $this->loggerService = $loggerService;
     }
 
     /**
@@ -86,7 +93,7 @@ class NotificationReceiverService
         // Validate if notification is not empty
         if (empty($request)) {
             $message = 'Notification is empty';
-            //TODO log notification message $logger->addAdyenNotification($message);
+            $this->loggerService->addAdyenNotification($message);
             return new JsonResponse(
                 [
                     'success' => false,
@@ -125,14 +132,14 @@ class NotificationReceiverService
                     $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
                 }
             }
-            //TODO log notification message $logger->addAdyenNotification('The result is accepted');
+            $this->loggerService->addAdyenNotification('The result is accepted');
 
             return new JsonResponse(
                 $this->returnAccepted($acceptedMessage)
             );
         } else {
             $message = 'Mismatch between Live/Test modes of Shopware store and the Adyen platform';
-            //TODO log notification message $logger->addAdyenNotification($message);
+            $this->loggerService->addAdyenNotification($message);
             return new JsonResponse(
                 array(
                     'success' => false,
@@ -192,7 +199,7 @@ class NotificationReceiverService
      * @return bool
      * @throws AuthenticationException
      */
-    private function isAuthorized($isTestNotification ,$requestUser, $requestPassword)
+    private function isAuthorized($isTestNotification, $requestUser, $requestPassword)
     {
         // Retrieve username and password from config
         $userName = $this->configurationService->getNotificationUsername();
@@ -241,16 +248,19 @@ class NotificationReceiverService
         $hmacKey = $this->configurationService->getHmacKey();
 
         // validate the notification
-        if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)){
+        if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)) {
             // log the notification
-            //TODO log notification message $logger->addAdyenNotification('The content of the notification item is: ' . print_r($notification, 1));
+            $this->loggerService->addAdyenNotification('The content of the notification item is: ' .
+                print_r($notificationItem, 1));
 
             // skip report notifications
-            {if ($this->isReportNotification($notificationItem['eventCode'])) {
-            //TODO log notification message $logger->addAdyenNotification('Notification is a REPORT notification from Adyen Customer Area');
-            return true;
-        }
-    }
+            {
+                if ($this->isReportNotification($notificationItem['eventCode'])) {
+                    $this->loggerService->addAdyenNotification('Notification is a REPORT notification from ' .
+                        'Adyen Customer Area');
+                    return true;
+                }
+            }
 
             // check if notification already exists
             if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
@@ -258,7 +268,8 @@ class NotificationReceiverService
                 return true;
             } else {
                 // duplicated so do nothing but return accepted to Adyen
-                //TODO log notification message $logger->addAdyenNotification('Notification is a TEST notification from Adyen Customer Area');
+                $this->loggerService->addAdyenNotification('Notification is a TEST notification from ' .
+                    'Adyen Customer Area');
                 return true;
             }
         }
