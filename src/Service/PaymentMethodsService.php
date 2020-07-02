@@ -122,7 +122,7 @@ class PaymentMethodsService
         if (!$merchantAccount) {
             $this->loggerService->addAdyenError('No Merchant Account has been configured. ' .
                 'Go to the Adyen plugin configuration panel and finish the required setup.');
-            return array();
+            return [];
         }
 
         $salesChannelCriteria = new Criteria([$context->getSalesChannel()->getId()]);
