@@ -27,6 +27,6 @@ namespace Adyen\Shopware\PaymentMethods;
 class PaymentMethods
 {
     const PAYMENT_METHODS = [
-        PaymentMethod::class
+        CardsPaymentMethod::class
     ];
 }

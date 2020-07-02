@@ -26,7 +26,7 @@ namespace Adyen\Shopware\PaymentMethods;
 
 use Adyen\Shopware\Handlers\PaymentMethodHandler;
 
-class PaymentMethod implements PaymentMethodInterface
+class CardsPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class PaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Adyen Dummy Payment Method';
+        return 'Cards';
     }
 
     /**
@@ -45,7 +45,7 @@ class PaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Adyen Dummy Payment Method';
+        return 'Credit and debit card payments.';
     }
 
     /**
@@ -65,7 +65,7 @@ class PaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN';
+        return 'ADYEN_CARDS';
     }
 
     /**
@@ -85,7 +85,7 @@ class PaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://live.adyen.com/hpp/img/pm/visa.png';
+        return 'https://live.adyen.com/hpp/img/pm/card.png';
     }
 
     /**
