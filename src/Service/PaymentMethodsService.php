@@ -94,7 +94,7 @@ class PaymentMethodsService
      */
     public function getPaymentMethods(SalesChannelContext $context): array
     {
-        $responseData = array();
+        $responseData = [];
         try {
             $requestData = $this->buildPaymentMethodsRequestData($context);
             if (!empty($requestData)) {
