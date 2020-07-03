@@ -9,6 +9,7 @@
     </imports>
 
     <services>
+        <!--Adyen Services-->
         <service id="Adyen\Shopware\Controller\SalesChannelApiController">
             <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
@@ -24,14 +25,12 @@
             <argument key="$apiLogger" type="service" id="monolog.logger.adyen_api"/>
         </service>
         <service id="Adyen\Shopware\Models\OriginKeyModel" autowire="true"/>
-
         <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
             <argument type="service" id="sales_channel.repository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\CheckoutService" autowire="true"/>
         <service id="Adyen\Util\Currency" autowire="true"/>
-
         <service id="Adyen\Util\HmacSignature" autowire="true"/>
         <service id="Adyen\Shopware\Service\ConfigurationService" autowire="true">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
@@ -52,6 +51,27 @@
         </service>
         <service id="Adyen\Shopware\Service\NotificationService">
             <argument type="service" id="adyen_notification.repository"/>
+        </service>
+
+        <!--Shopware Services wiring-->
+        <service id="Shopware\Core\Checkout\Payment\Cart\PaymentHandler\DefaultPayment">
+            <argument type="service"
+                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+        </service>
+        <service id="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader" autowire="true">
+            <argument type="service" id="sales_channel.payment_method.repository"/>
+            <argument type="service" id="sales_channel.shipping_method.repository"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader"/>
+        </service>
+
+        <!--Service decorators-->
+        <service id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPageLoader"
+                 decorates="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader">
+            <argument type="service"
+                      id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPageLoader.inner"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
         </service>
     </services>
 </container>

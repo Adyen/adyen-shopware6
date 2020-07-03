@@ -24,7 +24,7 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\PaymentMethodHandler;
+use Adyen\Shopware\Handlers\CardsPaymentMethodHandler;
 
 class CardsPaymentMethod implements PaymentMethodInterface
 {
@@ -55,7 +55,7 @@ class CardsPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return PaymentMethodHandler::class;
+        return CardsPaymentMethodHandler::class;
     }
 
     /**
