@@ -23,10 +23,13 @@
 
 namespace Adyen\Shopware\Service;
 
-use Shopware\Core\Framework\Log\LoggerFactory;
+use Adyen\Shopware\Exception\CommandException;
+use Monolog\Handler\StreamHandler;
+use Monolog\Processor\PsrLogMessageProcessor;
 
 class LoggerService extends \Monolog\Logger
 {
+    const SHOPWARE_LOG_PATH = '../var/log/'; //TODO prefix with shopware webroot path or use log dir const
     const LOG_DIR = 'adyen/';
     const NAME = 'ADYEN';
     const ADYEN_API = 201;
@@ -38,39 +41,39 @@ class LoggerService extends \Monolog\Logger
     private static $adyenHandlers = array(
         self::DEBUG => array(
             'level' => self::DEBUG,
-            'filePrefix' => 'debug'
+            'fileName' => 'debug.log'
         ),
         self::INFO => array(
             'level' => self::INFO,
-            'filePrefix' => 'info'
+            'fileName' => 'info.log'
         ),
         self::ADYEN_API => array(
             'level' => self::ADYEN_API,
-            'filePrefix' => 'adyen_api'
+            'fileName' => 'adyen_api.log'
         ),
         self::ADYEN_RESULT => array(
             'level' => self::ADYEN_RESULT,
-            'filePrefix' => 'adyen_result'
+            'fileName' => 'adyen_result.log'
         ),
         self::ADYEN_NOTIFICATION => array(
             'level' => self::ADYEN_NOTIFICATION,
-            'filePrefix' => 'adyen_notification'
+            'fileName' => 'adyen_notification.log'
         ),
         self::ADYEN_CRONJOB => array(
             'level' => self::ADYEN_CRONJOB,
-            'filePrefix' => 'adyen_cronjob'
+            'fileName' => 'adyen_cronjob.log'
         ),
         self::NOTICE => array(
             'level' => self::NOTICE,
-            'filePrefix' => 'notice'
+            'fileName' => 'notice.log'
         ),
         self::WARNING => array(
             'level' => self::WARNING,
-            'filePrefix' => 'warning'
+            'fileName' => 'warning.log'
         ),
-        self::ADYEN_ERROR => array(
-            'level' => self::ADYEN_ERROR,
-            'filePrefix' => 'adyen_error'
+        self::ERROR => array(
+            'level' => self::ERROR,
+            'fileName' => 'error.log'
         ),
     );
 
@@ -95,22 +98,29 @@ class LoggerService extends \Monolog\Logger
         self::EMERGENCY => 'EMERGENCY',
     );
 
-    /**
-     * @var LoggerFactory
-     */
-    private $loggerFactory;
+    public function __construct() {
+        parent::__construct(self::NAME);
+        $this->registerAdyenLogHandlers();
+    }
 
     /**
-     * LoggerService constructor.
+     * Retrieve Adyen log path
+     * If it doesn't exist yet then also creates it
      *
-     * @param LoggerFactory $loggerFactory
+     * @return string
+     * @throws CommandException
      */
-    public function __construct(
-        LoggerFactory $loggerFactory
-    ) {
-        $this->loggerFactory = $loggerFactory;
-        $this->registerAdyenLogHandlers();
-        parent::__construct(self::NAME);
+    private function getAdyenLogPath()
+    {
+        $path = self::SHOPWARE_LOG_PATH . self::LOG_DIR;
+
+        if (!file_exists($path)) {
+            if (!mkdir($path, 0755, true)) {
+                throw new CommandException('Creating the Adyen log folder failed');
+            }
+        }
+
+        return $path;
     }
 
     /**
@@ -120,7 +130,7 @@ class LoggerService extends \Monolog\Logger
      */
     public function addAdyenAPI($message, array $context = array())
     {
-        return self::$adyenHandlers[self::ADYEN_API]['logger']->info($message);
+        return $this->addRecord(static::ADYEN_API, $message, $context);
     }
 
     /**
@@ -130,17 +140,7 @@ class LoggerService extends \Monolog\Logger
      */
     public function addAdyenResult($message, array $context = array())
     {
-        return self::$adyenHandlers[self::ADYEN_RESULT]['logger']->info($message);
-    }
-
-    /**
-     * @param string $message
-     * @param array $context
-     * @return bool
-     */
-    public function addAdyenError($message, array $context = array())
-    {
-        return self::$adyenHandlers[self::ERROR]['logger']->error($message);
+        return $this->addRecord(static::ADYEN_RESULT, $message, $context);
     }
 
     /**
@@ -150,7 +150,7 @@ class LoggerService extends \Monolog\Logger
      */
     public function addAdyenNotification($message, array $context = array())
     {
-        return self::$adyenHandlers[self::ADYEN_NOTIFICATION]['logger']->info($message);
+        return $this->addRecord(static::ADYEN_NOTIFICATION, $message, $context);
     }
 
     /**
@@ -160,7 +160,7 @@ class LoggerService extends \Monolog\Logger
      */
     public function addAdyenCronjob($message, array $context = array())
     {
-        return self::$adyenHandlers[self::ADYEN_CRONJOB]['logger']->info($message);
+        return $this->addRecord(static::ADYEN_CRONJOB, $message, $context);
     }
 
     /**
@@ -168,9 +168,14 @@ class LoggerService extends \Monolog\Logger
      */
     private function registerAdyenLogHandlers()
     {
-        foreach (self::$adyenHandlers as $key => $adyenHandler) {
-            self::$adyenHandlers[$key]['logger'] =
-                $this->loggerFactory->createRotating(self::LOG_DIR . $adyenHandler['filePrefix'], 0);
+        $adyenLogPath = $this->getAdyenLogPath();
+        foreach (self::$adyenHandlers as $adyenHandler) {
+            $this->pushHandler(new StreamHandler(
+                $adyenLogPath . '/' . $adyenHandler['fileName'],
+                $adyenHandler['level'],
+                false
+            ));
+            $this->pushProcessor((new PsrLogMessageProcessor()));
         }
     }
 }

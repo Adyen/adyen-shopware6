@@ -98,14 +98,10 @@ class PaymentMethodsService
         try {
             $requestData = $this->buildPaymentMethodsRequestData($context);
             if (!empty($requestData)) {
-                $this->loggerService->addAdyenAPI(sprintf('/paymentMethods request sent to Adyen: %s',
-                    json_encode($requestData)));
                 $responseData = $this->checkoutService->paymentMethods($requestData);
-                $this->loggerService->addAdyenAPI(sprintf('/paymentMethods response from Adyen: %s',
-                    json_encode($responseData)));
             }
         } catch (AdyenException $e) {
-            $this->loggerService->addAdyenError($e->getMessage());
+            $this->loggerService->error($e->getMessage());
         }
         return $responseData;
     }
@@ -116,11 +112,15 @@ class PaymentMethodsService
      */
     private function buildPaymentMethodsRequestData(SalesChannelContext $context)
     {
+        if (is_null($context->getCustomer())) {
+            return [];
+        }
+
         $cart = $this->cartService->getCart($context->getToken(), $context);
         $merchantAccount = $this->configurationService->getMerchantAccount();
 
         if (!$merchantAccount) {
-            $this->loggerService->addAdyenError('No Merchant Account has been configured. ' .
+            $this->loggerService->error('No Merchant Account has been configured. ' .
                 'Go to the Adyen plugin configuration panel and finish the required setup.');
             return [];
         }

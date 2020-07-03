@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\Exception\MissingDataException;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ClientService extends \Adyen\Client
@@ -44,6 +45,7 @@ class ClientService extends \Adyen\Client
      * @param SystemConfigService $systemConfigService
      * @param LoggerService $loggerService
      * @throws \Adyen\AdyenException
+     * @throws MissingDataException
      */
     public function __construct(
         SystemConfigService $systemConfigService,
@@ -68,8 +70,8 @@ class ClientService extends \Adyen\Client
             $liveEndpointUrlPrefix = $this->systemConfigService->get('AdyenPayment.config.liveEndpointUrlPrefix');
 
         } catch (\Exception $e) {
-            $this->loggerService->addAdyenError($e->getMessage());
-            die();
+            $this->loggerService->error($e->getMessage());
+            throw new MissingDataException();
         }
 
         $this->setXApiKey($apiKey);
@@ -77,6 +79,8 @@ class ClientService extends \Adyen\Client
         $this->setMerchantApplication("Module", "Version"); //TODO fetch data from the plugin
         $this->setExternalPlatform("Platform", "Version"); //TODO fetch data from the platform
         $this->setEnvironment($environment, $liveEndpointUrlPrefix);
+
+        $this->setLogger($this->loggerService);
 
         //TODO set $this->configuration
     }
