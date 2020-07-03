@@ -175,7 +175,6 @@ class LoggerService extends \Monolog\Logger
                 $adyenHandler['level'],
                 false
             ));
-            $this->pushProcessor((new PsrLogMessageProcessor()));
         }
     }
 }
