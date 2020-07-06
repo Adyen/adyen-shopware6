@@ -128,7 +128,7 @@ class LoggerService extends \Monolog\Logger
      * @param array $context
      * @return bool
      */
-    public function addAdyenAPI($message, array $context = array())
+    public function adyenAPI($message, array $context = array())
     {
         return $this->addRecord(static::ADYEN_API, $message, $context);
     }
@@ -138,7 +138,7 @@ class LoggerService extends \Monolog\Logger
      * @param array $context
      * @return bool
      */
-    public function addAdyenResult($message, array $context = array())
+    public function adyenResult($message, array $context = array())
     {
         return $this->addRecord(static::ADYEN_RESULT, $message, $context);
     }
@@ -148,7 +148,7 @@ class LoggerService extends \Monolog\Logger
      * @param array $context
      * @return bool
      */
-    public function addAdyenNotification($message, array $context = array())
+    public function adyenNotification($message, array $context = array())
     {
         return $this->addRecord(static::ADYEN_NOTIFICATION, $message, $context);
     }
@@ -158,7 +158,7 @@ class LoggerService extends \Monolog\Logger
      * @param array $context
      * @return bool
      */
-    public function addAdyenCronjob($message, array $context = array())
+    public function adyenCronjob($message, array $context = array())
     {
         return $this->addRecord(static::ADYEN_CRONJOB, $message, $context);
     }

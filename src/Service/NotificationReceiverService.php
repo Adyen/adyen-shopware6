@@ -93,7 +93,7 @@ class NotificationReceiverService
         // Validate if notification is not empty
         if (empty($request)) {
             $message = 'Notification is empty';
-            $this->loggerService->addAdyenNotification($message);
+            $this->loggerService->adyenNotification($message);
             return new JsonResponse(
                 [
                     'success' => false,
@@ -132,14 +132,14 @@ class NotificationReceiverService
                     $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
                 }
             }
-            $this->loggerService->addAdyenNotification('The result is accepted');
+            $this->loggerService->adyenNotification('The result is accepted');
 
             return new JsonResponse(
                 $this->returnAccepted($acceptedMessage)
             );
         } else {
             $message = 'Mismatch between Live/Test modes of Shopware store and the Adyen platform';
-            $this->loggerService->addAdyenNotification($message);
+            $this->loggerService->adyenNotification($message);
             return new JsonResponse(
                 array(
                     'success' => false,
@@ -250,13 +250,13 @@ class NotificationReceiverService
         // validate the notification
         if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)) {
             // log the notification
-            $this->loggerService->addAdyenNotification('The content of the notification item is: ' .
+            $this->loggerService->adyenNotification('The content of the notification item is: ' .
                 print_r($notificationItem, 1));
 
             // skip report notifications
             {
                 if ($this->isReportNotification($notificationItem['eventCode'])) {
-                    $this->loggerService->addAdyenNotification('Notification is a REPORT notification from ' .
+                    $this->loggerService->adyenNotification('Notification is a REPORT notification from ' .
                         'Adyen Customer Area');
                     return true;
                 }
@@ -268,7 +268,7 @@ class NotificationReceiverService
                 return true;
             } else {
                 // duplicated so do nothing but return accepted to Adyen
-                $this->loggerService->addAdyenNotification('Notification is a TEST notification from ' .
+                $this->loggerService->adyenNotification('Notification is a TEST notification from ' .
                     'Adyen Customer Area');
                 return true;
             }
