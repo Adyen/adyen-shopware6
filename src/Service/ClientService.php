@@ -59,19 +59,19 @@ class ClientService extends \Adyen\Client
         $apiKey = '';
 
         try {
-            $apiKey = $this->systemConfigService->get('AdyenPayment.config.apiKeyTest');
-
             if ($this->systemConfigService->get('AdyenPayment.config.environment')) {
                 $environment = 'live';
             } else {
                 $environment = 'test';
             }
 
+            $apiKey = $this->systemConfigService->get('AdyenPayment.config.apiKeyTest');
+
             $liveEndpointUrlPrefix = $this->systemConfigService->get('AdyenPayment.config.liveEndpointUrlPrefix');
 
         } catch (\Exception $e) {
             $this->loggerService->error($e->getMessage());
-            throw new MissingDataException();
+            // TODO: check if $environment is test and, if so, exit with error message
         }
 
         $this->setXApiKey($apiKey);
