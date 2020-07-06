@@ -101,6 +101,7 @@ class LoggerService extends \Monolog\Logger
     public function __construct() {
         parent::__construct(self::NAME);
         $this->registerAdyenLogHandlers();
+        $this->pushProcessor((new PsrLogMessageProcessor()));
     }
 
     /**
@@ -175,7 +176,6 @@ class LoggerService extends \Monolog\Logger
                 $adyenHandler['level'],
                 false
             ));
-            $this->pushProcessor((new PsrLogMessageProcessor()));
         }
     }
 }
