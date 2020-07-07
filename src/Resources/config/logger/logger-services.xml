@@ -44,28 +44,28 @@
                          type="stream"
                          path="%kernel.logs_dir%/adyen/result.log">
             <monolog:channels>
-                <monolog:channel>adyen_generic</monolog:channel>
+                <monolog:channel>adyen_result</monolog:channel>
             </monolog:channels>
         </monolog:handler>
         <monolog:handler name="adyen_api"
                          type="stream"
                          path="%kernel.logs_dir%/adyen/api.log">
             <monolog:channels>
-                <monolog:channel>adyen_generic</monolog:channel>
+                <monolog:channel>adyen_api</monolog:channel>
             </monolog:channels>
         </monolog:handler>
         <monolog:handler name="adyen_cron"
                          type="stream"
                          path="%kernel.logs_dir%/adyen/cron.log">
             <monolog:channels>
-                <monolog:channel>adyen_generic</monolog:channel>
+                <monolog:channel>adyen_cron</monolog:channel>
             </monolog:channels>
         </monolog:handler>
         <monolog:handler name="adyen_notification"
                          type="stream"
                          path="%kernel.logs_dir%/adyen/notification.log">
             <monolog:channels>
-                <monolog:channel>adyen_generic</monolog:channel>
+                <monolog:channel>adyen_notification</monolog:channel>
             </monolog:channels>
         </monolog:handler>
     </monolog:config>
