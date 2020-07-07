@@ -25,7 +25,9 @@
 namespace Adyen\Shopware\Controller;
 
 use Adyen\Shopware\Service\PaymentMethodsService;
+use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\Shopware\Service\OriginKeyService;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
