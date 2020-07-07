@@ -24,7 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Shopware\Exception\MissingDataException;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ClientService extends \Adyen\Client
@@ -36,23 +36,24 @@ class ClientService extends \Adyen\Client
     private $systemConfigService;
 
     /**
-     * @var LoggerService
+     * @var LoggerInterface
      */
-    private $loggerService;
+    private $genericLogger;
 
     /**
      * Client constructor.
+     * @param LoggerInterface $genericLogger
+     * @param LoggerInterface $apiLogger
      * @param SystemConfigService $systemConfigService
-     * @param LoggerService $loggerService
      * @throws \Adyen\AdyenException
-     * @throws MissingDataException
      */
     public function __construct(
-        SystemConfigService $systemConfigService,
-        LoggerService $loggerService
+        LoggerInterface $genericLogger,
+        LoggerInterface $apiLogger,
+        SystemConfigService $systemConfigService
     ) {
         $this->systemConfigService = $systemConfigService;
-        $this->loggerService = $loggerService;
+        $this->genericLogger = $genericLogger;
 
         parent::__construct();
 
@@ -70,7 +71,7 @@ class ClientService extends \Adyen\Client
             $liveEndpointUrlPrefix = $this->systemConfigService->get('AdyenPayment.config.liveEndpointUrlPrefix');
 
         } catch (\Exception $e) {
-            $this->loggerService->error($e->getMessage());
+            $this->genericLogger->error($e->getMessage());
             // TODO: check if $environment is test and, if so, exit with error message
         }
 
@@ -80,7 +81,7 @@ class ClientService extends \Adyen\Client
         $this->setExternalPlatform("Platform", "Version"); //TODO fetch data from the platform
         $this->setEnvironment($environment, $liveEndpointUrlPrefix);
 
-        $this->setLogger($this->loggerService);
+        $this->setLogger($apiLogger);
 
         //TODO set $this->configuration
     }

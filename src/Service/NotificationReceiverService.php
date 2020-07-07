@@ -29,6 +29,7 @@ use Adyen\Shopware\Exception\AuthorizationException;
 use Adyen\Shopware\Exception\HMACKeyValidationException;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Exception\MerchantAccountCodeException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\AdyenException;
 use Adyen\Util\HmacSignature;
@@ -52,27 +53,28 @@ class NotificationReceiverService
     private $notificationService;
 
     /**
-     * @var LoggerService
+     * @var LoggerInterface
      */
-    private $loggerService;
+    private $logger;
 
     /**
      * NotificationReceiverService constructor.
      *
      * @param ConfigurationService $configurationService
      * @param HmacSignature $hmacSignature
+     * @param LoggerInterface $logger
      * @param NotificationService $notificationService
      */
     public function __construct(
         ConfigurationService $configurationService,
         HmacSignature $hmacSignature,
-        NotificationService $notificationService,
-        LoggerService $loggerService
+        LoggerInterface $logger,
+        NotificationService $notificationService
     ) {
         $this->configurationService = $configurationService;
         $this->hmacSignature = $hmacSignature;
         $this->notificationService = $notificationService;
-        $this->loggerService = $loggerService;
+        $this->logger = $logger;
     }
 
     /**
@@ -83,6 +85,7 @@ class NotificationReceiverService
      * @throws AuthorizationException
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
+     * @throws ValidationException
      */
     public function process(Request $requestObject)
     {
@@ -93,7 +96,7 @@ class NotificationReceiverService
         // Validate if notification is not empty
         if (empty($request)) {
             $message = 'Notification is empty';
-            $this->loggerService->adyenNotification($message);
+            $this->logger->info($message);
             return new JsonResponse(
                 [
                     'success' => false,
@@ -132,14 +135,14 @@ class NotificationReceiverService
                     $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
                 }
             }
-            $this->loggerService->adyenNotification('The result is accepted');
+            $this->logger->info('The result is accepted');
 
             return new JsonResponse(
                 $this->returnAccepted($acceptedMessage)
             );
         } else {
             $message = 'Mismatch between Live/Test modes of Shopware store and the Adyen platform';
-            $this->loggerService->adyenNotification($message);
+            $this->logger->info($message);
             return new JsonResponse(
                 array(
                     'success' => false,
@@ -250,13 +253,13 @@ class NotificationReceiverService
         // validate the notification
         if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)) {
             // log the notification
-            $this->loggerService->adyenNotification('The content of the notification item is: ' .
+            $this->logger->info('The content of the notification item is: ' .
                 print_r($notificationItem, 1));
 
             // skip report notifications
             {
                 if ($this->isReportNotification($notificationItem['eventCode'])) {
-                    $this->loggerService->adyenNotification('Notification is a REPORT notification from ' .
+                    $this->logger->info('Notification is a REPORT notification from ' .
                         'Adyen Customer Area');
                     return true;
                 }
@@ -268,7 +271,7 @@ class NotificationReceiverService
                 return true;
             } else {
                 // duplicated so do nothing but return accepted to Adyen
-                $this->loggerService->adyenNotification('Notification is a TEST notification from ' .
+                $this->logger->info('Notification is a TEST notification from ' .
                     'Adyen Customer Area');
                 return true;
             }

@@ -26,6 +26,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Models\OriginKeyModel;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class OriginKeyService
@@ -47,26 +48,27 @@ class OriginKeyService
     private $adyenCheckoutUtilityService;
 
     /**
-     * @var LoggerService
+     * @var LoggerInterface
      */
-    private $loggerService;
+    private $logger;
 
     /**
      * OriginKey constructor.
+     * @param LoggerInterface $logger
      * @param SystemConfigService $systemConfigService
      * @param CheckoutUtilityService $adyenCheckoutUtilityService
      * @param \Adyen\Shopware\Models\OriginKeyModel $originKeyModel
      */
     public function __construct(
+        LoggerInterface $logger,
         SystemConfigService $systemConfigService,
         CheckoutUtilityService $adyenCheckoutUtilityService,
-        OriginKeyModel $originKeyModel,
-        LoggerService $loggerService
+        OriginKeyModel $originKeyModel
     ) {
         $this->systemConfigService = $systemConfigService;
         $this->adyenCheckoutUtilityService = $adyenCheckoutUtilityService;
         $this->originKeyModel = $originKeyModel;
-        $this->loggerService = $loggerService;
+        $this->logger = $logger;
     }
 
     /**
@@ -77,11 +79,10 @@ class OriginKeyService
     public function getOriginKeyForOrigin(string $host): OriginKeyModel
     {
         $params = array("originDomains" => array($host));
-
         try {
             $response = $this->adyenCheckoutUtilityService->originKeys($params);
         } catch (AdyenException $e) {
-            $this->loggerService->error($e->getMessage());
+            $this->logger->error($e->getMessage());
             exit;
         }
 
@@ -90,7 +91,7 @@ class OriginKeyService
         if (!empty($response['originKeys']["host"])) {
             $originKey = $response['originKeys']["host"];
         } else {
-            $this->loggerService->error('Empty host response for OriginKey request');
+            $this->logger->error('Empty host response for OriginKey request');
             exit;
         }
 

@@ -25,9 +25,7 @@
 namespace Adyen\Shopware\Controller;
 
 use Adyen\Shopware\Service\PaymentMethodsService;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\Shopware\Service\OriginKeyService;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -106,7 +104,6 @@ class SalesChannelApiController extends AbstractController
      */
     private function getSalesChannelUrl(SalesChannelContext $context): string
     {
-
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
         $criteria->setLimit(1);

@@ -25,6 +25,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Util\Currency;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -59,33 +60,33 @@ class PaymentMethodsService
     private $salesChannelRepository;
 
     /**
-     * @var LoggerService
+     * @var LoggerInterface
      */
-    private $loggerService;
+    private $logger;
 
     /**
      * PaymentMethodsService constructor.
      * @param EntityRepositoryInterface $salesChannelRepository
+     * @param LoggerInterface $logger
      * @param CheckoutService $checkoutService
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param CartService $cartService
-     * @param LoggerService $loggerService
      */
     public function __construct(
         EntityRepositoryInterface $salesChannelRepository,
+        LoggerInterface $logger,
         CheckoutService $checkoutService,
         ConfigurationService $configurationService,
         Currency $currency,
-        CartService $cartService,
-        LoggerService $loggerService
+        CartService $cartService
     ) {
         $this->salesChannelRepository = $salesChannelRepository;
         $this->checkoutService = $checkoutService;
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
-        $this->loggerService = $loggerService;
+        $this->logger = $logger;
     }
 
     /**
@@ -101,7 +102,7 @@ class PaymentMethodsService
                 $responseData = $this->checkoutService->paymentMethods($requestData);
             }
         } catch (AdyenException $e) {
-            $this->loggerService->error($e->getMessage());
+            $this->logger->error($e->getMessage());
         }
         return $responseData;
     }
@@ -120,7 +121,7 @@ class PaymentMethodsService
         $merchantAccount = $this->configurationService->getMerchantAccount();
 
         if (!$merchantAccount) {
-            $this->loggerService->error('No Merchant Account has been configured. ' .
+            $this->logger->error('No Merchant Account has been configured. ' .
                 'Go to the Adyen plugin configuration panel and finish the required setup.');
             return [];
         }
