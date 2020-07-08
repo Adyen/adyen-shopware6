@@ -258,11 +258,11 @@ class NotificationReceiverService
 
             // skip report notifications
             {
-                if ($this->isReportNotification($notificationItem['eventCode'])) {
-                    $this->logger->info('Notification is a REPORT notification from ' .
-                        'Adyen Customer Area');
-                    return true;
-                }
+            if ($this->isReportNotification($notificationItem['eventCode'])) {
+                $this->logger->info('Notification is a REPORT notification from ' .
+                    'Adyen Customer Area');
+                return true;
+            }
             }
 
             // check if notification already exists
