@@ -271,8 +271,7 @@ class NotificationReceiverService
                 return true;
             } else {
                 // duplicated so do nothing but return accepted to Adyen
-                $this->logger->info('Notification is a TEST notification from ' .
-                    'Adyen Customer Area');
+                $this->logger->info('Duplicated notification received, skipped.');
 
                 return true;
             }
