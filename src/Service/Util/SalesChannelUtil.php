@@ -67,7 +67,7 @@ class SalesChannelUtil
      * @return SalesChannelEntity
      * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
      */
-    public function getSalesChannelLocale(SalesChannelContext $context): SalesChannelEntity
+    public function getSalesChannelAssocLocale(SalesChannelContext $context): SalesChannelEntity
     {
         $salesChannelCriteria = new Criteria([$context->getSalesChannel()->getId()]);
 

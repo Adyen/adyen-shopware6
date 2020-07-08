@@ -52,8 +52,6 @@ class ClientService extends \Adyen\Client
 
         parent::__construct();
 
-        $apiKey = '';
-
         try {
             $environment = $this->configurationService->getEnvironment();
             $apiKey = $this->configurationService->getApiKey();

@@ -128,8 +128,8 @@ class PaymentMethodsService
             return [];
         }
 
-        $salesChannel = $this->salesChannelUtil->getSalesChannelLocale($context);
-        $shopperLocale = $salesChannel->getLanguage()->getLocale()->getCode();
+        $salesChannelAssocLocale = $this->salesChannelUtil->getSalesChannelAssocLocale($context);
+        $shopperLocale = $salesChannelAssocLocale->getLanguage()->getLocale()->getCode();
 
         $currency = $context->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
