@@ -29,6 +29,10 @@ use Adyen\Shopware\Models\OriginKeyModel;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
+/**
+ * Class OriginKeyService
+ * @package Adyen\Shopware\Service
+ */
 class OriginKeyService
 {
 
@@ -88,8 +92,8 @@ class OriginKeyService
 
         $originKey = "";
 
-        if (!empty($response['originKeys']["host"])) {
-            $originKey = $response['originKeys']["host"];
+        if (!empty($response['originKeys'][$host])) {
+            $originKey = $response['originKeys'][$host];
         } else {
             $this->logger->error('Empty host response for OriginKey request');
             exit;

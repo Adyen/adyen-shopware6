@@ -26,8 +26,15 @@ namespace Adyen\Shopware\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
+/**
+ * Class ConfigurationService
+ * @package Adyen\Shopware\Service
+ */
 class ConfigurationService
 {
+    /**
+     *
+     */
     const BUNDLE_NAME = 'AdyenPayment';
 
     /**
@@ -42,8 +49,7 @@ class ConfigurationService
      */
     public function __construct(
         SystemConfigService $systemConfigService
-    )
-    {
+    ) {
         $this->systemConfigService = $systemConfigService;
     }
 
@@ -76,7 +82,7 @@ class ConfigurationService
      */
     public function getEnvironment()
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment');
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment') ? 'live' : 'test';
     }
 
     /**
