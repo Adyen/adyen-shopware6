@@ -4,10 +4,6 @@ namespace Adyen\Shopware\Storefront\Page\Checkout\Confirm;
 
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPage;
 
-/**
- * Class AdyenCheckoutConfirmPage
- * @package Adyen\Shopware\Storefront\Page\Checkout\Confirm
- */
 class AdyenCheckoutConfirmPage extends CheckoutConfirmPage
 {
     /**

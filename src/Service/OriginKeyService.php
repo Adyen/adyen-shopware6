@@ -28,10 +28,6 @@ use Adyen\AdyenException;
 use Adyen\Shopware\Models\OriginKeyModel;
 use Psr\Log\LoggerInterface;
 
-/**
- * Class OriginKeyService
- * @package Adyen\Shopware\Service
- */
 class OriginKeyService
 {
 

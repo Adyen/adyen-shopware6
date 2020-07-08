@@ -30,10 +30,6 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
-/**
- * Class PaymentMethodsService
- * @package Adyen\Shopware\Service
- */
 class PaymentMethodsService
 {
     /**

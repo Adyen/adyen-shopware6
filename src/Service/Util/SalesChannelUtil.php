@@ -10,10 +10,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
-/**
- * Class SalesChannelUtil
- * @package Adyen\Shopware\Service\Util
- */
 class SalesChannelUtil
 {
     /**
@@ -29,6 +25,7 @@ class SalesChannelUtil
     /**
      * SalesChannelUtil constructor.
      * @param EntityRepositoryInterface $domainRepository
+     * @param EntityRepositoryInterface $salesChannelRepository
      */
     public function __construct(
         EntityRepositoryInterface $domainRepository,

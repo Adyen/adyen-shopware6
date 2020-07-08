@@ -51,6 +51,12 @@ class SalesChannelApiController extends AbstractController
      */
     private $salesChannelUtil;
 
+    /**
+     * SalesChannelApiController constructor.
+     * @param OriginKeyService $originKeyService
+     * @param PaymentMethodsService $paymentMethodsService
+     * @param SalesChannelUtil $salesChannelUtil
+     */
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,

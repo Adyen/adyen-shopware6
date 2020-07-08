@@ -41,6 +41,10 @@ class ClientService extends \Adyen\Client
 
     /**
      * Client constructor.
+     * @param LoggerInterface $genericLogger
+     * @param LoggerInterface $apiLogger
+     * @param ConfigurationService $configurationService
+     * @throws \Adyen\AdyenException
      */
     public function __construct(
         LoggerInterface $genericLogger,

@@ -45,6 +45,16 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         return 'scheme';
     }
 
+    /**
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param RequestDataBag $dataBag
+     * @param SalesChannelContext $salesChannelContext
+     * @param string|null $gateway
+     * @param string $type
+     * @param array $gatewayInfo
+     * @return RedirectResponse
+     * @throws AsyncPaymentProcessException
+     */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,

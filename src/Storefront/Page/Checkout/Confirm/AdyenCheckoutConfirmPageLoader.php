@@ -4,7 +4,8 @@ namespace Adyen\Shopware\Storefront\Page\Checkout\Confirm;
 
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\Util\SalesChannelUtil;
-use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
+use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPage;
@@ -12,10 +13,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\OriginKeyService;
 
-/**
- * Class AdyenCheckoutConfirmPageLoader
- * @package Adyen\Shopware\Storefront\Page\Checkout\Confirm
- */
 class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
 {
     /**
@@ -46,7 +43,10 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
     /**
      * CheckoutConfirmPageLoader constructor.
      * @param CheckoutConfirmPageLoader $checkoutConfirmPageLoader
-     * @param CartService $cartService
+     * @param PaymentMethodsService $paymentMethodsService
+     * @param OriginKeyService $originKeyService
+     * @param SalesChannelUtil $salesChannelUtil
+     * @param ConfigurationService $configurationService
      */
     public function __construct(
         CheckoutConfirmPageLoader $checkoutConfirmPageLoader,
@@ -70,7 +70,7 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
      * @return CheckoutConfirmPage
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @throws InconsistentCriteriaIdsException|SalesChannelDomainNotFoundException
      */
     public function load(Request $request, SalesChannelContext $salesChannelContext): CheckoutConfirmPage
     {
@@ -93,7 +93,7 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
                     $this->salesChannelUtil->getSalesChannelUrl($salesChannelContext)
                 )->getOriginKey(),
 
-                'locale' => $this->salesChannelUtil->getSalesChannelLocale($salesChannelContext)
+                'locale' => $this->salesChannelUtil->getSalesChannelAssocLocale($salesChannelContext)
                     ->getLanguage()->getLocale()->getCode(),
 
                 'environment' => $this->configurationService->getEnvironment(),

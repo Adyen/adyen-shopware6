@@ -26,15 +26,8 @@ namespace Adyen\Shopware\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
-/**
- * Class ConfigurationService
- * @package Adyen\Shopware\Service
- */
 class ConfigurationService
 {
-    /**
-     *
-     */
     const BUNDLE_NAME = 'AdyenPayment';
 
     /**
