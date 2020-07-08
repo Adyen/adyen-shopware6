@@ -4,6 +4,10 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services
         https://symfony.com/schema/dic/services/services-1.0.xsd">
 
+    <imports>
+        <import resource="logger/logger-services.xml"/>
+    </imports>
+
     <services>
         <service id="Adyen\Shopware\Controller\SalesChannelApiController">
             <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
@@ -11,13 +15,19 @@
             <argument type="service" id="sales_channel_domain.repository"/>
             <tag name="controller.service_arguments"/>
         </service>
-        <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
         <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true"/>
-        <service id="Adyen\Shopware\Service\ClientService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\ClientService" autowire="true">
+            <argument key="$genericLogger" type="service" id="monolog.logger.adyen_generic"/>
+            <argument key="$apiLogger" type="service" id="monolog.logger.adyen_api"/>
+        </service>
         <service id="Adyen\Shopware\Models\OriginKeyModel" autowire="true"/>
 
         <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
             <argument type="service" id="sales_channel.repository"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\CheckoutService" autowire="true"/>
         <service id="Adyen\Util\Currency" autowire="true"/>
@@ -30,6 +40,7 @@
         <service id="Adyen\Shopware\Service\NotificationReceiverService" autowire="true">
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Util\HmacSignature"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController" autowire="true">

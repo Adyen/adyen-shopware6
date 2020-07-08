@@ -25,6 +25,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Util\Currency;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -58,8 +59,23 @@ class PaymentMethodsService
      */
     private $salesChannelRepository;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * PaymentMethodsService constructor.
+     * @param EntityRepositoryInterface $salesChannelRepository
+     * @param LoggerInterface $logger
+     * @param CheckoutService $checkoutService
+     * @param ConfigurationService $configurationService
+     * @param Currency $currency
+     * @param CartService $cartService
+     */
     public function __construct(
         EntityRepositoryInterface $salesChannelRepository,
+        LoggerInterface $logger,
         CheckoutService $checkoutService,
         ConfigurationService $configurationService,
         Currency $currency,
@@ -70,26 +86,44 @@ class PaymentMethodsService
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
+        $this->logger = $logger;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @return array
+     */
     public function getPaymentMethods(SalesChannelContext $context): array
     {
+        $responseData = [];
         try {
-            return $this->checkoutService->paymentMethods($this->buildPaymentMethodsRequestData($context));
+            $requestData = $this->buildPaymentMethodsRequestData($context);
+            if (!empty($requestData)) {
+                $responseData = $this->checkoutService->paymentMethods($requestData);
+            }
         } catch (AdyenException $e) {
-            //TODO: log this error message
-            die($e->getMessage());
+            $this->logger->error($e->getMessage());
         }
+        return $responseData;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @return array
+     */
     private function buildPaymentMethodsRequestData(SalesChannelContext $context)
     {
+        if (is_null($context->getCustomer())) {
+            return [];
+        }
+
         $cart = $this->cartService->getCart($context->getToken(), $context);
         $merchantAccount = $this->configurationService->getMerchantAccount();
 
         if (!$merchantAccount) {
-            //TODO log error
-            return array();
+            $this->logger->error('No Merchant Account has been configured. ' .
+                'Go to the Adyen plugin configuration panel and finish the required setup.');
+            return [];
         }
 
         $salesChannelCriteria = new Criteria([$context->getSalesChannel()->getId()]);

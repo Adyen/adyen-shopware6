@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ClientService extends \Adyen\Client
@@ -35,30 +36,42 @@ class ClientService extends \Adyen\Client
     private $systemConfigService;
 
     /**
+     * @var LoggerInterface
+     */
+    private $genericLogger;
+
+    /**
      * Client constructor.
+     * @param LoggerInterface $genericLogger
+     * @param LoggerInterface $apiLogger
+     * @param SystemConfigService $systemConfigService
+     * @throws \Adyen\AdyenException
      */
     public function __construct(
+        LoggerInterface $genericLogger,
+        LoggerInterface $apiLogger,
         SystemConfigService $systemConfigService
     ) {
         $this->systemConfigService = $systemConfigService;
+        $this->genericLogger = $genericLogger;
 
         parent::__construct();
 
         $apiKey = '';
 
         try {
-            $apiKey = $this->systemConfigService->get('AdyenPayment.config.apiKeyTest');
-
             if ($this->systemConfigService->get('AdyenPayment.config.environment')) {
                 $environment = 'live';
             } else {
                 $environment = 'test';
             }
 
+            $apiKey = $this->systemConfigService->get('AdyenPayment.config.apiKeyTest');
+
             $liveEndpointUrlPrefix = $this->systemConfigService->get('AdyenPayment.config.liveEndpointUrlPrefix');
         } catch (\Exception $e) {
-            die($e->getMessage());
-            //TODO log error
+            $this->genericLogger->error($e->getMessage());
+            // TODO: check if $environment is test and, if so, exit with error message
         }
 
         $this->setXApiKey($apiKey);
@@ -67,7 +80,8 @@ class ClientService extends \Adyen\Client
         $this->setExternalPlatform("Platform", "Version"); //TODO fetch data from the platform
         $this->setEnvironment($environment, $liveEndpointUrlPrefix);
 
-        //TODO use setLogger()
+        $this->setLogger($apiLogger);
+
         //TODO set $this->configuration
     }
 }
