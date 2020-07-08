@@ -68,6 +68,9 @@ class ClientService extends \Adyen\Client
             $this->setLogger($apiLogger);
 
             //TODO set $this->configuration
+        } catch (\Exception $e) {
+            $this->genericLogger->error($e->getMessage());
+            // TODO: check if $environment is test and, if so, exit with error message
         }
-}
+    }
 }
