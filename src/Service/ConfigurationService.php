@@ -124,11 +124,9 @@ class ConfigurationService
      */
     public function getHmacKey()
     {
-        if ($this->getEnvironment()) {
-            return $this->getHmacLive();
-        }
-
-        return $this->getHmacTest();
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.hmac' . ucfirst($this->getEnvironment())
+        );
     }
 
     /**
