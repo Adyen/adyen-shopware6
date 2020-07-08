@@ -27,7 +27,6 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Shopware\Models\OriginKeyModel;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * Class OriginKeyService
@@ -35,11 +34,6 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  */
 class OriginKeyService
 {
-
-    /**
-     * @var SystemConfigService
-     */
-    private $systemConfigService;
 
     /**
      * @var OriginKeyModel
@@ -59,17 +53,14 @@ class OriginKeyService
     /**
      * OriginKey constructor.
      * @param LoggerInterface $logger
-     * @param SystemConfigService $systemConfigService
      * @param CheckoutUtilityService $adyenCheckoutUtilityService
      * @param \Adyen\Shopware\Models\OriginKeyModel $originKeyModel
      */
     public function __construct(
         LoggerInterface $logger,
-        SystemConfigService $systemConfigService,
         CheckoutUtilityService $adyenCheckoutUtilityService,
         OriginKeyModel $originKeyModel
     ) {
-        $this->systemConfigService = $systemConfigService;
         $this->adyenCheckoutUtilityService = $adyenCheckoutUtilityService;
         $this->originKeyModel = $originKeyModel;
         $this->logger = $logger;
@@ -83,6 +74,7 @@ class OriginKeyService
     public function getOriginKeyForOrigin(string $host): OriginKeyModel
     {
         $params = array("originDomains" => array($host));
+
         try {
             $response = $this->adyenCheckoutUtilityService->originKeys($params);
         } catch (AdyenException $e) {

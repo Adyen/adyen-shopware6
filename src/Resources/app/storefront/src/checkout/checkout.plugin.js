@@ -15,7 +15,11 @@ export default class CheckoutPlugin extends Plugin {
             originKey: adyenCheckoutConfiguration.originKey,
             environment: adyenCheckoutConfiguration.environment,
             showPayButton: false,
-            paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)
+            paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse),
+
+            //Needed so the generic component does not throw errors, can be removed when the installments issue has been fixed
+            paymentMethodsConfiguration: {card: {installments: []}},
+            amount: {value: 1}
         };
 
         if (ADYEN_CHECKOUT_CONFIG) {
@@ -43,6 +47,12 @@ export default class CheckoutPlugin extends Plugin {
                 return;
             }
 
+            //Hide other payment method's contents when selecting an option
+            $('[name=paymentMethodId]').on("change", function () {
+                $('.payment-method-container-div').hide();
+                $('[data-payment-method-id="' + $(this).val() + '"]').show();
+            });
+
             // filter personal details extra fields from component and only leave the necessary ones
             paymentMethod.details = filterOutOpenInvoiceComponentDetails(paymentMethod.details);
 
@@ -59,7 +69,6 @@ export default class CheckoutPlugin extends Plugin {
                 }
             });
 
-
             try {
 
                 window.adyenCheckout
@@ -71,7 +80,6 @@ export default class CheckoutPlugin extends Plugin {
 
 
         });
-
 
         /**
          * In the open invoice components we need to validate only the personal details and only the
@@ -130,7 +138,6 @@ export default class CheckoutPlugin extends Plugin {
         function resetFields() {
             data = "";
         }
-
 
         /* eslint-enable no-unused-vars */
     }

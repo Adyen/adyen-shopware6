@@ -25,15 +25,14 @@
 namespace Adyen\Shopware\Service;
 
 use Psr\Log\LoggerInterface;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ClientService extends \Adyen\Client
 {
 
     /**
-     * @var SystemConfigService
+     * @var ConfigurationService
      */
-    private $systemConfigService;
+    private $configurationService;
 
     /**
      * @var LoggerInterface
@@ -42,17 +41,13 @@ class ClientService extends \Adyen\Client
 
     /**
      * Client constructor.
-     * @param LoggerInterface $genericLogger
-     * @param LoggerInterface $apiLogger
-     * @param SystemConfigService $systemConfigService
-     * @throws \Adyen\AdyenException
      */
     public function __construct(
         LoggerInterface $genericLogger,
         LoggerInterface $apiLogger,
-        SystemConfigService $systemConfigService
+        ConfigurationService $configurationService
     ) {
-        $this->systemConfigService = $systemConfigService;
+        $this->configurationService = $configurationService;
         $this->genericLogger = $genericLogger;
 
         parent::__construct();
@@ -60,29 +55,19 @@ class ClientService extends \Adyen\Client
         $apiKey = '';
 
         try {
-            if ($this->systemConfigService->get('AdyenPayment.config.environment')) {
-                $environment = 'live';
-            } else {
-                $environment = 'test';
-            }
+            $environment = $this->configurationService->getEnvironment();
+            $apiKey = $this->configurationService->getApiKey();
+            $liveEndpointUrlPrefix = $this->configurationService->getLiveEndpointUrlPrefix();
 
-            $apiKey = $this->systemConfigService->get('AdyenPayment.config.apiKeyTest');
+            $this->setXApiKey($apiKey);
+            $this->setAdyenPaymentSource("Module", "Version"); //TODO fetch data from the plugin
+            $this->setMerchantApplication("Module", "Version"); //TODO fetch data from the plugin
+            $this->setExternalPlatform("Platform", "Version"); //TODO fetch data from the platform
+            $this->setEnvironment($environment, $liveEndpointUrlPrefix);
 
-            $liveEndpointUrlPrefix = $this->systemConfigService->get('AdyenPayment.config.liveEndpointUrlPrefix');
+            $this->setLogger($apiLogger);
 
-        } catch (\Exception $e) {
-            $this->genericLogger->error($e->getMessage());
-            // TODO: check if $environment is test and, if so, exit with error message
+            //TODO set $this->configuration
         }
-
-        $this->setXApiKey($apiKey);
-        $this->setAdyenPaymentSource("Module", "Version"); //TODO fetch data from the plugin
-        $this->setMerchantApplication("Module", "Version"); //TODO fetch data from the plugin
-        $this->setExternalPlatform("Platform", "Version"); //TODO fetch data from the platform
-        $this->setEnvironment($environment, $liveEndpointUrlPrefix);
-
-        $this->setLogger($apiLogger);
-
-        //TODO set $this->configuration
-    }
+}
 }

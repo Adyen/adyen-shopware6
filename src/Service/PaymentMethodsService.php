@@ -30,6 +30,10 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Class PaymentMethodsService
+ * @package Adyen\Shopware\Service
+ */
 class PaymentMethodsService
 {
     /**
@@ -57,6 +61,20 @@ class PaymentMethodsService
      */
     private $salesChannelUtil;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * PaymentMethodsService constructor.
+     * @param LoggerInterface $logger
+     * @param CheckoutService $checkoutService
+     * @param ConfigurationService $configurationService
+     * @param Currency $currency
+     * @param CartService $cartService
+     * @param SalesChannelUtil $salesChannelUtil
+     */
     public function __construct(
         LoggerInterface $logger,
         CheckoutService $checkoutService,
@@ -69,8 +87,8 @@ class PaymentMethodsService
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
-        $this->logger = $logger;
         $this->salesChannelUtil = $salesChannelUtil;
+        $this->logger = $logger;
     }
 
     /**

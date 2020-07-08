@@ -143,10 +143,8 @@ class ConfigurationService
      */
     public function getApiKey()
     {
-        if ($this->getEnvironment()) {
-            return $this->getApiKeyLive();
-        }
-
-        return $this->getApiKeyTest();
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.apiKey' . ucfirst($this->getEnvironment())
+        );
     }
 }
