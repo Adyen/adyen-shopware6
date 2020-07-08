@@ -26,6 +26,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Models\OriginKeyModel;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class OriginKeyService
@@ -47,19 +48,27 @@ class OriginKeyService
     private $adyenCheckoutUtilityService;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * OriginKey constructor.
+     * @param LoggerInterface $logger
      * @param SystemConfigService $systemConfigService
      * @param CheckoutUtilityService $adyenCheckoutUtilityService
      * @param \Adyen\Shopware\Models\OriginKeyModel $originKeyModel
      */
     public function __construct(
+        LoggerInterface $logger,
         SystemConfigService $systemConfigService,
         CheckoutUtilityService $adyenCheckoutUtilityService,
         OriginKeyModel $originKeyModel
     ) {
         $this->systemConfigService = $systemConfigService;
-        $this->originKeyModel = $originKeyModel;
         $this->adyenCheckoutUtilityService = $adyenCheckoutUtilityService;
+        $this->originKeyModel = $originKeyModel;
+        $this->logger = $logger;
     }
 
     /**
@@ -70,12 +79,11 @@ class OriginKeyService
     public function getOriginKeyForOrigin(string $host): OriginKeyModel
     {
         $params = array("originDomains" => array($host));
-
         try {
             $response = $this->adyenCheckoutUtilityService->originKeys($params);
         } catch (AdyenException $e) {
-            die($e->getMessage());
-            //TODO log error
+            $this->logger->error($e->getMessage());
+            exit;
         }
 
         $originKey = "";
@@ -83,8 +91,8 @@ class OriginKeyService
         if (!empty($response['originKeys']["host"])) {
             $originKey = $response['originKeys']["host"];
         } else {
-            die("Empty host response");
-            //TODO log error
+            $this->logger->error('Empty host response for OriginKey request');
+            exit;
         }
 
         return $this->originKeyModel->setOriginKey($originKey);

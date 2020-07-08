@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~                       ######
+  ~                       ######
+  ~ ############    ####( ######  #####. ######  ############   ############
+  ~ #############  #####( ######  #####. ######  #############  #############
+  ~        ######  #####( ######  #####. ######  #####  ######  #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####          #####  ######
+  ~ #############  #############  #############  #############  #####  ######
+  ~  ############   ############  #############   ############  #####  ######
+  ~                                      ######
+  ~                               #############
+  ~                               ############
+  ~
+  ~ Adyen plugin for Shopware 6
+  ~
+  ~ Copyright (c) 2020 Adyen B.V.
+  ~ This file is open source and available under the MIT license.
+  ~ See the LICENSE file for more info.
+  ~
+  -->
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:monolog="http://symfony.com/schema/dic/monolog"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <monolog:config>
+        <monolog:channel>adyen_generic</monolog:channel>
+        <monolog:channel>adyen_result</monolog:channel>
+        <monolog:channel>adyen_api</monolog:channel>
+        <monolog:channel>adyen_cron</monolog:channel>
+        <monolog:channel>adyen_notification</monolog:channel>
+        
+        <monolog:handler name="adyen_generic"
+                         type="stream"
+                         path="%kernel.logs_dir%/adyen/adyen.log">
+            <monolog:channels>
+                <monolog:channel>adyen_generic</monolog:channel>
+            </monolog:channels>
+        </monolog:handler>
+        <monolog:handler name="adyen_result"
+                         type="stream"
+                         path="%kernel.logs_dir%/adyen/result.log">
+            <monolog:channels>
+                <monolog:channel>adyen_result</monolog:channel>
+            </monolog:channels>
+        </monolog:handler>
+        <monolog:handler name="adyen_api"
+                         type="stream"
+                         path="%kernel.logs_dir%/adyen/api.log">
+            <monolog:channels>
+                <monolog:channel>adyen_api</monolog:channel>
+            </monolog:channels>
+        </monolog:handler>
+        <monolog:handler name="adyen_cron"
+                         type="stream"
+                         path="%kernel.logs_dir%/adyen/cron.log">
+            <monolog:channels>
+                <monolog:channel>adyen_cron</monolog:channel>
+            </monolog:channels>
+        </monolog:handler>
+        <monolog:handler name="adyen_notification"
+                         type="stream"
+                         path="%kernel.logs_dir%/adyen/notification.log">
+            <monolog:channels>
+                <monolog:channel>adyen_notification</monolog:channel>
+            </monolog:channels>
+        </monolog:handler>
+    </monolog:config>
+</container>

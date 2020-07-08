@@ -106,7 +106,6 @@ class SalesChannelApiController extends AbstractController
      */
     private function getSalesChannelUrl(SalesChannelContext $context): string
     {
-
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
         $criteria->setLimit(1);
