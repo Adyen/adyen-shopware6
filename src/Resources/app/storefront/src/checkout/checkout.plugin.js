@@ -15,11 +15,7 @@ export default class CheckoutPlugin extends Plugin {
             originKey: adyenCheckoutConfiguration.originKey,
             environment: adyenCheckoutConfiguration.environment,
             showPayButton: false,
-            paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse),
-
-            //Needed so the generic component does not throw errors, can be removed when the installments issue has been fixed
-            paymentMethodsConfiguration: {card: {installments: []}},
-            amount: {value: 1}
+            paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)
         };
 
         if (ADYEN_CHECKOUT_CONFIG) {
