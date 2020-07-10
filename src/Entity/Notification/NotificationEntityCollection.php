@@ -22,7 +22,7 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Notification;
+namespace Adyen\Shopware\Entity\Notification;
 
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 
