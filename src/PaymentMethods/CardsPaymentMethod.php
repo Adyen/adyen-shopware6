@@ -85,7 +85,7 @@ class CardsPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://live.adyen.com/hpp/img/pm/card.png';
+        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/card.png';
     }
 
     /**
