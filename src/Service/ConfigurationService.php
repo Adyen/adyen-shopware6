@@ -42,8 +42,7 @@ class ConfigurationService
      */
     public function __construct(
         SystemConfigService $systemConfigService
-    )
-    {
+    ) {
         $this->systemConfigService = $systemConfigService;
     }
 

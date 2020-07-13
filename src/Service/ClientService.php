@@ -69,7 +69,6 @@ class ClientService extends \Adyen\Client
             $apiKey = $this->systemConfigService->get('AdyenPayment.config.apiKeyTest');
 
             $liveEndpointUrlPrefix = $this->systemConfigService->get('AdyenPayment.config.liveEndpointUrlPrefix');
-
         } catch (\Exception $e) {
             $this->genericLogger->error($e->getMessage());
             // TODO: check if $environment is test and, if so, exit with error message

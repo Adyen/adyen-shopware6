@@ -129,7 +129,8 @@ class PaymentMethodsService
         $salesChannelCriteria = new Criteria([$context->getSalesChannel()->getId()]);
         $salesChannel = $this->salesChannelRepository->search(
             $salesChannelCriteria->addAssociation('language.locale'),
-            Context::createDefaultContext())->first();
+            Context::createDefaultContext()
+        )->first();
         $shopperLocale = $salesChannel->getLanguage()->getLocale()->getCode();
 
 
