@@ -98,8 +98,10 @@ class AdyenPayment extends Plugin
 
         // Fetch ID for update
 
-        $paymentCriteria = (new Criteria())->addFilter(new EqualsFilter('handlerIdentifier',
-            CardsPaymentMethodHandler::class));
+        $paymentCriteria = (new Criteria())->addFilter(new EqualsFilter(
+            'handlerIdentifier',
+            CardsPaymentMethodHandler::class
+        ));
 
         $paymentIds = $paymentRepository->searchIds($paymentCriteria, Context::createDefaultContext());
 

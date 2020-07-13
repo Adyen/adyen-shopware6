@@ -26,5 +26,4 @@ class AdyenCheckoutConfirmPage extends CheckoutConfirmPage
     {
         $this->adyenData = $adyenData;
     }
-
 }

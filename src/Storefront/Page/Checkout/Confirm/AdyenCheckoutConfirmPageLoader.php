@@ -54,14 +54,12 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
         OriginKeyService $originKeyService,
         SalesChannelUtil $salesChannelUtil,
         ConfigurationService $configurationService
-
     ) {
         $this->checkoutConfirmPageLoader = $checkoutConfirmPageLoader;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->originKeyService = $originKeyService;
         $this->salesChannelUtil = $salesChannelUtil;
         $this->configurationService = $configurationService;
-
     }
 
     /**
@@ -82,8 +80,10 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
         $originalPaymentMethods = $page->getPaymentMethods();
 
         //Setting Shopware's payment methods list to the decorated/filtered list
-        $adyenPage->setPaymentMethods($this->filterShopwarePaymentMethods($originalPaymentMethods,
-            $salesChannelContext));
+        $adyenPage->setPaymentMethods($this->filterShopwarePaymentMethods(
+            $originalPaymentMethods,
+            $salesChannelContext
+        ));
         $adyenPage->setShippingMethods($page->getShippingMethods());
 
         //Setting Adyen data to be used in payment method forms
@@ -127,10 +127,12 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
             if (strpos($paymentMethodEntity->getFormattedHandlerIdentifier(), 'adyen')) {
                 $pmHandler = new $pmHandlerIdentifier;
                 $pmCode = $pmHandler->getAdyenPaymentMethodId();
-                $pmFound = array_filter($adyenPaymentMethods['paymentMethods'],
+                $pmFound = array_filter(
+                    $adyenPaymentMethods['paymentMethods'],
                     function ($value) use ($pmCode) {
                         return $value['type'] == $pmCode;
-                    });
+                    }
+                );
                 if (empty($pmFound)) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }

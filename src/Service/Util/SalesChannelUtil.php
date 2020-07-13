@@ -30,7 +30,6 @@ class SalesChannelUtil
     public function __construct(
         EntityRepositoryInterface $domainRepository,
         EntityRepositoryInterface $salesChannelRepository
-
     ) {
         $this->domainRepository = $domainRepository;
         $this->salesChannelRepository = $salesChannelRepository;
@@ -70,6 +69,7 @@ class SalesChannelUtil
 
         return $this->salesChannelRepository->search(
             $salesChannelCriteria->addAssociation('language.locale'),
-            Context::createDefaultContext())->first();
+            Context::createDefaultContext()
+        )->first();
     }
 }
