@@ -74,57 +74,6 @@ export default class CheckoutPlugin extends Plugin {
         });
 
         /**
-         * In the open invoice components we need to validate only the personal details and only the
-         * dateOfBirth, telephoneNumber and gender if it's set in the admin
-         * @param details
-         * @returns {Array}
-         */
-        function filterOutOpenInvoiceComponentDetails(details) {
-            var filteredDetails = details.map(function (parentDetail) {
-                // filter only personalDetails, billingAddress, separateDeliveryAddress, deliveryAddress and consentCheckbox
-                if ("personalDetails" !== parentDetail.key &&
-                    "billingAddress" !== parentDetail.key &&
-                    "separateDeliveryAddress" !== parentDetail.key &&
-                    "deliveryAddress" !== parentDetail.key &&
-                    "consentCheckbox" !== parentDetail.key
-                ) {
-                    return parentDetail;
-                }
-
-                if ("personalDetails" === parentDetail.key) {
-                    var detailObject = parentDetail.details.map(function (detail) {
-                        if ('dateOfBirth' === detail.key ||
-                            'telephoneNumber' === detail.key ||
-                            'gender' === detail.key) {
-                            return detail;
-                        }
-                    });
-
-                    if (!!detailObject) {
-                        return {
-                            "key": parentDetail.key,
-                            "type": parentDetail.type,
-                            "details": filterUndefinedItemsInArray(detailObject)
-                        };
-                    }
-                }
-            });
-
-            return filterUndefinedItemsInArray(filteredDetails);
-        }
-
-        /**
-         * Helper function to filter out the undefined items from an array
-         * @param arr
-         * @returns {*}
-         */
-        function filterUndefinedItemsInArray(arr) {
-            return arr.filter(function (item) {
-                return typeof item !== 'undefined';
-            });
-        }
-
-        /**
          * Reset card details
          */
         function resetFields() {
