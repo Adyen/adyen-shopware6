@@ -18,9 +18,7 @@ export default class CheckoutPlugin extends Plugin {
             paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)
         };
 
-        if (ADYEN_CHECKOUT_CONFIG) {
-            window.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
-        }
+        window.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
 
         var placeOrderAllowed = false;
         var data;
