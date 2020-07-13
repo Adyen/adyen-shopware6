@@ -48,5 +48,4 @@ class OriginKeyModel
         $this->originKey = $originKey;
         return $this;
     }
-
 }

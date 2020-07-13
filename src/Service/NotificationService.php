@@ -63,9 +63,9 @@ class NotificationService
         }
 
         return $this->notificationRepository->search(
-                (new Criteria())->addFilter(...$filters),
-                Context::createDefaultContext()
-            )->count() > 0;
+            (new Criteria())->addFilter(...$filters),
+            Context::createDefaultContext()
+        )->count() > 0;
     }
 
     public function insertNotification(array $notification): void
@@ -106,7 +106,8 @@ class NotificationService
             $fields['additional_data'] = $notification['additional_data'];
         }
 
-        $this->notificationRepository->create([$fields],
+        $this->notificationRepository->create(
+            [$fields],
             \Shopware\Core\Framework\Context::createDefaultContext()
         );
     }
