@@ -47,8 +47,6 @@ export default class CheckoutPlugin extends Plugin {
                 $('[data-payment-method-id="' + $(this).val() + '"]').show();
             });
 
-            // filter personal details extra fields from component and only leave the necessary ones
-            paymentMethod.details = filterOutOpenInvoiceComponentDetails(paymentMethod.details);
 
             /*Use the storedPaymentMethod object and the custom onChange function as the configuration object together*/
             var configuration = Object.assign(paymentMethod, {
