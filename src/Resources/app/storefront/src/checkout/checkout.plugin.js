@@ -24,7 +24,7 @@ export default class CheckoutPlugin extends Plugin {
         var data;
 
         // use this object to iterate through the stored payment methods
-        var paymentMethods = ADYEN_CHECKOUT_CONFIG.paymentMethodsResponse.paymentMethods;
+        var paymentMethods = window.adyenCheckout.paymentMethodsResponse.paymentMethods;
 
         // Iterate through the payment methods list we got from the adyen checkout component
         paymentMethods.forEach(function (paymentMethod) {
