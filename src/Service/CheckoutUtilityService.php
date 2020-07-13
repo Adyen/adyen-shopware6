@@ -13,13 +13,13 @@
  *                               #############
  *                               ############
  *
- * Adyen PrestaShop plugin
+ * Adyen Payment Module
  *
- * @author Adyen BV <support@adyen.com>
- * @copyright (c) 2020 Adyen B.V.
- * @license https://opensource.org/licenses/MIT MIT license
+ * Copyright (c) 2020 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
+ *
+ * Author: Adyen <shopware@adyen.com>
  */
 
 namespace Adyen\Shopware\Service;

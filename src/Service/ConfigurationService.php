@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Environment;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ConfigurationService
@@ -75,7 +76,8 @@ class ConfigurationService
      */
     public function getEnvironment()
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment') ? 'live' : 'test';
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment') ?
+            Environment::LIVE : Environment::TEST;
     }
 
     /**
