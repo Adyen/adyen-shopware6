@@ -33,7 +33,6 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\AdyenException;
 use Adyen\Util\HmacSignature;
-use Adyen\Service\NotificationReceiver;
 use Symfony\Component\HttpFoundation\Request;
 
 class NotificationReceiverService
@@ -70,14 +69,12 @@ class NotificationReceiverService
         ConfigurationService $configurationService,
         HmacSignature $hmacSignature,
         LoggerInterface $logger,
-        NotificationService $notificationService,
-        NotificationReceiver $notificationReceiver
+        NotificationService $notificationService
     ) {
         $this->configurationService = $configurationService;
         $this->hmacSignature = $hmacSignature;
         $this->notificationService = $notificationService;
         $this->logger = $logger;
-        $this->notificationReceiver = $notificationReceiver;
     }
 
     /**
@@ -112,7 +109,7 @@ class NotificationReceiverService
         $isTestNotification = $this->isTestNotification($request);
 
         // Authorize notification
-        if (!$this->isAuthorized($isTestNotification, $basicAuthUser, $basicAuthPassword, $request)) {
+        if (!$this->isAuthorized($isTestNotification, $basicAuthUser, $basicAuthPassword)) {
             throw new AuthorizationException();
         }
 
@@ -205,7 +202,7 @@ class NotificationReceiverService
      * @return bool
      * @throws AuthenticationException
      */
-    private function isAuthorized($isTestNotification, $requestUser, $requestPassword, $request)
+    private function isAuthorized($isTestNotification, $requestUser, $requestPassword)
     {
         // Retrieve username and password from config
         $userName = $this->configurationService->getNotificationUsername();
@@ -231,11 +228,16 @@ class NotificationReceiverService
             return false;
         }
 
-        if (!$this->notificationReceiver->isAuthenticated(
-            $request,
-            $this->configurationService->getMerchantAccount(),
-            $userName,
-            $password)) {
+        // Validate the username and password
+        $usernameCmp = hash_equals($userName, $requestUser);
+        $passwordCmp = hash_equals($password, $requestPassword);
+        if ($usernameCmp === false || $passwordCmp === false) {
+            if ($isTestNotification) {
+                $message = 'Username (PHP_AUTH_USER) and\or password (PHP_AUTH_PW) are not the same as ' .
+                    ' configuration settings';
+                throw new AuthenticationException($message);
+            }
+
             return false;
         }
 
@@ -266,11 +268,11 @@ class NotificationReceiverService
 
             // skip report notifications
             {
-                if ($this->isReportNotification($notificationItem['eventCode'])) {
-                    $this->logger->info('Notification is a REPORT notification from ' .
-                        'Adyen Customer Area');
-                    return true;
-                }
+            if ($this->isReportNotification($notificationItem['eventCode'])) {
+                $this->logger->info('Notification is a REPORT notification from ' .
+                    'Adyen Customer Area');
+                return true;
+            }
             }
 
             // check if notification already exists
