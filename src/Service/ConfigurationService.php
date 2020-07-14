@@ -128,8 +128,8 @@ class ConfigurationService
     {
         if ($this->getEnvironment() === Environment::LIVE) {
             return $this->getHmacLive();
-        )
-        
+        }
+
         return $this->getHmacTest();
     }
 
@@ -138,11 +138,10 @@ class ConfigurationService
      */
     public function getApiKey()
     {
-        ```suggestion
         if ($this->getEnvironment() === Environment::LIVE) {
-            return $this-> getApiKeyLive();
-        )
-        
-        return $this-> getApiKeyTest();
+            return $this->getApiKeyLive();
+        }
+
+        return $this->getApiKeyTest();
     }
 }
