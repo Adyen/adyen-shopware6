@@ -59,6 +59,15 @@
         <service id="Adyen\Shopware\Service\NotificationService">
             <argument type="service" id="adyen_notification.repository"/>
         </service>
+        <service id="Adyen\Shopware\Service\PaymentStateDataService">
+            <argument type="service" id="adyen_payment_state_data.repository"/>
+        </service>
+
+        <!--Event subscribers-->
+        <service id="Adyen\Shopware\Subscriber\SalesChannelContextSwitchEventSubscriber">
+            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
 
         <!--Shopware Services wiring-->
         <service id="Shopware\Core\Checkout\Payment\Cart\PaymentHandler\DefaultPayment">

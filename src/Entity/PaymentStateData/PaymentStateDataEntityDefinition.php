@@ -59,8 +59,8 @@ class PaymentStateDataEntityDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
-            new StringField('token', 'Sales Channel Context Token'),
-            new StringField('state_data', 'Adyen Payment State Data'),
+            new StringField('token', 'token'),
+            new StringField('state_data', 'statedata'),
             new CreatedAtField(),
             new UpdatedAtField()
         ]);
