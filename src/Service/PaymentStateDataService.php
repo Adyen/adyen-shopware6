@@ -22,35 +22,32 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Subscriber;
+namespace Adyen\Shopware\Service;
 
-use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Adyen\Shopware\Service\PaymentStateDataService;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 
-class SalesChannelContextSwitchEventSubscriber implements EventSubscriberInterface
+class PaymentStateDataService
 {
+    protected $paymentStateDataRepository;
 
-    private $paymentStateDataService;
-
-    function __construct(PaymentStateDataService $paymentStateDataService)
+    public function __construct(EntityRepositoryInterface $paymentStateDataRepository)
     {
-        $this->paymentStateDataService = $paymentStateDataService;
+        $this->paymentStateDataRepository = $paymentStateDataRepository;
     }
 
-    public static function getSubscribedEvents(): array
+    public function insertPaymentStateData(string $contextToken, string $stateData): void
     {
-        return [
-            \Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent::class
-            => 'onContextTokenUpdate'
-        ];
-    }
+        $fields = [];
+        if (!empty($contextToken)) {
+            $fields['token'] = $contextToken;
+        }
+        if (!empty($stateData)) {
+            $fields['statedata'] = $stateData;
+        }
 
-    public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
-    {
-        $this->paymentStateDataService->insertPaymentStateData(
-            $event->getSalesChannelContext()->getToken(),
-            $event->getRequestDataBag()->get('stateData')
+
+        $this->paymentStateDataRepository->create([$fields],
+            \Shopware\Core\Framework\Context::createDefaultContext()
         );
     }
 }

@@ -9,6 +9,10 @@
     </imports>
 
     <services>
+        <service id="Adyen\Shopware\Subscriber\SalesChannelContextSwitchEventSubscriber">
+            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
         <service id="Adyen\Shopware\Controller\SalesChannelApiController">
             <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
@@ -55,6 +59,9 @@
         </service>
         <service id="Adyen\Shopware\Service\NotificationService">
             <argument type="service" id="adyen_notification.repository"/>
+        </service>
+        <service id="Adyen\Shopware\Service\PaymentStateDataService">
+            <argument type="service" id="adyen_payment_state_data.repository"/>
         </service>
     </services>
 </container>
