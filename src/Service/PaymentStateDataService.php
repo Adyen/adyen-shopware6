@@ -24,7 +24,10 @@
 
 namespace Adyen\Shopware\Service;
 
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
 class PaymentStateDataService
 {
@@ -49,5 +52,16 @@ class PaymentStateDataService
         $this->paymentStateDataRepository->create([$fields],
             \Shopware\Core\Framework\Context::createDefaultContext()
         );
+    }
+
+    public function getPaymentStateDataFromContextToken(string $contextToken): string
+    {
+        $stateDataRow = $this->paymentStateDataRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
+            Context::createDefaultContext()
+        )->first();
+
+        return $stateDataRow['statedata'];
+
     }
 }
