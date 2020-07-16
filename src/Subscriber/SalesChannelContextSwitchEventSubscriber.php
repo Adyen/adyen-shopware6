@@ -33,7 +33,7 @@ class SalesChannelContextSwitchEventSubscriber implements EventSubscriberInterfa
 
     private $paymentStateDataService;
 
-    function __construct(PaymentStateDataService $paymentStateDataService)
+    public function __construct(PaymentStateDataService $paymentStateDataService)
     {
         $this->paymentStateDataService = $paymentStateDataService;
     }

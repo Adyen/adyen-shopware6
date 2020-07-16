@@ -72,5 +72,4 @@ class PaymentStateDataEntity extends Entity
     {
         $this->stateData = $stateData;
     }
-
 }

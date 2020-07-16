@@ -49,7 +49,8 @@ class PaymentStateDataService
         }
 
 
-        $this->paymentStateDataRepository->create([$fields],
+        $this->paymentStateDataRepository->create(
+            [$fields],
             \Shopware\Core\Framework\Context::createDefaultContext()
         );
     }
@@ -62,6 +63,5 @@ class PaymentStateDataService
         )->first();
 
         return $stateDataRow['statedata'];
-
     }
 }
