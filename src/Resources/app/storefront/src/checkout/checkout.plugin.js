@@ -6,8 +6,10 @@ export default class CheckoutPlugin extends Plugin {
         /* global adyenCheckoutConfiguration, AdyenCheckout */
         /* eslint-disable no-unused-vars */
 
+        const formattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
+
         const paymentMethodTypeHandlers = {
-            'scheme': 'handler_adyen_cardspaymentmethodhandler'
+            'scheme': formattedHandlerIdentifier
         };
 
         var ADYEN_CHECKOUT_CONFIG = {
