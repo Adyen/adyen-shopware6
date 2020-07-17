@@ -30,7 +30,6 @@ use Adyen\Service\Builder\Browser;
 use Adyen\Service\Builder\Customer;
 use Adyen\Service\Builder\Payment;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
-use Adyen\Exception\MissingDataException;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
@@ -44,21 +43,72 @@ use Adyen\Util\Currency;
 use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
 
-
 class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
 
+    /**
+     * @var CheckoutService
+     */
     protected $checkoutService;
+
+    /**
+     * @var Browser
+     */
     protected $browserBuilder;
+
+    /**
+     * @var Address
+     */
     protected $addressBuilder;
+
+    /**
+     * @var Payment
+     */
     protected $paymentBuilder;
+
+    /**
+     * @var Currency
+     */
     protected $currency;
+
+    /**
+     * @var ConfigurationService
+     */
     protected $configurationService;
+
+    /**
+     * @var Customer
+     */
     protected $customerBuilder;
+
+    /**
+     * @var CheckoutStateDataValidator
+     */
     protected $checkoutStateDataValidator;
+
+    /**
+     * @var PaymentStateDataService
+     */
     protected $paymentStateDataService;
+
+    /**
+     * @var LoggerInterface
+     */
     protected $logger;
 
+    /**
+     * CardsPaymentMethodHandler constructor.
+     * @param ConfigurationService $configurationService
+     * @param CheckoutService $checkoutService
+     * @param Browser $browserBuilder
+     * @param Address $addressBuilder
+     * @param Payment $paymentBuilder
+     * @param Currency $currency
+     * @param Customer $customerBuilder
+     * @param CheckoutStateDataValidator $checkoutStateDataValidator
+     * @param PaymentStateDataService $paymentStateDataService
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         ConfigurationService $configurationService,
         CheckoutService $checkoutService,
@@ -83,10 +133,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         $this->logger = $logger;
     }
 
-
     /**
-     * {@inheritDoc}
-     *
      * @return string
      */
     public function getAdyenPaymentMethodId(): string
@@ -102,9 +149,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
      * @param string $type
      * @param array $gatewayInfo
      * @return RedirectResponse
-     * @throws AsyncPaymentProcessException
      */
-
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
@@ -115,7 +160,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     ): RedirectResponse {
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
-        } catch (MissingDataException $exception) {
+        } catch (Exception $exception) {
             $this->logger->error(
                 sprintf(
                     "There was an error with the payment method. Order number: %s Missing data: %s",
@@ -141,8 +186,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         return RedirectResponse::create($transaction->getReturnUrl());
     }
 
+
     /**
-     * @inheritDoc
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
      */
     public function finalize(
         AsyncPaymentTransactionStruct $transaction,
@@ -153,6 +201,10 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     }
 
     //TODO move to util or outsource to lib
+    /**
+     * @param string $address
+     * @return array
+     */
     public function splitStreetAddressHouseNumber(string $address): array
     {
         $fullStreetAddress = explode(' ', $address);
@@ -165,6 +217,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         ];
     }
 
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @return array
+     */
     public function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction
