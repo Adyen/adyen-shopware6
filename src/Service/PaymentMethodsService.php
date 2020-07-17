@@ -24,12 +24,10 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
+use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentMethodsService
@@ -55,7 +53,7 @@ class PaymentMethodsService
     private $cartService;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var SalesChannelRepository
      */
     private $salesChannelRepository;
 
@@ -66,26 +64,26 @@ class PaymentMethodsService
 
     /**
      * PaymentMethodsService constructor.
-     * @param EntityRepositoryInterface $salesChannelRepository
      * @param LoggerInterface $logger
      * @param CheckoutService $checkoutService
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param CartService $cartService
+     * @param SalesChannelRepository $salesChannelRepository
      */
     public function __construct(
-        EntityRepositoryInterface $salesChannelRepository,
         LoggerInterface $logger,
         CheckoutService $checkoutService,
         ConfigurationService $configurationService,
         Currency $currency,
-        CartService $cartService
+        CartService $cartService,
+        SalesChannelRepository $salesChannelRepository
     ) {
-        $this->salesChannelRepository = $salesChannelRepository;
         $this->checkoutService = $checkoutService;
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
+        $this->salesChannelRepository = $salesChannelRepository;
         $this->logger = $logger;
     }
 
@@ -126,13 +124,8 @@ class PaymentMethodsService
             return [];
         }
 
-        $salesChannelCriteria = new Criteria([$context->getSalesChannel()->getId()]);
-        $salesChannel = $this->salesChannelRepository->search(
-            $salesChannelCriteria->addAssociation('language.locale'),
-            Context::createDefaultContext()
-        )->first();
-        $shopperLocale = $salesChannel->getLanguage()->getLocale()->getCode();
-
+        $salesChannelAssocLocale = $this->salesChannelRepository->getSalesChannelAssocLocale($context);
+        $shopperLocale = $salesChannelAssocLocale->getLanguage()->getLocale()->getCode();
 
         $currency = $context->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);

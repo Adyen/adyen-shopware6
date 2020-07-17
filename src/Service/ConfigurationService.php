@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Environment;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ConfigurationService
@@ -75,7 +76,8 @@ class ConfigurationService
      */
     public function getEnvironment()
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment');
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment') ?
+            Environment::LIVE : Environment::TEST;
     }
 
     /**
@@ -124,7 +126,7 @@ class ConfigurationService
      */
     public function getHmacKey()
     {
-        if ($this->getEnvironment()) {
+        if ($this->getEnvironment() === Environment::LIVE) {
             return $this->getHmacLive();
         }
 
@@ -136,7 +138,7 @@ class ConfigurationService
      */
     public function getApiKey()
     {
-        if ($this->getEnvironment()) {
+        if ($this->getEnvironment() === Environment::LIVE) {
             return $this->getApiKeyLive();
         }
 

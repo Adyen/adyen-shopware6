@@ -30,11 +30,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\Shopware\Service\OriginKeyService;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
+use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 
 class SalesChannelApiController extends AbstractController
 {
@@ -50,18 +47,24 @@ class SalesChannelApiController extends AbstractController
     private $paymentMethodsService;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var SalesChannelRepository
      */
-    private $domainRepository;
+    private $salesChannelRepository;
 
+    /**
+     * SalesChannelApiController constructor.
+     * @param OriginKeyService $originKeyService
+     * @param PaymentMethodsService $paymentMethodsService
+     * @param SalesChannelRepository $salesChannelRepository
+     */
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
-        EntityRepositoryInterface $domainRepository
+        SalesChannelRepository $salesChannelRepository
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->domainRepository = $domainRepository;
+        $this->salesChannelRepository = $salesChannelRepository;
     }
 
     /**
@@ -79,7 +82,7 @@ class SalesChannelApiController extends AbstractController
     {
         return new JsonResponse([
             $this->originKeyService
-                ->getOriginKeyForOrigin($this->getSalesChannelUrl($context))
+                ->getOriginKeyForOrigin($this->salesChannelRepository->getSalesChannelUrl($context))
                 ->getOriginKey()
         ]);
     }
@@ -98,28 +101,5 @@ class SalesChannelApiController extends AbstractController
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
         return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
-    }
-
-    /**
-     * @param SalesChannelContext $context
-     * @return string
-     */
-    private function getSalesChannelUrl(SalesChannelContext $context): string
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
-        $criteria->setLimit(1);
-
-        $domainEntity = $this->domainRepository
-            ->search($criteria, $context->getContext())
-            ->first();
-
-        if (!$domainEntity) {
-            throw new SalesChannelDomainNotFoundException($context->getSalesChannel());
-        }
-
-        $url = $domainEntity->getUrl();
-
-        return $url;
     }
 }

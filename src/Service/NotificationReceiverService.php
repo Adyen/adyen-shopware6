@@ -218,6 +218,16 @@ class NotificationReceiverService
             return false;
         }
 
+        // Validate if username and password is configured
+        if ((is_null($userName) || is_null($password))) {
+            if ($isTestNotification) {
+                $message = 'Notifications username and/or password are not configured.';
+                throw new AuthenticationException($message);
+            }
+
+            return false;
+        }
+
         // Validate the username and password
         $usernameCmp = hash_equals($userName, $requestUser);
         $passwordCmp = hash_equals($password, $requestPassword);
@@ -254,7 +264,7 @@ class NotificationReceiverService
         if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)) {
             // log the notification
             $this->logger->info('The content of the notification item is: ' .
-                print_r($notificationItem, 1));
+                print_r($notificationItem, true));
 
             // skip report notifications
             {

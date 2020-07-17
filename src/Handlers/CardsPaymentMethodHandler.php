@@ -32,8 +32,29 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
-class PaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return string
+     */
+    public function getAdyenPaymentMethodId(): string
+    {
+        return 'scheme';
+    }
+
+    /**
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param RequestDataBag $dataBag
+     * @param SalesChannelContext $salesChannelContext
+     * @param string|null $gateway
+     * @param string $type
+     * @param array $gatewayInfo
+     * @return RedirectResponse
+     * @throws AsyncPaymentProcessException
+     */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
