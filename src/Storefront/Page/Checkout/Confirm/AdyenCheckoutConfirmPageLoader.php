@@ -3,7 +3,7 @@
 namespace Adyen\Shopware\Storefront\Page\Checkout\Confirm;
 
 use Adyen\Shopware\Service\ConfigurationService;
-use Adyen\Shopware\Service\Util\SalesChannelUtil;
+use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -31,9 +31,9 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
     private $originKeyService;
 
     /**
-     * @var SalesChannelUtil
+     * @var SalesChannelRepository
      */
-    private $salesChannelUtil;
+    private $salesChannelRepository;
 
     /**
      * @var ConfigurationService
@@ -45,20 +45,20 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
      * @param CheckoutConfirmPageLoader $checkoutConfirmPageLoader
      * @param PaymentMethodsService $paymentMethodsService
      * @param OriginKeyService $originKeyService
-     * @param SalesChannelUtil $salesChannelUtil
+     * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      */
     public function __construct(
         CheckoutConfirmPageLoader $checkoutConfirmPageLoader,
         PaymentMethodsService $paymentMethodsService,
         OriginKeyService $originKeyService,
-        SalesChannelUtil $salesChannelUtil,
+        SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService
     ) {
         $this->checkoutConfirmPageLoader = $checkoutConfirmPageLoader;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->originKeyService = $originKeyService;
-        $this->salesChannelUtil = $salesChannelUtil;
+        $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
     }
 
@@ -90,10 +90,10 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
         $adyenPage->setAdyenData(
             [
                 'originKey' => $this->originKeyService->getOriginKeyForOrigin(
-                    $this->salesChannelUtil->getSalesChannelUrl($salesChannelContext)
+                    $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext)
                 )->getOriginKey(),
 
-                'locale' => $this->salesChannelUtil->getSalesChannelAssocLocale($salesChannelContext)
+                'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
                     ->getLanguage()->getLocale()->getCode(),
 
                 'environment' => $this->configurationService->getEnvironment(),

@@ -31,7 +31,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\Shopware\Service\OriginKeyService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Adyen\Shopware\Service\Util\SalesChannelUtil;
+use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 
 class SalesChannelApiController extends AbstractController
 {
@@ -47,24 +47,24 @@ class SalesChannelApiController extends AbstractController
     private $paymentMethodsService;
 
     /**
-     * @var SalesChannelUtil
+     * @var SalesChannelRepository
      */
-    private $salesChannelUtil;
+    private $salesChannelRepository;
 
     /**
      * SalesChannelApiController constructor.
      * @param OriginKeyService $originKeyService
      * @param PaymentMethodsService $paymentMethodsService
-     * @param SalesChannelUtil $salesChannelUtil
+     * @param SalesChannelRepository $salesChannelRepository
      */
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
-        SalesChannelUtil $salesChannelUtil
+        SalesChannelRepository $salesChannelRepository
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->salesChannelUtil = $salesChannelUtil;
+        $this->salesChannelRepository = $salesChannelRepository;
     }
 
     /**
@@ -82,7 +82,7 @@ class SalesChannelApiController extends AbstractController
     {
         return new JsonResponse([
             $this->originKeyService
-                ->getOriginKeyForOrigin($this->salesChannelUtil->getSalesChannelUrl($context))
+                ->getOriginKeyForOrigin($this->salesChannelRepository->getSalesChannelUrl($context))
                 ->getOriginKey()
         ]);
     }

@@ -24,7 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
-use Adyen\Shopware\Service\Util\SalesChannelUtil;
+use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
@@ -53,9 +53,9 @@ class PaymentMethodsService
     private $cartService;
 
     /**
-     * @var SalesChannelUtil
+     * @var SalesChannelRepository
      */
-    private $salesChannelUtil;
+    private $salesChannelRepository;
 
     /**
      * @var LoggerInterface
@@ -69,7 +69,7 @@ class PaymentMethodsService
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param CartService $cartService
-     * @param SalesChannelUtil $salesChannelUtil
+     * @param SalesChannelRepository $salesChannelRepository
      */
     public function __construct(
         LoggerInterface $logger,
@@ -77,13 +77,13 @@ class PaymentMethodsService
         ConfigurationService $configurationService,
         Currency $currency,
         CartService $cartService,
-        SalesChannelUtil $salesChannelUtil
+        SalesChannelRepository $salesChannelRepository
     ) {
         $this->checkoutService = $checkoutService;
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
-        $this->salesChannelUtil = $salesChannelUtil;
+        $this->salesChannelRepository = $salesChannelRepository;
         $this->logger = $logger;
     }
 
@@ -124,7 +124,7 @@ class PaymentMethodsService
             return [];
         }
 
-        $salesChannelAssocLocale = $this->salesChannelUtil->getSalesChannelAssocLocale($context);
+        $salesChannelAssocLocale = $this->salesChannelRepository->getSalesChannelAssocLocale($context);
         $shopperLocale = $salesChannelAssocLocale->getLanguage()->getLocale()->getCode();
 
         $currency = $context->getCurrency()->getIsoCode();

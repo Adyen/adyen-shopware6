@@ -1,6 +1,6 @@
 <?php
 
-namespace Adyen\Shopware\Service\Util;
+namespace Adyen\Shopware\Service\Repository;
 
 use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
 use Shopware\Core\Framework\Context;
@@ -10,7 +10,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
-class SalesChannelUtil
+class SalesChannelRepository
 {
     /**
      * @var EntityRepositoryInterface
@@ -23,7 +23,7 @@ class SalesChannelUtil
     private $salesChannelRepository;
 
     /**
-     * SalesChannelUtil constructor.
+     * SalesChannelRepository constructor.
      * @param EntityRepositoryInterface $domainRepository
      * @param EntityRepositoryInterface $salesChannelRepository
      */
