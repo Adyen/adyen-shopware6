@@ -251,7 +251,6 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 
         //Setting delivery address info if not present in statedata
         if (empty($request['deliveryAddress'])) {
-
             if ($salesChannelContext->getShippingLocation()->getAddress()->getCountryState()) {
                 $shippingState = $salesChannelContext->getShippingLocation()
                     ->getAddress()->getCountryState()->getShortCode();
@@ -275,7 +274,6 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 
         //Setting billing address info if not present in statedata
         if (empty($request['billingAddress'])) {
-
             if ($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountryState()) {
                 $billingState = $salesChannelContext->getCustomer()
                     ->getActiveBillingAddress()->getCountryState()->getShortCode();
@@ -310,7 +308,6 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $shopperEmail = $salesChannelContext->getCustomer()->getEmail();
         } else {
             $shopperEmail = $request['shopperEmail'];
-
         }
 
         if (empty($request['paymentMethod']['personalDetails']['telephoneNumber'])) {

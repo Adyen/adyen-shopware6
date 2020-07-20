@@ -122,7 +122,6 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
         $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
 
         foreach ($originalPaymentMethods as $paymentMethodEntity) {
-
             //TODO filter out unsupported PMs
             $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
 
