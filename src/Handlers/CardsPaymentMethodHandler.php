@@ -234,68 +234,142 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     ) {
 
         //Get state.data using the context token
-        $stateData = json_decode($this->paymentStateDataService->getPaymentStateDataFromContextToken(
+        $request = json_decode($this->paymentStateDataService->getPaymentStateDataFromContextToken(
             $salesChannelContext->getToken()
         )->getStateData(), true);
 
-        //Split addresses' house number / name TODO prioritize state.data customer address input when available
-        $shippingStreetAddress = $this->splitStreetAddressHouseNumber(
-            $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
-        );
-        $billingStreetAddress = $this->splitStreetAddressHouseNumber(
-            $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
-        );
-
-        //Get states' codes TODO prioritize state.data customer address input when available
-        if ($salesChannelContext->getShippingLocation()->getAddress()->getCountryState()) {
-            $shippingState = $salesChannelContext->getShippingLocation()
-                ->getAddress()->getCountryState()->getShortCode();
-        } else {
-            $shippingState = '';
-        }
-        if ($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountryState()) {
-            $billingState = $salesChannelContext->getCustomer()
-                ->getActiveBillingAddress()->getCountryState()->getShortCode();
-        } else {
-            $billingState = '';
-        }
-
-        //Get customer DOB TODO prioritize state.data customer DOB input when available
-        if ($salesChannelContext->getCustomer()->getBirthday()) {
-            $customerBirthday = $salesChannelContext->getCustomer()->getBirthday()->format('dd-mm-yyyy');
-        } else {
-            $customerBirthday = '';
-        }
-
-        //Setting browser info
-        if (empty($stateData['browserInfo']['acceptHeader'])) {
-            $stateData['browserInfo']['acceptHeader'] = $_SERVER['HTTP_ACCEPT'];
-        }
-        if (empty($stateData['browserInfo']['userAgent'])) {
-            $stateData['browserInfo']['acceptHeader'] = $_SERVER['HTTP_USER_AGENT'];
-        }
-
         //Validate state.data for payment and build request object
-        $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
+        $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
 
-        $request = $this->addressBuilder->buildDeliveryAddress(
-            $shippingStreetAddress['street'],
-            $shippingStreetAddress['houseNumber'],
-            $salesChannelContext->getShippingLocation()->getAddress()->getZipcode(),
-            $salesChannelContext->getShippingLocation()->getAddress()->getCity(),
-            $shippingState,
-            $salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso(),
+        //Setting browser info if not present in statedata
+        if (empty($request['browserInfo']['acceptHeader'])) {
+            $request['browserInfo']['acceptHeader'] = $_SERVER['HTTP_ACCEPT'];
+        }
+        if (empty($request['browserInfo']['userAgent'])) {
+            $request['browserInfo']['acceptHeader'] = $_SERVER['HTTP_USER_AGENT'];
+        }
+
+        //Setting delivery address info if not present in statedata
+        if (empty($request['deliveryAddress'])) {
+
+            if ($salesChannelContext->getShippingLocation()->getAddress()->getCountryState()) {
+                $shippingState = $salesChannelContext->getShippingLocation()
+                    ->getAddress()->getCountryState()->getShortCode();
+            } else {
+                $shippingState = '';
+            }
+
+            $shippingStreetAddress = $this->splitStreetAddressHouseNumber(
+                $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
+            );
+            $request = $this->addressBuilder->buildDeliveryAddress(
+                $shippingStreetAddress['street'],
+                $shippingStreetAddress['houseNumber'],
+                $salesChannelContext->getShippingLocation()->getAddress()->getZipcode(),
+                $salesChannelContext->getShippingLocation()->getAddress()->getCity(),
+                $shippingState,
+                $salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso(),
+                $request
+            );
+        }
+
+        //Setting billing address info if not present in statedata
+        if (empty($request['billingAddress'])) {
+
+            if ($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountryState()) {
+                $billingState = $salesChannelContext->getCustomer()
+                    ->getActiveBillingAddress()->getCountryState()->getShortCode();
+            } else {
+                $billingState = '';
+            }
+
+            $billingStreetAddress = $this->splitStreetAddressHouseNumber(
+                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
+            );
+            $request = $this->addressBuilder->buildBillingAddress(
+                $billingStreetAddress['street'],
+                $billingStreetAddress['houseNumber'],
+                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode(),
+                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity(),
+                $billingState,
+                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso(),
+                $request
+            );
+        }
+
+        //Setting customer data if not present in statedata
+        if (empty($request['shopperName'])) {
+            $shopperFirstName = $salesChannelContext->getCustomer()->getFirstName();
+            $shopperLastName = $salesChannelContext->getCustomer()->getFirstName();
+        } else {
+            $shopperFirstName = $request['shopperName']['firstName'];
+            $shopperLastName = $request['shopperName']['lastName'];
+        }
+
+        if (empty($request['shopperEmail'])) {
+            $shopperEmail = $salesChannelContext->getCustomer()->getEmail();
+        } else {
+            $shopperEmail = $request['shopperEmail'];
+
+        }
+
+        if (empty($request['paymentMethod']['personalDetails']['telephoneNumber'])) {
+            $shopperPhone = $salesChannelContext->getShippingLocation()->getAddress()->getPhoneNumber();
+        } else {
+            $shopperPhone = $request['paymentMethod']['personalDetails']['telephoneNumber'];
+        }
+
+        if (empty($request['paymentMethod']['personalDetails']['dateOfBirth'])) {
+            if ($salesChannelContext->getCustomer()->getBirthday()) {
+                $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('dd-mm-yyyy');
+            } else {
+                $shopperDob = '';
+            }
+        } else {
+            $shopperDob = $request['paymentMethod']['personalDetails']['dateOfBirth'];
+        }
+
+        if (empty($request['shopperLocale'])) {
+            $shopperLocale = $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
+                ->getLanguage()->getLocale()->getCode();
+        } else {
+            $shopperLocale = $request['shopperLocale'];
+        }
+
+        if (empty($request['shopperIP'])) {
+            $shopperIp = $salesChannelContext->getCustomer()->getRemoteAddress();
+        } else {
+            $shopperIp = $request['shopperIP'];
+        }
+
+        if (empty($request['shopperReference'])) {
+            $shopperReference = $salesChannelContext->getCustomer()->getId();
+        } else {
+            $shopperReference = $request['shopperReference'];
+        }
+
+        if (empty($request['countryCode'])) {
+            $countryCode = $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
+        } else {
+            $countryCode = $request['countryCode'];
+        }
+
+        $request = $this->customerBuilder->buildCustomerData(
+            false,
+            $shopperEmail,
+            $shopperPhone,
+            '',
+            $shopperDob,
+            $shopperFirstName,
+            $shopperLastName,
+            $countryCode,
+            $shopperLocale,
+            $shopperIp,
+            $shopperReference,
             $request
         );
-        $request = $this->addressBuilder->buildBillingAddress(
-            $billingStreetAddress['street'],
-            $billingStreetAddress['houseNumber'],
-            $salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode(),
-            $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity(),
-            $billingState,
-            $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso(),
-            $request
-        );
+
+        //Building payment data
         $request = $this->paymentBuilder->buildPaymentData(
             $salesChannelContext->getCurrency()->getIsoCode(),
             $this->currency->sanitize(
@@ -307,24 +381,12 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $transaction->getReturnUrl(),
             $request
         );
-        $request = $this->customerBuilder->buildCustomerData(
-            false,
-            $salesChannelContext->getCustomer()->getEmail(),
-            $salesChannelContext->getShippingLocation()->getAddress()->getPhoneNumber(),
-            '',
-            $customerBirthday,
-            $salesChannelContext->getCustomer()->getFirstName(),
-            $salesChannelContext->getCustomer()->getLastName(),
-            $salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso(),
-            $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
-                ->getLanguage()->getLocale()->getCode(),
-            $salesChannelContext->getCustomer()->getRemoteAddress(),
-            $salesChannelContext->getCustomer()->getId(),
-            $request
-        );
-        $request['origin'] = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
-            $salesChannelContext->getToken()
-        )->getOrigin();
+
+        if (empty($request['origin'])) {
+            $request['origin'] = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
+                $salesChannelContext->getToken()
+            )->getOrigin();
+        }
 
         return $request;
     }
