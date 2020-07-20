@@ -117,16 +117,18 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
      */
     private function filterShopwarePaymentMethods($originalPaymentMethods, SalesChannelContext $salesChannelContext)
     {
+        //TODO do this in an event instead
         //Adyen /paymentMethods response
         $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
 
         foreach ($originalPaymentMethods as $paymentMethodEntity) {
+
+            //TODO filter out unsupported PMs
             $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
 
             //If this is an Adyen PM installed it will only be enabled if it's present in the /paymentMethods response
             if (strpos($paymentMethodEntity->getFormattedHandlerIdentifier(), 'adyen')) {
-                $pmHandler = new $pmHandlerIdentifier;
-                $pmCode = $pmHandler->getAdyenPaymentMethodId();
+                $pmCode = 'scheme'; //TODO get from payment method handler instead of hardcoding PM type
                 $pmFound = array_filter(
                     $adyenPaymentMethods['paymentMethods'],
                     function ($value) use ($pmCode) {
