@@ -55,6 +55,8 @@ export default class CheckoutPlugin extends Plugin {
                 'onChange': function (state) {
                     if (state.isValid) {
                         data = state.data;
+                        $('#adyenStateData').val(JSON.stringify(data));
+                        $('#adyenOrigin').val(window.location.origin);
                         placeOrderAllowed = true;
                     } else {
                         placeOrderAllowed = false;

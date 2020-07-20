@@ -39,7 +39,12 @@ class PaymentStateDataEntity extends Entity
     /**
      * @var string
      */
-    protected $stateData;
+    protected $statedata;
+
+    /**
+     * @var string
+     */
+    protected $origin;
 
     /**
      * @return string
@@ -62,14 +67,30 @@ class PaymentStateDataEntity extends Entity
      */
     public function getStateData(): string
     {
-        return $this->stateData;
+        return $this->statedata;
     }
 
     /**
      * @param string $stateData
      */
-    public function setStateData(string $stateData): void
+    public function setStateData(string $statedata): void
     {
-        $this->stateData = $stateData;
+        $this->statedata = $statedata;
+    }
+
+    /**
+     * @return string
+     */
+    public function getOrigin(): string
+    {
+        return $this->origin;
+    }
+
+    /**
+     * @param string $origin
+     */
+    public function setOrigin(string $origin): void
+    {
+        $this->origin = $origin;
     }
 }

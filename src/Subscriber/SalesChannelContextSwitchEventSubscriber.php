@@ -48,10 +48,11 @@ class SalesChannelContextSwitchEventSubscriber implements EventSubscriberInterfa
 
     public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
     {
-        if ($event->getRequestDataBag()->get('stateData')) {
+        if ($event->getRequestDataBag()->get('adyenStateData')) {
             $this->paymentStateDataService->insertPaymentStateData(
                 $event->getSalesChannelContext()->getToken(),
-                $event->getRequestDataBag()->get('stateData')
+                $event->getRequestDataBag()->get('adyenStateData'),
+                $event->getRequestDataBag()->get('adyenOrigin')
             );
         }
     }

@@ -18,7 +18,8 @@ class Migration1594381360AdyenPaymentStateData extends MigrationStep
             CREATE TABLE IF NOT EXISTS `adyen_payment_state_data` (
                 `id` BINARY(16) NOT NULL,
                 `token` VARCHAR(255) NULL,
-                `state_data` VARCHAR(255) NULL,
+                `state_data` text NULL,
+                `origin` VARCHAR(255) NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`)
