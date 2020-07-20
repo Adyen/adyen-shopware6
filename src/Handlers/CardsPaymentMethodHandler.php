@@ -232,7 +232,13 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction
     ) {
-        //Split addresses' house number / name
+
+        //Get state.data using the context token
+        $stateData = json_decode($this->paymentStateDataService->getPaymentStateDataFromContextToken(
+            $salesChannelContext->getToken()
+        )->getStateData(), true);
+
+        //Split addresses' house number / name TODO prioritize state.data customer address input when available
         $shippingStreetAddress = $this->splitStreetAddressHouseNumber(
             $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
         );
@@ -240,7 +246,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
         );
 
-        //Get states' codes
+        //Get states' codes TODO prioritize state.data customer address input when available
         if ($salesChannelContext->getShippingLocation()->getAddress()->getCountryState()) {
             $shippingState = $salesChannelContext->getShippingLocation()
                 ->getAddress()->getCountryState()->getShortCode();
@@ -254,60 +260,24 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $billingState = '';
         }
 
-        //Get customer DOB
+        //Get customer DOB TODO prioritize state.data customer DOB input when available
         if ($salesChannelContext->getCustomer()->getBirthday()) {
             $customerBirthday = $salesChannelContext->getCustomer()->getBirthday()->format('dd-mm-yyyy');
         } else {
             $customerBirthday = '';
         }
 
-        //Validate state.data for payment
-        //TODO replace with stateData stored by generic component branch
-        $stateDataJson = '{
-                              "riskData": {
-                                "clientData": "sample"
-                              },
-                              "paymentMethod": {
-                                "type": "scheme",
-                                "holderName": "Joao Smith",
-                                "encryptedCardNumber": "sample",
-                                "encryptedExpiryMonth": "sample",
-                                "encryptedExpiryYear": "sample",
-                                "encryptedSecurityCode": "sample"
-                              },
-                              "storePaymentMethod": false,
-                              "installments": {
-                                "value": 2
-                              },
-                              "browserInfo": {
-                                "acceptHeader": "*/*",
-                                "colorDepth": 24,
-                                "language": "pt",
-                                "javaEnabled": false,
-                                "screenHeight": 2160,
-                                "screenWidth": 3840,
-                                "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                                "timeZoneOffset": -120
-                              }
-                            }';
+        //Setting browser info
+        if (empty($stateData['browserInfo']['acceptHeader'])) {
+            $stateData['browserInfo']['acceptHeader'] = $_SERVER['HTTP_ACCEPT'];
+        }
+        if (empty($stateData['browserInfo']['userAgent'])) {
+            $stateData['browserInfo']['acceptHeader'] = $_SERVER['HTTP_USER_AGENT'];
+        }
 
-        //TODO replace arg with $this->paymentStateDataService
-        //->getPaymentStateDataFromContextToken($salesChannelContext->getToken())
-        $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData(json_decode($stateDataJson, true));
+        //Validate state.data for payment and build request object
+        $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
 
-        //Build request
-        $request = array();
-        $request = $this->browserBuilder->buildBrowserData(
-            $_SERVER['HTTP_USER_AGENT'],
-            $_SERVER['HTTP_ACCEPT'],
-            $stateData['browserInfo']['screenWidth'],
-            $stateData['browserInfo']['screenHeight'],
-            $stateData['browserInfo']['colorDepth'],
-            $stateData['browserInfo']['timeZoneOffset'],
-            $stateData['browserInfo']['language'],
-            $stateData['browserInfo']['javaEnabled'],
-            $request
-        );
         $request = $this->addressBuilder->buildDeliveryAddress(
             $shippingStreetAddress['street'],
             $shippingStreetAddress['houseNumber'],
@@ -352,17 +322,9 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $salesChannelContext->getCustomer()->getId(),
             $request
         );
-        $request = $this->paymentBuilder->buildCardData(
-            $stateData['paymentMethod']['encryptedCardNumber'],
-            $stateData['paymentMethod']['encryptedExpiryMonth'],
-            $stateData['paymentMethod']['encryptedExpiryYear'],
-            $stateData['paymentMethod']['holderName'],
-            'http://192.168.33.10', //TODO replace with util function in generic component branch
-            $stateData['paymentMethod']['encryptedSecurityCode'],
-            $stateData['paymentMethod']['type'],
-            $stateData['storePaymentMethod'],
-            $request
-        );
+        $request['origin'] = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
+            $salesChannelContext->getToken()
+        )->getOrigin();
 
         return $request;
     }
