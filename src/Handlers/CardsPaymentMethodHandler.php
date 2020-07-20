@@ -251,10 +251,16 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 
         //Setting browser info if not present in statedata
         if (empty($request['browserInfo']['acceptHeader'])) {
-            $request['browserInfo']['acceptHeader'] = $_SERVER['HTTP_ACCEPT'];
+            $acceptHeader = $_SERVER['HTTP_ACCEPT'];
+        } else {
+            $acceptHeader = $request['browserInfo']['acceptHeader'];
+
         }
         if (empty($request['browserInfo']['userAgent'])) {
-            $request['browserInfo']['userAgent'] = $_SERVER['HTTP_USER_AGENT'];
+            $userAgent = $_SERVER['HTTP_USER_AGENT'];
+        } else {
+            $userAgent = $request['browserInfo']['userAgent'];
+
         }
 
         //Setting delivery address info if not present in statedata
@@ -358,6 +364,18 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         } else {
             $countryCode = $request['countryCode'];
         }
+
+        $request = $this->browserBuilder->buildBrowserData(
+            $userAgent,
+            $acceptHeader,
+            $request['browserInfo']['screenWidth'],
+            $request['browserInfo']['screenHeight'],
+            $request['browserInfo']['colorDepth'],
+            $request['browserInfo']['timeZoneOffset'],
+            $request['browserInfo']['language'],
+            $request['browserInfo']['javaEnabled'],
+            $request
+        );
 
         $request = $this->customerBuilder->buildCustomerData(
             false,
