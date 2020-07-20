@@ -246,7 +246,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $request['browserInfo']['acceptHeader'] = $_SERVER['HTTP_ACCEPT'];
         }
         if (empty($request['browserInfo']['userAgent'])) {
-            $request['browserInfo']['acceptHeader'] = $_SERVER['HTTP_USER_AGENT'];
+            $request['browserInfo']['userAgent'] = $_SERVER['HTTP_USER_AGENT'];
         }
 
         //Setting delivery address info if not present in statedata
