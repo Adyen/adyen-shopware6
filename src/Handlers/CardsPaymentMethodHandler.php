@@ -154,18 +154,12 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
-     * @param string|null $gateway
-     * @param string $type
-     * @param array $gatewayInfo
      * @return RedirectResponse
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext,
-        string $gateway = null,
-        string $type = 'redirect',
-        array $gatewayInfo = []
+        SalesChannelContext $salesChannelContext
     ): RedirectResponse {
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
