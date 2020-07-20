@@ -42,6 +42,7 @@ use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Util\Currency;
 use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
+use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 
 class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
@@ -97,6 +98,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     protected $logger;
 
     /**
+     * @var SalesChannelRepository
+     */
+    protected $salesChannelRepository;
+
+    /**
      * CardsPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
      * @param CheckoutService $checkoutService
@@ -107,6 +113,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
      * @param Customer $customerBuilder
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStateDataService $paymentStateDataService
+     * @param SalesChannelRepository $salesChannelRepository
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -119,6 +126,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         Customer $customerBuilder,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStateDataService $paymentStateDataService,
+        SalesChannelRepository $salesChannelRepository,
         LoggerInterface $logger
     ) {
         $this->checkoutService = $checkoutService;
@@ -130,6 +138,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         $this->paymentBuilder = $paymentBuilder;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStateDataService = $paymentStateDataService;
+        $this->salesChannelRepository = $salesChannelRepository;
         $this->logger = $logger;
     }
 
@@ -201,6 +210,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     }
 
     //TODO move to util or outsource to lib
+
     /**
      * @param string $address
      * @return array
@@ -336,7 +346,8 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $salesChannelContext->getCustomer()->getFirstName(),
             $salesChannelContext->getCustomer()->getLastName(),
             $salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso(),
-            'en-GB', //TODO replace with function in generic component branch
+            $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
+                ->getLanguage()->getLocale()->getCode(),
             $salesChannelContext->getCustomer()->getRemoteAddress(),
             $salesChannelContext->getCustomer()->getId(),
             $request
