@@ -164,14 +164,16 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
         } catch (Exception $exception) {
-            $this->logger->error(
-                sprintf(
-                    "There was an error with the payment method. Order number: %s Missing data: %s",
-                    $transaction->getOrder()->getOrderNumber(),
-                    $exception->getMessage()
-                )
+            $message = sprintf(
+                "There was an error with the payment method. Order number: %s Missing data: %s",
+                $transaction->getOrder()->getOrderNumber(),
+                $exception->getMessage()
             );
-            exit;
+            $this->logger->error($message);
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrder()->getId(),
+                $message
+            );
         }
 
         try {
