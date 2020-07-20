@@ -22,23 +22,23 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Notification;
+namespace Adyen\Shopware\Entity\PaymentStateData;
 
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 
 /**
- * @method void                    add(NotificationEntity $entity)
- * @method void                    set(string $key, NotificationEntity $entity)
- * @method NotificationEntity[]    getIterator()
- * @method NotificationEntity[]    getElements()
- * @method NotificationEntity|null get(string $key)
- * @method NotificationEntity|null first()
- * @method NotificationEntity|null last()
+ * @method void                    add(PaymentStateDataEntity $entity)
+ * @method void                    set(string $key, PaymentStateDataEntity $entity)
+ * @method PaymentStateDataEntity[]    getIterator()
+ * @method PaymentStateDataEntity[]    getElements()
+ * @method PaymentStateDataEntity|null get(string $key)
+ * @method PaymentStateDataEntity|null first()
+ * @method PaymentStateDataEntity|null last()
  */
-class NotificationEntityCollection extends EntityCollection
+class PaymentStateDataEntityCollection extends EntityCollection
 {
     protected function getExpectedClass(): string
     {
-        return NotificationEntity::class;
+        return PaymentStateDataEntity::class;
     }
 }
