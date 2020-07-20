@@ -227,6 +227,9 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
      * @param SalesChannelContext $salesChannelContext
      * @param AsyncPaymentTransactionStruct $transaction
      * @return array
+     * @throws AsyncPaymentProcessException
+     * @throws \Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
      */
     public function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
@@ -237,9 +240,14 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         $request = json_decode($this->paymentStateDataService->getPaymentStateDataFromContextToken(
             $salesChannelContext->getToken()
         )->getStateData(), true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        // Throw error, log error
-    }
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrder()->getId(),
+                'Invalid payment state data.'
+            );
+        }
+
         if (!empty($request['additionalData'])) {
             $stateDataAdditionalData = $request['additionalData'];
         }
