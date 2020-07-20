@@ -86,5 +86,8 @@
             <argument type="service"
                       id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPage.inner"/>
         </service>
+        <service id="Adyen\Shopware\Handlers\PaymentResponseHandler" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
     </services>
 </container>
