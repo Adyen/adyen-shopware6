@@ -207,13 +207,9 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
      */
     public function splitStreetAddressHouseNumber(string $address): array
     {
-        $fullStreetAddress = explode(' ', $address);
-        $streetAddress = implode(' ', array_slice($fullStreetAddress, 0, -1));
-        $houseNumberOrName = end($fullStreetAddress);
-
         return [
-            'street' => $streetAddress,
-            'houseNumber' => $houseNumberOrName
+            'street' => $address,
+            'houseNumber' => 'N\A'
         ];
     }
 
