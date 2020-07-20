@@ -238,6 +238,10 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $salesChannelContext->getToken()
         )->getStateData(), true);
 
+        if (!empty($request['additionalData'])) {
+            $stateDataAdditionalData = $request['additionalData'];
+        }
+
         //Validate state.data for payment and build request object
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
 
@@ -379,10 +383,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $request
         );
 
-        if (empty($request['origin'])) {
-            $request['origin'] = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
-                $salesChannelContext->getToken()
-            )->getOrigin();
+        //Setting info from statedata additionalData if present
+        if (!empty($stateDataAdditionalData['origin'])) {
+            $request['origin'] = $stateDataAdditionalData['origin'];
+        } else {
+            $request['origin'] = $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext);
         }
 
         return $request;

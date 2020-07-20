@@ -59,6 +59,7 @@ class PaymentStateDataService
     /**
      * @param string $contextToken
      * @param string $stateData
+     * @param string $origin
      */
     public function insertPaymentStateData(string $contextToken, string $stateData, string $origin): void
     {
@@ -68,9 +69,16 @@ class PaymentStateDataService
             exit;
         }
 
+        $stateDataArray = json_decode($stateData, true);
+
+        //Set additional data to persist along with the state.data
+        $additionalData = [
+            'origin' => $origin
+        ];
+        $stateDataArray['additionalData'] = $additionalData;
+
         $fields['token'] = $contextToken;
-        $fields['statedata'] = $stateData;
-        $fields['origin'] = $origin;
+        $fields['statedata'] = json_encode($stateDataArray);
 
         $this->paymentStateDataRepository->create(
             [$fields],
