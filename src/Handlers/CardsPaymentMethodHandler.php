@@ -219,7 +219,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     {
         return [
             'street' => $address,
-            'houseNumber' => 'N\A'
+            'houseNumber' => 'N/A'
         ];
     }
 
