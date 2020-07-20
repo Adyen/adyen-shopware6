@@ -203,7 +203,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         // TODO: Implement finalize() method.
     }
 
-    //TODO move to util or outsource to lib
+    //TODO move to external object or outsource to lib
 
     /**
      * @param string $address
