@@ -62,7 +62,6 @@ class PaymentStateDataEntityDefinition extends EntityDefinition
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
             new StringField('token', 'token'),
             new LongTextField('state_data', 'statedata'),
-            new StringField('origin', 'origin'),
             new CreatedAtField(),
             new UpdatedAtField()
         ]);

@@ -19,7 +19,6 @@ class Migration1594381360AdyenPaymentStateData extends MigrationStep
                 `id` BINARY(16) NOT NULL,
                 `token` VARCHAR(255) NULL,
                 `state_data` text NULL,
-                `origin` VARCHAR(255) NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`)
