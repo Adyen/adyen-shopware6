@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller;
 
+use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -52,19 +53,28 @@ class SalesChannelApiController extends AbstractController
     private $salesChannelRepository;
 
     /**
+     * @var PaymentDetailsService
+     */
+    private $paymentDetailsService;
+
+    /**
      * SalesChannelApiController constructor.
+     *
      * @param OriginKeyService $originKeyService
      * @param PaymentMethodsService $paymentMethodsService
      * @param SalesChannelRepository $salesChannelRepository
+     * @param PaymentDetailsService $paymentDetailsService
      */
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
-        SalesChannelRepository $salesChannelRepository
+        SalesChannelRepository $salesChannelRepository,
+        PaymentDetailsService $paymentDetailsService
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->salesChannelRepository = $salesChannelRepository;
+        $this->paymentDetailsService = $paymentDetailsService;
     }
 
     /**
@@ -101,5 +111,21 @@ class SalesChannelApiController extends AbstractController
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
         return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
+    }
+
+    /**
+     * @RouteScope(scopes={"sales-channel-api"})
+     * @Route(
+     *     "/sales-channel-api/v1/adyen/payment-details",
+     *     name="sales-channel-api.action.adyen.payment-details",
+     *     methods={"POST"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function postPaymentDetails(SalesChannelContext $context): JsonResponse
+    {
+        return new JsonResponse($this->paymentDetailsService->doPaymentDetails($context));
     }
 }

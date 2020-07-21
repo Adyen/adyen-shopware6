@@ -18,6 +18,7 @@
             <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentDetailsService"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true">
@@ -30,6 +31,9 @@
         </service>
         <service id="Adyen\Shopware\Models\OriginKeyModel" autowire="true"/>
         <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
+        <service id="Adyen\Shopware\Service\PaymentDetailsService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\CheckoutService" autowire="true"/>
