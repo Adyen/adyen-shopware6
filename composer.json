@@ -10,7 +10,7 @@
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "require": {
-        "adyen/php-api-library": "^6.1",
+        "adyen/php-api-library": "^7",
         "monolog/monolog": "^1"
     },
     "extra": {

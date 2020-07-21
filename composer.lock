@@ -4,25 +4,28 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "ca99781bd1fc60bbefa1385d56f9fb7b",
+    "content-hash": "2ef3e620ece9810083d450e3f87f413c",
     "packages": [
         {
             "name": "adyen/php-api-library",
-            "version": "6.3.0",
+            "version": "7.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Adyen/adyen-php-api-library.git",
-                "reference": "97833dbb402f0a8c440f2711941a5313f886c4fd"
+                "reference": "c809f0da8cc73d56704fd2a51ef92a443639cb66"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/97833dbb402f0a8c440f2711941a5313f886c4fd",
-                "reference": "97833dbb402f0a8c440f2711941a5313f886c4fd",
+                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/c809f0da8cc73d56704fd2a51ef92a443639cb66",
+                "reference": "c809f0da8cc73d56704fd2a51ef92a443639cb66",
                 "shasum": ""
             },
             "require": {
-                "monolog/monolog": "^1.16",
-                "php": ">=5.3"
+                "ext-ctype": "*",
+                "ext-mbstring": "*",
+                "ext-openssl": "*",
+                "monolog/monolog": ">=1.16",
+                "php": ">=5.6"
             },
             "require-dev": {
                 "dms/phpunit-arraysubset-asserts": "0.2.0",
@@ -47,7 +50,7 @@
             "keywords": [
                 "adyen"
             ],
-            "time": "2020-06-26T10:01:44+00:00"
+            "time": "2020-06-30T15:36:20+00:00"
         },
         {
             "name": "monolog/monolog",
