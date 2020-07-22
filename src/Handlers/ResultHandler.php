@@ -65,12 +65,12 @@ class ResultHandler
         $merchantReference = $this->request->get(self::ADYEN_MERCHANT_REFERENCE);
 
         if ($merchantReference) {
-
             //Get the order's payment response
             $paymentResponse = $this->paymentResponseRepository->search(
                 (new Criteria())->addFilter(new EqualsFilter('order_number', $merchantReference))
                     ->addAssociation('cart'), //TODO verify if this association works, FK needed?
-                Context::createDefaultContext())->first();
+                Context::createDefaultContext()
+            )->first();
 
             // Validate if cart exists and if we have the necessary objects stored, if not redirect back to order page
             if (empty($paymentResponse) || empty($paymentResponse['paymentData']) || !$paymentResponse->getCart()) {
