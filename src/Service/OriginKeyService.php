@@ -75,14 +75,14 @@ class OriginKeyService
             $response = $this->adyenCheckoutUtilityService->originKeys($params);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
+            return $this->originKeyModel->setOriginKey('');
         }
-
-        $originKey = "";
 
         if (!empty($response['originKeys'][$host])) {
             $originKey = $response['originKeys'][$host];
         } else {
             $this->logger->error('Empty host response for OriginKey request');
+            return $this->originKeyModel->setOriginKey('');
         }
 
         return $this->originKeyModel->setOriginKey($originKey);
