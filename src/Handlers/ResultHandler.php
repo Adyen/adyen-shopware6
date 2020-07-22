@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\AdyenException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -32,6 +33,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\PaymentResponseService;
+use Psr\Log\LoggerInterface;
 
 class ResultHandler
 {
@@ -42,17 +44,20 @@ class ResultHandler
     private $request;
     private $checkoutService;
     private $paymentResponseService;
+    private $logger;
 
     public function __construct(
         EntityRepositoryInterface $paymentResponseRepository,
         Request $request,
         CheckoutService $checkoutService,
-        PaymentResponseService $paymentResponseService
+        PaymentResponseService $paymentResponseService,
+        LoggerInterface $logger
     ) {
         $this->paymentResponseRepository = $paymentResponseRepository;
         $this->request = $request;
         $this->checkoutService = $checkoutService;
         $this->paymentResponseService = $paymentResponseService;
+        $this->logger = $logger;
     }
 
     public function proccessResult()
@@ -73,12 +78,17 @@ class ResultHandler
             }
         }
 
-        $response = $this->checkoutService->paymentsDetails(
-            array(
-                'paymentData' => $paymentResponse['paymentData'],
-                'details' => array_merge($this->request->query->all(), $this->request->request->all())
-            )
-        );
+        try {
+            $response = $this->checkoutService->paymentsDetails(
+                array(
+                    'paymentData' => $paymentResponse['paymentData'],
+                    'details' => array_merge($this->request->query->all(), $this->request->request->all())
+                )
+            );
+        } catch (AdyenException $exception) {
+            $this->logger->error($exception->getMessage());
+            return new RedirectResponse('/checkout/cart');
+        }
 
         // Remove stored response since the paymentDetails call is done
         $this->paymentResponseService->delete($paymentResponse->getId());
