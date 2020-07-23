@@ -38,28 +38,70 @@ use Psr\Log\LoggerInterface;
 class ResultHandler
 {
 
+    /**
+     *
+     */
     const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
 
+    /**
+     * @var EntityRepositoryInterface
+     */
     private $paymentResponseRepository;
+
+    /**
+     * @var Request
+     */
     private $request;
+
+    /**
+     * @var CheckoutService
+     */
     private $checkoutService;
+
+    /**
+     * @var PaymentResponseService
+     */
     private $paymentResponseService;
+
+    /**
+     * @var LoggerInterface
+     */
     private $logger;
 
+    /**
+     * @var PaymentResponseHandler
+     */
+    private $paymentResponseHandler;
+
+    /**
+     * ResultHandler constructor.
+     * @param EntityRepositoryInterface $paymentResponseRepository
+     * @param Request $request
+     * @param CheckoutService $checkoutService
+     * @param PaymentResponseService $paymentResponseService
+     * @param LoggerInterface $logger
+     * @param PaymentResponseHandler $paymentResponseHandler
+     */
     public function __construct(
         EntityRepositoryInterface $paymentResponseRepository,
         Request $request,
         CheckoutService $checkoutService,
         PaymentResponseService $paymentResponseService,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        PaymentResponseHandler $paymentResponseHandler
     ) {
         $this->paymentResponseRepository = $paymentResponseRepository;
         $this->request = $request;
         $this->checkoutService = $checkoutService;
         $this->paymentResponseService = $paymentResponseService;
         $this->logger = $logger;
+        $this->paymentResponseHandler = $paymentResponseHandler;
     }
 
+    /**
+     * @return RedirectResponse
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     */
     public function proccessResult()
     {
         $merchantReference = $this->request->get(self::ADYEN_MERCHANT_REFERENCE);
@@ -93,6 +135,6 @@ class ResultHandler
         // Remove stored response since the paymentDetails call is done
         $this->paymentResponseService->delete($paymentResponse->getId());
 
-        //TODO handle response
+        $this->paymentResponseHandler->handlePaymentResponse($response);
     }
 }
