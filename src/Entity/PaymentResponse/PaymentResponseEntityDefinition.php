@@ -23,7 +23,6 @@
 
 namespace Adyen\Shopware\Entity\PaymentResponse;
 
-
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
