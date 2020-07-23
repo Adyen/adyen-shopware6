@@ -93,15 +93,16 @@ class ResultHandler
      */
     public function processResult()
     {
-        $merchantReference = $this->request->get(self::ADYEN_MERCHANT_REFERENCE);
+        $orderNumber = $this->request->get(self::ADYEN_MERCHANT_REFERENCE);
 
-        if ($merchantReference) {
+        if ($orderNumber) {
             //Get the order's payment response
             $paymentResponse = $this->paymentResponseService
-                                    ->getWithMerchantReference($merchantReference);
+                                    ->getWithOrderNumber($orderNumber);
 
             // Validate if cart exists and if we have the necessary objects stored, if not redirect back to order page
             if (empty($paymentResponse) || empty($paymentResponse['paymentData']) || !$paymentResponse->getCart()) {
+                // TODO: restore the customer cart before redirecting
                 return new RedirectResponse('/checkout/cart');
             }
         }
@@ -115,6 +116,7 @@ class ResultHandler
             );
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
+            // TODO: restore the customer cart before redirecting
             return new RedirectResponse('/checkout/cart');
         }
 

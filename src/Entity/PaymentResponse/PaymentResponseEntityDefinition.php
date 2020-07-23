@@ -56,8 +56,9 @@ class PaymentResponseEntityDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
-            new StringField('token', 'token'),
-            new StringField('resultCode', 'result_code'),
+            new StringField('order_number', 'orderNumber'),
+            new StringField('result_code', 'resultCode'),
+            new StringField('sales_channel_api_context_token', 'token'),
             new StringField('response', 'response'),
             new CreatedAtField(),
             new UpdatedAtField()

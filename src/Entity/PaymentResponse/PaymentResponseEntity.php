@@ -33,7 +33,12 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
-    protected $token;
+    protected $orderNumber;
+
+    /**
+     * @var string
+     */
+    protected $salesChannelApiContextToken;
 
     /**
      * @var string
@@ -48,17 +53,17 @@ class PaymentResponseEntity extends Entity
     /**
      * @return string
      */
-    public function getToken(): string
+    public function getOrderNumber(): string
     {
-        return $this->token;
+        return $this->orderNumber;
     }
 
     /**
-     * @param string $token
+     * @param string $orderNumber
      */
-    public function setToken(string $token): void
+    public function setOrderNumber(string $orderNumber): void
     {
-        $this->token = $token;
+        $this->orderNumber = $orderNumber;
     }
 
     /**
@@ -67,6 +72,22 @@ class PaymentResponseEntity extends Entity
     public function getResultCode(): string
     {
         return $this->resultCode;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSalesChannelApiContextToken(): string
+    {
+        return $this->salesChannelApiContextToken;
+    }
+
+    /**
+     * @param string $salesChannelApiContextToken
+     */
+    public function setSalesChannelApiContextToken(string $salesChannelApiContextToken): void
+    {
+        $this->salesChannelApiContextToken = $salesChannelApiContextToken;
     }
 
     /**
