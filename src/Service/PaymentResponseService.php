@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -41,7 +42,7 @@ class PaymentResponseService
         $this->repository = $repository;
     }
 
-    public function getPaymentResponseForMerchantReference(string $merchantReference)
+    public function getWithMerchantReference(string $merchantReference) : PaymentResponseEntity
     {
         return $this->repository
             ->search(
@@ -51,5 +52,9 @@ class PaymentResponseService
                 Context::createDefaultContext()
             )
             ->first();
+    }
+
+    public function deleteWithId(string $getId)
+    {
     }
 }

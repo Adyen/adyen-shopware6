@@ -26,6 +26,7 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\CheckoutService;
@@ -34,7 +35,6 @@ use Psr\Log\LoggerInterface;
 
 class ResultHandler
 {
-
     /**
      *
      */
@@ -67,7 +67,6 @@ class ResultHandler
 
     /**
      * ResultHandler constructor.
-     * @param EntityRepositoryInterface $paymentResponseRepository
      * @param Request $request
      * @param CheckoutService $checkoutService
      * @param PaymentResponseService $paymentResponseService
@@ -90,7 +89,7 @@ class ResultHandler
 
     /**
      * @return RedirectResponse
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @throws InconsistentCriteriaIdsException
      */
     public function processResult()
     {
@@ -99,7 +98,7 @@ class ResultHandler
         if ($merchantReference) {
             //Get the order's payment response
             $paymentResponse = $this->paymentResponseService
-                                    ->getPaymentResponseForMerchantReference($merchantReference);
+                                    ->getWithMerchantReference($merchantReference);
 
             // Validate if cart exists and if we have the necessary objects stored, if not redirect back to order page
             if (empty($paymentResponse) || empty($paymentResponse['paymentData']) || !$paymentResponse->getCart()) {
@@ -118,9 +117,6 @@ class ResultHandler
             $this->logger->error($exception->getMessage());
             return new RedirectResponse('/checkout/cart');
         }
-
-        // Remove stored response since the paymentDetails call is done
-        $this->paymentResponseService->delete($paymentResponse->getId());
 
         $this->paymentResponseHandler->handlePaymentResponse($response);
     }
