@@ -25,10 +25,7 @@
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\CheckoutService;
@@ -42,11 +39,6 @@ class ResultHandler
      *
      */
     const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
-
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $paymentResponseRepository;
 
     /**
      * @var Request
@@ -83,14 +75,12 @@ class ResultHandler
      * @param PaymentResponseHandler $paymentResponseHandler
      */
     public function __construct(
-        EntityRepositoryInterface $paymentResponseRepository,
         Request $request,
         CheckoutService $checkoutService,
         PaymentResponseService $paymentResponseService,
         LoggerInterface $logger,
         PaymentResponseHandler $paymentResponseHandler
     ) {
-        $this->paymentResponseRepository = $paymentResponseRepository;
         $this->request = $request;
         $this->checkoutService = $checkoutService;
         $this->paymentResponseService = $paymentResponseService;
@@ -102,17 +92,14 @@ class ResultHandler
      * @return RedirectResponse
      * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
      */
-    public function proccessResult()
+    public function processResult()
     {
         $merchantReference = $this->request->get(self::ADYEN_MERCHANT_REFERENCE);
 
         if ($merchantReference) {
             //Get the order's payment response
-            $paymentResponse = $this->paymentResponseRepository->search(
-                (new Criteria())->addFilter(new EqualsFilter('order_number', $merchantReference))
-                    ->addAssociation('cart'), //TODO verify if this association works, FK needed?
-                Context::createDefaultContext()
-            )->first();
+            $paymentResponse = $this->paymentResponseService
+                                    ->getPaymentResponseForMerchantReference($merchantReference);
 
             // Validate if cart exists and if we have the necessary objects stored, if not redirect back to order page
             if (empty($paymentResponse) || empty($paymentResponse['paymentData']) || !$paymentResponse->getCart()) {

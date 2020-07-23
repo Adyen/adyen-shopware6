@@ -86,8 +86,10 @@
         <service id="Adyen\Service\Builder\Customer"/>
         <service id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
         <service id="Adyen\Shopware\Handlers\ResultHandler" autowire="true">
-            <argument type="service" id="adyen_payment_response.repository" />
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
+        <service id="Adyen\Shopware\Service\PaymentResponseService" autowire="true">
+            <argument type="service" id="adyen_payment_response.repository" />
         </service>
 
         <!--Event subscribers-->
