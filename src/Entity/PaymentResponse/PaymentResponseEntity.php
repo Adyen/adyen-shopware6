@@ -74,6 +74,14 @@ class PaymentResponseEntity extends Entity
         return $this->resultCode;
     }
 
+     /**
+     * @param string $resultCode
+     */
+    public function setResultCode(string $resultCode): void
+    {
+        $this->resultCode = $resultCode;
+    }
+
     /**
      * @return string
      */
@@ -88,14 +96,6 @@ class PaymentResponseEntity extends Entity
     public function setSalesChannelApiContextToken(string $salesChannelApiContextToken): void
     {
         $this->salesChannelApiContextToken = $salesChannelApiContextToken;
-    }
-
-    /**
-     * @param string $resultCode
-     */
-    public function setResultCode(string $resultCode): void
-    {
-        $this->resultCode = $resultCode;
     }
 
     /**
