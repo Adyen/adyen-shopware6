@@ -99,7 +99,8 @@ class PaymentResponseHandler
                 // Store response for cart until the payment is done
                 $this->paymentResponseService->insertPaymentResponse($response);
 
-                return $this->controllerResponseJsonBuilder->buildControllerResponseJson('threeDS2',
+                return $this->controllerResponseJsonBuilder->buildControllerResponseJson(
+                    'threeDS2',
                     array(
                         'type' => 'IdentifyShopper',
                         'token' => $response['authentication']['threeds2.fingerprintToken']
@@ -110,7 +111,8 @@ class PaymentResponseHandler
                 // Store response for cart temporarily until the payment is done
                 $this->paymentResponseService->insertPaymentResponse($response);
 
-                return $this->controllerResponseJsonBuilder->buildControllerResponseJson('threeDS2',
+                return $this->controllerResponseJsonBuilder->buildControllerResponseJson(
+                    'threeDS2',
                     array(
                         'type' => 'ChallengeShopper',
                         'token' => $response['authentication']['threeds2.challengeToken']
@@ -137,7 +139,8 @@ class PaymentResponseHandler
                     $paRequest = $response['redirect']['data']['PaReq'];
                     $md = $response['redirect']['data']['MD'];
 
-                    return $this->controllerResponseJsonBuilder->buildControllerResponseJson('threeDS1',
+                    return $this->controllerResponseJsonBuilder->buildControllerResponseJson(
+                        'threeDS1',
                         array(
                             self::PA_REQUEST => $paRequest,
                             self::MD => $md,
@@ -146,7 +149,8 @@ class PaymentResponseHandler
                         )
                     );
                 } else {
-                    return $this->controllerResponseJsonBuilder->buildControllerResponseJson('redirect',
+                    return $this->controllerResponseJsonBuilder->buildControllerResponseJson(
+                        'redirect',
                         array(
                             'redirectUrl' => $redirectUrl
                         )
