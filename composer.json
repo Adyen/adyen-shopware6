@@ -11,7 +11,8 @@
     "license": "MIT",
     "require": {
         "adyen/php-api-library": "^7",
-        "monolog/monolog": "^1"
+        "monolog/monolog": "^1",
+        "ext-json": "*"
     },
     "extra": {
         "shopware-plugin-class": "Adyen\\Shopware\\AdyenPayment",
