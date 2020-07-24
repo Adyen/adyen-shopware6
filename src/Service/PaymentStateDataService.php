@@ -93,7 +93,6 @@ class PaymentStateDataService
                 \Shopware\Core\Framework\Context::createDefaultContext()
             );
         }
-
     }
 
     /**
