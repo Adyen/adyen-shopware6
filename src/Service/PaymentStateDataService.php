@@ -80,6 +80,8 @@ class PaymentStateDataService
         $fields['token'] = $contextToken;
         $fields['statedata'] = json_encode($stateDataArray);
 
+        $this->cleanTokenStateData($contextToken);
+
         $this->paymentStateDataRepository->create(
             [$fields],
             \Shopware\Core\Framework\Context::createDefaultContext()
@@ -98,5 +100,26 @@ class PaymentStateDataService
         )->first();
 
         return $stateDataRow;
+    }
+
+    /**
+     * @param string $contextToken
+     */
+    private function cleanTokenStateData(string $contextToken)
+    {
+
+        $stateDataRows = $this->paymentStateDataRepository->searchIds(
+            (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
+            Context::createDefaultContext()
+        );
+
+        $ids = $stateDataRows->getIds();
+        if ($ids) {
+            $idsToDelete = [];
+            foreach ($ids as $id) {
+                $idsToDelete[] = ['id' => $id];
+            }
+            $this->paymentStateDataRepository->delete($idsToDelete, Context::createDefaultContext());
+        }
     }
 }
