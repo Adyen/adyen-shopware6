@@ -96,7 +96,27 @@ class PaymentResponseHandler
                 // Cancel order
                 break;
             case 'IdentifyShopper':
+                // Store response for cart until the payment is done
+                $this->paymentResponseService->insertPaymentResponse($response);
+
+                return $this->controllerResponseJsonBuilder->buildControllerResponseJson('threeDS2',
+                    array(
+                        'type' => 'IdentifyShopper',
+                        'token' => $response['authentication']['threeds2.fingerprintToken']
+                    )
+                );
+                break;
             case 'ChallengeShopper':
+                // Store response for cart temporarily until the payment is done
+                $this->paymentResponseService->insertPaymentResponse($response);
+
+                return $this->controllerResponseJsonBuilder->buildControllerResponseJson('threeDS2',
+                    array(
+                        'type' => 'ChallengeShopper',
+                        'token' => $response['authentication']['threeds2.challengeToken']
+                    )
+                );
+                break;
             case 'RedirectShopper':
                 // Check if redirect shopper response data is valid
                 if (empty($response['redirect']['url']) ||
