@@ -26,19 +26,44 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\AdyenException;
 use Psr\Log\LoggerInterface;
+use Adyen\Shopware\Service\PaymentResponseService;
+use Adyen\Shopware\Service\Builder\ControllerResponseJsonBuilder;
 
 class PaymentResponseHandler
 {
+
+    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
+    const ISSUER = 'issuer';
+    const PA_REQUEST = 'paRequest';
+    const MD = 'md';
+    const ISSUER_URL = 'issuerUrl';
+    const REDIRECT_METHOD = 'redirectMethod';
+
     /**
      * @var LoggerInterface
      */
     private $logger;
 
+    /**
+     * @var PaymentResponseService
+     */
+    private $paymentResponseService;
+
+    /**
+     * @var ControllerResponseJsonBuilder
+     */
+    private $controllerResponseJsonBuilder;
+
     public function __construct(
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        PaymentResponseService $paymentResponseService,
+        ControllerResponseJsonBuilder $controllerResponseJsonBuilder
     ) {
         $this->logger = $logger;
+        $this->paymentResponseService = $paymentResponseService;
+        $this->controllerResponseJsonBuilder = $controllerResponseJsonBuilder;
     }
 
     /**
@@ -73,8 +98,41 @@ class PaymentResponseHandler
             case 'IdentifyShopper':
             case 'ChallengeShopper':
             case 'RedirectShopper':
-                // Store payments response for later use
-                // Return to frontend with action
+                // Check if redirect shopper response data is valid
+                if (empty($response['redirect']['url']) ||
+                    empty($response['redirect']['method']) ||
+                    empty($response['paymentData'])
+                ) {
+                    throw new AdyenException("There was an error with the payment method, please choose another one.");
+                }
+
+                // Store response for cart temporarily until the payment is done
+                $this->paymentResponseService->insertPaymentResponse($response);
+
+                $redirectUrl = $response['redirect']['url'];
+                $redirectMethod = $response['redirect']['method'];
+
+                // Identify if 3DS1 redirect
+                if (!empty($response['redirect']['data']['PaReq']) && !empty($response['redirect']['data']['MD'])) {
+                    $paRequest = $response['redirect']['data']['PaReq'];
+                    $md = $response['redirect']['data']['MD'];
+
+                    return $this->controllerResponseJsonBuilder->buildControllerResponseJson('threeDS1',
+                        array(
+                            self::PA_REQUEST => $paRequest,
+                            self::MD => $md,
+                            self::ISSUER_URL => $redirectUrl,
+                            self::REDIRECT_METHOD => $redirectMethod
+                        )
+                    );
+                } else {
+                    return $this->controllerResponseJsonBuilder->buildControllerResponseJson('redirect',
+                        array(
+                            'redirectUrl' => $redirectUrl
+                        )
+                    );
+                }
+                break;
                 break;
             case 'Received':
             case 'PresentToShopper':
