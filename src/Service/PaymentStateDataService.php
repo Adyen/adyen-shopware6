@@ -79,20 +79,28 @@ class PaymentStateDataService
 
         $fields['token'] = $contextToken;
         $fields['statedata'] = json_encode($stateDataArray);
+        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
 
-        $this->cleanTokenStateData($contextToken);
+        if ($stateData) {
+            $fields['id'] = $stateData->getId();
+            $this->paymentStateDataRepository->update(
+                [$fields],
+                \Shopware\Core\Framework\Context::createDefaultContext()
+            );
+        } else {
+            $this->paymentStateDataRepository->create(
+                [$fields],
+                \Shopware\Core\Framework\Context::createDefaultContext()
+            );
+        }
 
-        $this->paymentStateDataRepository->create(
-            [$fields],
-            \Shopware\Core\Framework\Context::createDefaultContext()
-        );
     }
 
     /**
      * @param string $contextToken
      * @return string
      */
-    public function getPaymentStateDataFromContextToken(string $contextToken): PaymentStateDataEntity
+    public function getPaymentStateDataFromContextToken(string $contextToken):? PaymentStateDataEntity
     {
         $stateDataRow = $this->paymentStateDataRepository->search(
             (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
@@ -100,26 +108,5 @@ class PaymentStateDataService
         )->first();
 
         return $stateDataRow;
-    }
-
-    /**
-     * @param string $contextToken
-     */
-    private function cleanTokenStateData(string $contextToken)
-    {
-
-        $stateDataRows = $this->paymentStateDataRepository->searchIds(
-            (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
-            Context::createDefaultContext()
-        );
-
-        $ids = $stateDataRows->getIds();
-        if ($ids) {
-            $idsToDelete = [];
-            foreach ($ids as $id) {
-                $idsToDelete[] = ['id' => $id];
-            }
-            $this->paymentStateDataRepository->delete($idsToDelete, Context::createDefaultContext());
-        }
     }
 }
