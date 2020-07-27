@@ -157,7 +157,6 @@ class PaymentResponseHandler
                     );
                 }
                 break;
-                break;
             case 'Received':
             case 'PresentToShopper':
                 // Store payments response for later use
