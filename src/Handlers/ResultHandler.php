@@ -36,11 +36,6 @@ use Psr\Log\LoggerInterface;
 class ResultHandler
 {
     /**
-     *
-     */
-    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
-
-    /**
      * @var Request
      */
     private $request;
@@ -93,12 +88,12 @@ class ResultHandler
      */
     public function processResult()
     {
-        $orderNumber = $this->request->get(self::ADYEN_MERCHANT_REFERENCE);
+        $orderNumber = $this->request->get(PaymentResponseHandler::ADYEN_MERCHANT_REFERENCE);
 
         if ($orderNumber) {
             //Get the order's payment response
             $paymentResponse = $this->paymentResponseService
-                                    ->getWithOrderNumber($orderNumber);
+                ->getWithOrderNumber($orderNumber);
 
             // Validate if cart exists and if we have the necessary objects stored, if not redirect back to order page
             if (empty($paymentResponse) || empty($paymentResponse['paymentData']) || !$paymentResponse->getCart()) {
@@ -114,12 +109,11 @@ class ResultHandler
                     'details' => array_merge($this->request->query->all(), $this->request->request->all())
                 )
             );
+            $this->paymentResponseHandler->handlePaymentResponse($response);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
             // TODO: restore the customer cart before redirecting
             return new RedirectResponse('/checkout/cart');
         }
-
-        $this->paymentResponseHandler->handlePaymentResponse($response);
     }
 }

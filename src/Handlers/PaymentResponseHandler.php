@@ -26,19 +26,30 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\AdyenException;
 use Psr\Log\LoggerInterface;
+use Adyen\Shopware\Service\PaymentResponseService;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class PaymentResponseHandler
 {
+    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
     /**
      * @var LoggerInterface
      */
     private $logger;
 
+    /**
+     * @var PaymentResponseService
+     */
+    private $paymentResponseService;
+
     public function __construct(
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        PaymentResponseService $paymentResponseService
     ) {
         $this->logger = $logger;
+        $this->paymentResponseService = $paymentResponseService;
     }
 
     /**
@@ -70,11 +81,13 @@ class PaymentResponseHandler
                 $this->logger->error("The payment was refused, id:  " . $id);
                 // Cancel order
                 break;
+            case 'RedirectShopper':
             case 'IdentifyShopper':
             case 'ChallengeShopper':
-            case 'RedirectShopper':
-                // Store payments response for later use
-                // Return to frontend with action
+                // Store response for cart temporarily until the payment is done
+                $this->paymentResponseService->insertPaymentResponse($response);
+
+                return new JsonResponse($response);
                 break;
             case 'Received':
             case 'PresentToShopper':
