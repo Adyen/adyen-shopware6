@@ -70,20 +70,19 @@ class OriginKeyService
     public function getOriginKeyForOrigin(string $host): OriginKeyModel
     {
         $params = array("originDomains" => array($host));
+        $response = [];
         try {
             $response = $this->adyenCheckoutUtilityService->originKeys($params);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
-            exit;
+            return $this->originKeyModel->setOriginKey('');
         }
-
-        $originKey = "";
 
         if (!empty($response['originKeys'][$host])) {
             $originKey = $response['originKeys'][$host];
         } else {
             $this->logger->error('Empty host response for OriginKey request');
-            exit;
+            return $this->originKeyModel->setOriginKey('');
         }
 
         return $this->originKeyModel->setOriginKey($originKey);

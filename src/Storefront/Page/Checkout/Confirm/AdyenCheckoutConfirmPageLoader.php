@@ -126,14 +126,21 @@ class AdyenCheckoutConfirmPageLoader extends CheckoutConfirmPageLoader
             $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
 
             //If this is an Adyen PM installed it will only be enabled if it's present in the /paymentMethods response
-            if (strpos($paymentMethodEntity->getFormattedHandlerIdentifier(), 'adyen')) {
+            if (strpos($paymentMethodEntity->getFormattedHandlerIdentifier(), 'adyen') !== false) {
                 $pmCode = 'scheme'; //TODO get from payment method handler instead of hardcoding PM type
+                // In case the paymentMethods response has no payment methods, remove it from the list
+                if (empty($adyenPaymentMethods)) {
+                    $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                    continue;
+                }
+
                 $pmFound = array_filter(
                     $adyenPaymentMethods['paymentMethods'],
                     function ($value) use ($pmCode) {
                         return $value['type'] == $pmCode;
                     }
                 );
+
                 if (empty($pmFound)) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
