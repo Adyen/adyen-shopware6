@@ -33,7 +33,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class PaymentResponseHandler
 {
-    const ADYEN_MERCHANT_REFERENCE = 'merchantReference';
+    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
     /**
      * @var LoggerInterface
      */
