@@ -79,18 +79,24 @@ class PaymentStateDataService
 
         $fields['token'] = $contextToken;
         $fields['statedata'] = json_encode($stateDataArray);
+        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
 
-        $this->paymentStateDataRepository->create(
+        if ($stateData) {
+            $fields['id'] = $stateData->getId();
+        }
+
+        $this->paymentStateDataRepository->upsert(
             [$fields],
             \Shopware\Core\Framework\Context::createDefaultContext()
         );
     }
 
+
     /**
      * @param string $contextToken
      * @return string
      */
-    public function getPaymentStateDataFromContextToken(string $contextToken): PaymentStateDataEntity
+    public function getPaymentStateDataFromContextToken(string $contextToken):? PaymentStateDataEntity
     {
         $stateDataRow = $this->paymentStateDataRepository->search(
             (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
