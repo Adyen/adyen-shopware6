@@ -29,18 +29,11 @@ namespace Adyen\Shopware\Handlers;
 use Adyen\AdyenException;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
-use Adyen\Shopware\Service\Builder\ControllerResponseJsonBuilder;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class PaymentResponseHandler
 {
-
-    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
-    const ISSUER = 'issuer';
-    const PA_REQUEST = 'paRequest';
-    const MD = 'md';
-    const ISSUER_URL = 'issuerUrl';
-    const REDIRECT_METHOD = 'redirectMethod';
-
+    const ADYEN_MERCHANT_REFERENCE = 'merchantReference';
     /**
      * @var LoggerInterface
      */
@@ -51,19 +44,12 @@ class PaymentResponseHandler
      */
     private $paymentResponseService;
 
-    /**
-     * @var ControllerResponseJsonBuilder
-     */
-    private $controllerResponseJsonBuilder;
-
     public function __construct(
         LoggerInterface $logger,
-        PaymentResponseService $paymentResponseService,
-        ControllerResponseJsonBuilder $controllerResponseJsonBuilder
+        PaymentResponseService $paymentResponseService
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
-        $this->controllerResponseJsonBuilder = $controllerResponseJsonBuilder;
     }
 
     /**
@@ -95,67 +81,13 @@ class PaymentResponseHandler
                 $this->logger->error("The payment was refused, id:  " . $id);
                 // Cancel order
                 break;
+            case 'RedirectShopper':
             case 'IdentifyShopper':
-                // Store response for cart until the payment is done
-                $this->paymentResponseService->insertPaymentResponse($response);
-
-                return $this->controllerResponseJsonBuilder->buildControllerResponseJson(
-                    'threeDS2',
-                    array(
-                        'type' => 'IdentifyShopper',
-                        'token' => $response['authentication']['threeds2.fingerprintToken']
-                    )
-                );
-                break;
             case 'ChallengeShopper':
                 // Store response for cart temporarily until the payment is done
                 $this->paymentResponseService->insertPaymentResponse($response);
 
-                return $this->controllerResponseJsonBuilder->buildControllerResponseJson(
-                    'threeDS2',
-                    array(
-                        'type' => 'ChallengeShopper',
-                        'token' => $response['authentication']['threeds2.challengeToken']
-                    )
-                );
-                break;
-            case 'RedirectShopper':
-                // Check if redirect shopper response data is valid
-                if (empty($response['redirect']['url']) ||
-                    empty($response['redirect']['method']) ||
-                    empty($response['paymentData'])
-                ) {
-                    throw new AdyenException("There was an error with the payment method, please choose another one.");
-                }
-
-                // Store response for cart temporarily until the payment is done
-                $this->paymentResponseService->insertPaymentResponse($response);
-
-                $redirectUrl = $response['redirect']['url'];
-                $redirectMethod = $response['redirect']['method'];
-
-                // Identify if 3DS1 redirect
-                if (!empty($response['redirect']['data']['PaReq']) && !empty($response['redirect']['data']['MD'])) {
-                    $paRequest = $response['redirect']['data']['PaReq'];
-                    $md = $response['redirect']['data']['MD'];
-
-                    return $this->controllerResponseJsonBuilder->buildControllerResponseJson(
-                        'threeDS1',
-                        array(
-                            self::PA_REQUEST => $paRequest,
-                            self::MD => $md,
-                            self::ISSUER_URL => $redirectUrl,
-                            self::REDIRECT_METHOD => $redirectMethod
-                        )
-                    );
-                } else {
-                    return $this->controllerResponseJsonBuilder->buildControllerResponseJson(
-                        'redirect',
-                        array(
-                            'redirectUrl' => $redirectUrl
-                        )
-                    );
-                }
+                return new JsonResponse($response);
                 break;
             case 'Received':
             case 'PresentToShopper':
