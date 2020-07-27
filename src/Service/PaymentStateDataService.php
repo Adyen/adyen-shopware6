@@ -83,17 +83,14 @@ class PaymentStateDataService
 
         if ($stateData) {
             $fields['id'] = $stateData->getId();
-            $this->paymentStateDataRepository->update(
-                [$fields],
-                \Shopware\Core\Framework\Context::createDefaultContext()
-            );
-        } else {
-            $this->paymentStateDataRepository->create(
-                [$fields],
-                \Shopware\Core\Framework\Context::createDefaultContext()
-            );
         }
+
+        $this->paymentStateDataRepository->upsert(
+            [$fields],
+            \Shopware\Core\Framework\Context::createDefaultContext()
+        );
     }
+
 
     /**
      * @param string $contextToken
