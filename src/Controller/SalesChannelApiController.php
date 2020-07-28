@@ -128,4 +128,20 @@ class SalesChannelApiController extends AbstractController
     {
         return new JsonResponse($this->paymentDetailsService->doPaymentDetails($context));
     }
+
+    /**
+     * @RouteScope(scopes={"sales-channel-api"})
+     * @Route(
+     *     "/sales-channel-api/v1/adyen/payment",
+     *     name="sales-channel-api.action.adyen.payment",
+     *     methods={"POST"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function payment(SalesChannelContext $context): JsonResponse
+    {
+        return new JsonResponse(['aloha']);
+    }
 }
