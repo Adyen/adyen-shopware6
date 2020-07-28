@@ -26,14 +26,22 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
-use Adyen\AdyenException;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class PaymentResponseHandler
 {
+    // Merchant reference parameter in return GET parameters list
     const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
+
+    // Merchant reference key in API response
+    const MERCHANT_REFERENCE = 'merchantReference';
     /**
      * @var LoggerInterface
      */
@@ -44,19 +52,32 @@ class PaymentResponseHandler
      */
     private $paymentResponseService;
 
+    /**
+     * @var OrderTransactionStateHandler
+     */
+    private $transactionStateHandler;
+
     public function __construct(
         LoggerInterface $logger,
-        PaymentResponseService $paymentResponseService
+        PaymentResponseService $paymentResponseService,
+        OrderTransactionStateHandler $transactionStateHandler
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
+        $this->transactionStateHandler = $transactionStateHandler;
     }
 
     /**
      * @param array $response
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param SalesChannelContext $salesChannelContext
+     * @return JsonResponse
      */
-    public function handlePaymentResponse($response)
-    {
+    public function handlePaymentResponse(
+        array $response,
+        AsyncPaymentTransactionStruct $transaction,
+        SalesChannelContext $salesChannelContext
+    ) : RedirectResponse {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
 
@@ -65,6 +86,8 @@ class PaymentResponseHandler
         if (!empty($response['pspReference'])) {
             $pspReference = $response['pspReference'];
         }
+
+        $orderTransactionId = $transaction->getOrderTransaction()->getId();
 
         // Based on the result code start different payment flows
         switch ($resultCode) {
@@ -76,10 +99,17 @@ class PaymentResponseHandler
                 break;
             case 'Refused':
                 // Log Refused
-                //TODO replace $id with an actual id
-                $id = 'An id with which we can identify the payment';
-                $this->logger->error("The payment was refused, id:  " . $id);
+                $this->logger->error(
+                    "The payment was refused, order transaction id:  " . $orderTransactionId .
+                    " merchant reference: " . $response[self::MERCHANT_REFERENCE]
+                );
+
                 // Cancel order
+                throw new AsyncPaymentProcessException(
+                    $orderTransactionId,
+                    'The payment was refused'
+                );
+
                 break;
             case 'RedirectShopper':
             case 'IdentifyShopper':
@@ -87,7 +117,8 @@ class PaymentResponseHandler
                 // Store response for cart temporarily until the payment is done
                 $this->paymentResponseService->insertPaymentResponse($response);
 
-                return new JsonResponse($response);
+                //TODO
+                return new RedirectResponse('');
                 break;
             case 'Received':
             case 'PresentToShopper':
@@ -97,24 +128,27 @@ class PaymentResponseHandler
                 break;
             case 'Error':
                 // Log error
-                //TODO replace $id with an actual id
-                $id = 'An id with which we can identify the payment';
                 $this->logger->error(
-                    "There was an error with the payment method. id:  " . $id .
+                    "There was an error with the payment method. id:  " . $orderTransactionId .
                     ' Result code "Error" in response: ' . print_r($response, true)
                 );
                 // Cancel the order
+                throw new AsyncPaymentProcessException(
+                    $orderTransactionId,
+                    'The payment had an error'
+                );
                 break;
             default:
                 // Unsupported resultCode
-                //TODO replace $id with an actual id
-                $id = 'An id with which we can identify the payment';
-
                 $this->logger->error(
-                    "There was an error with the payment method. id:  " . $id .
+                    "There was an error with the payment method. id:  " . $orderTransactionId .
                     ' Unsupported result code in response: ' . print_r($response, true)
                 );
                 // Cancel the order
+                throw new AsyncPaymentProcessException(
+                    $orderTransactionId,
+                    'The payment had an error'
+                );
                 break;
         }
     }
