@@ -414,7 +414,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount(),
-            'test url',
+            $transaction->getReturnUrl(),
             $request
         );
 

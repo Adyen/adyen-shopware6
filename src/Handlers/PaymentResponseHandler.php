@@ -37,7 +37,11 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class PaymentResponseHandler
 {
-    const ADYEN_MERCHANT_REFERENCE = 'merchantReference';
+    // Merchant reference parameter in return GET parameters list
+    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
+
+    // Merchant reference key in API response
+    const MERCHANT_REFERENCE = 'merchantReference';
     /**
      * @var LoggerInterface
      */
@@ -97,7 +101,7 @@ class PaymentResponseHandler
                 // Log Refused
                 $this->logger->error(
                     "The payment was refused, order transaction id:  " . $orderTransactionId .
-                    " merchant reference: " . $response[self::ADYEN_MERCHANT_REFERENCE]
+                    " merchant reference: " . $response[self::MERCHANT_REFERENCE]
                 );
 
                 // Cancel order
