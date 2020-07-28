@@ -24,28 +24,48 @@
 
 namespace Adyen\Shopware\Subscriber;
 
+use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
+use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Adyen\Shopware\Service\PaymentStateDataService;
 
-class SalesChannelContextSwitchEventSubscriber implements EventSubscriberInterface
+class CheckoutSubscriber implements EventSubscriberInterface
 {
 
+    const ADYEN_DATA_EXTENSION_ID = 'adyenFrontendData';
+
+    /**
+     * @var PaymentStateDataService
+     */
     private $paymentStateDataService;
 
-    public function __construct(PaymentStateDataService $paymentStateDataService)
-    {
+    /**
+     * CheckoutSubscriber constructor.
+     * @param PaymentStateDataService $paymentStateDataService
+     */
+    public function __construct(
+        PaymentStateDataService $paymentStateDataService
+    ) {
         $this->paymentStateDataService = $paymentStateDataService;
     }
 
+    /**
+     * @return array|string[]
+     */
     public static function getSubscribedEvents(): array
     {
         return [
-            \Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent::class
-            => 'onContextTokenUpdate'
+            SalesChannelContextSwitchEvent::class => 'onContextTokenUpdate',
+            CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded'
         ];
     }
 
+    /**
+     * Persists the Adyen payment state data on payment method confirmation/update
+     *
+     * @param SalesChannelContextSwitchEvent $event
+     */
     public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
     {
         if ($event->getRequestDataBag()->get('adyenStateData')) {
@@ -55,5 +75,22 @@ class SalesChannelContextSwitchEventSubscriber implements EventSubscriberInterfa
                 $event->getRequestDataBag()->get('adyenOrigin')
             );
         }
+    }
+
+    /**
+     * Adds vars to frontend template to be used in JS
+     *
+     * @param CheckoutConfirmPageLoadedEvent $event
+     */
+    public function onCheckoutConfirmLoaded(CheckoutConfirmPageLoadedEvent $event)
+    {
+        $salesChannelContext = $event->getSalesChannelContext();
+        $page = $event->getPage();
+        $page->addExtension(self::ADYEN_DATA_EXTENSION_ID, new ArrayEntity(
+                [
+                    'languageId' => $salesChannelContext->getContext()->getLanguageId()
+                ]
+            )
+        );
     }
 }
