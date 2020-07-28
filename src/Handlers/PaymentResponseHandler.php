@@ -28,13 +28,15 @@ namespace Adyen\Shopware\Handlers;
 
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Shopware\Core\Checkout\Payment\Cart\SyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\SyncPaymentProcessException;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentResponseHandler
 {
-    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
+    const ADYEN_MERCHANT_REFERENCE = 'merchantReference';
     /**
      * @var LoggerInterface
      */
@@ -45,20 +47,28 @@ class PaymentResponseHandler
      */
     private $paymentResponseService;
 
+    /**
+     * @var OrderTransactionStateHandler
+     */
+    private $transactionStateHandler;
+
     public function __construct(
         LoggerInterface $logger,
-        PaymentResponseService $paymentResponseService
+        PaymentResponseService $paymentResponseService,
+        OrderTransactionStateHandler $transactionStateHandler
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
+        $this->transactionStateHandler = $transactionStateHandler;
     }
 
     /**
-     * @param $response
-     * @param $transaction
-     * @param $salesChannelContext
+     * @param array $response
+     * @param SyncPaymentTransactionStruct $transaction
+     * @param SalesChannelContext $salesChannelContext
+     * @return JsonResponse
      */
-    public function handlePaymentResponse($response, $transaction, $salesChannelContext)
+    public function handlePaymentResponse(array $response, SyncPaymentTransactionStruct $transaction, SalesChannelContext $salesChannelContext)
     {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
