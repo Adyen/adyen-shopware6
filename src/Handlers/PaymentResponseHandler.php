@@ -30,9 +30,10 @@ use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Shopware\Core\Checkout\Payment\Cart\SyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Exception\SyncPaymentProcessException;
+use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class PaymentResponseHandler
 {
@@ -64,15 +65,15 @@ class PaymentResponseHandler
 
     /**
      * @param array $response
-     * @param SyncPaymentTransactionStruct $transaction
+     * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
      * @return JsonResponse
      */
     public function handlePaymentResponse(
         array $response,
-        SyncPaymentTransactionStruct $transaction,
+        AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext
-    ) {
+    ) : RedirectResponse {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
 
@@ -100,7 +101,7 @@ class PaymentResponseHandler
                 );
 
                 // Cancel order
-                throw new SyncPaymentProcessException(
+                throw new AsyncPaymentProcessException(
                     $orderTransactionId,
                     'The payment was refused'
                 );
@@ -112,7 +113,8 @@ class PaymentResponseHandler
                 // Store response for cart temporarily until the payment is done
                 $this->paymentResponseService->insertPaymentResponse($response);
 
-                return new JsonResponse($response);
+                //TODO
+                return new RedirectResponse('');
                 break;
             case 'Received':
             case 'PresentToShopper':
@@ -127,7 +129,7 @@ class PaymentResponseHandler
                     ' Result code "Error" in response: ' . print_r($response, true)
                 );
                 // Cancel the order
-                throw new SyncPaymentProcessException(
+                throw new AsyncPaymentProcessException(
                     $orderTransactionId,
                     'The payment had an error'
                 );
@@ -139,7 +141,7 @@ class PaymentResponseHandler
                     ' Unsupported result code in response: ' . print_r($response, true)
                 );
                 // Cancel the order
-                throw new SyncPaymentProcessException(
+                throw new AsyncPaymentProcessException(
                     $orderTransactionId,
                     'The payment had an error'
                 );
