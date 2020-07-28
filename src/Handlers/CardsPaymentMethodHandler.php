@@ -46,7 +46,6 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 
 class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
-
     /**
      * @var CheckoutService
      */
@@ -103,7 +102,13 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     protected $salesChannelRepository;
 
     /**
+     * @var PaymentResponseHandler
+     */
+    protected $paymentResponseHandler;
+
+    /**
      * CardsPaymentMethodHandler constructor.
+     *
      * @param ConfigurationService $configurationService
      * @param CheckoutService $checkoutService
      * @param Browser $browserBuilder
@@ -114,6 +119,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
+     * @param PaymentResponseHandler $paymentResponseHandler
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -127,6 +133,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
+        PaymentResponseHandler $paymentResponseHandler,
         LoggerInterface $logger
     ) {
         $this->checkoutService = $checkoutService;
@@ -139,6 +146,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
+        $this->paymentResponseHandler = $paymentResponseHandler;
         $this->logger = $logger;
     }
 
@@ -188,7 +196,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             );
         }
 
-        return RedirectResponse::create($transaction->getReturnUrl());
+        //return $this->paymentResponseHandler->handlePaymentResponse($response, $transaction, $salesChannelContext);
     }
 
 
