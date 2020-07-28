@@ -68,8 +68,11 @@ class PaymentResponseHandler
      * @param SalesChannelContext $salesChannelContext
      * @return JsonResponse
      */
-    public function handlePaymentResponse(array $response, SyncPaymentTransactionStruct $transaction, SalesChannelContext $salesChannelContext)
-    {
+    public function handlePaymentResponse(
+        array $response,
+        SyncPaymentTransactionStruct $transaction,
+        SalesChannelContext $salesChannelContext
+    ) {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
 

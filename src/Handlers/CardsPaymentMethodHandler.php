@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -198,7 +199,6 @@ class CardsPaymentMethodHandler implements SynchronousPaymentHandlerInterface
                 $transaction->getOrderTransaction()->getId(),
                 $message
             );
-
         }
 
         $this->paymentResponseHandler->handlePaymentResponse($response, $transaction, $salesChannelContext);
@@ -227,11 +227,13 @@ class CardsPaymentMethodHandler implements SynchronousPaymentHandlerInterface
         SalesChannelContext $salesChannelContext,
         SyncPaymentTransactionStruct $transaction
     ) {
-
         //Get state.data using the context token
-        $request = json_decode($this->paymentStateDataService->getPaymentStateDataFromContextToken(
-            $salesChannelContext->getToken()
-        )->getStateData(), true);
+        $request = json_decode(
+            $this->paymentStateDataService->getPaymentStateDataFromContextToken(
+                $salesChannelContext->getToken()
+            )->getStateData(),
+            true
+        );
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new SyncPaymentProcessException(
