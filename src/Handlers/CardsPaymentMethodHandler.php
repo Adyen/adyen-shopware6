@@ -31,12 +31,11 @@ use Adyen\Service\Builder\Customer;
 use Adyen\Service\Builder\Payment;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Service\PaymentStateDataService;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
+use Shopware\Core\Checkout\Payment\Cart\SyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\SynchronousPaymentHandlerInterface;
+use Shopware\Core\Checkout\Payment\Exception\SyncPaymentProcessException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Util\Currency;
@@ -44,7 +43,7 @@ use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 
-class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+class CardsPaymentMethodHandler implements SynchronousPaymentHandlerInterface
 {
     /**
      * @var CheckoutService
@@ -159,16 +158,16 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param SyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
-     * @return RedirectResponse
+     * @return void
      */
     public function pay(
-        AsyncPaymentTransactionStruct $transaction,
+        SyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
-    ): RedirectResponse {
+    ): void {
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
         } catch (Exception $exception) {
@@ -178,8 +177,8 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
                 $exception->getMessage()
             );
             $this->logger->error($message);
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrder()->getId(),
+            throw new SyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
                 $message
             );
         }
@@ -187,30 +186,22 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         try {
             $response = $this->checkoutService->payments($request);
         } catch (AdyenException $exception) {
-            $this->logger->error(
-                sprintf(
-                    "There was an error with the /payments request. Order number %s: %s",
-                    $transaction->getOrder()->getOrderNumber(),
-                    $exception->getMessage()
-                )
+            $message = sprintf(
+                "There was an error with the /payments request. Order number %s: %s",
+                $transaction->getOrder()->getOrderNumber(),
+                $exception->getMessage()
             );
+
+            $this->logger->error($message);
+
+            throw new SyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
+                $message
+            );
+
         }
 
-        //return $this->paymentResponseHandler->handlePaymentResponse($response, $transaction, $salesChannelContext);
-    }
-
-
-    /**
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param Request $request
-     * @param SalesChannelContext $salesChannelContext
-     */
-    public function finalize(
-        AsyncPaymentTransactionStruct $transaction,
-        Request $request,
-        SalesChannelContext $salesChannelContext
-    ): void {
-        // TODO: Implement finalize() method.
+        $this->paymentResponseHandler->handlePaymentResponse($response, $transaction, $salesChannelContext);
     }
 
     //TODO move to external object or outsource to lib
@@ -229,15 +220,12 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 
     /**
      * @param SalesChannelContext $salesChannelContext
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param SyncPaymentTransactionStruct $transaction
      * @return array
-     * @throws AsyncPaymentProcessException
-     * @throws \Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
      */
     public function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
-        AsyncPaymentTransactionStruct $transaction
+        SyncPaymentTransactionStruct $transaction
     ) {
 
         //Get state.data using the context token
@@ -246,8 +234,8 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         )->getStateData(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrder()->getId(),
+            throw new SyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
                 'Invalid payment state data.'
             );
         }
@@ -409,7 +397,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount(),
-            $transaction->getReturnUrl(),
+            'test url',
             $request
         );
 
