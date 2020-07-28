@@ -5,6 +5,7 @@ import FormSerializeUtil from 'src/utility/form/form-serialize.util';
 import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 
 /* global adyenCheckoutOptions */
+/* eslint-disable no-unused-vars */
 export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
