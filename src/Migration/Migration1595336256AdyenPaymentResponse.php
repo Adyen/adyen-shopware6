@@ -5,7 +5,7 @@ namespace Adyen\Shopware\Migration;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Migration\MigrationStep;
 
-class Migration1595336256PaymentResponse extends MigrationStep
+class Migration1595336256AdyenPaymentResponse extends MigrationStep
 {
     public function getCreationTimestamp(): int
     {
