@@ -86,7 +86,9 @@ class CheckoutSubscriber implements EventSubscriberInterface
     {
         $salesChannelContext = $event->getSalesChannelContext();
         $page = $event->getPage();
-        $page->addExtension(self::ADYEN_DATA_EXTENSION_ID, new ArrayEntity(
+        $page->addExtension(
+            self::ADYEN_DATA_EXTENSION_ID,
+            new ArrayEntity(
                 [
                     'languageId' => $salesChannelContext->getContext()->getLanguageId()
                 ]
