@@ -120,9 +120,7 @@ class PaymentResponseHandler
                     $transaction->getOrder()->getOrderNumber(),
                     $salesChannelContext->getToken()
                 );
-
-                //TODO
-                return new RedirectResponse('');
+                return new RedirectResponse('responseUrl');
                 break;
             case 'Received':
             case 'PresentToShopper':
