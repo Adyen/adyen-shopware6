@@ -29,6 +29,7 @@ namespace Adyen\Shopware\Handlers;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
@@ -57,14 +58,21 @@ class PaymentResponseHandler
      */
     private $transactionStateHandler;
 
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $orderTransactionRepository;
+
     public function __construct(
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
-        OrderTransactionStateHandler $transactionStateHandler
+        OrderTransactionStateHandler $transactionStateHandler,
+        EntityRepositoryInterface $orderTransactionRepository
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
@@ -92,10 +100,20 @@ class PaymentResponseHandler
         // Based on the result code start different payment flows
         switch ($resultCode) {
             case 'Authorised':
-                // Tag order as payed
-
+                // Tag order as paid
+                $context = $salesChannelContext->getContext();
+                $this->transactionStateHandler->paid($orderTransactionId, $context);
                 // Store psp reference for the payment $pspReference
-
+                // read custom fields before writing to it so we don't mess with other plugins
+                $customFields = array_merge(
+                    $transaction->getOrderTransaction()->getCustomFields() ?: [],
+                    ['originalPspReference' => $pspReference]
+                );
+                $transaction->getOrderTransaction()->setCustomFields($customFields);
+                $this->orderTransactionRepository->update(
+                    ['id' => $orderTransactionId, 'customFields' => $customFields],
+                    $context
+                );
                 break;
             case 'Refused':
                 // Log Refused
