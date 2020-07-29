@@ -136,5 +136,7 @@
             <argument type="service"
                       id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPage.inner"/>
         </service>
+        <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
+
     </services>
 </container>
