@@ -29,7 +29,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         const orderId = this.options.orderId;
         const request = new XMLHttpRequest();
         let callback = null;
-        if (typeof(orderId) !== 'undefined' && orderId !== null) { //Only used if the order is being edited
+        if (!!orderId) { //Only used if the order is being edited
             formData.set('orderId', orderId);
             request.open('POST', ''); //TODO define URL for order edit flow
             callback = this.afterSetPayment.bind(this);
