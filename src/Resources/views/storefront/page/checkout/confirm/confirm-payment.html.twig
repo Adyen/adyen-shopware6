@@ -3,10 +3,11 @@
 {% block page_checkout_confirm_payment_inner %}
     {{ parent() }}
     {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\CheckoutSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
-    {% if adyenFrontendData and adyenFrontendData.Url %}
+    {% if adyenFrontendData and adyenFrontendData.paymentUrl %}
         <div id="adyen-checkout-options"
              data-language-id="{{ adyenFrontendData.languageId }}"
-             data-url="{{ adyenFrontendData.Url }}">
+             data-payment-url="{{ adyenFrontendData.paymentUrl }}"
+             data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}">
         </div>
     {% endif %}
     <script>

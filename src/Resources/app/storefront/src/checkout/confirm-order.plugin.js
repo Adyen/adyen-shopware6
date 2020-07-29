@@ -28,12 +28,12 @@ export default class ConfirmOrderPlugin extends Plugin {
         const orderId = this.options.orderId;
         const request = new XMLHttpRequest();
         let callback = null;
-        if (orderId !== null) {
+        if (typeof(orderId) !== 'undefined' && orderId !== null) { //Only used if the order is being edited
             formData.set('orderId', orderId);
-            request.open('POST', adyenCheckoutOptions.url);
+            request.open('POST', adyenCheckoutOptions.paymentUrl);
             callback = this.afterSetPayment.bind(this);
         } else {
-            request.open('POST', this.options.checkoutOrderUrl);
+            request.open('POST', adyenCheckoutOptions.checkoutOrderUrl);
             callback = this.afterCreateOrder.bind(this);
         }
         request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
