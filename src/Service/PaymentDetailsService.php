@@ -105,9 +105,14 @@ class PaymentDetailsService
         // Validate if the payment is not paid yet
         if (false /* TODO is transaction paid */) {
             $this->logger->warning(
-                'paymentDetails is called for an already paid order. Sales channel Api context token: ' . $context->getToken(
-                )
+                'paymentDetails is called for an already paid order. Sales channel Api context token: ' . $context->getToken()
             );
+        }
+
+        // Get orderNumber if sent
+        $orderNumber = $request->request->get('orderNumber');
+        if (empty($orderNumber)) {
+            // TODO error handling
         }
 
         // Get state data object if sent
@@ -119,12 +124,18 @@ class PaymentDetailsService
         }
 
         // Get paymentData for the paymentDetails request
-        $paymentResponse = $this->paymentResponseService->getWithSalesChannelApiContextToken($context->getToken());
+        $paymentResponse = $this->paymentResponseService->getWithSalesChannelApiContextTokenAndOrderNumber($context->getToken(), $orderNumber);
 
         // Check if the payment response is not empty and contains the paymentData
         if (empty($paymentResponse)) {
             $this->logger->error('paymentResponse is empty. Sales channel Api context token: ' . $context->getToken());
             //TODO return error
+        }
+
+        $paymentResponse = json_decode($paymentResponse->getResponse(), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            //TODO error handling
         }
 
         if (empty($paymentResponse['paymentData'])) {
@@ -144,10 +155,11 @@ class PaymentDetailsService
         try {
             $response = $this->checkoutService->paymentsDetails($request);
         } catch (\Adyen\AdyenException $exception) {
-            $this->logger->error();
+            // TODO error handling
+            $this->logger->error('');
+            return [$exception->getMessage()];
         }
-
-        return ["done" => true, 'response' => $response];
+        
         //return $this->paymentResponseHandler->handlePaymentResponse($response, );
     }
 }
