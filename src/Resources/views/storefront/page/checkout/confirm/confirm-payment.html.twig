@@ -9,8 +9,8 @@
              data-payment-url="{{ adyenFrontendData.paymentUrl }}"
              data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}">
         </div>
+        <script>
+            var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
+        </script>
     {% endif %}
-    <script>
-        var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
-    </script>
 {% endblock %}
