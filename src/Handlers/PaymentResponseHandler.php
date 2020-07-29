@@ -29,6 +29,7 @@ namespace Adyen\Shopware\Handlers;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
@@ -57,14 +58,21 @@ class PaymentResponseHandler
      */
     private $transactionStateHandler;
 
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $orderTransactionRepository;
+
     public function __construct(
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
-        OrderTransactionStateHandler $transactionStateHandler
+        OrderTransactionStateHandler $transactionStateHandler,
+        EntityRepositoryInterface $orderTransactionRepository
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
@@ -122,11 +130,22 @@ class PaymentResponseHandler
                 );
                 return new RedirectResponse('responseUrl');
                 break;
+            // Received and PresentToShopper follow the same protocol at this stage
             case 'Received':
             case 'PresentToShopper':
                 // Store payments response for later use
+                $context = $salesChannelContext->getContext();
                 // Return to frontend with additionalData or action
+                $customFields = array_merge(
+                    $transaction->getOrderTransaction()->getCustomFields() ?: [],
+                    ['additionalData' => $response['additionalData']]
+                );
+                $this->orderTransactionRepository->update(
+                    ['id' => $orderTransactionId, 'customFields' => $customFields],
+                    $context
+                );
                 // Tag the order as waiting for payment
+                $this->transactionStateHandler->process($orderTransactionId, $context);
                 break;
             case 'Error':
                 // Log error
