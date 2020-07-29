@@ -87,12 +87,13 @@ class PaymentResponseService
         );
     }
 
-    public function getWithSalesChannelApiContextToken(string $salesChannelApiContextToken) : PaymentResponseEntity
+    public function getWithSalesChannelApiContextTokenAndOrderNumber(string $salesChannelApiContextToken, string $orderNumber) : PaymentResponseEntity
     {
         return $this->repository
             ->search(
                 (new Criteria())
-                    ->addFilter(new EqualsFilter('sales_channel_api_context_token', $salesChannelApiContextToken)),
+                    ->addFilter(new EqualsFilter('orderNumber', $orderNumber))
+                    ->addFilter(new EqualsFilter('token', $salesChannelApiContextToken)),
                 Context::createDefaultContext()
             )
             ->first();
