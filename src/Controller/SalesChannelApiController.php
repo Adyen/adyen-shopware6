@@ -140,7 +140,7 @@ class SalesChannelApiController extends AbstractController
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
-    public function payment(SalesChannelContext $context): JsonResponse
+    public function getPaymentStatus(SalesChannelContext $context): JsonResponse
     {
         return new JsonResponse(['aloha']);
     }
