@@ -40,6 +40,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         request.setRequestHeader('sw-language-id', adyenCheckoutOptions.languageId);
         this._client._sendRequest(request, formData, callback);
+        }
     }
 
     afterCreateOrder(response) {
