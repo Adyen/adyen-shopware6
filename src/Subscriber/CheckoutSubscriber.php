@@ -29,6 +29,7 @@ use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Adyen\Shopware\Service\PaymentStateDataService;
+use Symfony\Component\Routing\RouterInterface;
 
 class CheckoutSubscriber implements EventSubscriberInterface
 {
@@ -41,13 +42,20 @@ class CheckoutSubscriber implements EventSubscriberInterface
     private $paymentStateDataService;
 
     /**
+     * @var RouterInterface
+     */
+    private $router;
+
+    /**
      * CheckoutSubscriber constructor.
      * @param PaymentStateDataService $paymentStateDataService
      */
     public function __construct(
-        PaymentStateDataService $paymentStateDataService
+        PaymentStateDataService $paymentStateDataService,
+        RouterInterface $router
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
+        $this->router = $router;
     }
 
     /**
@@ -90,7 +98,8 @@ class CheckoutSubscriber implements EventSubscriberInterface
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
                 [
-                    'Url' => '/sales-channel-api/v1/adyen/payment',
+                    'paymentUrl' => $this->router->generate('sales-channel-api.action.adyen.payment', ['version' => 2]),
+                    'checkoutOrderUrl' => $this->router->generate('sales-channel-api.checkout.order.create', ['version' => 2]),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId()
                 ]
             )
