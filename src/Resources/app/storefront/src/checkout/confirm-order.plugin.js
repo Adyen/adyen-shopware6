@@ -68,7 +68,16 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterPayOrder(response) {
+        console.log(response);
+        this._client.post(
+            `sales-channel-api/v1/adyen/payment-status`,
+            JSON.stringify({'asd': 1}),
+            this.afterPaymetStatus.bind(this)
+        );
+    }
 
+    afterPaymetStatus(response) {
+        console.log(response);
     }
 
 }
