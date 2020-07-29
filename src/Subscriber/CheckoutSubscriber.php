@@ -99,7 +99,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
             new ArrayEntity(
                 [
                     'paymentStatusUrl' => $this->router->generate(
-                        'sales-channel-api.action.adyen.payment',
+                        'sales-channel-api.action.adyen.payment-status',
                         ['version' => 2]
                     ),
                     'checkoutOrderUrl' => $this->router->generate(
