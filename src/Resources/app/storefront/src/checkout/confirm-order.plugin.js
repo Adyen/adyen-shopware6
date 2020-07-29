@@ -14,6 +14,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     confirmOrder(event) {
+        if (!!adyenCheckoutOptions && !!adyenCheckoutOptions.paymentUrl && adyenCheckoutOptions.checkoutOrderUrl) {
         event.preventDefault();
         const form = event.target;
         if (!form.checkValidity()) {
