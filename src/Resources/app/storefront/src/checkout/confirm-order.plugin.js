@@ -44,7 +44,13 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterCreateOrder(response) {
-        const order = JSON.parse(response);
+        try {
+            const order = JSON.parse(response);
+        } catch () {
+            // Response is not a valid JSON
+            // TODO error handling
+            return;
+        }
         const orderId = order.data.id;
         const params = {};
 
