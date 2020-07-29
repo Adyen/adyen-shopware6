@@ -60,4 +60,15 @@ class PaymentResponseService
             )
             ->first();
     }
+
+    public function getWithSalesChannelApiContextToken(string $salesChannelApiContextToken) : PaymentResponseEntity
+    {
+        return $this->repository
+            ->search(
+                (new Criteria())
+                    ->addFilter(new EqualsFilter('sales_channel_api_context_token', $salesChannelApiContextToken)),
+                Context::createDefaultContext()
+            )
+            ->first();
+    }
 }
