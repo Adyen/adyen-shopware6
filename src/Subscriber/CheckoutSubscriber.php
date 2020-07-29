@@ -98,7 +98,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
                 [
-                    'paymentUrl' => $this->router->generate(
+                    'paymentStatusUrl' => $this->router->generate(
                         'sales-channel-api.action.adyen.payment',
                         ['version' => 2]
                     ),
