@@ -90,6 +90,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
                 [
+                    'Url' => '/sales-channel-api/v1/adyen/payment',
                     'languageId' => $salesChannelContext->getContext()->getLanguageId()
                 ]
             )

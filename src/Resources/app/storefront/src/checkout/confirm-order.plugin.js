@@ -30,7 +30,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         let callback = null;
         if (orderId !== null) {
             formData.set('orderId', orderId);
-            request.open('POST', '/sales-channel-api/v1/adyen/payment');
+            request.open('POST', adyenCheckoutOptions.url);
             callback = this.afterSetPayment.bind(this);
         } else {
             request.open('POST', this.options.checkoutOrderUrl);
