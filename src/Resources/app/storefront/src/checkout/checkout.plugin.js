@@ -1,10 +1,10 @@
 import Plugin from 'src/plugin-system/plugin.class';
 
+/* global adyenCheckoutConfiguration, AdyenCheckout */
+/* eslint-disable no-unused-vars */
 export default class CheckoutPlugin extends Plugin {
 
     init() {
-        /* global adyenCheckoutConfiguration, AdyenCheckout */
-        /* eslint-disable no-unused-vars */
 
         const formattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
 
