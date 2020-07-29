@@ -79,6 +79,7 @@ class PaymentResponseService
         $fields['token'] = $salesChannelContextToken;
         $fields['resultCode'] = $paymentResponse["resultCode"];
         $fields['orderNumber'] = $orderNumber;
+        $fields['response'] = json_encode($paymentResponse);
 
         $this->repository->upsert(
             [$fields],
