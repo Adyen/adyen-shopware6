@@ -42,7 +42,15 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterCreateOrder(response) {
+        const order = JSON.parse(response);
+        const orderId = order.data.id;
+        const params = {};
 
+        this._client.post(
+            `${adyenCheckoutOptions.checkoutOrderUrl}/${orderId}/pay`,
+            JSON.stringify(params),
+            this.afterPayOrder.bind(this)
+        );
     }
 
     afterSetPayment(response) {

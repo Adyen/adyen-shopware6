@@ -50,14 +50,39 @@ class PaymentResponseService
         $this->orderRepository = $orderRepository;
     }
 
-    public function getWithOrderNumber(string $orderNumber) : PaymentResponseEntity
+    public function getWithOrderNumber(string $orderNumber):? PaymentResponseEntity
     {
         return $this->repository
             ->search(
                 (new Criteria())
-                    ->addFilter(new EqualsFilter('order_number', $orderNumber)),
+                    ->addFilter(new EqualsFilter('orderNumber', $orderNumber)),
                 Context::createDefaultContext()
             )
             ->first();
+    }
+
+    public function insertPaymentResponse(
+        array $paymentResponse,
+        string $orderNumber,
+        string $salesChannelContextToken
+    ): void {
+        if (empty($paymentResponse)) {
+            //TODO log error
+            exit;
+        }
+
+        $storedPaymentResponse = $this->getWithOrderNumber($orderNumber);
+        if ($storedPaymentResponse) {
+            $fields['id'] = $storedPaymentResponse->getId();
+        }
+
+        $fields['token'] = $salesChannelContextToken;
+        $fields['resultCode'] = $paymentResponse["resultCode"];
+        $fields['orderNumber'] = $orderNumber;
+
+        $this->repository->upsert(
+            [$fields],
+            Context::createDefaultContext()
+        );
     }
 }
