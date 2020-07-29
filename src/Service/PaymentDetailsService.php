@@ -159,7 +159,8 @@ class PaymentDetailsService
             $this->logger->error('');
             return [$exception->getMessage()];
         }
-        
-        //return $this->paymentResponseHandler->handlePaymentResponse($response, );
+
+        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $context);
+        return $this->paymentResponseHandler->handleAdyenApis($result);
     }
 }
