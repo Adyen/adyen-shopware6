@@ -98,8 +98,14 @@ class CheckoutSubscriber implements EventSubscriberInterface
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
                 [
-                    'paymentUrl' => $this->router->generate('sales-channel-api.action.adyen.payment', ['version' => 2]),
-                    'checkoutOrderUrl' => $this->router->generate('sales-channel-api.checkout.order.create', ['version' => 2]),
+                    'paymentUrl' => $this->router->generate(
+                        'sales-channel-api.action.adyen.payment',
+                        ['version' => 2]
+                    ),
+                    'checkoutOrderUrl' => $this->router->generate(
+                        'sales-channel-api.checkout.order.create',
+                        ['version' => 2]
+                    ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId()
                 ]
             )

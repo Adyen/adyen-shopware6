@@ -115,7 +115,6 @@ class PaymentResponseHandler
             case 'IdentifyShopper':
             case 'ChallengeShopper':
                 // Store response for cart temporarily until the payment is done
-            $response;
                 $this->paymentResponseService->insertPaymentResponse(
                     $response,
                     $transaction->getOrder()->getOrderNumber(),
