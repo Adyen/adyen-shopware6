@@ -5,7 +5,7 @@ namespace Adyen\Shopware\Migration;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Migration\MigrationStep;
 
-class Migration1595336256PaymentResponse extends MigrationStep
+class Migration1595336256AdyenPaymentResponse extends MigrationStep
 {
     public function getCreationTimestamp(): int
     {
@@ -22,6 +22,8 @@ class Migration1595336256PaymentResponse extends MigrationStep
                 `sales_channel_api_context_token` VARCHAR(255) NOT NULL,
                 `result_code` VARCHAR(255) NOT NULL,
                 `response` TEXT,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL

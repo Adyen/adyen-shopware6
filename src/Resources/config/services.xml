@@ -99,9 +99,11 @@
         <service id="Adyen\Shopware\Handlers\PaymentResponseHandler" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
+
         <!--Event subscribers-->
-        <service id="Adyen\Shopware\Subscriber\SalesChannelContextSwitchEventSubscriber">
+        <service id="Adyen\Shopware\Subscriber\CheckoutSubscriber">
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
+            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 
