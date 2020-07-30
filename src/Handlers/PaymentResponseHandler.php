@@ -29,12 +29,12 @@ namespace Adyen\Shopware\Handlers;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 
 class PaymentResponseHandler
 {
@@ -131,13 +131,10 @@ class PaymentResponseHandler
         // Based on the result code start different payment flows
         switch ($resultCode) {
             case self::AUTHORISED:
-                // Tag order as payed
-
-                // Store psp reference for the payment $pspReference
-
+                // Do nothing the payment is authorised no further steps needed
                 break;
             case self::REFUSED:
-                // Log Refused
+                // Log Refused, no further steps needed
                 $this->logger->error(
                     "The payment was refused, order transaction merchant reference: " .
                     $response[self::MERCHANT_REFERENCE]
@@ -146,26 +143,17 @@ class PaymentResponseHandler
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
-                // Store response for cart temporarily until the payment is done
-                $this->paymentResponseService->insertPaymentResponse(
-                    $response,
-                    $orderNumber,
-                    $salesChannelContext->getToken()
-                );
-
-                return $this->paymentResponseHandlerResult;
-                break;
             case self::RECEIVED:
             case self::PRESENT_TO_SHOPPER:
-                // Store payments response for later use
+                // Store response for cart until the payment is finalised
                 $this->paymentResponseService->insertPaymentResponse(
                     $response,
                     $orderNumber,
                     $salesChannelContext->getToken()
                 );
 
-                // Tag the order as waiting for payment
-                // TODO create new order status
+                // Return the standard payment response handler result
+                return $this->paymentResponseHandlerResult;
                 break;
             case self::ERROR:
                 // Log error
@@ -181,8 +169,6 @@ class PaymentResponseHandler
                     "There was an error with the payment method. id:  " .
                     ' Unsupported result code in response: ' . print_r($response, true)
                 );
-
-                break;
         }
     }
 
@@ -269,6 +255,7 @@ class PaymentResponseHandler
             case self::ERROR:
                 return new JsonResponse(
                     [
+                        "isFinal" => true,
                         "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
                     ]
                 );
@@ -278,6 +265,7 @@ class PaymentResponseHandler
             case self::PRESENT_TO_SHOPPER:
                 return new JsonResponse(
                     [
+                        "isFinal" => false,
                         "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
                         "action" => $this->paymentResponseHandlerResult->getAction()
                     ]
@@ -286,6 +274,7 @@ class PaymentResponseHandler
             case self::RECEIVED:
                 return new JsonResponse(
                     [
+                        "isFinal" => true,
                         "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
                         "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
                     ]
@@ -294,6 +283,7 @@ class PaymentResponseHandler
             default:
                 return new JsonResponse(
                     [
+                        "isFinal" => true,
                         "resultCode" => self::ERROR,
                     ]
                 );
