@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Shopware\Exception\PaymentException;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -176,7 +177,7 @@ class PaymentResponseHandler
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
         PaymentResponseHandlerResult $paymentResponseHandlerResult
-    ) {
+    ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $resultCode = $paymentResponseHandlerResult->getResultCode();
         $context = $salesChannelContext->getContext();
@@ -222,7 +223,6 @@ class PaymentResponseHandler
             case self::AUTHORISED:
                 // Tag order as paid
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
-                return new RedirectResponse('notUsedResponse');
                 break;
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
@@ -231,13 +231,12 @@ class PaymentResponseHandler
             case self::PRESENT_TO_SHOPPER:
                 $this->transactionStateHandler->process($orderTransactionId, $context);
                 // Return to the frontend without throwing an exception
-                return new RedirectResponse('notUsedResponse');
                 break;
             case self::REFUSED:
             case self::ERROR:
             default:
                 // Cancel the order
-                throw new AsyncPaymentProcessException(
+                throw new PaymentException(
                     $orderTransactionId,
                     'The payment was cancelled, refused or had an error or an unhandled result code'
                 );
