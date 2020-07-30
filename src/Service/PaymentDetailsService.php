@@ -105,7 +105,8 @@ class PaymentDetailsService
         // Validate if the payment is not paid yet
         if (false /* TODO is transaction paid */) {
             $this->logger->warning(
-                'paymentDetails is called for an already paid order. Sales channel Api context token: ' . $context->getToken()
+                'paymentDetails is called for an already paid order. Sales channel Api context token: ' .
+                $context->getToken()
             );
         }
 
@@ -124,7 +125,10 @@ class PaymentDetailsService
         }
 
         // Get paymentData for the paymentDetails request
-        $paymentResponse = $this->paymentResponseService->getWithSalesChannelApiContextTokenAndOrderNumber($context->getToken(), $orderNumber);
+        $paymentResponse = $this->paymentResponseService->getWithSalesChannelApiContextTokenAndOrderNumber(
+            $context->getToken(),
+            $orderNumber
+        );
 
         // Check if the payment response is not empty and contains the paymentData
         if (empty($paymentResponse)) {
@@ -140,8 +144,8 @@ class PaymentDetailsService
 
         if (empty($paymentResponse['paymentData'])) {
             $this->logger->error(
-                'paymentData is missing from the paymentResponse. Sales channel Api context token: ' . $context->getToken(
-                )
+                'paymentData is missing from the paymentResponse. Sales channel Api context token: ' .
+                $context->getToken()
             );
             //TODO return error
         }

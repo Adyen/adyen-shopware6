@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -92,11 +93,13 @@ class SalesChannelApiController extends AbstractController
      */
     public function originKey(SalesChannelContext $context): JsonResponse
     {
-        return new JsonResponse([
-            $this->originKeyService
-                ->getOriginKeyForOrigin($this->salesChannelRepository->getSalesChannelUrl($context))
-                ->getOriginKey()
-        ]);
+        return new JsonResponse(
+            [
+                $this->originKeyService
+                    ->getOriginKeyForOrigin($this->salesChannelRepository->getSalesChannelUrl($context))
+                    ->getOriginKey()
+            ]
+        );
     }
 
     /**
@@ -128,8 +131,11 @@ class SalesChannelApiController extends AbstractController
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
-    public function postPaymentDetails(Request $request, RequestDataBag $data,SalesChannelContext $context): JsonResponse
-    {
+    public function postPaymentDetails(
+        Request $request,
+        RequestDataBag $data,
+        SalesChannelContext $context
+    ): JsonResponse {
         return new JsonResponse($this->paymentDetailsService->doPaymentDetails($request, $data, $context));
     }
 

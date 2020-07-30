@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -50,7 +51,7 @@ class PaymentResponseService
         $this->orderRepository = $orderRepository;
     }
 
-    public function getWithOrderNumber(string $orderNumber):? PaymentResponseEntity
+    public function getWithOrderNumber(string $orderNumber): ?PaymentResponseEntity
     {
         return $this->repository
             ->search(
@@ -87,8 +88,10 @@ class PaymentResponseService
         );
     }
 
-    public function getWithSalesChannelApiContextTokenAndOrderNumber(string $salesChannelApiContextToken, string $orderNumber) : PaymentResponseEntity
-    {
+    public function getWithSalesChannelApiContextTokenAndOrderNumber(
+        string $salesChannelApiContextToken,
+        string $orderNumber
+    ): PaymentResponseEntity {
         return $this->repository
             ->search(
                 (new Criteria())

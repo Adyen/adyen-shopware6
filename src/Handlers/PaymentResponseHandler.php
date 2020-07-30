@@ -246,47 +246,39 @@ class PaymentResponseHandler
 
     public function handleAdyenApis(
         PaymentResponseHandlerResult $paymentResponseHandlerResult
-    ): JsonResponse {
+    ): array {
         $resultCode = $paymentResponseHandlerResult->getResultCode();
 
         switch ($resultCode) {
             case self::AUTHORISED:
             case self::REFUSED:
             case self::ERROR:
-                return new JsonResponse(
-                    [
+                return [
                         "isFinal" => true,
                         "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
-                    ]
-                );
+                    ];
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::PRESENT_TO_SHOPPER:
-                return new JsonResponse(
-                    [
+                return [
                         "isFinal" => false,
                         "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
                         "action" => $this->paymentResponseHandlerResult->getAction()
-                    ]
-                );
+                    ];
                 break;
             case self::RECEIVED:
-                return new JsonResponse(
-                    [
+                return [
                         "isFinal" => true,
                         "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
                         "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
-                    ]
-                );
+                    ];
                 break;
             default:
-                return new JsonResponse(
-                    [
+                return [
                         "isFinal" => true,
                         "resultCode" => self::ERROR,
-                    ]
-                );
+                    ];
         }
     }
 }
