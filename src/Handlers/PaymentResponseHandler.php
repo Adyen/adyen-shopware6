@@ -172,7 +172,7 @@ class PaymentResponseHandler
         }
     }
 
-    public function handleShopwareAPIs(
+    public function handleShopwareApis(
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
         PaymentResponseHandlerResult $paymentResponseHandlerResult
