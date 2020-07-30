@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  *                       ######
@@ -25,6 +26,7 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Controller;
 
+use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -61,23 +63,31 @@ class SalesChannelApiController extends AbstractController
     private $paymentDetailsService;
 
     /**
+     * @var CheckoutStateDataValidator
+     */
+    private $checkoutStateDataValidator;
+
+    /**
      * SalesChannelApiController constructor.
      *
      * @param OriginKeyService $originKeyService
      * @param PaymentMethodsService $paymentMethodsService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentDetailsService $paymentDetailsService
+     * @param CheckoutStateDataValidator $checkoutStateDataValidator
      */
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
         SalesChannelRepository $salesChannelRepository,
-        PaymentDetailsService $paymentDetailsService
+        PaymentDetailsService $paymentDetailsService,
+        CheckoutStateDataValidator $checkoutStateDataValidator
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentDetailsService = $paymentDetailsService;
+        $this->checkoutStateDataValidator = $checkoutStateDataValidator;
     }
 
     /**
@@ -127,16 +137,30 @@ class SalesChannelApiController extends AbstractController
      * )
      *
      * @param Request $request
-     * @param RequestDataBag $data
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
     public function postPaymentDetails(
         Request $request,
-        RequestDataBag $data,
         SalesChannelContext $context
     ): JsonResponse {
-        return new JsonResponse($this->paymentDetailsService->doPaymentDetails($request, $data, $context));
+
+        $orderNumber = $request->request->get('orderNumber');
+        if (empty($orderNumber)) {
+            // TODO error handling
+        }
+
+        // Get state data object if sent
+        $stateData = $request->request->get('stateData');
+
+        // Validate stateData object
+        if (!empty($stateData)) {
+            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
+        }
+
+        $result = $this->paymentDetailsService->doPaymentDetails($stateData, $orderNumber, $context);
+
+        return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
     }
 
     /**
