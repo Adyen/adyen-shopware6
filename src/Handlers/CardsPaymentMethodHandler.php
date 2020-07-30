@@ -207,7 +207,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 
         $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $salesChannelContext);
 
-        return $this->paymentResponseHandler->handleShopwareAPIs($transaction, $salesChannelContext, $result);
+        return $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
     }
 
     /**
