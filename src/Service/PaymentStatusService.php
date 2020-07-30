@@ -52,6 +52,10 @@ class PaymentStatusService
     {
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getToken());
         $responseData = json_decode($paymentResponse->getResponse(), true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            //TODO error handling
+        }
         $result = $this->paymentResponseHandler->handlePaymentResponse(
             $responseData,
             $paymentResponse->getOrderNumber(),
