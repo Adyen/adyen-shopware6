@@ -241,7 +241,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
-        // TODO: Implement finalize() method.
+        $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
     }
 
     //TODO move to external object or outsource to lib

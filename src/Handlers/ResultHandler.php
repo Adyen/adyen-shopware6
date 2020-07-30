@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -24,9 +26,12 @@
 
 namespace Adyen\Shopware\Handlers;
 
-use Adyen\AdyenException;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Adyen\Shopware\Exception\PaymentException;
+use Adyen\Shopware\Service\PaymentDetailsService;
+use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\CheckoutService;
@@ -61,59 +66,74 @@ class ResultHandler
     private $paymentResponseHandler;
 
     /**
+     * @var PaymentDetailsService
+     */
+    private $paymentDetailsService;
+
+    /**
      * ResultHandler constructor.
+     *
      * @param Request $request
      * @param CheckoutService $checkoutService
      * @param PaymentResponseService $paymentResponseService
      * @param LoggerInterface $logger
      * @param PaymentResponseHandler $paymentResponseHandler
+     * @param PaymentDetailsService $paymentDetailsService
      */
     public function __construct(
         Request $request,
         CheckoutService $checkoutService,
         PaymentResponseService $paymentResponseService,
         LoggerInterface $logger,
-        PaymentResponseHandler $paymentResponseHandler
+        PaymentResponseHandler $paymentResponseHandler,
+        PaymentDetailsService $paymentDetailsService
     ) {
         $this->request = $request;
         $this->checkoutService = $checkoutService;
         $this->paymentResponseService = $paymentResponseService;
         $this->logger = $logger;
         $this->paymentResponseHandler = $paymentResponseHandler;
+        $this->paymentDetailsService = $paymentDetailsService;
     }
 
     /**
      * @return RedirectResponse
      * @throws InconsistentCriteriaIdsException
      */
-    public function processResult()
-    {
-        $orderNumber = $this->request->get(PaymentResponseHandler::ADYEN_MERCHANT_REFERENCE);
-
-        if ($orderNumber) {
-            //Get the order's payment response
-            $paymentResponse = $this->paymentResponseService
-                ->getWithOrderNumber($orderNumber);
-
-            // Validate if cart exists and if we have the necessary objects stored, if not redirect back to order page
-            if (empty($paymentResponse) || empty($paymentResponse['paymentData']) || !$paymentResponse->getCart()) {
-                // TODO: restore the customer cart before redirecting
-                return new RedirectResponse('/checkout/cart');
-            }
+    public function processResult(
+        AsyncPaymentTransactionStruct $transaction,
+        Request $request,
+        SalesChannelContext $salesChannelContext
+    ) {
+        // Get details to validate
+        $details = $request->request->all();
+        if (empty($details)) {
+            throw new AsyncPaymentFinalizeException('Query parameters are missing from return URL');
         }
+
+        // Get order number
+        $orderNumber = $request->get(PaymentResponseHandler::ADYEN_MERCHANT_REFERENCE);
+        if (empty($orderNumber)) {
+            throw new AsyncPaymentFinalizeException('Adyen merchant reference parameter is missing from return URL');
+        }
+
+        // Validate the return
+        $result = $this->paymentDetailsService->doPaymentDetails(
+            $details,
+            $orderNumber,
+            $salesChannelContext
+        );
 
         try {
-            $response = $this->checkoutService->paymentsDetails(
-                array(
-                    'paymentData' => $paymentResponse['paymentData'],
-                    'details' => array_merge($this->request->query->all(), $this->request->request->all())
-                )
+            // Process the result and handle the transaction
+            $this->paymentResponseHandler->handleShopwareAPIs(
+                $transaction,
+                $salesChannelContext,
+                $result
             );
-            $this->paymentResponseHandler->handlePaymentResponse($response);
-        } catch (AdyenException $exception) {
-            $this->logger->error($exception->getMessage());
-            // TODO: restore the customer cart before redirecting
-            return new RedirectResponse('/checkout/cart');
+        } catch (PaymentException $exception) {
+            throw new AsyncPaymentFinalizeException($exception->getMessage());
         }
+
     }
 }
