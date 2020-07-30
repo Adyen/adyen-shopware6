@@ -140,11 +140,22 @@ class PaymentResponseHandler
                 );
                 return new RedirectResponse('responseUrl');
                 break;
+            // Received and PresentToShopper follow the same protocol at this stage
             case 'Received':
             case 'PresentToShopper':
                 // Store payments response for later use
+                $context = $salesChannelContext->getContext();
                 // Return to frontend with additionalData or action
+                $customFields = array_merge(
+                    $transaction->getOrderTransaction()->getCustomFields() ?: [],
+                    ['additionalData' => $response['additionalData']]
+                );
+                $this->orderTransactionRepository->update(
+                    ['id' => $orderTransactionId, 'customFields' => $customFields],
+                    $context
+                );
                 // Tag the order as waiting for payment
+                $this->transactionStateHandler->process($orderTransactionId, $context);
                 break;
             case 'Error':
                 // Log error
