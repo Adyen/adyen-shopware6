@@ -55,7 +55,8 @@ class PaymentStatusService
         $result = $this->paymentResponseHandler->handlePaymentResponse(
             $responseData,
             $paymentResponse->getOrderNumber(),
-            $context);
+            $context
+        );
         return $this->paymentResponseHandler->handleAdyenApis($result);
     }
 }
