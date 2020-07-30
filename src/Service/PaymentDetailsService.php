@@ -100,8 +100,11 @@ class PaymentDetailsService
      * @param SalesChannelContext $context
      * @return array
      */
-    public function doPaymentDetails(array $details, string $orderNumber, SalesChannelContext $context): PaymentResponseHandlerResult
-    {
+    public function doPaymentDetails(
+        array $details,
+        string $orderNumber,
+        SalesChannelContext $context
+    ): PaymentResponseHandlerResult {
         // Validate if the payment is not paid yet
         if (false /* TODO is transaction paid */) {
             $this->logger->warning(
@@ -149,7 +152,6 @@ class PaymentDetailsService
             $this->logger->error($exception->getMessage());
         }
 
-         return $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $context);
-
+        return $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $context);
     }
 }

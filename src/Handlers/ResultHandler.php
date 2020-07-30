@@ -134,6 +134,5 @@ class ResultHandler
         } catch (PaymentException $exception) {
             throw new AsyncPaymentFinalizeException($exception->getMessage());
         }
-
     }
 }
