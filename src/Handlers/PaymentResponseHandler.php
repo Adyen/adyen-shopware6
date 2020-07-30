@@ -48,6 +48,11 @@ class PaymentResponseHandler
     const PRESENT_TO_SHOPPER = 'PresentToShopper';
     const ERROR = 'Error';
 
+    const PSP_REFERENCE = 'pspReference';
+    const ORIGINAL_PSP_REFERENCE = 'originalPspReference';
+    const ADDITIONAL_DATA = 'additionalData';
+    const ACTION = 'action';
+
 
     // Merchant reference parameter in return GET parameters list
     const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
@@ -109,18 +114,18 @@ class PaymentResponseHandler
         $this->paymentResponseHandlerResult->setResultCode($resultCode);
 
         // Retrieve PSP reference from response array if available
-        if (!empty($response['pspReference'])) {
-            $this->paymentResponseHandlerResult->setPspReference($response['pspReference']);
+        if (!empty($response[self::PSP_REFERENCE])) {
+            $this->paymentResponseHandlerResult->setPspReference($response[self::PSP_REFERENCE]);
         }
 
         // Set action in result object if available
-        if (!empty($response['action'])) {
-            $this->paymentResponseHandlerResult->setAction($response['action']);
+        if (!empty($response[self::ACTION])) {
+            $this->paymentResponseHandlerResult->setAction($response[self::ACTION]);
         }
 
         // Set additionalData in result object if available
-        if (!empty($response['additionalData'])) {
-            $this->paymentResponseHandlerResult->setAdditionalData($response['additionalData']);
+        if (!empty($response[self::ADDITIONAL_DATA])) {
+            $this->paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
         }
 
         // Based on the result code start different payment flows
@@ -190,36 +195,57 @@ class PaymentResponseHandler
         $resultCode = $paymentResponseHandlerResult->getResultCode();
         $context = $salesChannelContext->getContext();
 
-        // Only store psp reference for the transaction if this is the firs/original pspreference
+        // Get already stored transaction custom fileds
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
+
+        // Store action, additionalData and originalPspReference in the transaction
+        $transactionCustomFields = [];
+
+        // Only store psp reference for the transaction if this is the first/original pspreference
         $pspReference = $this->paymentResponseHandlerResult->getPspReference();
-        if (empty($storedTransactionCustomFields['originalPspReference']) && !empty($pspReference)) {
-
-            // read custom fields before writing to it so we don't mess with other plugins
-            $customFields = array_merge(
-                $storedTransactionCustomFields,
-                ['originalPspReference' => $pspReference]
-            );
-
-            $transaction->getOrderTransaction()->setCustomFields($customFields);
-
-            $this->orderTransactionRepository->update(
-                ['id' => $orderTransactionId, 'customFields' => $customFields],
-                $context
-            );
+        if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE]) && !empty($pspReference)) {
+            $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
         }
+
+        // Only store action for the transaction if this is the first action
+        $action = $this->paymentResponseHandlerResult->getAction();
+        if (empty($storedTransactionCustomFields[self::ACTION]) && !empty($action)) {
+            $transactionCustomFields[self::ACTION] = $action;
+        }
+
+        // Only store additional data for the transaction if this is the first additional data
+        $additionalData = $this->paymentResponseHandlerResult->getAction();
+        if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA]) && !empty($additionalData)) {
+            $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
+        }
+
+        // read custom fields before writing to it so we don't mess with other plugins
+        $customFields = array_merge(
+            $storedTransactionCustomFields,
+            $transactionCustomFields
+        );
+
+        $transaction->getOrderTransaction()->setCustomFields($customFields);
+
+        $this->orderTransactionRepository->update(
+            ['id' => $orderTransactionId, 'customFields' => $customFields],
+            $context
+        );
 
         switch ($resultCode) {
             case self::AUTHORISED:
                 // Tag order as paid
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
+                return new RedirectResponse('notUsedResponse');
+                break;
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::RECEIVED:
             case self::PRESENT_TO_SHOPPER:
+                $this->transactionStateHandler->process($orderTransactionId, $context);
                 // Return to the frontend without throwing an exception
-                return new RedirectResponse('redirectUrl');
+                return new RedirectResponse('notUsedResponse');
                 break;
             case self::REFUSED:
             case self::ERROR:
