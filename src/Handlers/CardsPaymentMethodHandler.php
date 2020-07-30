@@ -32,6 +32,7 @@ use Adyen\Service\Builder\Browser;
 use Adyen\Service\Builder\Customer;
 use Adyen\Service\Builder\Payment;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -109,6 +110,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     protected $paymentResponseHandler;
 
     /**
+     * @var ResultHandler
+     */
+    protected $resultHandler;
+
+    /**
      * CardsPaymentMethodHandler constructor.
      *
      * @param ConfigurationService $configurationService
@@ -122,6 +128,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
+     * @param ResultHandler $resultHandler
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -136,6 +143,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
         PaymentResponseHandler $paymentResponseHandler,
+        ResultHandler $resultHandler,
         LoggerInterface $logger
     ) {
         $this->checkoutService = $checkoutService;
@@ -149,6 +157,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
+        $this->resultHandler = $resultHandler;
         $this->logger = $logger;
     }
 
@@ -205,9 +214,21 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 
         $orderNumber = $transaction->getOrder()->getOrderNumber();
 
+        if (!empty($orderNumber)) {
+            throw new AsyncPaymentProcessException('Order number is missing');
+        }
+
         $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $salesChannelContext);
 
-        return $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
+        try {
+            $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
+        } catch (PaymentException $exception) {
+            // Cancel payment in shopware
+            throw new AsyncPaymentProcessException($exception->getMessage());
+        }
+
+        // Payment had no error, continue the process
+        return new RedirectResponse('unusedRedirectUrl');
     }
 
     /**
