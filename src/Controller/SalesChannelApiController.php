@@ -165,7 +165,7 @@ class SalesChannelApiController extends AbstractController
         return new JsonResponse(
             $this->paymentStatusService->getPaymentStatusWithOrderId(
                 $request->get('orderId'),
-                $context->getToken()
+                $context
             )
         );
     }

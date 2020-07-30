@@ -25,6 +25,9 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+
 class PaymentStatusService
 {
     /**
@@ -32,27 +35,27 @@ class PaymentStatusService
      */
     private $paymentResponseService;
 
+    /**
+     * @var PaymentResponseHandler
+     */
+    private $paymentResponseHandler;
+
     public function __construct(
-        PaymentResponseService $paymentResponseService
+        PaymentResponseService $paymentResponseService,
+        PaymentResponseHandler $paymentResponseHandler
     ) {
         $this->paymentResponseService = $paymentResponseService;
+        $this->paymentResponseHandler = $paymentResponseHandler;
     }
 
-    public function getPaymentStatusWithOrderId(string $orderId, string $contextToken): array
+    public function getPaymentStatusWithOrderId(string $orderId, SalesChannelContext $context): array
     {
-        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $contextToken);
+        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getToken());
         $responseData = json_decode($paymentResponse->getResponse(), true);
-        $action = [];
-
-        if ($responseData['action']) {
-            $action = [$responseData['action']];
-        }
-
-        $paymentStatus = [
-            'paymentResponseResultCode' => $paymentResponse->getResultCode(),
-            'action' => $action
-        ];
-
-        return $paymentStatus;
+        $result = $this->paymentResponseHandler->handlePaymentResponse(
+            $responseData,
+            $paymentResponse->getOrderNumber(),
+            $context);
+        return $this->paymentResponseHandler->handleAdyenApis($result);
     }
 }
