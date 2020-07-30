@@ -160,8 +160,13 @@ class SalesChannelApiController extends AbstractController
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
-    public function getPaymentStatus(Request $request): JsonResponse
+    public function getPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
     {
-        return new JsonResponse($this->paymentStatusService->getPaymentStatusWithOrderId($request->get('orderId')));
+        return new JsonResponse(
+            $this->paymentStatusService->getPaymentStatusWithOrderId(
+                $request->get('orderId'),
+                $context->getToken()
+            )
+        );
     }
 }

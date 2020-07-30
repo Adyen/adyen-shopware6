@@ -38,9 +38,9 @@ class PaymentStatusService
         $this->paymentResponseService = $paymentResponseService;
     }
 
-    public function getPaymentStatusWithOrderId(string $orderId): array
+    public function getPaymentStatusWithOrderId(string $orderId, string $contextToken): array
     {
-        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
+        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $contextToken);
         $responseData = json_decode($paymentResponse->getResponse(), true);
         $action = [];
 
