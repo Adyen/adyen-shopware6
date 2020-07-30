@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -27,7 +28,9 @@ namespace Adyen\Shopware\Controller;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\Shopware\Service\OriginKeyService;
@@ -90,11 +93,13 @@ class SalesChannelApiController extends AbstractController
      */
     public function originKey(SalesChannelContext $context): JsonResponse
     {
-        return new JsonResponse([
-            $this->originKeyService
-                ->getOriginKeyForOrigin($this->salesChannelRepository->getSalesChannelUrl($context))
-                ->getOriginKey()
-        ]);
+        return new JsonResponse(
+            [
+                $this->originKeyService
+                    ->getOriginKeyForOrigin($this->salesChannelRepository->getSalesChannelUrl($context))
+                    ->getOriginKey()
+            ]
+        );
     }
 
     /**
@@ -121,12 +126,17 @@ class SalesChannelApiController extends AbstractController
      *     methods={"POST"}
      * )
      *
+     * @param Request $request
+     * @param RequestDataBag $data
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
-    public function postPaymentDetails(SalesChannelContext $context): JsonResponse
-    {
-        return new JsonResponse($this->paymentDetailsService->doPaymentDetails($context));
+    public function postPaymentDetails(
+        Request $request,
+        RequestDataBag $data,
+        SalesChannelContext $context
+    ): JsonResponse {
+        return new JsonResponse($this->paymentDetailsService->doPaymentDetails($request, $data, $context));
     }
 
     /**

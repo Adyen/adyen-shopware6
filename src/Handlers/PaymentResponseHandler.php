@@ -38,6 +38,22 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class PaymentResponseHandler
 {
+
+    const AUTHORISED = 'Authorised';
+    const REFUSED = 'Refused';
+    const REDIRECT_SHOPPER = 'RedirectShopper';
+    const IDENTIFY_SHOPPER = 'IdentifyShopper';
+    const CHALLENGE_SHOPPER = 'ChallengeShopper';
+    const RECEIVED = 'Received';
+    const PRESENT_TO_SHOPPER = 'PresentToShopper';
+    const ERROR = 'Error';
+
+    const PSP_REFERENCE = 'pspReference';
+    const ORIGINAL_PSP_REFERENCE = 'originalPspReference';
+    const ADDITIONAL_DATA = 'additionalData';
+    const ACTION = 'action';
+
+
     // Merchant reference parameter in return GET parameters list
     const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
 
@@ -59,6 +75,11 @@ class PaymentResponseHandler
     private $transactionStateHandler;
 
     /**
+     * @var PaymentResponseHandlerResult
+     */
+    private $paymentResponseHandlerResult;
+
+    /**
      * @var EntityRepositoryInterface
      */
     private $orderTransactionRepository;
@@ -67,120 +88,197 @@ class PaymentResponseHandler
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
+        PaymentResponseHandlerResult $paymentResponseHandlerResult,
         EntityRepositoryInterface $orderTransactionRepository
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
+        $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
      * @param array $response
-     * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
-     * @return JsonResponse
+     * @return
      */
     public function handlePaymentResponse(
         array $response,
-        AsyncPaymentTransactionStruct $transaction,
+        string $orderNumber,
         SalesChannelContext $salesChannelContext
-    ) : RedirectResponse {
+    ): PaymentResponseHandlerResult {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
 
+        $this->paymentResponseHandlerResult->setResultCode($resultCode);
+
         // Retrieve PSP reference from response array if available
-        $pspReference = '';
-        if (!empty($response['pspReference'])) {
-            $pspReference = $response['pspReference'];
+        if (!empty($response[self::PSP_REFERENCE])) {
+            $this->paymentResponseHandlerResult->setPspReference($response[self::PSP_REFERENCE]);
         }
 
-        $orderTransactionId = $transaction->getOrderTransaction()->getId();
+        // Set action in result object if available
+        if (!empty($response[self::ACTION])) {
+            $this->paymentResponseHandlerResult->setAction($response[self::ACTION]);
+        }
+
+        // Set additionalData in result object if available
+        if (!empty($response[self::ADDITIONAL_DATA])) {
+            $this->paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
+        }
 
         // Based on the result code start different payment flows
         switch ($resultCode) {
-            case 'Authorised':
-                // Tag order as paid
-                $context = $salesChannelContext->getContext();
-                $this->transactionStateHandler->paid($orderTransactionId, $context);
-                // Store psp reference for the payment $pspReference
-                // read custom fields before writing to it so we don't mess with other plugins
-                $customFields = array_merge(
-                    $transaction->getOrderTransaction()->getCustomFields() ?: [],
-                    ['originalPspReference' => $pspReference]
-                );
-                $transaction->getOrderTransaction()->setCustomFields($customFields);
-                $this->orderTransactionRepository->update(
-                    ['id' => $orderTransactionId, 'customFields' => $customFields],
-                    $context
-                );
+            case self::AUTHORISED:
+                // Do nothing the payment is authorised no further steps needed
                 break;
-            case 'Refused':
-                // Log Refused
+            case self::REFUSED:
+                // Log Refused, no further steps needed
                 $this->logger->error(
-                    "The payment was refused, order transaction id:  " . $orderTransactionId .
-                    " merchant reference: " . $response[self::MERCHANT_REFERENCE]
+                    "The payment was refused, order transaction merchant reference: " .
+                    $response[self::MERCHANT_REFERENCE]
                 );
-
-                // Cancel order
-                throw new AsyncPaymentProcessException(
-                    $orderTransactionId,
-                    'The payment was refused'
-                );
-
                 break;
-            case 'RedirectShopper':
-            case 'IdentifyShopper':
-            case 'ChallengeShopper':
-                // Store response for cart temporarily until the payment is done
+            case self::REDIRECT_SHOPPER:
+            case self::IDENTIFY_SHOPPER:
+            case self::CHALLENGE_SHOPPER:
+            case self::RECEIVED:
+            case self::PRESENT_TO_SHOPPER:
+                // Store response for cart until the payment is finalised
                 $this->paymentResponseService->insertPaymentResponse(
                     $response,
-                    $transaction->getOrder()->getOrderNumber(),
+                    $orderNumber,
                     $salesChannelContext->getToken()
                 );
-                return new RedirectResponse('responseUrl');
+
+                // Return the standard payment response handler result
+                return $this->paymentResponseHandlerResult;
                 break;
-            // Received and PresentToShopper follow the same protocol at this stage
-            case 'Received':
-            case 'PresentToShopper':
-                // Store payments response for later use
-                $context = $salesChannelContext->getContext();
-                // Return to frontend with additionalData or action
-                $customFields = array_merge(
-                    $transaction->getOrderTransaction()->getCustomFields() ?: [],
-                    ['additionalData' => $response['additionalData']]
-                );
-                $this->orderTransactionRepository->update(
-                    ['id' => $orderTransactionId, 'customFields' => $customFields],
-                    $context
-                );
-                // Tag the order as waiting for payment
-                $this->transactionStateHandler->process($orderTransactionId, $context);
-                break;
-            case 'Error':
+            case self::ERROR:
                 // Log error
                 $this->logger->error(
-                    "There was an error with the payment method. id:  " . $orderTransactionId .
+                    'There was an error with the payment method. ' .
                     ' Result code "Error" in response: ' . print_r($response, true)
                 );
-                // Cancel the order
-                throw new AsyncPaymentProcessException(
-                    $orderTransactionId,
-                    'The payment had an error'
-                );
+
                 break;
             default:
                 // Unsupported resultCode
                 $this->logger->error(
-                    "There was an error with the payment method. id:  " . $orderTransactionId .
+                    "There was an error with the payment method. id:  " .
                     ' Unsupported result code in response: ' . print_r($response, true)
                 );
+        }
+    }
+
+    public function handleShopwareApis(
+        AsyncPaymentTransactionStruct $transaction,
+        SalesChannelContext $salesChannelContext,
+        PaymentResponseHandlerResult $paymentResponseHandlerResult
+    ) {
+        $orderTransactionId = $transaction->getOrderTransaction()->getId();
+        $resultCode = $paymentResponseHandlerResult->getResultCode();
+        $context = $salesChannelContext->getContext();
+
+        // Get already stored transaction custom fileds
+        $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
+
+        // Store action, additionalData and originalPspReference in the transaction
+        $transactionCustomFields = [];
+
+        // Only store psp reference for the transaction if this is the first/original pspreference
+        $pspReference = $this->paymentResponseHandlerResult->getPspReference();
+        if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE]) && !empty($pspReference)) {
+            $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
+        }
+
+        // Only store action for the transaction if this is the first action
+        $action = $this->paymentResponseHandlerResult->getAction();
+        if (empty($storedTransactionCustomFields[self::ACTION]) && !empty($action)) {
+            $transactionCustomFields[self::ACTION] = $action;
+        }
+
+        // Only store additional data for the transaction if this is the first additional data
+        $additionalData = $this->paymentResponseHandlerResult->getAction();
+        if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA]) && !empty($additionalData)) {
+            $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
+        }
+
+        // read custom fields before writing to it so we don't mess with other plugins
+        $customFields = array_merge(
+            $storedTransactionCustomFields,
+            $transactionCustomFields
+        );
+
+        $transaction->getOrderTransaction()->setCustomFields($customFields);
+
+        $this->orderTransactionRepository->update(
+            ['id' => $orderTransactionId, 'customFields' => $customFields],
+            $context
+        );
+
+        switch ($resultCode) {
+            case self::AUTHORISED:
+                // Tag order as paid
+                $this->transactionStateHandler->paid($orderTransactionId, $context);
+                return new RedirectResponse('notUsedResponse');
+                break;
+            case self::REDIRECT_SHOPPER:
+            case self::IDENTIFY_SHOPPER:
+            case self::CHALLENGE_SHOPPER:
+            case self::RECEIVED:
+            case self::PRESENT_TO_SHOPPER:
+                $this->transactionStateHandler->process($orderTransactionId, $context);
+                // Return to the frontend without throwing an exception
+                return new RedirectResponse('notUsedResponse');
+                break;
+            case self::REFUSED:
+            case self::ERROR:
+            default:
                 // Cancel the order
                 throw new AsyncPaymentProcessException(
                     $orderTransactionId,
-                    'The payment had an error'
+                    'The payment was cancelled, refused or had an error or an unhandled result code'
                 );
+        }
+    }
+
+    public function handleAdyenApis(
+        PaymentResponseHandlerResult $paymentResponseHandlerResult
+    ): array {
+        $resultCode = $paymentResponseHandlerResult->getResultCode();
+
+        switch ($resultCode) {
+            case self::AUTHORISED:
+            case self::REFUSED:
+            case self::ERROR:
+                return [
+                        "isFinal" => true,
+                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                    ];
+            case self::REDIRECT_SHOPPER:
+            case self::IDENTIFY_SHOPPER:
+            case self::CHALLENGE_SHOPPER:
+            case self::PRESENT_TO_SHOPPER:
+                return [
+                        "isFinal" => false,
+                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                        "action" => $this->paymentResponseHandlerResult->getAction()
+                    ];
                 break;
+            case self::RECEIVED:
+                return [
+                        "isFinal" => true,
+                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                        "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
+                    ];
+                break;
+            default:
+                return [
+                        "isFinal" => true,
+                        "resultCode" => self::ERROR,
+                    ];
         }
     }
 }

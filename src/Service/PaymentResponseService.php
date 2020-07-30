@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -50,7 +51,7 @@ class PaymentResponseService
         $this->orderRepository = $orderRepository;
     }
 
-    public function getWithOrderNumber(string $orderNumber):? PaymentResponseEntity
+    public function getWithOrderNumber(string $orderNumber): ?PaymentResponseEntity
     {
         return $this->repository
             ->search(
@@ -79,10 +80,25 @@ class PaymentResponseService
         $fields['token'] = $salesChannelContextToken;
         $fields['resultCode'] = $paymentResponse["resultCode"];
         $fields['orderNumber'] = $orderNumber;
+        $fields['response'] = json_encode($paymentResponse);
 
         $this->repository->upsert(
             [$fields],
             Context::createDefaultContext()
         );
+    }
+
+    public function getWithSalesChannelApiContextTokenAndOrderNumber(
+        string $salesChannelApiContextToken,
+        string $orderNumber
+    ): PaymentResponseEntity {
+        return $this->repository
+            ->search(
+                (new Criteria())
+                    ->addFilter(new EqualsFilter('orderNumber', $orderNumber))
+                    ->addFilter(new EqualsFilter('token', $salesChannelApiContextToken)),
+                Context::createDefaultContext()
+            )
+            ->first();
     }
 }

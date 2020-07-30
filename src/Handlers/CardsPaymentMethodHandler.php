@@ -203,7 +203,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             );
         }
 
-        return $this->paymentResponseHandler->handlePaymentResponse($response, $transaction, $salesChannelContext);
+        $orderNumber = $transaction->getOrder()->getOrderNumber();
+
+        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $salesChannelContext);
+
+        return $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
     }
 
     /**
@@ -424,6 +428,12 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         } else {
             $request['origin'] = $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext);
         }
+
+        // TODO add configiuration to enable 3DS2 ?
+        $request['additionalData']['allow3DS2'] = true;
+
+        // TODO add channel?
+        $request['channel'] = 'web';
 
         return $request;
     }

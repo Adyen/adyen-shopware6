@@ -28,6 +28,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -58,7 +59,7 @@ class PaymentResponseEntityDefinition extends EntityDefinition
             new StringField('order_number', 'orderNumber'),
             new StringField('result_code', 'resultCode'),
             new StringField('sales_channel_api_context_token', 'token'),
-            new StringField('response', 'response'),
+            new LongTextField('response', 'response'),
             new CreatedAtField(),
             new UpdatedAtField()
         ]);
