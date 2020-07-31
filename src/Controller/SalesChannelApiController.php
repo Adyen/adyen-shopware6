@@ -183,7 +183,13 @@ class SalesChannelApiController extends AbstractController
             $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
         }
 
-        $result = $this->paymentDetailsService->doPaymentDetails($stateData,
+        if (empty($stateData['details'])) {
+            // handle error
+        }
+
+        $details = $stateData['details'];
+
+        $result = $this->paymentDetailsService->doPaymentDetails($details,
             $this->paymentResponseService->getWithOrderId($orderId, $context->getToken())->getOrderNumber(),
             $context);
 
