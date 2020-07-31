@@ -38,7 +38,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Symfony\Component\Routing\RouterInterface;
 
-class CheckoutSubscriber implements EventSubscriberInterface
+class PaymentSubscriber implements EventSubscriberInterface
 {
 
     const ADYEN_DATA_EXTENSION_ID = 'adyenFrontendData';
@@ -74,7 +74,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
     private $paymentMethodsService;
 
     /**
-     * CheckoutSubscriber constructor.
+     * PaymentSubscriber constructor.
      * @param PaymentStateDataService $paymentStateDataService
      * @param RouterInterface $router
      * @param OriginKeyService $originKeyService

@@ -2,7 +2,7 @@
 
 {% block page_checkout_confirm_payment_inner %}
     {{ parent() }}
-    {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\CheckoutSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+    {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
     {% if adyenFrontendData and adyenFrontendData.paymentStatusUrl %}
         <div id="adyen-checkout-options"
              data-language-id="{{ adyenFrontendData.languageId }}"

@@ -1,4 +1,4 @@
-{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\CheckoutSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
 {% if adyenFrontendData and adyenFrontendData.locale %}
     <div id="adyen-checkout-configuration"
          data-locale="{{ adyenFrontendData.locale }}"
