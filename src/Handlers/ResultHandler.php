@@ -98,10 +98,10 @@ class ResultHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ) {
-        // Get details to validate
-        $details = $request->request->all();
-        if (empty($details)) {
-            throw new AsyncPaymentFinalizeException('Query parameters are missing from return URL');
+        // Get payload to be validated
+        $payload = $request->request->get('payload');
+        if (empty($payload)) {
+            throw new AsyncPaymentFinalizeException('Payload parameter is missing from return URL');
         }
 
         // Get order number
@@ -109,6 +109,11 @@ class ResultHandler
         if (empty($orderNumber)) {
             throw new AsyncPaymentFinalizeException('Adyen merchant reference parameter is missing from return URL');
         }
+
+        // Construct the details object for the paymentDetails request
+        $details = [
+            'payload' => $payload
+        ];
 
         // Validate the return
         $result = $this->paymentDetailsService->doPaymentDetails(
