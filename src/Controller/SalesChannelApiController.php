@@ -28,6 +28,7 @@ namespace Adyen\Shopware\Controller;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStatusService;
+use http\Env\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -162,6 +163,10 @@ class SalesChannelApiController extends AbstractController
      */
     public function getPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if (empty($request->get('orderId'))) {
+            return new JsonResponse('Order ID not provided');
+        }
+
         return new JsonResponse(
             $this->paymentStatusService->getPaymentStatusWithOrderId(
                 $request->get('orderId'),
