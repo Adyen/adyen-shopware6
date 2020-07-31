@@ -67,13 +67,25 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     }
 
-    afterPayOrder(response) {
-        console.log(response);
+    afterPayOrder(orderId) {
         this._client.post(
-            `sales-channel-api/v1/adyen/payment-status`,
-            JSON.stringify({'asd': 1}),
-            this.afterPaymetStatus.bind(this)
+            `${adyenCheckoutOptions.paymentStatusUrl}`,
+            JSON.stringify({'orderId': orderId}),
+            this.handlePaymentAction.bind(this)
         );
+    }
+
+    handlePaymentAction(paymentAction) {
+        const paymentActionResponse = JSON.parse(paymentAction);
+        try{
+            window.adyenCheckout
+                .createFromAction(paymentActionResponse.action)
+                .mount('[data-adyen-payment-action-container]');
+        }
+        catch (e) {
+            console.log(e);
+        }
+
     }
 
     afterPaymetStatus(response) {
