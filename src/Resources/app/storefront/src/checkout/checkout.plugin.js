@@ -13,14 +13,24 @@ export default class CheckoutPlugin extends Plugin {
             'scheme': formattedHandlerIdentifier
         };
 
-        // TODO ask Ricardo if there is a better way
         this.client = new StoreApiClient();
 
         let handleOnAdditionalDetails = function (state) {
             this.client.post(
                 `${adyenCheckoutOptions.paymentDetailsUrl}`,
                 JSON.stringify({'orderId': window.orderId, 'stateData': state.data}),
-                this.handlePaymentAction.bind(this)
+                function (paymentAction) {
+                    // TODO: clean-up
+                    const paymentActionResponse = JSON.parse(paymentAction);
+                    try{
+                        window.adyenCheckout
+                            .createFromAction(paymentActionResponse.action)
+                            .mount('[data-adyen-payment-action-container]');
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
+                }
             );
         }
 
@@ -99,6 +109,4 @@ export default class CheckoutPlugin extends Plugin {
 
         /* eslint-enable no-unused-vars */
     }
-
-
 }
