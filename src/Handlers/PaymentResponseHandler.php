@@ -26,15 +26,12 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Shopware\Exception\PaymentException;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class PaymentResponseHandler
 {
@@ -79,23 +76,16 @@ class PaymentResponseHandler
      */
     private $paymentResponseHandlerResult;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderTransactionRepository;
-
     public function __construct(
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult,
-        EntityRepositoryInterface $orderTransactionRepository
+        PaymentResponseHandlerResult $paymentResponseHandlerResult
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
-        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
@@ -176,7 +166,7 @@ class PaymentResponseHandler
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
         PaymentResponseHandlerResult $paymentResponseHandlerResult
-    ) {
+    ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $resultCode = $paymentResponseHandlerResult->getResultCode();
         $context = $salesChannelContext->getContext();
@@ -213,16 +203,10 @@ class PaymentResponseHandler
 
         $transaction->getOrderTransaction()->setCustomFields($customFields);
 
-        $this->orderTransactionRepository->update(
-            ['id' => $orderTransactionId, 'customFields' => $customFields],
-            $context
-        );
-
         switch ($resultCode) {
             case self::AUTHORISED:
                 // Tag order as paid
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
-                return new RedirectResponse('notUsedResponse');
                 break;
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
@@ -231,13 +215,12 @@ class PaymentResponseHandler
             case self::PRESENT_TO_SHOPPER:
                 $this->transactionStateHandler->process($orderTransactionId, $context);
                 // Return to the frontend without throwing an exception
-                return new RedirectResponse('notUsedResponse');
                 break;
             case self::REFUSED:
             case self::ERROR:
             default:
                 // Cancel the order
-                throw new AsyncPaymentProcessException(
+                throw new PaymentException(
                     $orderTransactionId,
                     'The payment was cancelled, refused or had an error or an unhandled result code'
                 );

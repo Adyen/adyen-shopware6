@@ -59,7 +59,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this._client.post(
             `${adyenCheckoutOptions.checkoutOrderUrl}/${orderId}/pay`,
             JSON.stringify(params),
-            this.afterPayOrder.bind(this)
+            this.afterPayOrder.bind(this, orderId)
         );
     }
 
@@ -87,9 +87,4 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
 
     }
-
-    afterPaymetStatus(response) {
-        console.log(response);
-    }
-
 }
