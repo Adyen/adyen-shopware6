@@ -30,12 +30,8 @@ use Adyen\Shopware\Exception\PaymentException;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class PaymentResponseHandler
 {
@@ -80,23 +76,16 @@ class PaymentResponseHandler
      */
     private $paymentResponseHandlerResult;
 
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderTransactionRepository;
-
     public function __construct(
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult,
-        EntityRepositoryInterface $orderTransactionRepository
+        PaymentResponseHandlerResult $paymentResponseHandlerResult
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
-        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
