@@ -106,6 +106,10 @@ class CheckoutSubscriber implements EventSubscriberInterface
                         'sales-channel-api.checkout.order.create',
                         ['version' => 2]
                     ),
+                    'paymentDetailsUrl' => $this->router->generate(
+                        'sales-channel-api.action.adyen.payment-details',
+                        ['version' => 2]
+                    ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId()
                 ]
             )

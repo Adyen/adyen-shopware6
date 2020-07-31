@@ -53,13 +53,13 @@ export default class ConfirmOrderPlugin extends Plugin {
             // TODO error handling
             return;
         }
-        const orderId = order.data.id;
+        window.orderId = order.data.id;
         const params = {};
 
         this._client.post(
-            `${adyenCheckoutOptions.checkoutOrderUrl}/${orderId}/pay`,
+            `${adyenCheckoutOptions.checkoutOrderUrl}/${window.orderId}/pay`,
             JSON.stringify(params),
-            this.afterPayOrder.bind(this, orderId)
+            this.afterPayOrder.bind(this, window.orderId)
         );
     }
 

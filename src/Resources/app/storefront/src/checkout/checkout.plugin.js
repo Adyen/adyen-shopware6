@@ -1,6 +1,6 @@
 import Plugin from 'src/plugin-system/plugin.class';
 
-/* global adyenCheckoutConfiguration, AdyenCheckout */
+/* global adyenCheckoutConfiguration, AdyenCheckout, adyenCheckoutOptions */
 /* eslint-disable no-unused-vars */
 export default class CheckoutPlugin extends Plugin {
 
@@ -12,12 +12,27 @@ export default class CheckoutPlugin extends Plugin {
             'scheme': formattedHandlerIdentifier
         };
 
+        let handleOnAdditionalDetails = function (state) {
+            console.log('qweqweqweqw');
+            console.log(state);
+            if (state.isValid) {
+                this._client.post(
+                    `${adyenCheckoutOptions.paymentDetailsUrl}`,
+                    JSON.stringify({'orderId': window.orderId, 'stateData': state.data}),
+                    this.handlePaymentAction.bind(this)
+                );
+            } else {
+                //TODO handle error
+            }
+        }
+
         var ADYEN_CHECKOUT_CONFIG = {
             locale: adyenCheckoutConfiguration.locale,
             originKey: adyenCheckoutConfiguration.originKey,
             environment: adyenCheckoutConfiguration.environment,
             showPayButton: false,
-            paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)
+            paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse),
+            onAdditionalDetails: handleOnAdditionalDetails
         };
 
         window.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
