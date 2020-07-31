@@ -67,7 +67,7 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     }
 
-    afterPayOrder(orderId) {
+    afterPayOrder(orderId, response) {
         this._client.post(
             `${adyenCheckoutOptions.paymentStatusUrl}`,
             JSON.stringify({'orderId': orderId}),
