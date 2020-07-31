@@ -160,6 +160,8 @@ class PaymentResponseHandler
                     ' Unsupported result code in response: ' . print_r($response, true)
                 );
         }
+
+        return $this->paymentResponseHandlerResult;
     }
 
     public function handleShopwareApis(
