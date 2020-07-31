@@ -27,10 +27,7 @@ namespace Adyen\Shopware\Handlers;
 use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\PaymentResponseService;
@@ -88,8 +85,10 @@ class ResultHandler
     }
 
     /**
-     * @return RedirectResponse
-     * @throws InconsistentCriteriaIdsException
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
+     * @throws PaymentException
      */
     public function processResult(
         AsyncPaymentTransactionStruct $transaction,
@@ -99,13 +98,13 @@ class ResultHandler
         // Get payload to be validated
         $payload = $request->request->get('payload');
         if (empty($payload)) {
-            throw new AsyncPaymentFinalizeException('Payload parameter is missing from return URL');
+            throw new PaymentException('Payload parameter is missing from return URL');
         }
 
         // Get order number
         $orderNumber = $request->get(PaymentResponseHandler::ADYEN_MERCHANT_REFERENCE);
         if (empty($orderNumber)) {
-            throw new AsyncPaymentFinalizeException('Adyen merchant reference parameter is missing from return URL');
+            throw new PaymentException('Adyen merchant reference parameter is missing from return URL');
         }
 
         // Construct the details object for the paymentDetails request
@@ -120,15 +119,11 @@ class ResultHandler
             $salesChannelContext
         );
 
-        try {
-            // Process the result and handle the transaction
-            $this->paymentResponseHandler->handleShopwareAPIs(
-                $transaction,
-                $salesChannelContext,
-                $result
-            );
-        } catch (PaymentException $exception) {
-            throw new AsyncPaymentFinalizeException($exception->getMessage());
-        }
+        // Process the result and handle the transaction
+        $this->paymentResponseHandler->handleShopwareAPIs(
+            $transaction,
+            $salesChannelContext,
+            $result
+        );
     }
 }

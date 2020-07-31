@@ -36,6 +36,7 @@ use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -248,7 +249,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
-        $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
+        try {
+            $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
+        } catch (PaymentException $exception) {
+            throw new AsyncPaymentFinalizeException($exception->getMessage());
+        }
     }
 
     //TODO move to external object or outsource to lib
