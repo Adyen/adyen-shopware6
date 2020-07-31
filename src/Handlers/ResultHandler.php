@@ -41,11 +41,6 @@ use Psr\Log\LoggerInterface;
 class ResultHandler
 {
     /**
-     * @var Request
-     */
-    private $request;
-
-    /**
      * @var CheckoutService
      */
     private $checkoutService;
@@ -81,14 +76,12 @@ class ResultHandler
      * @param PaymentDetailsService $paymentDetailsService
      */
     public function __construct(
-        Request $request,
         CheckoutService $checkoutService,
         PaymentResponseService $paymentResponseService,
         LoggerInterface $logger,
         PaymentResponseHandler $paymentResponseHandler,
         PaymentDetailsService $paymentDetailsService
     ) {
-        $this->request = $request;
         $this->checkoutService = $checkoutService;
         $this->paymentResponseService = $paymentResponseService;
         $this->logger = $logger;
