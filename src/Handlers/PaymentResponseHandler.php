@@ -214,11 +214,6 @@ class PaymentResponseHandler
 
         $transaction->getOrderTransaction()->setCustomFields($customFields);
 
-        $this->orderTransactionRepository->update(
-            ['id' => $orderTransactionId, 'customFields' => $customFields],
-            $context
-        );
-
         switch ($resultCode) {
             case self::AUTHORISED:
                 // Tag order as paid
