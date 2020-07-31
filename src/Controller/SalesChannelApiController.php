@@ -27,10 +27,11 @@ namespace Adyen\Shopware\Controller;
 
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
+use Adyen\Shopware\Service\PaymentStatusService;
+use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\Shopware\Service\OriginKeyService;
@@ -61,23 +62,31 @@ class SalesChannelApiController extends AbstractController
     private $paymentDetailsService;
 
     /**
+     * @var PaymentStatusService
+     */
+    private $paymentStatusService;
+
+    /**
      * SalesChannelApiController constructor.
      *
      * @param OriginKeyService $originKeyService
      * @param PaymentMethodsService $paymentMethodsService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentDetailsService $paymentDetailsService
+     * @param PaymentStatusService $paymentStatusService
      */
     public function __construct(
         OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
         SalesChannelRepository $salesChannelRepository,
-        PaymentDetailsService $paymentDetailsService
+        PaymentDetailsService $paymentDetailsService,
+        PaymentStatusService $paymentStatusService
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentDetailsService = $paymentDetailsService;
+        $this->paymentStatusService = $paymentStatusService;
     }
 
     /**
@@ -144,14 +153,24 @@ class SalesChannelApiController extends AbstractController
      * @Route(
      *     "/sales-channel-api/v1/adyen/payment-status",
      *     name="sales-channel-api.action.adyen.payment-status",
-     *     methods={"GET"}
+     *     methods={"POST"}
      * )
      *
+     * @param Request $request
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
-    public function getPaymentStatus(SalesChannelContext $context): JsonResponse
+    public function getPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
     {
-        return new JsonResponse(['aloha']);
+        if (empty($request->get('orderId'))) {
+            return new JsonResponse('Order ID not provided');
+        }
+
+        return new JsonResponse(
+            $this->paymentStatusService->getPaymentStatusWithOrderId(
+                $request->get('orderId'),
+                $context
+            )
+        );
     }
 }

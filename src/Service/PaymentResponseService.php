@@ -62,6 +62,18 @@ class PaymentResponseService
             ->first();
     }
 
+    public function getWithOrderId(string $orderId, string $contextToken): ?PaymentResponseEntity
+    {
+        $order = $this->orderRepository
+            ->search(
+                (new Criteria())
+                    ->addFilter(new EqualsFilter('id', $orderId)),
+                Context::createDefaultContext()
+            )
+            ->first();
+        return $this->getWithSalesChannelApiContextTokenAndOrderNumber($contextToken, $order->getOrderNumber());
+    }
+
     public function insertPaymentResponse(
         array $paymentResponse,
         string $orderNumber,
