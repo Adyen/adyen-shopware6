@@ -110,6 +110,10 @@
         <service id="Adyen\Shopware\Subscriber\CheckoutSubscriber">
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 
