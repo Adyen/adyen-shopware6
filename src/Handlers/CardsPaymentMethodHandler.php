@@ -214,8 +214,12 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 
         $orderNumber = $transaction->getOrder()->getOrderNumber();
 
-        if (!empty($orderNumber)) {
-            throw new AsyncPaymentProcessException('Order number is missing');
+        if (empty($orderNumber)) {
+            $message = 'Order number is missing';
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
+                $message
+            );
         }
 
         $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $salesChannelContext);
@@ -224,7 +228,10 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
         } catch (PaymentException $exception) {
             // Cancel payment in shopware
-            throw new AsyncPaymentProcessException($exception->getMessage());
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
+                $exception->getMessage()
+            );
         }
 
         // Payment had no error, continue the process
