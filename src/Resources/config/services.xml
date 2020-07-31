@@ -19,6 +19,7 @@
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentDetailsService"/>
+            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentStatusService"/>
             <tag name="controller.service_arguments"/>
         </service>
@@ -82,7 +83,7 @@
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult"/>
+            <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
             <tag name="shopware.payment.method.async" />
         </service>
@@ -103,7 +104,6 @@
         </service>
         <service id="Adyen\Shopware\Handlers\PaymentResponseHandler" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
-            <argument key="$orderTransactionRepository" type="service" id="order_transaction.repository"/>
         </service>
 
         <!--Event subscribers-->

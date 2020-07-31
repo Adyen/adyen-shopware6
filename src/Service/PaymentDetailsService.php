@@ -23,13 +23,13 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Handlers\PaymentResponseHandlerResult;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\Request;
 
 class PaymentDetailsService
 {
@@ -83,7 +83,6 @@ class PaymentDetailsService
         LoggerInterface $logger,
         CheckoutService $checkoutService,
         ConfigurationService $configurationService,
-        CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentResponseService $paymentResponseService,
         PaymentResponseHandler $paymentResponseHandler
     ) {
@@ -91,37 +90,27 @@ class PaymentDetailsService
         $this->logger = $logger;
         $this->checkoutService = $checkoutService;
         $this->configurationService = $configurationService;
-        $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentResponseService = $paymentResponseService;
         $this->paymentResponseHandler = $paymentResponseHandler;
     }
 
     /**
+     * @param array $details
+     * @param string $orderNumber
      * @param SalesChannelContext $context
      * @return array
      */
-    public function doPaymentDetails(Request $request, RequestDataBag $data, SalesChannelContext $context): array
-    {
+    public function doPaymentDetails(
+        array $details,
+        string $orderNumber,
+        SalesChannelContext $context
+    ): PaymentResponseHandlerResult {
         // Validate if the payment is not paid yet
         if (false /* TODO is transaction paid */) {
             $this->logger->warning(
                 'paymentDetails is called for an already paid order. Sales channel Api context token: ' .
                 $context->getToken()
             );
-        }
-
-        // Get orderNumber if sent
-        $orderNumber = $request->request->get('orderNumber');
-        if (empty($orderNumber)) {
-            // TODO error handling
-        }
-
-        // Get state data object if sent
-        $stateData = $request->request->get('stateData');
-
-        // Validate stateData object
-        if (!empty($stateData)) {
-            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
         }
 
         // Get paymentData for the paymentDetails request
@@ -153,18 +142,16 @@ class PaymentDetailsService
         // Construct paymentDetails request object
         $request = [
             'paymentData' => $paymentResponse['paymentData'],
-            'details' => $stateData
+            'details' => $details
         ];
 
         try {
             $response = $this->checkoutService->paymentsDetails($request);
-        } catch (\Adyen\AdyenException $exception) {
+        } catch (AdyenException $exception) {
             // TODO error handling
-            $this->logger->error('');
-            return [$exception->getMessage()];
+            $this->logger->error($exception->getMessage());
         }
 
-        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $context);
-        return $this->paymentResponseHandler->handleAdyenApis($result);
+        return $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $context);
     }
 }

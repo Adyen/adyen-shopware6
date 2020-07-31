@@ -59,7 +59,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this._client.post(
             `${adyenCheckoutOptions.checkoutOrderUrl}/${orderId}/pay`,
             JSON.stringify(params),
-            this.afterPayOrder.bind(this)
+            this.afterPayOrder.bind(this, orderId)
         );
     }
 
@@ -67,11 +67,10 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     }
 
-    afterPayOrder(response) {
-        console.log(response);
+    afterPayOrder(orderId, response) {
         this._client.post(
-            `sales-channel-api/v1/adyen/payment-status`,
-            JSON.stringify({'asd': 1}),
+            `${adyenCheckoutOptions.paymentStatusUrl}`,
+            JSON.stringify({'orderId': orderId}),
             this.afterPaymetStatus.bind(this)
         );
     }
