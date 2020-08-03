@@ -55,7 +55,11 @@ class AdyenAccountOrderController extends AccountOrderController
     }
 
     /**
-     * @Route("/account/order/payment/{orderId}", name="frontend.account.edit-order.change-payment-method", methods={"POST"})
+     * @Route(
+     *     "/account/order/payment/{orderId}",
+     *     name="frontend.account.edit-order.change-payment-method",
+     *     methods={"POST"}
+     *     )
      */
     public function orderChangePayment(string $orderId, Request $request, SalesChannelContext $context): Response
     {
