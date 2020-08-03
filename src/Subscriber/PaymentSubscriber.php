@@ -135,6 +135,11 @@ class PaymentSubscriber implements EventSubscriberInterface
     {
         $salesChannelContext = $event->getSalesChannelContext();
         $page = $event->getPage();
+        $orderId = '';
+        if (method_exists($page, 'getOrder')) {
+            $orderId = $page->getOrder()->getId();
+        }
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -145,6 +150,10 @@ class PaymentSubscriber implements EventSubscriberInterface
                     ),
                     'checkoutOrderUrl' => $this->router->generate(
                         'sales-channel-api.checkout.order.create',
+                        ['version' => 2]
+                    ),
+                    'editPaymentUrl' => $this->router->generate(
+                        'store-api.order.set-payment',
                         ['version' => 2]
                     ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
@@ -159,7 +168,8 @@ class PaymentSubscriber implements EventSubscriberInterface
 
                     'paymentMethodsResponse' => json_encode(
                         $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
-                    )
+                    ),
+                    'orderId' => $orderId
                 ]
             )
         );

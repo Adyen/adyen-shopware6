@@ -105,6 +105,7 @@
         <service id="Adyen\Shopware\Handlers\PaymentResponseHandler" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
+        <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
 
         <!--Event subscribers-->
         <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">
@@ -146,7 +147,19 @@
             <argument type="service"
                       id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPage.inner"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
-
+        <service  id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController"
+                 decorates="Shopware\Storefront\Controller\AccountOrderController">
+            <argument type="service"
+                      id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController.inner"/>
+            <argument type="service" id="Shopware\Storefront\Page\Account\Order\AccountOrderPageLoader"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\OrderRoute"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
+            <argument type="service" id="Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoader"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\CancelOrderRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
+            <argument type="service" id="event_dispatcher"/>
+        </service>
     </services>
 </container>
