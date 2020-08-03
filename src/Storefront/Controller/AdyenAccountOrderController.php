@@ -20,7 +20,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Component\Routing\Annotation\Route;
 
-
 /**
  * @RouteScope(scopes={"storefront"})
  */
@@ -42,8 +41,17 @@ class AdyenAccountOrderController extends AccountOrderController
         EventDispatcherInterface $eventDispatcher
     ) {
         $this->contextSwitchRoute = $contextSwitchRoute;
-        parent::__construct($orderPageLoader, $orderRoute, $requestCriteriaBuilder, $accountEditOrderPageLoader,
-            $contextSwitchRoute, $cancelOrderRoute, $setPaymentOrderRoute, $handlePaymentMethodRoute, $eventDispatcher);
+        parent::__construct(
+            $orderPageLoader,
+            $orderRoute,
+            $requestCriteriaBuilder,
+            $accountEditOrderPageLoader,
+            $contextSwitchRoute,
+            $cancelOrderRoute,
+            $setPaymentOrderRoute,
+            $handlePaymentMethodRoute,
+            $eventDispatcher
+        );
     }
 
     /**
