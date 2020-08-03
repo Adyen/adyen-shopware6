@@ -105,7 +105,16 @@ class ClientService extends \Adyen\Client
 
         $composerJson = file_get_contents($rootDir . '/custom/plugins/adyen-shopware6/composer.json');
 
+        if (false === $composerJson) {
+            $this->genericLogger->error('composer.json is not available in the Adyen plugin folder');
+            return "NA";
+        }
+
         $composerJson = json_decode($composerJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->genericLogger->error('composer.json is not a valid JSON in the Adyen plugin folder');
+            return "NA";
+        }
 
         if (empty($composerJson['version'])) {
             $this->genericLogger->error('Adyen plugin version is not available in composer.json');
