@@ -110,6 +110,15 @@ class CheckoutSubscriber implements EventSubscriberInterface
                         'sales-channel-api.action.adyen.payment-details',
                         ['version' => 2]
                     ),
+                    'paymentFinishUrl' => $this->router->generate(
+                        'frontend.checkout.finish.page',
+                        ['orderId' => '']
+                    ),
+                    'paymentErrorUrl' => $this->router->generate('frontend.checkout.finish.page', [
+                        'orderId' => '',
+                        'changedPayment' => false,
+                        'paymentFailed' => true,
+                    ]),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId()
                 ]
             )

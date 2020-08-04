@@ -86,6 +86,7 @@
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
             <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler" />
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
             <tag name="shopware.payment.method.async" />
         </service>

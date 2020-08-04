@@ -22,6 +22,11 @@ export default class CheckoutPlugin extends Plugin {
                 function (paymentAction) {
                     // TODO: clean-up
                     const paymentActionResponse = JSON.parse(paymentAction);
+
+                    if (paymentActionResponse.isFinal === true) {
+                        location.href = window.returnUrl;
+                    }
+
                     try{
                         window.adyenCheckout
                             .createFromAction(paymentActionResponse.action)

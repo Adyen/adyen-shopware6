@@ -54,7 +54,10 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
         window.orderId = order.data.id;
-        const params = {};
+        const params = {
+            'finishUrl': `${adyenCheckoutOptions.paymentFinishUrl}` + order.data.id,
+            'errorUrl': `${adyenCheckoutOptions.paymentErrorUrl}` + order.data.id
+        };
 
         this._client.post(
             `${adyenCheckoutOptions.checkoutOrderUrl}/${window.orderId}/pay`,
@@ -63,11 +66,10 @@ export default class ConfirmOrderPlugin extends Plugin {
         );
     }
 
-    afterSetPayment(response) {
-
-    }
-
     afterPayOrder(orderId, response) {
+        response = JSON.parse(response);
+        window.returnUrl = response.paymentUrl;
+
         this._client.post(
             `${adyenCheckoutOptions.paymentStatusUrl}`,
             JSON.stringify({'orderId': orderId}),
@@ -77,13 +79,20 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     handlePaymentAction(paymentAction) {
         const paymentActionResponse = JSON.parse(paymentAction);
+
+        if (paymentActionResponse.isFinal === true) {
+            console.log(paymentActionResponse, window.returnUrl);
+            location.href = window.returnUrl;
+            return;
+        }
+
         try{
             window.adyenCheckout
                 .createFromAction(paymentActionResponse.action)
                 .mount('[data-adyen-payment-action-container]');
         }
         catch (e) {
-            console.log(e);
+            console.log('error');
         }
 
     }
