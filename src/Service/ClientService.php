@@ -96,6 +96,7 @@ class ClientService extends \Adyen\Client
 
     /**
      * Get adyen module's version from composer.json
+     * TODO: switch to a shopware service to retrieve the module version instead of composer
      *
      * @return string
      */
