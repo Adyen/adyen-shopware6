@@ -54,9 +54,13 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
         window.orderId = order.data.id;
+        const finishUrl = new URL(location.origin + adyenCheckoutOptions.paymentFinishUrl);
+        finishUrl.searchParams.set('orderId', order.data.id);
+        const errorUrl = new URL(location.origin + adyenCheckoutOptions.paymentErrorUrl);
+        errorUrl.searchParams.set('orderId', order.data.id);
         const params = {
-            'finishUrl': `${adyenCheckoutOptions.paymentFinishUrl}` + order.data.id,
-            'errorUrl': `${adyenCheckoutOptions.paymentErrorUrl}` + order.data.id
+            'finishUrl': finishUrl.toString(),
+            'errorUrl': errorUrl.toString()
         };
 
         this._client.post(
