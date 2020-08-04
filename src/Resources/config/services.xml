@@ -107,11 +107,16 @@
         </service>
         <service id="Adyen\Shopware\Service\ContainerParametersService" autowire="true">
         </service>
+        <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
 
         <!--Event subscribers-->
-        <service id="Adyen\Shopware\Subscriber\CheckoutSubscriber">
+        <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 
@@ -144,7 +149,19 @@
             <argument type="service"
                       id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPage.inner"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
-
+        <service  id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController"
+                 decorates="Shopware\Storefront\Controller\AccountOrderController">
+            <argument type="service"
+                      id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController.inner"/>
+            <argument type="service" id="Shopware\Storefront\Page\Account\Order\AccountOrderPageLoader"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\OrderRoute"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
+            <argument type="service" id="Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoader"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\CancelOrderRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
+            <argument type="service" id="event_dispatcher"/>
+        </service>
     </services>
 </container>
