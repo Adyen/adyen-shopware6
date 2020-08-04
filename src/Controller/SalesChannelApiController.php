@@ -189,9 +189,13 @@ class SalesChannelApiController extends AbstractController
 
         $details = $stateData['details'];
 
-        $result = $this->paymentDetailsService->doPaymentDetails($details,
-            $this->paymentResponseService->getWithOrderId($orderId, $context->getToken())->getOrderNumber(),
-            $context);
+        $result = $this->paymentDetailsService->doPaymentDetails(
+            $details,
+            $this->paymentResponseService
+                ->getWithOrderId($orderId, $context->getToken())
+                ->getOrderNumber(),
+            $context
+        );
 
         return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
     }

@@ -146,12 +146,14 @@ class PaymentDetailsService
         ];
 
         try {
-            $response = $this->checkoutService->paymentsDetails($request);
+            return $this->paymentResponseHandler->handlePaymentResponse(
+                $this->checkoutService->paymentsDetails($request),
+                $orderNumber,
+                $context
+            );
         } catch (AdyenException $exception) {
             // TODO error handling
             $this->logger->error($exception->getMessage());
         }
-
-        return $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $context);
     }
 }

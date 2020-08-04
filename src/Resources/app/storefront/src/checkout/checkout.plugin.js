@@ -26,6 +26,7 @@ export default class CheckoutPlugin extends Plugin {
                         window.adyenCheckout
                             .createFromAction(paymentActionResponse.action)
                             .mount('[data-adyen-payment-action-container]');
+                        $('[data-adyen-payment-action-modal]').modal({show: true});
                     }
                     catch (e) {
                         console.log(e);
