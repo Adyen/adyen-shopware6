@@ -24,14 +24,21 @@
 
 namespace Adyen\Shopware\Subscriber;
 
+use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\OriginKeyService;
+use Adyen\Shopware\Service\PaymentMethodsService;
+use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
+use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
+use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
+use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Symfony\Component\Routing\RouterInterface;
 
-class CheckoutSubscriber implements EventSubscriberInterface
+class PaymentSubscriber implements EventSubscriberInterface
 {
 
     const ADYEN_DATA_EXTENSION_ID = 'adyenFrontendData';
@@ -47,15 +54,48 @@ class CheckoutSubscriber implements EventSubscriberInterface
     private $router;
 
     /**
-     * CheckoutSubscriber constructor.
+     * @var OriginKeyService
+     */
+    private $originKeyService;
+
+    /**
+     * @var SalesChannelRepository
+     */
+    private $salesChannelRepository;
+
+    /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
+     * @var PaymentMethodsService
+     */
+    private $paymentMethodsService;
+
+    /**
+     * PaymentSubscriber constructor.
      * @param PaymentStateDataService $paymentStateDataService
+     * @param RouterInterface $router
+     * @param OriginKeyService $originKeyService
+     * @param SalesChannelRepository $salesChannelRepository
+     * @param ConfigurationService $configurationService
+     * @param PaymentMethodsService $paymentMethodsService
      */
     public function __construct(
         PaymentStateDataService $paymentStateDataService,
-        RouterInterface $router
+        RouterInterface $router,
+        OriginKeyService $originKeyService,
+        SalesChannelRepository $salesChannelRepository,
+        ConfigurationService $configurationService,
+        PaymentMethodsService $paymentMethodsService
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
         $this->router = $router;
+        $this->originKeyService = $originKeyService;
+        $this->salesChannelRepository = $salesChannelRepository;
+        $this->configurationService = $configurationService;
+        $this->paymentMethodsService = $paymentMethodsService;
     }
 
     /**
@@ -65,7 +105,8 @@ class CheckoutSubscriber implements EventSubscriberInterface
     {
         return [
             SalesChannelContextSwitchEvent::class => 'onContextTokenUpdate',
-            CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded'
+            CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
+            AccountEditOrderPageLoadedEvent::class => 'onCheckoutConfirmLoaded'
         ];
     }
 
@@ -88,12 +129,17 @@ class CheckoutSubscriber implements EventSubscriberInterface
     /**
      * Adds vars to frontend template to be used in JS
      *
-     * @param CheckoutConfirmPageLoadedEvent $event
+     * @param PageLoadedEvent $event
      */
-    public function onCheckoutConfirmLoaded(CheckoutConfirmPageLoadedEvent $event)
+    public function onCheckoutConfirmLoaded(PageLoadedEvent $event)
     {
         $salesChannelContext = $event->getSalesChannelContext();
         $page = $event->getPage();
+        $orderId = '';
+        if (method_exists($page, 'getOrder')) {
+            $orderId = $page->getOrder()->getId();
+        }
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -119,7 +165,22 @@ class CheckoutSubscriber implements EventSubscriberInterface
                         'changedPayment' => false,
                         'paymentFailed' => true,
                     ]),
-                    'languageId' => $salesChannelContext->getContext()->getLanguageId()
+                    'editPaymentUrl' => $this->router->generate(
+                        'store-api.order.set-payment',
+                        ['version' => 2]
+                    ),
+                    'languageId' => $salesChannelContext->getContext()->getLanguageId(),
+                    'originKey' => $this->originKeyService->getOriginKeyForOrigin(
+                        $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext)
+                    )->getOriginKey(),
+                    'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
+                        ->getLanguage()->getLocale()->getCode(),
+
+                    'environment' => $this->configurationService->getEnvironment(),
+                    'paymentMethodsResponse' => json_encode(
+                        $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
+                    ),
+                    'orderId' => $orderId
                 ]
             )
         );

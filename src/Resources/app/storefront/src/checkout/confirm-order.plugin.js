@@ -26,12 +26,12 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         ElementLoadingIndicatorUtil.create(document.body);
 
-        const orderId = this.options.orderId;
+        const orderId = adyenCheckoutOptions.orderId;
         const request = new XMLHttpRequest();
         let callback = null;
         if (!!orderId) { //Only used if the order is being edited
             formData.set('orderId', orderId);
-            request.open('POST', ''); //TODO define URL for order edit flow
+            request.open('POST', adyenCheckoutOptions.editPaymentUrl);
             callback = this.afterSetPayment.bind(this);
         } else {
             request.open('POST', adyenCheckoutOptions.checkoutOrderUrl);
@@ -68,6 +68,13 @@ export default class ConfirmOrderPlugin extends Plugin {
             JSON.stringify(params),
             this.afterPayOrder.bind(this, window.orderId)
         );
+    }
+
+    afterSetPayment(response) {
+        const responseObject = JSON.parse(response);
+        if (responseObject.success === true) {
+            this.afterCreateOrder(JSON.stringify({ data: { id: adyenCheckoutOptions.orderId } }));
+        }
     }
 
     afterPayOrder(orderId, response) {

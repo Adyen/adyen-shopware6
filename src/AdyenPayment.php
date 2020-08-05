@@ -84,6 +84,7 @@ class AdyenPayment extends Plugin
             'name' => $paymentMethod->getName(),
             'description' => $paymentMethod->getDescription(),
             'pluginId' => $pluginId,
+            'afterOrderEnabled' => true
         ];
 
         /** @var EntityRepositoryInterface $paymentRepository */

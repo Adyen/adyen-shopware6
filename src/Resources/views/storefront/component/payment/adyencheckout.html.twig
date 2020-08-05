@@ -1,10 +1,13 @@
-<div id="adyen-checkout-configuration"
-     data-locale="{{ page.adyenData.locale }}"
-     data-origin-key="{{ page.adyenData.originKey }}"
-     data-environment="{{ page.adyenData.environment }}"
-     data-payment-methods-response="{{ page.adyenData.paymentMethodsResponse }}"
-></div>
-<script type="text/javascript" src="{{ asset('bundles/adyenpayment/js/bundle.js') }}"></script>
-<script>
-    var adyenCheckoutConfiguration = document.querySelector('#adyen-checkout-configuration').dataset;
-</script>
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+{% if adyenFrontendData and adyenFrontendData.locale %}
+    <div id="adyen-checkout-configuration"
+         data-locale="{{ adyenFrontendData.locale }}"
+         data-origin-key="{{ adyenFrontendData.originKey }}"
+         data-environment="{{ adyenFrontendData.environment }}"
+         data-payment-methods-response="{{ adyenFrontendData.paymentMethodsResponse }}"
+    ></div>
+    <script type="text/javascript" src="{{ asset('bundles/adyenpayment/js/bundle.js') }}"></script>
+    <script>
+        var adyenCheckoutConfiguration = document.querySelector('#adyen-checkout-configuration').dataset;
+    </script>
+{% endif %}

@@ -1,4 +1,4 @@
-{% sw_extends '@Storefront/storefront/page/checkout/confirm/confirm-payment.html.twig' %}
+{% sw_extends '@Storefront/storefront/page/account/order/index.html.twig' %}
 
 {% block page_checkout_confirm_payment_inner %}
     {{ parent() }}
@@ -7,13 +7,7 @@
         <div id="adyen-checkout-options"
              data-language-id="{{ adyenFrontendData.languageId }}"
              data-payment-status-url="{{ adyenFrontendData.paymentStatusUrl }}"
-             data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}"
-             data-payment-details-url="{{ adyenFrontendData.paymentDetailsUrl }}"
-             data-payment-finish-url="{{ adyenFrontendData.paymentFinishUrl }}"
-             data-payment-error-url="{{ adyenFrontendData.paymentErrorUrl }}"
-             data-edit-payment-url="{{ adyenFrontendData.editPaymentUrl }}"
-             data-order-id="{{ adyenFrontendData.orderId }}"
-        >
+             data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}">
         </div>
         <script>
             var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
