@@ -61,27 +61,34 @@ class ResultHandler
     private $paymentDetailsService;
 
     /**
+     * @var PaymentResponseHandlerResult
+     */
+    private $paymentResponseHandlerResult;
+
+    /**
      * ResultHandler constructor.
      *
-     * @param Request $request
      * @param CheckoutService $checkoutService
      * @param PaymentResponseService $paymentResponseService
      * @param LoggerInterface $logger
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param PaymentDetailsService $paymentDetailsService
+     * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
      */
     public function __construct(
         CheckoutService $checkoutService,
         PaymentResponseService $paymentResponseService,
         LoggerInterface $logger,
         PaymentResponseHandler $paymentResponseHandler,
-        PaymentDetailsService $paymentDetailsService
+        PaymentDetailsService $paymentDetailsService,
+        PaymentResponseHandlerResult $paymentResponseHandlerResult
     ) {
         $this->checkoutService = $checkoutService;
         $this->paymentResponseService = $paymentResponseService;
         $this->logger = $logger;
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->paymentDetailsService = $paymentDetailsService;
+        $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
     }
 
     /**
@@ -95,29 +102,38 @@ class ResultHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ) {
-        // Get payload to be validated
-        $payload = $request->request->get('payload');
-        if (empty($payload)) {
-            throw new PaymentException('Payload parameter is missing from return URL');
+
+        // Retrieve paymentResponse and if it is
+        $orderId = $transaction->getOrderTransaction()->getOrderId();
+        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $salesChannelContext->getToken());
+        $orderNumber = $paymentResponse->getOrderNumber();
+
+        $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
+
+        if ('RedirectShopper' === $result->getResultCode()) {
+
+            // Validate 3DS1 Post parameters
+            // Get MD and PaRes to be validated
+            $md = $request->request->get('MD');
+            $paRes = $request->request->get('PaRes');
+
+            if (empty($md) || empty($paRes)) {
+                throw new PaymentException('MD and/or PaRes parameter is missing from the redirect request');
+            }
+
+            // Construct the details object for the paymentDetails request
+            $details = [
+                'MD' => $md,
+                'PaRes' => $paRes
+            ];
+
+            // Validate the return
+            $result = $this->paymentDetailsService->doPaymentDetails(
+                $details,
+                $orderNumber,
+                $salesChannelContext
+            );
         }
-
-        // Get order number
-        $orderNumber = $request->get(PaymentResponseHandler::ADYEN_MERCHANT_REFERENCE);
-        if (empty($orderNumber)) {
-            throw new PaymentException('Adyen merchant reference parameter is missing from return URL');
-        }
-
-        // Construct the details object for the paymentDetails request
-        $details = [
-            'payload' => $payload
-        ];
-
-        // Validate the return
-        $result = $this->paymentDetailsService->doPaymentDetails(
-            $details,
-            $orderNumber,
-            $salesChannelContext
-        );
 
         // Process the result and handle the transaction
         $this->paymentResponseHandler->handleShopwareAPIs(

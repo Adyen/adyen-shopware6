@@ -278,32 +278,4 @@ class PaymentResponseHandler
                     ];
         }
     }
-
-
-    /**
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param SalesChannelContext $salesChannelContext
-     */
-    public function finalize(
-        AsyncPaymentTransactionStruct $transaction,
-        SalesChannelContext $salesChannelContext
-    ): void {
-        $orderTransactionId = $transaction->getOrderTransaction()->getId();
-        $context = $salesChannelContext->getContext();
-
-        $this->logger->debug($transaction->getOrderTransaction()->getCustomFields());
-        $resultCode = '';
-
-        switch ($resultCode) {
-            case self::AUTHORISED:
-                $this->transactionStateHandler->paid($orderTransactionId, $context);
-                break;
-            case self::REFUSED:
-            case self::ERROR:
-                $this->transactionStateHandler->fail($orderTransactionId, $context);
-                break;
-            default:
-                //TODO log unhandled result code
-        }
-    }
 }
