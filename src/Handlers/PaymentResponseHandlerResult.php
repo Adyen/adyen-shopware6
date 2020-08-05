@@ -2,12 +2,53 @@
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
+
 class PaymentResponseHandlerResult
 {
     private $resultCode;
     private $pspReference;
     private $action;
     private $additionalData;
+
+    /**
+     * @param PaymentResponseEntity $paymentResponse
+     */
+    public function createFromPaymentResponse($paymentResponse)
+    {
+        // Set result code
+        $this->setResultCode($paymentResponse->getResultCode());
+
+        $response = $paymentResponse->getResponse();
+
+        // If response is empty return the result only with the result code
+        if (empty($response)) {
+            return $this;
+        }
+
+        $response = json_decode($response, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            //TODO error handling
+        }
+
+        // Set pspReference if exists
+        if (!empty($response['pspReference'])) {
+            $this->setPspReference($response['pspReference']);
+        }
+
+        // Set action if exists
+        if (!empty($response['action'])) {
+            $this->setAction($response['action']);
+        }
+
+        // Set additional data if exists
+        if (!empty($response['additionalData'])) {
+            $this->setAdditionalData($response['additionalData']);
+        }
+
+        return $this;
+    }
 
     /**
      * @return null|string
