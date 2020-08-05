@@ -14,8 +14,8 @@ class PaymentResponseHandlerResult
     /**
      * @param PaymentResponseEntity $paymentResponse
      */
-    public function createFromPaymentResponse($paymentResponse) {
-
+    public function createFromPaymentResponse($paymentResponse)
+    {
         // Set result code
         $this->setResultCode($paymentResponse->getResultCode());
 

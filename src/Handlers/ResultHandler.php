@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -102,7 +103,6 @@ class ResultHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ) {
-
         // Retrieve paymentResponse and if it is
         $orderId = $transaction->getOrderTransaction()->getOrderId();
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $salesChannelContext->getToken());
@@ -111,7 +111,6 @@ class ResultHandler
         $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
 
         if ('RedirectShopper' === $result->getResultCode()) {
-
             // Validate 3DS1 Post parameters
             // Get MD and PaRes to be validated
             $md = $request->request->get('MD');
