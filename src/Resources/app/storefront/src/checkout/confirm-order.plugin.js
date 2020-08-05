@@ -92,9 +92,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         const paymentActionResponse = JSON.parse(paymentAction);
 
         if (paymentActionResponse.isFinal === true) {
-            console.log(paymentActionResponse, window.returnUrl);
             location.href = window.returnUrl;
-            return;
         }
 
         try{
