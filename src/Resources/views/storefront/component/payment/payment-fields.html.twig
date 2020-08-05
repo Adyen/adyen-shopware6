@@ -46,7 +46,7 @@
                                             {% endblock %}
                                         </label>
                                         {% if payment.formattedHandlerIdentifier == "handler_adyen_cardspaymentmethodhandler" %}
-                                            <div class="payment-method-container-div" data-payment-method-id="{{ payment.id }}" data-payment-method="handler_adyen_cardspaymentmethodhandler">
+                                            <div class="adyen-payment-method-container-div" data-payment-method-id="{{ payment.id }}" data-payment-method="handler_adyen_cardspaymentmethodhandler">
                                                 <div data-adyen-payment-container></div>
                                             </div>
                                         {% endif %}
