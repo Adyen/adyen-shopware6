@@ -303,7 +303,7 @@ class PaymentResponseHandler
                 $this->transactionStateHandler->fail($orderTransactionId, $context);
                 break;
             default:
-                //
+                //TODO log unhandled result code
         }
     }
 }
