@@ -34,6 +34,7 @@ use Adyen\Service\Builder\Payment;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Service\PaymentStateDataService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
@@ -116,6 +117,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     protected $resultHandler;
 
     /**
+     * @var OrderTransactionStateHandler
+     */
+    protected $orderTransactionStateHandler;
+
+    /**
      * CardsPaymentMethodHandler constructor.
      *
      * @param ConfigurationService $configurationService
@@ -145,6 +151,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         SalesChannelRepository $salesChannelRepository,
         PaymentResponseHandler $paymentResponseHandler,
         ResultHandler $resultHandler,
+        OrderTransactionStateHandler $orderTransactionStateHandler,
         LoggerInterface $logger
     ) {
         $this->checkoutService = $checkoutService;
@@ -160,6 +167,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->resultHandler = $resultHandler;
         $this->logger = $logger;
+        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
     }
 
     /**
@@ -236,7 +244,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse('unusedRedirectUrl');
+        return new RedirectResponse($transaction->getReturnUrl());
     }
 
     /**
@@ -249,11 +257,21 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
-        try {
+        //TODO this one will only handle 3DS2 but for 3DS1 we need the processResult
+        $this->paymentResponseHandler->finalize(
+            $transaction,
+            $salesChannelContext
+        );
+        /*$context = $salesChannelContext->getContext();
+        $this->orderTransactionStateHandler->paid($transaction->getOrderTransaction()->getId(), $context);*/
+        /*try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentException $exception) {
-            throw new AsyncPaymentFinalizeException($exception->getMessage());
-        }
+            throw new AsyncPaymentFinalizeException(
+        $transaction->getOrderTransaction()->getId(),
+        $exception->getMessage()
+        );
+        }*/
     }
 
     //TODO move to external object or outsource to lib

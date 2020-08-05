@@ -152,6 +152,19 @@ class PaymentSubscriber implements EventSubscriberInterface
                         'sales-channel-api.checkout.order.create',
                         ['version' => 2]
                     ),
+                    'paymentDetailsUrl' => $this->router->generate(
+                        'sales-channel-api.action.adyen.payment-details',
+                        ['version' => 2]
+                    ),
+                    'paymentFinishUrl' => $this->router->generate(
+                        'frontend.checkout.finish.page',
+                        ['orderId' => '']
+                    ),
+                    'paymentErrorUrl' => $this->router->generate('frontend.checkout.finish.page', [
+                        'orderId' => '',
+                        'changedPayment' => false,
+                        'paymentFailed' => true,
+                    ]),
                     'editPaymentUrl' => $this->router->generate(
                         'store-api.order.set-payment',
                         ['version' => 2]
@@ -160,12 +173,10 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'originKey' => $this->originKeyService->getOriginKeyForOrigin(
                         $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext)
                     )->getOriginKey(),
-
                     'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
                         ->getLanguage()->getLocale()->getCode(),
 
                     'environment' => $this->configurationService->getEnvironment(),
-
                     'paymentMethodsResponse' => json_encode(
                         $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
                     ),

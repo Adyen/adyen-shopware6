@@ -8,8 +8,12 @@
              data-language-id="{{ adyenFrontendData.languageId }}"
              data-payment-status-url="{{ adyenFrontendData.paymentStatusUrl }}"
              data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}"
+             data-payment-details-url="{{ adyenFrontendData.paymentDetailsUrl }}"
+             data-payment-finish-url="{{ adyenFrontendData.paymentFinishUrl }}"
+             data-payment-error-url="{{ adyenFrontendData.paymentErrorUrl }}"
              data-edit-payment-url="{{ adyenFrontendData.editPaymentUrl }}"
-            data-order-id="{{ adyenFrontendData.orderId }}">
+             data-order-id="{{ adyenFrontendData.orderId }}"
+        >
         </div>
         <script>
             var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;

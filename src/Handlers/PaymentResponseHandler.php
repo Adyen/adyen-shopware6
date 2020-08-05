@@ -120,16 +120,21 @@ class PaymentResponseHandler
 
         // Based on the result code start different payment flows
         switch ($resultCode) {
-            case self::AUTHORISED:
-                // Do nothing the payment is authorised no further steps needed
-                break;
             case self::REFUSED:
                 // Log Refused, no further steps needed
                 $this->logger->error(
                     "The payment was refused, order transaction merchant reference: " .
                     $response[self::MERCHANT_REFERENCE]
                 );
+
+                // Store response for cart until the payment is finalised
+                $this->paymentResponseService->insertPaymentResponse(
+                    $response,
+                    $orderNumber,
+                    $salesChannelContext->getToken()
+                );
                 break;
+            case self::AUTHORISED:
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
@@ -152,6 +157,7 @@ class PaymentResponseHandler
                     ' Result code "Error" in response: ' . print_r($response, true)
                 );
 
+                //TODO check if insertPaymentResponse is needed
                 break;
             default:
                 // Unsupported resultCode
@@ -160,6 +166,8 @@ class PaymentResponseHandler
                     ' Unsupported result code in response: ' . print_r($response, true)
                 );
         }
+
+        return $this->paymentResponseHandlerResult;
     }
 
     public function handleShopwareApis(
@@ -208,21 +216,27 @@ class PaymentResponseHandler
                 // Tag order as paid
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
                 break;
+            case self::REFUSED:
+                //Sync response, do nothing, wait for finalize()
+                $this->transactionStateHandler->fail($orderTransactionId, $context);
+                // Cancel the order
+                throw new PaymentException(
+                    'The payment was refused'
+                );
+                break;
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::RECEIVED:
             case self::PRESENT_TO_SHOPPER:
-                $this->transactionStateHandler->process($orderTransactionId, $context);
                 // Return to the frontend without throwing an exception
+                $this->transactionStateHandler->process($orderTransactionId, $context);
                 break;
-            case self::REFUSED:
             case self::ERROR:
             default:
                 // Cancel the order
                 throw new PaymentException(
-                    $orderTransactionId,
-                    'The payment was cancelled, refused or had an error or an unhandled result code'
+                    'The payment had an error or an unhandled result code'
                 );
         }
     }
@@ -262,6 +276,34 @@ class PaymentResponseHandler
                         "isFinal" => true,
                         "resultCode" => self::ERROR,
                     ];
+        }
+    }
+
+
+    /**
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param SalesChannelContext $salesChannelContext
+     */
+    public function finalize(
+        AsyncPaymentTransactionStruct $transaction,
+        SalesChannelContext $salesChannelContext
+    ): void {
+        $orderTransactionId = $transaction->getOrderTransaction()->getId();
+        $context = $salesChannelContext->getContext();
+
+        $this->logger->debug($transaction->getOrderTransaction()->getCustomFields());
+        $resultCode = '';
+
+        switch ($resultCode) {
+            case self::AUTHORISED:
+                $this->transactionStateHandler->paid($orderTransactionId, $context);
+                break;
+            case self::REFUSED:
+            case self::ERROR:
+                $this->transactionStateHandler->fail($orderTransactionId, $context);
+                break;
+            default:
+                //TODO log unhandled result code
         }
     }
 }

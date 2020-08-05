@@ -1,0 +1,14 @@
+{% sw_extends '@Storefront/storefront/page/checkout/confirm/index.html.twig' %}
+
+{% block base_footer %}
+    {{ parent() }}
+    <div class="modal" tabindex="-1" role="dialog" data-adyen-payment-action-modal>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div data-adyen-payment-action-container></div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

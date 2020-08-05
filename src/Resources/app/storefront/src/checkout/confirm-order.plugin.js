@@ -53,13 +53,20 @@ export default class ConfirmOrderPlugin extends Plugin {
             // TODO error handling
             return;
         }
-        const orderId = order.data.id;
-        const params = {};
+        window.orderId = order.data.id;
+        const finishUrl = new URL(location.origin + adyenCheckoutOptions.paymentFinishUrl);
+        finishUrl.searchParams.set('orderId', order.data.id);
+        const errorUrl = new URL(location.origin + adyenCheckoutOptions.paymentErrorUrl);
+        errorUrl.searchParams.set('orderId', order.data.id);
+        const params = {
+            'finishUrl': finishUrl.toString(),
+            'errorUrl': errorUrl.toString()
+        };
 
         this._client.post(
-            `${adyenCheckoutOptions.checkoutOrderUrl}/${orderId}/pay`,
+            `${adyenCheckoutOptions.checkoutOrderUrl}/${window.orderId}/pay`,
             JSON.stringify(params),
-            this.afterPayOrder.bind(this, orderId)
+            this.afterPayOrder.bind(this, window.orderId)
         );
     }
 
@@ -71,15 +78,31 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterPayOrder(orderId, response) {
+        response = JSON.parse(response);
+        window.returnUrl = response.paymentUrl;
+
         this._client.post(
             `${adyenCheckoutOptions.paymentStatusUrl}`,
             JSON.stringify({'orderId': orderId}),
-            this.afterPaymetStatus.bind(this)
+            this.handlePaymentAction.bind(this)
         );
     }
 
-    afterPaymetStatus(response) {
-        console.log(response);
-    }
+    handlePaymentAction(paymentAction) {
+        const paymentActionResponse = JSON.parse(paymentAction);
 
+        if (paymentActionResponse.isFinal === true) {
+            location.href = window.returnUrl;
+        }
+
+        try{
+            window.adyenCheckout
+                .createFromAction(paymentActionResponse.action)
+                .mount('[data-adyen-payment-action-container]');
+        }
+        catch (e) {
+            console.log('error');
+        }
+
+    }
 }

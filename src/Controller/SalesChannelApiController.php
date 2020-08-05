@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 /**
  *                       ######
@@ -27,12 +26,13 @@ declare(strict_types=1);
 namespace Adyen\Shopware\Controller;
 
 use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
+use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
-use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -74,6 +74,16 @@ class SalesChannelApiController extends AbstractController
     private $paymentStatusService;
 
     /**
+     * @var PaymentResponseService
+     */
+    private $paymentResponseService;
+
+    /**
+     * @var PaymentResponseHandler
+     */
+    private $paymentResponseHandler;
+
+    /**
      * SalesChannelApiController constructor.
      *
      * @param OriginKeyService $originKeyService
@@ -82,6 +92,8 @@ class SalesChannelApiController extends AbstractController
      * @param PaymentDetailsService $paymentDetailsService
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStatusService $paymentStatusService
+     * @param PaymentResponseHandler $paymentResponseHandler
+     * @param PaymentResponseService $paymentResponseService
      */
     public function __construct(
         OriginKeyService $originKeyService,
@@ -89,7 +101,9 @@ class SalesChannelApiController extends AbstractController
         SalesChannelRepository $salesChannelRepository,
         PaymentDetailsService $paymentDetailsService,
         CheckoutStateDataValidator $checkoutStateDataValidator,
-        PaymentStatusService $paymentStatusService
+        PaymentStatusService $paymentStatusService,
+        PaymentResponseHandler $paymentResponseHandler,
+        PaymentResponseService $paymentResponseService
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
@@ -97,6 +111,8 @@ class SalesChannelApiController extends AbstractController
         $this->paymentDetailsService = $paymentDetailsService;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStatusService = $paymentStatusService;
+        $this->paymentResponseHandler = $paymentResponseHandler;
+        $this->paymentResponseService = $paymentResponseService;
     }
 
     /**
@@ -154,8 +170,8 @@ class SalesChannelApiController extends AbstractController
         SalesChannelContext $context
     ): JsonResponse {
 
-        $orderNumber = $request->request->get('orderNumber');
-        if (empty($orderNumber)) {
+        $orderId = $request->request->get('orderId');
+        if (empty($orderId)) {
             // TODO error handling
         }
 
@@ -167,7 +183,19 @@ class SalesChannelApiController extends AbstractController
             $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
         }
 
-        $result = $this->paymentDetailsService->doPaymentDetails($stateData, $orderNumber, $context);
+        if (empty($stateData['details'])) {
+            // handle error
+        }
+
+        $details = $stateData['details'];
+
+        $result = $this->paymentDetailsService->doPaymentDetails(
+            $details,
+            $this->paymentResponseService
+                ->getWithOrderId($orderId, $context->getToken())
+                ->getOrderNumber(),
+            $context
+        );
 
         return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
     }
