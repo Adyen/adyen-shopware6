@@ -27,13 +27,12 @@ export default class CheckoutPlugin extends Plugin {
                         location.href = window.returnUrl;
                     }
 
-                    try{
+                    try {
                         window.adyenCheckout
                             .createFromAction(paymentActionResponse.action)
                             .mount('[data-adyen-payment-action-container]');
                         $('[data-adyen-payment-action-modal]').modal({show: true});
-                    }
-                    catch (e) {
+                    } catch (e) {
                         console.log(e);
                     }
                 }
@@ -72,12 +71,16 @@ export default class CheckoutPlugin extends Plugin {
                 return;
             }
 
+            //Show the payment method's contents if it's selected by default
+            if ($('[data-payment-method-id]').data('payment-method-id') == $('[name=paymentMethodId]:checked').val()) {
+                $('[data-payment-method-id]').show();
+            }
+
             //Hide other payment method's contents when selecting an option
             $('[name=paymentMethodId]').on("change", function () {
-                $('.payment-method-container-div').hide();
+                $('.adyen-payment-method-container-div').hide();
                 $('[data-payment-method-id="' + $(this).val() + '"]').show();
             });
-
 
             /*Use the storedPaymentMethod object and the custom onChange function as the configuration object together*/
             var configuration = Object.assign(paymentMethod, {
