@@ -257,18 +257,20 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
-
         //TODO this one will only handle 3DS2 but for 3DS1 we need the processResult
         $this->paymentResponseHandler->finalize(
-            $transaction, $salesChannelContext
+            $transaction,
+            $salesChannelContext
         );
         /*$context = $salesChannelContext->getContext();
         $this->orderTransactionStateHandler->paid($transaction->getOrderTransaction()->getId(), $context);*/
-
         /*try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentException $exception) {
-            throw new AsyncPaymentFinalizeException($transaction->getOrderTransaction()->getId(), $exception->getMessage());
+            throw new AsyncPaymentFinalizeException(
+        $transaction->getOrderTransaction()->getId(),
+        $exception->getMessage()
+        );
         }*/
     }
 
