@@ -91,12 +91,11 @@ class PaymentStateDataService
         );
     }
 
-
     /**
      * @param string $contextToken
      * @return string
      */
-    public function getPaymentStateDataFromContextToken(string $contextToken):? PaymentStateDataEntity
+    public function getPaymentStateDataFromContextToken(string $contextToken): ?PaymentStateDataEntity
     {
         $stateDataRow = $this->paymentStateDataRepository->search(
             (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
@@ -104,6 +103,25 @@ class PaymentStateDataService
         )->first();
 
         return $stateDataRow;
+    }
+
+    /**
+     * @param string $contextToken
+     * @return string|null
+     */
+    public function getPaymentMethodType(string $contextToken): ?string
+    {
+        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
+        if (empty($stateData)) {
+            return null;
+        }
+
+        $stateDataArray = json_decode($stateData->getStateData(), true);
+        if (empty($stateDataArray['paymentMethod']['type'])) {
+            return null;
+        }
+
+        return $stateDataArray['paymentMethod']['type'];
     }
 
     /**
