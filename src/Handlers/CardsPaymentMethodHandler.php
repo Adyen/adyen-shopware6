@@ -522,7 +522,11 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         // Generate the custome Adyen endpoint to receive the redirect from the issuer page
         $adyenReturnUrl = $this->router->generate(
             'adyen_redirect_result',
-            [RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken('payment.finalize.transaction')->getValue()],
+            [
+                RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
+                    'payment.finalize.transaction'
+                )->getValue()
+            ],
             RouterInterface::ABSOLUTE_URL
         );
 
