@@ -105,4 +105,17 @@ class PaymentStateDataService
 
         return $stateDataRow;
     }
+
+    /**
+     * @param PaymentStateDataEntity $stateData
+     */
+    public function deletePaymentStateData(PaymentStateDataEntity $stateData): void
+    {
+        $this->paymentStateDataRepository->delete(
+            [
+                ['id' => $stateData->getId()],
+            ],
+            Context::createDefaultContext()
+        );
+    }
 }
