@@ -118,7 +118,7 @@ class PaymentStateDataService
         }
 
         $stateDataArray = json_decode($stateData->getStateData(), true);
-        if (!$stateDataArray['paymentMethod']['type']) {
+        if (empty($stateDataArray['paymentMethod']['type'])) {
             return null;
         }
 
