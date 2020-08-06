@@ -91,7 +91,6 @@ class PaymentStateDataService
         );
     }
 
-
     /**
      * @param string $contextToken
      * @return string
@@ -123,5 +122,17 @@ class PaymentStateDataService
         }
 
         return $stateDataArray['paymentMethod']['type'];
+
+    /**
+     * @param PaymentStateDataEntity $stateData
+     */
+    public function deletePaymentStateData(PaymentStateDataEntity $stateData): void
+    {
+        $this->paymentStateDataRepository->delete(
+            [
+                ['id' => $stateData->getId()],
+            ],
+            Context::createDefaultContext()
+        );
     }
 }
