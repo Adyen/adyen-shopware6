@@ -122,6 +122,7 @@ class PaymentStateDataService
         }
 
         return $stateDataArray['paymentMethod']['type'];
+    }
 
     /**
      * @param PaymentStateDataEntity $stateData
