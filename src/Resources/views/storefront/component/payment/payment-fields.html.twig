@@ -47,9 +47,6 @@
                                         </label>
                                         {% if payment.formattedHandlerIdentifier == "handler_adyen_cardspaymentmethodhandler" %}
                                             <div class="adyen-payment-method-container-div" data-payment-method-id="{{ payment.id }}" data-payment-method="handler_adyen_cardspaymentmethodhandler">
-                                                <div data-adyen-update-payment-details class="adyen-update-payment-details">
-                                                    <button type="button" class="btn btn-primary" onclick="window.showPaymentMethodDetails()">{{ "adyen.updateDetails"|trans }}</button>
-                                                </div>
                                                 <div data-adyen-payment-container></div>
                                             </div>
                                         {% endif %}
