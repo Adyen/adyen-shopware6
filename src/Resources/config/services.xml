@@ -57,6 +57,9 @@
             <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\Storefront\Controller\RedirectResultController" autowire="true">
+            <tag name="controller.service_arguments"/>
+        </service>
         <service id="Adyen\Shopware\Entity\Notification\NotificationEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_notification"/>
         </service>
