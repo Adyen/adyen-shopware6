@@ -113,7 +113,7 @@ class PaymentStateDataService
     public function getPaymentMethodType(string $contextToken): ?string
     {
         $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
-        if (!$stateData) {
+        if (empty($stateData)) {
             return null;
         }
 
