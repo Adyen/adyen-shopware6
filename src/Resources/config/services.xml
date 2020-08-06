@@ -57,6 +57,9 @@
             <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\Storefront\Controller\RedirectResultController" autowire="true">
+            <tag name="controller.service_arguments"/>
+        </service>
         <service id="Adyen\Shopware\Entity\Notification\NotificationEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_notification"/>
         </service>
@@ -87,6 +90,8 @@
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
             <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler" />
+            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument type="service" id="security.csrf.token_manager"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
             <tag name="shopware.payment.method.async" />
         </service>
