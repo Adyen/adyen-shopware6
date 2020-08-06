@@ -291,11 +291,10 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         AsyncPaymentTransactionStruct $transaction
     ) {
 
+        //Get state.data using the context token
         $stateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
             $salesChannelContext->getToken()
         );
-
-        //Get state.data using the context token
         $request = json_decode($stateData->getStateData(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
