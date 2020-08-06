@@ -111,7 +111,6 @@ export default class CheckoutPlugin extends Plugin {
 
             //Hiding component contents if there's already state.data saved for this PM
             if (updatablePaymentMethods.includes(paymentMethod.type) && adyenCheckoutOptions.statedataPaymentMethod === paymentMethod.type) {
-                console.log('includes');
                 $('[data-adyen-payment-container]').hide();
                 $('[data-adyen-update-payment-details]').show();
             }
