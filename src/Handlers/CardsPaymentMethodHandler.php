@@ -34,6 +34,7 @@ use Adyen\Service\Builder\Payment;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Service\PaymentStateDataService;
+use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -48,6 +49,8 @@ use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use \Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
@@ -122,6 +125,16 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     protected $orderTransactionStateHandler;
 
     /**
+     * @var RouterInterface
+     */
+    protected $router;
+
+    /**
+     * @var CsrfTokenManagerInterface
+     */
+    protected $csrfTokenManager;
+
+    /**
      * CardsPaymentMethodHandler constructor.
      *
      * @param ConfigurationService $configurationService
@@ -136,6 +149,8 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param ResultHandler $resultHandler
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param RouterInterface $router
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -152,6 +167,8 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         PaymentResponseHandler $paymentResponseHandler,
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
+        RouterInterface $router,
+        CsrfTokenManagerInterface $csrfTokenManager,
         LoggerInterface $logger
     ) {
         $this->checkoutService = $checkoutService;
@@ -168,6 +185,8 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         $this->resultHandler = $resultHandler;
         $this->logger = $logger;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
+        $this->router = $router;
+        $this->csrfTokenManager = $csrfTokenManager;
     }
 
     /**
@@ -244,7 +263,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($transaction->getReturnUrl());
+        return new RedirectResponse($this->getAdyenReturnUrl($transaction->getReturnUrl()));
     }
 
     /**
@@ -462,7 +481,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount(),
-            $transaction->getReturnUrl(),
+            $this->getAdyenReturnUrl($transaction->getReturnUrl()),
             $request
         );
 
@@ -480,5 +499,34 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         $request['channel'] = 'web';
 
         return $request;
+    }
+
+    /**
+     * Creates the Adyen Redirect Result URL with the same query as the original return URL
+     * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
+     *
+     * @param $returnUrl
+     * @return string
+     * @throws PaymentException
+     */
+    private function getAdyenReturnUrl($returnUrl)
+    {
+        // Parse the original return URL to retrieve the query parameters
+        $returnUrlQuery = parse_url($returnUrl, PHP_URL_QUERY);
+
+        // In case the URL is malformed it cannot be parsed
+        if (false === $returnUrlQuery) {
+            throw new PaymentException('Return URL is malformed');
+        }
+
+        // Generate the custome Adyen endpoint to receive the redirect from the issuer page
+        $adyenReturnUrl = $this->router->generate(
+            'adyen_redirect_result',
+            [RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken('payment.finalize.transaction')->getValue()],
+            RouterInterface::ABSOLUTE_URL
+        );
+
+        // Create the adyen redirect result URL with the same query as the original return URL
+        return $adyenReturnUrl . '&' . $returnUrlQuery;
     }
 }
