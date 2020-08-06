@@ -13,6 +13,9 @@ export default class CheckoutPlugin extends Plugin {
             'scheme': formattedHandlerIdentifier
         };
 
+        //PMs that should show an 'Update Details' button if there's already a state.data for that PM stored for this context
+        const updatablePaymentMethods = ['scheme'];
+
         this.client = new StoreApiClient();
 
         let handleOnAdditionalDetails = function (state) {
@@ -106,6 +109,13 @@ export default class CheckoutPlugin extends Plugin {
                 console.log(err);
             }
 
+            //Hiding component contents if there's already state.data saved for this PM
+            if (updatablePaymentMethods.includes(paymentMethod.type) && adyenCheckoutOptions.statedataPaymentMethod === paymentMethod.type) {
+                console.log('includes');
+                $('[data-adyen-payment-container]').hide();
+                $('[data-adyen-update-payment-details]').show();
+            }
+
 
         });
 
@@ -114,6 +124,14 @@ export default class CheckoutPlugin extends Plugin {
          */
         function resetFields() {
             data = "";
+        }
+
+        /**
+         * Shows the payment method component in order to update the previously saved details
+         */
+        window.showPaymentMethodDetails = function () {
+            $('[data-adyen-payment-container]').show();
+            $('[data-adyen-update-payment-details]').hide();
         }
 
         /* eslint-enable no-unused-vars */
