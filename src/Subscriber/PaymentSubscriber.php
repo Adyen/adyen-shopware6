@@ -140,7 +140,9 @@ class PaymentSubscriber implements EventSubscriberInterface
             $orderId = $page->getOrder()->getId();
         }
 
-        $stateDataPaymentMethod = $this->paymentStateDataService->getPaymentMethodType($salesChannelContext->getToken());
+        $stateDataPaymentMethod = $this->paymentStateDataService->getPaymentMethodType(
+            $salesChannelContext->getToken()
+        );
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
