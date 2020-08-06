@@ -310,12 +310,10 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         AsyncPaymentTransactionStruct $transaction
     ) {
         //Get state.data using the context token
-        $request = json_decode(
-            $this->paymentStateDataService->getPaymentStateDataFromContextToken(
-                $salesChannelContext->getToken()
-            )->getStateData(),
-            true
+        $stateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
+            $salesChannelContext->getToken()
         );
+        $request = json_decode($stateData->getStateData(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new AsyncPaymentProcessException(
@@ -497,6 +495,9 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 
         // TODO add channel?
         $request['channel'] = 'web';
+
+        //Remove the used state.data
+        $this->paymentStateDataService->deletePaymentStateData($stateData);
 
         return $request;
     }
