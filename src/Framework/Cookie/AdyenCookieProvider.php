@@ -23,7 +23,6 @@ class AdyenCookieProvider implements CookieProviderInterface
         $this->originalService = $service;
     }
 
-    // cookies can also be provided as a group
     private static $requiredCookies = [
         [
             'cookie' => 'JSESSIONID',
