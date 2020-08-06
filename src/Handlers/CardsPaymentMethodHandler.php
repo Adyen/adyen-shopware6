@@ -519,7 +519,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             throw new PaymentException('Return URL is malformed');
         }
 
-        // Generate the custome Adyen endpoint to receive the redirect from the issuer page
+        // Generate the custom Adyen endpoint to receive the redirect from the issuer page
         $adyenReturnUrl = $this->router->generate(
             'adyen_redirect_result',
             [
