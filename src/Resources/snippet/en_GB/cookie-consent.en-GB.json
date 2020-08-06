@@ -1,0 +1,8 @@
+{
+  "adyen": {
+    "required_cookie": {
+        "name": "Adyen payments",
+        "description": "Required cookies to process payments using Adyen"
+    }
+  }
+}
