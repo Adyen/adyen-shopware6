@@ -73,7 +73,6 @@ class AdyenCookieProvider implements CookieProviderInterface
             'cookie' => '_gcl_au',
             "hidden" => true
         ]
-        /* TODO check if it can be retrieved automatically or only manually */
     ];
 
     /**
@@ -83,10 +82,40 @@ class AdyenCookieProvider implements CookieProviderInterface
     {
         $cookieGroups = $this->originalService->getCookieGroups();
 
+        $requiredCookieGroupKey = $this->getRequiredCookieGroupKey($cookieGroups);
+
         foreach (self::$requiredCookies as $cookieEntries) {
-            $cookieGroups[0]['entries'][] = $cookieEntries;
+            $cookieGroups[$requiredCookieGroupKey]['entries'][] = $cookieEntries;
         }
 
         return $cookieGroups;
+    }
+
+    /**
+     * Retrieves the required default cookie group's key in the already registered cookie groups array
+     * Returns false in case it's not present in the array
+     * Returns the key as int in case it's found
+     *
+     * @param array $cookieGroups
+     * @return bool|int
+     */
+    private function getRequiredCookieGroupKey($cookieGroups)
+    {
+        $requiredCookieGroupKey = false;
+
+        // Search the default required cookie group
+        foreach ($cookieGroups as $cookieGroupKey => $cookieGroup) {
+            // Loop until the default required cookie group is found in the array
+            if (empty($cookieGroup['snippet_name']) || 'cookie.groupRequired' !== $cookieGroup['snippet_name']) {
+                continue;
+            }
+
+            $requiredCookieGroupKey = $cookieGroupKey;
+
+            // Stop the searching
+            break;
+        }
+
+        return $requiredCookieGroupKey;
     }
 }
