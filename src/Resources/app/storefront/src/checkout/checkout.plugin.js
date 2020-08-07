@@ -62,7 +62,7 @@ export default class CheckoutPlugin extends Plugin {
         // Iterate through the payment methods list we got from the adyen checkout component
         paymentMethods.forEach(function (paymentMethod) {
             //  if the container doesn't exits don't try to render the component
-            var paymentMethodContainer = $('[data-payment-method="' + paymentMethodTypeHandlers[paymentMethod.type] + '"]');
+            var paymentMethodContainer = $('[data-adyen-payment-method="' + paymentMethodTypeHandlers[paymentMethod.type] + '"]');
 
             // container doesn't exist, something went wrong on the template side
             if (!paymentMethodContainer.length) {
@@ -75,14 +75,14 @@ export default class CheckoutPlugin extends Plugin {
             }
 
             //Show the payment method's contents if it's selected by default
-            if ($('[data-payment-method-id]').data('payment-method-id') == $('[name=paymentMethodId]:checked').val()) {
-                $('[data-payment-method-id]').show();
+            if ($('[data-adyen-payment-method-id]').data('adyen-payment-method-id') == $('[name=paymentMethodId]:checked').val()) {
+                $('[data-adyen-payment-method-id]').show();
             }
 
             //Hide other payment method's contents when selecting an option
             $('[name=paymentMethodId]').on("change", function () {
                 $('.adyen-payment-method-container-div').hide();
-                $('[data-payment-method-id="' + $(this).val() + '"]').show();
+                $('[data-adyen-payment-method-id="' + $(this).val() + '"]').show();
             });
 
             /*Use the storedPaymentMethod object and the custom onChange function as the configuration object together*/
