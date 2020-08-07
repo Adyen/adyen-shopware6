@@ -41,6 +41,7 @@ use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\CheckoutService;
@@ -263,7 +264,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction->getReturnUrl()));
+        return new RedirectResponse($this->getAdyenReturnUrl($transaction->getReturnUrl(), $salesChannelContext));
     }
 
     /**
@@ -479,7 +480,7 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount(),
-            $this->getAdyenReturnUrl($transaction->getReturnUrl()),
+            $this->getAdyenReturnUrl($transaction->getReturnUrl(), $salesChannelContext),
             $request
         );
 
@@ -505,12 +506,13 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
     /**
      * Creates the Adyen Redirect Result URL with the same query as the original return URL
      * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
+     * Fixes Google Chrome same site cookie policy issue
      *
      * @param $returnUrl
      * @return string
      * @throws PaymentException
      */
-    private function getAdyenReturnUrl($returnUrl)
+    private function getAdyenReturnUrl($returnUrl, SalesChannelContext $salesChannelContext)
     {
         // Parse the original return URL to retrieve the query parameters
         $returnUrlQuery = parse_url($returnUrl, PHP_URL_QUERY);
@@ -526,7 +528,8 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             [
                 RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
                     'payment.finalize.transaction'
-                )->getValue()
+                )->getValue(),
+                PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID => $salesChannelContext->getToken()
             ],
             RouterInterface::ABSOLUTE_URL
         );

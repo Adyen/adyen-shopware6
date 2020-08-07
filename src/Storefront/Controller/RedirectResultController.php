@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace Adyen\Shopware\Storefront\Controller;
 
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
@@ -70,10 +71,14 @@ class RedirectResultController extends StorefrontController
         // Get the CSRF token from the query parameters
         $csrfToken = $request->query->get(self::CSRF_TOKEN);
 
-        // Remove it from the query parameters
-        $request->query->remove(self::CSRF_TOKEN);
+        // Get the sales channel context token from the query parameters
+        $salesChannelContextToken = $request->query->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
 
-        // Only add the SCRF token when the method is POST
+        // Remove the parameters above from the query parameters
+        $request->query->remove(self::CSRF_TOKEN);
+        $request->query->remove(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
+
+        // Only add the extra parameters above when the method is POST
         if ($request->isMethod('GET')) {
             // Continue with shopware default finalize-tranzaction
             return $this->paymentController->finalizeTransaction($request, $salesChannelContext);
@@ -83,6 +88,13 @@ class RedirectResultController extends StorefrontController
         if (!empty($csrfToken)) {
             $request->request->set(self::CSRF_TOKEN, $csrfToken);
         }
+
+        // Set the sales channel context token token as an attribute parameter
+        if (!empty($salesChannelContextToken)) {
+            $request->attributes->set(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID, $salesChannelContextToken);
+        }
+
+
 
         // Continue with shopware default finalize-tranzaction
         return $this->paymentController->finalizeTransaction($request, $salesChannelContext);
