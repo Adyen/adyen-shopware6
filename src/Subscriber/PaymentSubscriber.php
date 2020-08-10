@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Subscriber;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\OriginKeyService;
 use Adyen\Shopware\Service\PaymentMethodsService;
@@ -118,11 +119,15 @@ class PaymentSubscriber implements EventSubscriberInterface
     public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
     {
         if ($event->getRequestDataBag()->get('adyenStateData')) {
-            $this->paymentStateDataService->insertPaymentStateData(
-                $event->getSalesChannelContext()->getToken(),
-                $event->getRequestDataBag()->get('adyenStateData'),
-                $event->getRequestDataBag()->get('adyenOrigin')
-            );
+            try {
+                $this->paymentStateDataService->insertPaymentStateData(
+                    $event->getSalesChannelContext()->getToken(),
+                    $event->getRequestDataBag()->get('adyenStateData'),
+                    $event->getRequestDataBag()->get('adyenOrigin')
+                );
+            } catch (AdyenException $exception) {
+                //TODO handle error
+            }
         }
     }
 

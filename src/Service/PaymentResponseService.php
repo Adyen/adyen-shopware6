@@ -81,7 +81,6 @@ class PaymentResponseService
     ): void {
         if (empty($paymentResponse)) {
             //TODO log error
-            exit;
         }
 
         $storedPaymentResponse = $this->getWithOrderNumber($orderNumber);

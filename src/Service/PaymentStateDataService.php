@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -60,13 +61,15 @@ class PaymentStateDataService
      * @param string $contextToken
      * @param string $stateData
      * @param string $origin
+     * @throws AdyenException
      */
     public function insertPaymentStateData(string $contextToken, string $stateData, string $origin): void
     {
 
         if (empty($contextToken) || empty($stateData)) {
-            $this->logger->error('No context token or state.data found, unable to save payment state.data');
-            exit;
+            $message = 'No context token or state.data found, unable to save payment state.data';
+            $this->logger->error($message);
+            throw new AdyenException($message);
         }
 
         $stateDataArray = json_decode($stateData, true);
