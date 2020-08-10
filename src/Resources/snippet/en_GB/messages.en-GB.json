@@ -1,5 +1,6 @@
 {
-  "adyen": {
-    "updateDetails": "Update payment details"
-  }
+    "adyen": {
+        "updateDetails": "Update payment details",
+        "loading": "Loading..."
+    }
 }
