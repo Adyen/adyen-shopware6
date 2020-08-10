@@ -104,7 +104,7 @@ export default class CheckoutPlugin extends Plugin {
 
     renderPaymentMethod (paymentMethod) {
         //  if the container doesn't exits don't try to render the component
-        var paymentMethodContainer = $('[data-adyen-payment-method="' + this.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
+        const paymentMethodContainer = $('[data-adyen-payment-method="' + this.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
 
         // container doesn't exist, something went wrong on the template side
         // If payment method doesn't have details, just skip it
@@ -120,12 +120,12 @@ export default class CheckoutPlugin extends Plugin {
         //Hide other payment method's contents when selecting an option
         $('[name=paymentMethodId]').on("change", function () {
             $('.adyen-payment-method-container-div').hide();
-            $('[data-adyen-payment-method-id="' + $(this).val() + '"]').show();
+            $(`[data-adyen-payment-method-id="${$(this).val()}"]`).show();
         });
 
         /*Use the storedPaymentMethod object and the custom onChange function as the configuration object together*/
-        var configuration = Object.assign(paymentMethod, {
-            'onChange': this.onPaymentMethodChange.bind(this)
+        const configuration = Object.assign(paymentMethod, {
+            onChange: this.onPaymentMethodChange.bind(this)
         });
 
         try {
