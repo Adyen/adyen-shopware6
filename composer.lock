@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "39c70730db8adc669a2246a1d129b9dd",
+    "content-hash": "7d97b8af1e06258e1f8f390e5bb9c457",
     "packages": [
         {
             "name": "adyen/php-api-library",
-            "version": "7.0.0",
+            "version": "7.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Adyen/adyen-php-api-library.git",
-                "reference": "c809f0da8cc73d56704fd2a51ef92a443639cb66"
+                "reference": "e8285bf020b135944e556220b82c6e2c30311c39"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/c809f0da8cc73d56704fd2a51ef92a443639cb66",
-                "reference": "c809f0da8cc73d56704fd2a51ef92a443639cb66",
+                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/e8285bf020b135944e556220b82c6e2c30311c39",
+                "reference": "e8285bf020b135944e556220b82c6e2c30311c39",
                 "shasum": ""
             },
             "require": {
@@ -32,7 +32,7 @@
                 "ext-json": "*",
                 "friendsofphp/php-cs-fixer": "*",
                 "php-coveralls/php-coveralls": "2.2.0",
-                "phpunit/phpunit": "9.1.4",
+                "phpunit/phpunit": "9.2.6",
                 "squizlabs/php_codesniffer": "3.5.5"
             },
             "type": "library",
@@ -50,7 +50,7 @@
             "keywords": [
                 "adyen"
             ],
-            "time": "2020-06-30T15:36:20+00:00"
+            "time": "2020-08-10T10:57:23+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -180,16 +180,16 @@
     "packages-dev": [
         {
             "name": "squizlabs/php_codesniffer",
-            "version": "3.5.5",
+            "version": "3.5.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/squizlabs/PHP_CodeSniffer.git",
-                "reference": "73e2e7f57d958e7228fce50dc0c61f58f017f9f6"
+                "reference": "e97627871a7eab2f70e59166072a6b767d5834e0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/squizlabs/PHP_CodeSniffer/zipball/73e2e7f57d958e7228fce50dc0c61f58f017f9f6",
-                "reference": "73e2e7f57d958e7228fce50dc0c61f58f017f9f6",
+                "url": "https://api.github.com/repos/squizlabs/PHP_CodeSniffer/zipball/e97627871a7eab2f70e59166072a6b767d5834e0",
+                "reference": "e97627871a7eab2f70e59166072a6b767d5834e0",
                 "shasum": ""
             },
             "require": {
@@ -227,7 +227,7 @@
                 "phpcs",
                 "standards"
             ],
-            "time": "2020-04-17T01:09:41+00:00"
+            "time": "2020-08-10T04:50:15+00:00"
         }
     ],
     "aliases": [],
