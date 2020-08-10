@@ -21,5 +21,5 @@
  */
 
 export default function () {
-    return $('[data-adyen-payment-method-id]').data('payment-adyen-method-id') == $('[name=paymentMethodId]:checked').val();
+    return $('[data-adyen-payment-method-id]').data('adyen-payment-method-id') == $('[name=paymentMethodId]:checked').val();
 }
