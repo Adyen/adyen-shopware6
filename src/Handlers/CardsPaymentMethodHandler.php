@@ -490,7 +490,6 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
             $request['origin'] = $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext);
         }
 
-        // TODO add configiuration to enable 3DS2 ?
         $request['additionalData']['allow3DS2'] = true;
 
         $request['channel'] = 'web';
