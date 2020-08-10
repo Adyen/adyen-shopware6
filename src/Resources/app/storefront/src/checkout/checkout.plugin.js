@@ -107,12 +107,8 @@ export default class CheckoutPlugin extends Plugin {
         var paymentMethodContainer = $('[data-adyen-payment-method="' + this.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
 
         // container doesn't exist, something went wrong on the template side
-        if (!paymentMethodContainer.length) {
-            return;
-        }
-
         // If payment method doesn't have details, just skip it
-        if (!paymentMethod.details) {
+        if (!paymentMethodContainer || !paymentMethod.details) {
             return;
         }
 
