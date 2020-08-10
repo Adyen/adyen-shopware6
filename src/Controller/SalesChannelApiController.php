@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -24,17 +25,20 @@
 
 namespace Adyen\Shopware\Controller;
 
+use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Service\PaymentDetailsService;
+use Adyen\Shopware\Service\PaymentMethodsService;
+use Adyen\Shopware\Service\PaymentResponseService;
+use Adyen\Shopware\Service\PaymentStatusService;
+use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Adyen\Shopware\Service\OriginKeyService;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
-
+use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 
 class SalesChannelApiController extends AbstractController
 {
@@ -45,53 +49,180 @@ class SalesChannelApiController extends AbstractController
     private $originKeyService;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var PaymentMethodsService
      */
-    private $domainRepository;
+    private $paymentMethodsService;
 
+    /**
+     * @var SalesChannelRepository
+     */
+    private $salesChannelRepository;
+
+    /**
+     * @var PaymentDetailsService
+     */
+    private $paymentDetailsService;
+
+    /**
+     * @var CheckoutStateDataValidator
+     */
+    private $checkoutStateDataValidator;
+
+    /**
+     * @var PaymentStatusService
+     */
+    private $paymentStatusService;
+
+    /**
+     * @var PaymentResponseService
+     */
+    private $paymentResponseService;
+
+    /**
+     * @var PaymentResponseHandler
+     */
+    private $paymentResponseHandler;
+
+    /**
+     * SalesChannelApiController constructor.
+     *
+     * @param OriginKeyService $originKeyService
+     * @param PaymentMethodsService $paymentMethodsService
+     * @param SalesChannelRepository $salesChannelRepository
+     * @param PaymentDetailsService $paymentDetailsService
+     * @param CheckoutStateDataValidator $checkoutStateDataValidator
+     * @param PaymentStatusService $paymentStatusService
+     * @param PaymentResponseHandler $paymentResponseHandler
+     * @param PaymentResponseService $paymentResponseService
+     */
     public function __construct(
         OriginKeyService $originKeyService,
-        EntityRepositoryInterface $domainRepository
+        PaymentMethodsService $paymentMethodsService,
+        SalesChannelRepository $salesChannelRepository,
+        PaymentDetailsService $paymentDetailsService,
+        CheckoutStateDataValidator $checkoutStateDataValidator,
+        PaymentStatusService $paymentStatusService,
+        PaymentResponseHandler $paymentResponseHandler,
+        PaymentResponseService $paymentResponseService
     ) {
         $this->originKeyService = $originKeyService;
-        $this->domainRepository = $domainRepository;
+        $this->paymentMethodsService = $paymentMethodsService;
+        $this->salesChannelRepository = $salesChannelRepository;
+        $this->paymentDetailsService = $paymentDetailsService;
+        $this->checkoutStateDataValidator = $checkoutStateDataValidator;
+        $this->paymentStatusService = $paymentStatusService;
+        $this->paymentResponseHandler = $paymentResponseHandler;
+        $this->paymentResponseService = $paymentResponseService;
     }
 
     /**
      * @RouteScope(scopes={"sales-channel-api"})
-     * @Route("/sales-channel-api/v1/adyen/origin-key", name="sales-channel-api.action.adyen.origin-key", methods={"GET"})
+     * @Route(
+     *     "/sales-channel-api/v1/adyen/origin-key",
+     *     name="sales-channel-api.action.adyen.origin-key",
+     *     methods={"GET"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @return JsonResponse
      */
     public function originKey(SalesChannelContext $context): JsonResponse
     {
-
-        return new JsonResponse([
-            $this->originKeyService
-                ->getOriginKeyForOrigin($this->getSalesChannelUrl($context))
-                ->getOriginKey()
-        ]);
+        return new JsonResponse(
+            [
+                $this->originKeyService
+                    ->getOriginKeyForOrigin($this->salesChannelRepository->getSalesChannelUrl($context))
+                    ->getOriginKey()
+            ]
+        );
     }
 
     /**
+     * @RouteScope(scopes={"sales-channel-api"})
+     * @Route(
+     *     "/sales-channel-api/v1/adyen/payment-methods",
+     *     name="sales-channel-api.action.adyen.payment-methods",
+     *     methods={"GET"}
+     * )
+     *
      * @param SalesChannelContext $context
-     * @return string
+     * @return JsonResponse
      */
-    private function getSalesChannelUrl(SalesChannelContext $context): string
+    public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
+        return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
+    }
 
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
-        $criteria->setLimit(1);
+    /**
+     * @RouteScope(scopes={"sales-channel-api"})
+     * @Route(
+     *     "/sales-channel-api/v1/adyen/payment-details",
+     *     name="sales-channel-api.action.adyen.payment-details",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function postPaymentDetails(
+        Request $request,
+        SalesChannelContext $context
+    ): JsonResponse {
 
-        $domainEntity = $this->domainRepository
-            ->search($criteria, $context->getContext())
-            ->first();
-
-        if (!$domainEntity) {
-            throw new SalesChannelDomainNotFoundException($context->getSalesChannel());
+        $orderId = $request->request->get('orderId');
+        if (empty($orderId)) {
+            // TODO error handling
         }
 
-        $url = $domainEntity->getUrl();
+        // Get state data object if sent
+        $stateData = $request->request->get('stateData');
 
-        return $url;
+        // Validate stateData object
+        if (!empty($stateData)) {
+            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
+        }
+
+        if (empty($stateData['details'])) {
+            // handle error
+        }
+
+        $details = $stateData['details'];
+
+        $result = $this->paymentDetailsService->doPaymentDetails(
+            $details,
+            $this->paymentResponseService
+                ->getWithOrderId($orderId, $context->getToken())
+                ->getOrderNumber(),
+            $context
+        );
+
+        return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
+    }
+
+    /**
+     * @RouteScope(scopes={"sales-channel-api"})
+     * @Route(
+     *     "/sales-channel-api/v1/adyen/payment-status",
+     *     name="sales-channel-api.action.adyen.payment-status",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function getPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        if (empty($request->get('orderId'))) {
+            return new JsonResponse('Order ID not provided');
+        }
+
+        return new JsonResponse(
+            $this->paymentStatusService->getPaymentStatusWithOrderId(
+                $request->get('orderId'),
+                $context
+            )
+        );
     }
 }

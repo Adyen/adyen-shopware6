@@ -21,10 +21,11 @@
  *
  * Author: Adyen <shopware@adyen.com>
  */
+// phpcs:disable PSR1.Files.SideEffects
 
 namespace Adyen\Shopware;
 
-use Adyen\Shopware\Handlers\PaymentMethodHandler;
+use Adyen\Shopware\Handlers\CardsPaymentMethodHandler;
 use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
 use Shopware\Core\Framework\Plugin;
@@ -37,7 +38,6 @@ use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-
 
 class AdyenPayment extends Plugin
 {
@@ -84,6 +84,7 @@ class AdyenPayment extends Plugin
             'name' => $paymentMethod->getName(),
             'description' => $paymentMethod->getDescription(),
             'pluginId' => $pluginId,
+            'afterOrderEnabled' => true
         ];
 
         /** @var EntityRepositoryInterface $paymentRepository */
@@ -97,8 +98,12 @@ class AdyenPayment extends Plugin
         $paymentRepository = $this->container->get('payment_method.repository');
 
         // Fetch ID for update
-        $paymentCriteria = (new Criteria())->addFilter(new EqualsFilter('handlerIdentifier',
-            PaymentMethodHandler::class));
+
+        $paymentCriteria = (new Criteria())->addFilter(new EqualsFilter(
+            'handlerIdentifier',
+            CardsPaymentMethodHandler::class
+        ));
+
         $paymentIds = $paymentRepository->searchIds($paymentCriteria, Context::createDefaultContext());
 
         if ($paymentIds->getTotal() === 0) {
@@ -127,5 +132,6 @@ class AdyenPayment extends Plugin
 
         $paymentRepository->update([$paymentMethod], $context);
     }
-
 }
+
+require_once __DIR__ . '/../vendor/autoload.php';
