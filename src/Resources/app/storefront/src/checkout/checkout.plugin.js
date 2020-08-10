@@ -46,10 +46,10 @@ export default class CheckoutPlugin extends Plugin {
 
         this.client = new StoreApiClient();
 
-        let handleOnAdditionalDetails = function (state) {
+        const handleOnAdditionalDetails = function (state) {
             this.client.post(
                 `${adyenCheckoutOptions.paymentDetailsUrl}`,
-                JSON.stringify({'orderId': window.orderId, 'stateData': state.data}),
+                JSON.stringify({orderId: window.orderId, stateData: state.data}),
                 function (paymentAction) {
                     // TODO: clean-up
                     const paymentActionResponse = JSON.parse(paymentAction);
@@ -70,7 +70,7 @@ export default class CheckoutPlugin extends Plugin {
             );
         }
 
-        var ADYEN_CHECKOUT_CONFIG = {
+        const ADYEN_CHECKOUT_CONFIG = {
             locale: adyenCheckoutConfiguration.locale,
             originKey: adyenCheckoutConfiguration.originKey,
             environment: adyenCheckoutConfiguration.environment,
@@ -85,7 +85,7 @@ export default class CheckoutPlugin extends Plugin {
         this.data = '';
 
         // use this object to iterate through the stored payment methods
-        var paymentMethods = window.adyenCheckout.paymentMethodsResponse.paymentMethods;
+        const paymentMethods = window.adyenCheckout.paymentMethodsResponse.paymentMethods;
 
         // Iterate through the payment methods list we got from the adyen checkout component
         paymentMethods.forEach(this.renderPaymentMethod.bind(this));

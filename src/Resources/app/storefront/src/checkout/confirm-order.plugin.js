@@ -71,36 +71,47 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterSetPayment(response) {
-        const responseObject = JSON.parse(response);
-        if (responseObject.success === true) {
-            this.afterCreateOrder(JSON.stringify({ data: { id: adyenCheckoutOptions.orderId } }));
+        try {
+            const responseObject = JSON.parse(response);
+            if (responseObject.success) {
+                this.afterCreateOrder(JSON.stringify({data: {id: adyenCheckoutOptions.orderId}}));
+            }
+        } catch (e) {
+            console.log(e);
         }
     }
 
     afterPayOrder(orderId, response) {
-        response = JSON.parse(response);
-        window.returnUrl = response.paymentUrl;
+        try {
+            response = JSON.parse(response);
+            window.returnUrl = response.paymentUrl;
 
-        this._client.post(
-            `${adyenCheckoutOptions.paymentStatusUrl}`,
-            JSON.stringify({'orderId': orderId}),
-            this.handlePaymentAction.bind(this)
-        );
+            this._client.post(
+                `${adyenCheckoutOptions.paymentStatusUrl}`,
+                JSON.stringify({'orderId': orderId}),
+                this.handlePaymentAction.bind(this)
+            );
+        } catch (e) {
+            console.log(e);
+        }
     }
 
     handlePaymentAction(paymentAction) {
-        const paymentActionResponse = JSON.parse(paymentAction);
+        try {
+            const paymentActionResponse = JSON.parse(paymentAction);
+        } catch (e) {
+            console.log(e);
+        }
 
-        if (paymentActionResponse.isFinal === true) {
+        if (paymentActionResponse.isFinal) {
             location.href = window.returnUrl;
         }
 
-        try{
+        try {
             window.adyenCheckout
                 .createFromAction(paymentActionResponse.action)
                 .mount('[data-adyen-payment-action-container]');
-        }
-        catch (e) {
+        } catch (e) {
             console.log('error');
         }
 
