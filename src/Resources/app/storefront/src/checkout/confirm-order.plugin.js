@@ -15,31 +15,31 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     confirmOrder(event) {
         if (!!adyenCheckoutOptions && !!adyenCheckoutOptions.paymentStatusUrl && adyenCheckoutOptions.checkoutOrderUrl) {
-        event.preventDefault();
-        const form = event.target;
-        if (!form.checkValidity()) {
-            return;
-        }
+            event.preventDefault();
+            const form = event.target;
+            if (!form.checkValidity()) {
+                return;
+            }
 
-        this._client = new StoreApiClient();
-        const formData = FormSerializeUtil.serialize(form);
+            this._client = new StoreApiClient();
+            const formData = FormSerializeUtil.serialize(form);
 
-        ElementLoadingIndicatorUtil.create(document.body);
+            ElementLoadingIndicatorUtil.create(document.body);
 
-        const orderId = adyenCheckoutOptions.orderId;
-        const request = new XMLHttpRequest();
-        let callback = null;
-        if (!!orderId) { //Only used if the order is being edited
-            formData.set('orderId', orderId);
-            request.open('POST', adyenCheckoutOptions.editPaymentUrl);
-            callback = this.afterSetPayment.bind(this);
-        } else {
-            request.open('POST', adyenCheckoutOptions.checkoutOrderUrl);
-            callback = this.afterCreateOrder.bind(this);
-        }
-        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        request.setRequestHeader('sw-language-id', adyenCheckoutOptions.languageId);
-        this._client._sendRequest(request, formData, callback);
+            const orderId = adyenCheckoutOptions.orderId;
+            const request = new XMLHttpRequest();
+            let callback = null;
+            if (!!orderId) { //Only used if the order is being edited
+                formData.set('orderId', orderId);
+                request.open('POST', adyenCheckoutOptions.editPaymentUrl);
+                callback = this.afterSetPayment.bind(this);
+            } else {
+                request.open('POST', adyenCheckoutOptions.checkoutOrderUrl);
+                callback = this.afterCreateOrder.bind(this);
+            }
+            request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            request.setRequestHeader('sw-language-id', adyenCheckoutOptions.languageId);
+            this._client._sendRequest(request, formData, callback);
         }
     }
 
@@ -99,15 +99,9 @@ export default class ConfirmOrderPlugin extends Plugin {
     handlePaymentAction(paymentAction) {
         try {
             const paymentActionResponse = JSON.parse(paymentAction);
-        } catch (e) {
-            console.log(e);
-        }
-
-        if (paymentActionResponse.isFinal) {
-            location.href = window.returnUrl;
-        }
-
-        try {
+            if (paymentActionResponse.isFinal) {
+                location.href = window.returnUrl;
+            }
             window.adyenCheckout
                 .createFromAction(paymentActionResponse.action)
                 .mount('[data-adyen-payment-action-container]');
