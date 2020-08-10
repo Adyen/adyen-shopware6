@@ -54,7 +54,7 @@ export default class CheckoutPlugin extends Plugin {
                     // TODO: clean-up
                     const paymentActionResponse = JSON.parse(paymentAction);
 
-                    if (paymentActionResponse.isFinal === true) {
+                    if (paymentActionResponse.isFinal) {
                         location.href = window.returnUrl;
                     }
 
