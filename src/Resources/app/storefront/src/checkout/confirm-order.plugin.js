@@ -72,7 +72,7 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     afterSetPayment(response) {
         const responseObject = JSON.parse(response);
-        if (responseObject.success === true) {
+        if (responseObject.success) {
             this.afterCreateOrder(JSON.stringify({ data: { id: adyenCheckoutOptions.orderId } }));
         }
     }
