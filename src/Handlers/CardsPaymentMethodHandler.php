@@ -493,7 +493,6 @@ class CardsPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
         // TODO add configiuration to enable 3DS2 ?
         $request['additionalData']['allow3DS2'] = true;
 
-        // TODO add channel?
         $request['channel'] = 'web';
 
         //Remove the used state.data
