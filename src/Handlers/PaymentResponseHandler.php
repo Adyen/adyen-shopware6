@@ -30,6 +30,7 @@ use Adyen\Shopware\Exception\PaymentException;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -44,6 +45,7 @@ class PaymentResponseHandler
     const RECEIVED = 'Received';
     const PRESENT_TO_SHOPPER = 'PresentToShopper';
     const ERROR = 'Error';
+    const CANCELED = 'Canceled';
 
     const PSP_REFERENCE = 'pspReference';
     const ORIGINAL_PSP_REFERENCE = 'originalPspReference';
@@ -176,8 +178,14 @@ class PaymentResponseHandler
         PaymentResponseHandlerResult $paymentResponseHandlerResult
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
-        $resultCode = $paymentResponseHandlerResult->getResultCode();
         $context = $salesChannelContext->getContext();
+        $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
+        $resultCode = $paymentResponseHandlerResult->getResultCode();
+
+        // Check if result is already handled
+        if ($this->isTransactionHandled($stateTechnicalName, $resultCode)) {
+            return;
+        }
 
         // Get already stored transaction custom fileds
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
@@ -251,31 +259,67 @@ class PaymentResponseHandler
             case self::REFUSED:
             case self::ERROR:
                 return [
-                        "isFinal" => true,
-                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
-                    ];
+                    "isFinal" => true,
+                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                ];
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::PRESENT_TO_SHOPPER:
                 return [
-                        "isFinal" => false,
-                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
-                        "action" => $this->paymentResponseHandlerResult->getAction()
-                    ];
+                    "isFinal" => false,
+                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                    "action" => $this->paymentResponseHandlerResult->getAction()
+                ];
                 break;
             case self::RECEIVED:
                 return [
-                        "isFinal" => true,
-                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
-                        "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
-                    ];
+                    "isFinal" => true,
+                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                    "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
+                ];
                 break;
             default:
                 return [
-                        "isFinal" => true,
-                        "resultCode" => self::ERROR,
-                    ];
+                    "isFinal" => true,
+                    "resultCode" => self::ERROR,
+                ];
         }
+    }
+
+    /**
+     * Validates if the state is already changed where the resultCode would switch it
+     * Example: Authorised -> paid, Refused -> failed
+     *
+     * @param string $transactionStateTechnicalName
+     * @param string $resultCode
+     * @return bool
+     */
+    private function isTransactionHandled(
+        $transactionStateTechnicalName,
+        $resultCode
+    ) {
+        // TODO check all the states and adyen resultCodes not just the straightforward ones
+        switch ($resultCode) {
+            case self::AUTHORISED:
+                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_PAID) {
+                    return true;
+                }
+                break;
+            case self::REFUSED:
+            case self::ERROR:
+                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_FAILED) {
+                    return true;
+                }
+                break;
+            case self::CANCELED:
+                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_CANCELLED) {
+                    return true;
+                }
+                break;
+            default:
+        }
+
+        return false;
     }
 }
