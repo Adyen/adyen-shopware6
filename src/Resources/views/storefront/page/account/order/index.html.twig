@@ -1,16 +1,6 @@
 {% sw_extends '@Storefront/storefront/page/account/order/index.html.twig' %}
 
-{% block page_checkout_confirm_payment_inner %}
+{% block base_footer %}
     {{ parent() }}
-    {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
-    {% if adyenFrontendData and adyenFrontendData.paymentStatusUrl %}
-        <div id="adyen-checkout-options"
-             data-language-id="{{ adyenFrontendData.languageId }}"
-             data-payment-status-url="{{ adyenFrontendData.paymentStatusUrl }}"
-             data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}">
-        </div>
-        <script>
-            var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
-        </script>
-    {% endif %}
+    {% include '@AdyenPayment/storefront/component/payment/payment-action-modal.html.twig' %}
 {% endblock %}
