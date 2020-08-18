@@ -59,28 +59,20 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function deactivate(DeactivateContext $deactivateContext): void
     {
-        $this->setPaymentMethodIsActive(false, $deactivateContext->getContext());
+        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+            $this->setPaymentMethodIsActive(false, $deactivateContext->getContext(), $paymentMethod);
+        }
         parent::deactivate($deactivateContext);
     }
 
     public function uninstall(UninstallContext $uninstallContext): void
     {
-        $this->setPaymentMethodIsActive(false, $uninstallContext->getContext());
-    }
+        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+            $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), $paymentMethod);
+        }    }
 
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
     {
-        if (true && true) {
-            if (true) {
-            }
-
-            // for pending payment that redirect we store this under adyenPaymentData
-            // we need to refactor the code in the plugin that all paymentData is stored in paymentData and not in adyenPaymentData
-            if (true) {
-
-            }
-        }
-
         $paymentMethodExists = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
 
         // Payment method exists already, no need to continue here
