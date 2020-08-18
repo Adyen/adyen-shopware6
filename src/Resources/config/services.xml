@@ -134,30 +134,8 @@
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
         </service>
-        <service id="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader" autowire="true">
-            <argument type="service" id="sales_channel.payment_method.repository"/>
-            <argument type="service" id="sales_channel.shipping_method.repository"/>
-            <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
-            <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader"/>
-        </service>
-        <service id="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPage" autowire="true"/>
 
         <!--Service decorators-->
-        <service id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPageLoader"
-                 decorates="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader">
-            <argument type="service"
-                      id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPageLoader.inner"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
-            <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-        </service>
-        <service id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPage"
-                 decorates="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPage">
-            <argument type="service"
-                      id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPage.inner"/>
-        </service>
         <service id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController"
                  decorates="Shopware\Storefront\Controller\AccountOrderController">
             <argument type="service"

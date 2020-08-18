@@ -31,6 +31,7 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
@@ -145,6 +146,13 @@ class PaymentSubscriber implements EventSubscriberInterface
             $orderId = $page->getOrder()->getId();
         }
 
+        $filteredPaymentMethods = $this->filterShopwarePaymentMethods(
+            $page->getPaymentMethods(),
+            $salesChannelContext
+        );
+
+        $page->setPaymentMethods($filteredPaymentMethods);
+
         $stateDataPaymentMethod = $this->paymentStateDataService->getPaymentMethodType(
             $salesChannelContext->getToken()
         );
@@ -194,5 +202,46 @@ class PaymentSubscriber implements EventSubscriberInterface
                 ]
             )
         );
+    }
+
+    /**
+     * Removes payment methods from the Shopware list if not present in Adyen's /paymentMethods response
+     *
+     * @param $originalPaymentMethods
+     * @param SalesChannelContext $salesChannelContext
+     * @return mixed
+     */
+    private function filterShopwarePaymentMethods($originalPaymentMethods, SalesChannelContext $salesChannelContext)
+    {
+        //TODO do this in an event instead
+        //Adyen /paymentMethods response
+        $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+
+        foreach ($originalPaymentMethods as $paymentMethodEntity) {
+            //TODO filter out unsupported PMs
+            $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
+
+            //If this is an Adyen PM installed it will only be enabled if it's present in the /paymentMethods response
+            if (strpos($paymentMethodEntity->getFormattedHandlerIdentifier(), 'adyen') !== false) {
+                $pmCode = 'scheme'; //TODO get from payment method handler instead of hardcoding PM type
+                // In case the paymentMethods response has no payment methods, remove it from the list
+                if (empty($adyenPaymentMethods)) {
+                    $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                    continue;
+                }
+
+                $pmFound = array_filter(
+                    $adyenPaymentMethods['paymentMethods'],
+                    function ($value) use ($pmCode) {
+                        return $value['type'] == $pmCode;
+                    }
+                );
+
+                if (empty($pmFound)) {
+                    $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                }
+            }
+        }
+        return $originalPaymentMethods;
     }
 }
