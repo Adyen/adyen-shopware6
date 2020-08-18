@@ -39,7 +39,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 
-class AdyenPayment extends Plugin
+class AdyenPaymentShopware6 extends Plugin
 {
 
     public function install(InstallContext $installContext): void

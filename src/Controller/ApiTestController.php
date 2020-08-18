@@ -58,15 +58,15 @@ class ApiTestController
     {
         try {
             $client = new \Adyen\Client();
-            $client->setXApiKey($dataBag->get('AdyenPayment.config.apiKeyTest'));
+            $client->setXApiKey($dataBag->get('AdyenPaymentShopware6.config.apiKeyTest'));
             $client->setEnvironment(
-                $dataBag->get('AdyenPayment.config.environment') ? 'live' : 'test',
-                $dataBag->get('AdyenPayment.config.liveEndpointUrlPrefix')
+                $dataBag->get('AdyenPaymentShopware6.config.environment') ? 'live' : 'test',
+                $dataBag->get('AdyenPaymentShopware6.config.liveEndpointUrlPrefix')
             );
             $service = new \Adyen\Service\Checkout($client);
 
             $params = array(
-                'merchantAccount' => $dataBag->get('AdyenPayment.config.merchantAccount'),
+                'merchantAccount' => $dataBag->get('AdyenPaymentShopware6.config.merchantAccount'),
                 'countryCode' => 'NL',
                 'amount' => array(
                     'currency' => 'EUR',
