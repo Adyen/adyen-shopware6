@@ -40,5 +40,9 @@
             <name>hmacLive</name>
             <label>HMAC Key for live</label>
         </input-field>
+        <component name="adyen-config-check-button">
+            <name>configTest</name>
+            <label>Test configuration</label>
+        </component>
     </card>
 </config>

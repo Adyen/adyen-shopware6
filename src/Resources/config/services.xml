@@ -178,5 +178,12 @@
             <argument type="service"
                       id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider.inner"/>
         </service>
+        <service id="Adyen\Shopware\Controller\ApiTestController">
+            <argument type="service"
+                      key="$logger"
+                      id="monolog.logger.adyen_api"
+            />
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>
