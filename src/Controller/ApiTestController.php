@@ -23,7 +23,7 @@
 
 namespace Adyen\Shopware\Controller;
 
-use Adyen\Shopware\Service\PaymentMethodsService;
+use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -58,15 +58,15 @@ class ApiTestController
     {
         try {
             $client = new \Adyen\Client();
-            $client->setXApiKey($dataBag->get('AdyenPaymentShopware6.config.apiKeyTest'));
+            $client->setXApiKey($dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.apiKeyTest'));
             $client->setEnvironment(
-                $dataBag->get('AdyenPaymentShopware6.config.environment') ? 'live' : 'test',
-                $dataBag->get('AdyenPaymentShopware6.config.liveEndpointUrlPrefix')
+                $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.environment') ? 'live' : 'test',
+                $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.liveEndpointUrlPrefix')
             );
             $service = new \Adyen\Service\Checkout($client);
 
             $params = array(
-                'merchantAccount' => $dataBag->get('AdyenPaymentShopware6.config.merchantAccount'),
+                'merchantAccount' => $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.merchantAccount'),
                 'countryCode' => 'NL',
                 'amount' => array(
                     'currency' => 'EUR',

@@ -2,7 +2,7 @@
 {% block component_payment_methods %}
     <div class="payment-methods">
         <template data-adyen-payment></template>
-        {% include '@AdyenPayment/storefront/component/payment/adyencheckout.html.twig' %}
+        {% include '@AdyenPaymentShopware6/storefront/component/payment/adyencheckout.html.twig' %}
         {% for payment in page.paymentMethods %}
             {% block component_payment_method %}
                 <div class="payment-method">

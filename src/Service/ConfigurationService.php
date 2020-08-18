@@ -29,7 +29,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ConfigurationService
 {
-    const BUNDLE_NAME = 'AdyenPayment';
+    const BUNDLE_NAME = 'AdyenPaymentShopware6';
 
     /**
      * @var SystemConfigService
