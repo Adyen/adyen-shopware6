@@ -156,7 +156,7 @@ class SalesChannelApiController extends AbstractController
     /**
      * @RouteScope(scopes={"sales-channel-api"})
      * @Route(
-     *     "/sales-channel-api/v1/adyen/payment-details",
+     *     "/sales-channel-api/v2/adyen/payment-details",
      *     name="sales-channel-api.action.adyen.payment-details",
      *     methods={"POST"}
      * )
@@ -203,7 +203,7 @@ class SalesChannelApiController extends AbstractController
     /**
      * @RouteScope(scopes={"sales-channel-api"})
      * @Route(
-     *     "/sales-channel-api/v1/adyen/payment-status",
+     *     "/sales-channel-api/v2/adyen/payment-status",
      *     name="sales-channel-api.action.adyen.payment-status",
      *     methods={"POST"}
      * )

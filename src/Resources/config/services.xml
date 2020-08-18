@@ -96,6 +96,7 @@
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
             <tag name="shopware.payment.method.async"/>
         </service>
+        <service id="Adyen\Shopware\Handlers\IdealPaymentMethodHandler" />
         <service id="Adyen\Service\Builder\Browser"/>
         <service id="Adyen\Service\Builder\Address"/>
         <service id="Adyen\Service\Builder\Payment"/>
