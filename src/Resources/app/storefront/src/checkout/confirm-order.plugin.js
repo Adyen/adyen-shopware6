@@ -106,7 +106,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 .createFromAction(paymentActionResponse.action)
                 .mount('[data-adyen-payment-action-container]');
         } catch (e) {
-            console.log('error');
+            console.log(e);
         }
 
     }
