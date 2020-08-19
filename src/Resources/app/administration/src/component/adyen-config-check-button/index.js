@@ -63,7 +63,7 @@ Component.register('adyen-config-check-button', {
                 } else {
                     this.createNotificationError({
                         title: this.$tc('adyen.configTestTitle'),
-                        message: this.$tc('adyen.configTestFail')
+                        message: this.$tc(res.message ? res.message : 'adyen.configTestFail')
                     });
                 }
 

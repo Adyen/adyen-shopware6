@@ -76,9 +76,14 @@ class ApiTestController
             );
             $result = $service->paymentMethods($params);
 
-            return new JsonResponse(['success' => isset($result['paymentMethods'])]);
+            $hasPaymentMethods = isset($result['paymentMethods']);
+            $response = ['success' => $hasPaymentMethods];
+            if (!$hasPaymentMethods) {
+                $response['message'] = 'adyen.paymentMethodsMissing';
+            }
+            return new JsonResponse($response);
         } catch (\Exception $exception) {
-            return new JsonResponse(['success' => false]);
+            return new JsonResponse(['success' => false, 'message' => $exception->getMessage()]);
         }
     }
 }
