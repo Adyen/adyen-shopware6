@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\IdealPaymentMethodHandler;
+use Adyen\Shopware\Handlers\KlarnaPaymentMethodHandler;
 
-class IdealPaymentMethod implements PaymentMethodInterface
+class KlarnaPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'iDeal';
+        return 'Klarna Pay Later';
     }
 
     /**
@@ -55,7 +55,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return IdealPaymentMethodHandler::class;
+        return KlarnaPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_IDEAL';
+        return 'ADYEN_KLARNA';
     }
 
     /**
@@ -85,7 +85,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/ideal.png';
+        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/klarna.png';
     }
 
     /**

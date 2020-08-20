@@ -53,7 +53,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
-class AbstractPaymentMethodHandler
+abstract class AbstractPaymentMethodHandler
 {
 
     /**
@@ -191,6 +191,8 @@ class AbstractPaymentMethodHandler
         $this->csrfTokenManager = $csrfTokenManager;
     }
 
+    abstract static function getPaymentMethodCode();
+
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
@@ -305,7 +307,12 @@ class AbstractPaymentMethodHandler
         $stateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
             $salesChannelContext->getToken()
         );
-        $request = json_decode($stateData->getStateData(), true);
+
+        if ($stateData) {
+            $request = json_decode($stateData->getStateData(), true);
+        } else {
+            $request = [];
+        }
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new AsyncPaymentProcessException(
@@ -438,12 +445,12 @@ class AbstractPaymentMethodHandler
         $request = $this->browserBuilder->buildBrowserData(
             $userAgent,
             $acceptHeader,
-            $request['browserInfo']['screenWidth'],
-            $request['browserInfo']['screenHeight'],
-            $request['browserInfo']['colorDepth'],
-            $request['browserInfo']['timeZoneOffset'],
-            $request['browserInfo']['language'],
-            $request['browserInfo']['javaEnabled'],
+            isset($request['browserInfo']['screenWidth']) ? $request['browserInfo']['screenWidth'] : null,
+            isset($request['browserInfo']['screenHeight']) ? $request['browserInfo']['screenHeight'] : null,
+            isset($request['browserInfo']['colorDepth']) ? $request['browserInfo']['colorDepth'] : null,
+            isset($request['browserInfo']['timeZoneOffset']) ? $request['browserInfo']['timeZoneOffset'] : null,
+            isset($request['browserInfo']['language']) ? $request['browserInfo']['language'] : null,
+            isset($request['browserInfo']['javaEnabled']) ? $request['browserInfo']['javaEnabled'] : null,
             $request
         );
 
@@ -487,7 +494,9 @@ class AbstractPaymentMethodHandler
         $request['channel'] = 'web';
 
         //Remove the used state.data
-        $this->paymentStateDataService->deletePaymentStateData($stateData);
+        if ($stateData) {
+            $this->paymentStateDataService->deletePaymentStateData($stateData);
+        }
 
         return $request;
     }

@@ -28,6 +28,9 @@ class PaymentMethods
 {
     const PAYMENT_METHODS = [
         CardsPaymentMethod::class,
-        IdealPaymentMethod::class
+        IdealPaymentMethod::class,
+        KlarnaPaymentMethod::class,
+        SepaPaymentMethod::class,
+        SofortPaymentMethod::class
     ];
 }

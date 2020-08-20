@@ -35,6 +35,10 @@ use Symfony\Component\HttpFoundation\Request;
 class IdealPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
 
+    static function getPaymentMethodCode(){
+        return 'ideal';
+    }
+
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,

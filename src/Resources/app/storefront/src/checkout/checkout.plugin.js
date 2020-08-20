@@ -35,14 +35,22 @@ export default class CheckoutPlugin extends Plugin {
         const confirmPaymentForm = DomAccess.querySelector(document, '#confirmPaymentForm');
         confirmPaymentForm.addEventListener('submit', this.onConfirmPayment.bind(this));
 
-        const formattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
+        const cardsFormattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
+        const idealFormattedHandlerIdentifier = 'handler_adyen_idealpaymentmethodhandler';
+        const klarnaFormattedHandlerIdentifier = 'handler_adyen_klarnapaymentmethodhandler';
+        const sepaFormattedHandlerIdentifier = 'handler_adyen_sepapaymentmethodhandler';
+        const sofortFormattedHandlerIdentifier = 'handler_adyen_sofortpaymentmethodhandler';
 
         this.paymentMethodTypeHandlers = {
-            'scheme': formattedHandlerIdentifier
+            'scheme': cardsFormattedHandlerIdentifier,
+            'ideal': idealFormattedHandlerIdentifier,
+            'klarna': klarnaFormattedHandlerIdentifier,
+            'sepadirectdebit': sepaFormattedHandlerIdentifier,
+            'sofort': sofortFormattedHandlerIdentifier
         };
 
         //PMs that should show an 'Update Details' button if there's already a state.data for that PM stored for this context
-        this.updatablePaymentMethods = ['scheme'];
+        this.updatablePaymentMethods = ['scheme', 'ideal', 'sepadirectdebit'];
 
         this.client = new StoreApiClient();
 
@@ -158,7 +166,8 @@ export default class CheckoutPlugin extends Plugin {
     }
 
     onConfirmPayment (event) {
-        if (!this.cardFormValidator.validateForm()) {
+        //TODO Implement validation for multiple PMs
+        if (!this.cardFormValidator.validateForm() && false) {
             event.preventDefault();
         }
     }
