@@ -189,7 +189,7 @@ abstract class AbstractPaymentMethodHandler
         $this->csrfTokenManager = $csrfTokenManager;
     }
 
-    public abstract static function getPaymentMethodCode();
+    abstract public static function getPaymentMethodCode();
 
     /**
      * @param AsyncPaymentTransactionStruct $transaction
