@@ -35,7 +35,8 @@ use Symfony\Component\HttpFoundation\Request;
 class KlarnaPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
 
-    static function getPaymentMethodCode(){
+    public static function getPaymentMethodCode()
+    {
         return 'klarna';
     }
 
@@ -54,5 +55,4 @@ class KlarnaPaymentMethodHandler extends AbstractPaymentMethodHandler implements
     ): void {
         parent::finalize($transaction, $request, $salesChannelContext);
     }
-
 }

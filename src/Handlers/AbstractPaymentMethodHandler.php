@@ -23,9 +23,7 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-
 namespace Adyen\Shopware\Handlers;
-
 
 use Adyen\AdyenException;
 use Adyen\Service\Builder\Address;
@@ -191,7 +189,7 @@ abstract class AbstractPaymentMethodHandler
         $this->csrfTokenManager = $csrfTokenManager;
     }
 
-    abstract static function getPaymentMethodCode();
+    public abstract static function getPaymentMethodCode();
 
     /**
      * @param AsyncPaymentTransactionStruct $transaction

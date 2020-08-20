@@ -35,7 +35,8 @@ use Symfony\Component\HttpFoundation\Request;
 class SepaPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
 
-    static function getPaymentMethodCode(){
+    public static function getPaymentMethodCode()
+    {
         return 'sepadirectdebit';
     }
 
@@ -54,5 +55,4 @@ class SepaPaymentMethodHandler extends AbstractPaymentMethodHandler implements A
     ): void {
         parent::finalize($transaction, $request, $salesChannelContext);
     }
-
 }

@@ -69,7 +69,8 @@ class AdyenPaymentShopware6 extends Plugin
     {
         foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), $paymentMethod);
-        }    }
+        }
+    }
 
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
     {

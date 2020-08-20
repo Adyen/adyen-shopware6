@@ -35,7 +35,8 @@ use Symfony\Component\HttpFoundation\Request;
 class SofortPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
 
-    static function getPaymentMethodCode(){
+    public static function getPaymentMethodCode()
+    {
         return 'directEbanking';
     }
 
@@ -54,5 +55,4 @@ class SofortPaymentMethodHandler extends AbstractPaymentMethodHandler implements
     ): void {
         parent::finalize($transaction, $request, $salesChannelContext);
     }
-
 }
