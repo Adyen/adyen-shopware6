@@ -39,20 +39,4 @@ class IdealPaymentMethodHandler extends AbstractPaymentMethodHandler implements 
     {
         return 'ideal';
     }
-
-    public function pay(
-        AsyncPaymentTransactionStruct $transaction,
-        RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext
-    ): RedirectResponse {
-        return parent::pay($transaction, $dataBag, $salesChannelContext);
-    }
-
-    public function finalize(
-        AsyncPaymentTransactionStruct $transaction,
-        Request $request,
-        SalesChannelContext $salesChannelContext
-    ): void {
-        parent::finalize($transaction, $request, $salesChannelContext);
-    }
 }

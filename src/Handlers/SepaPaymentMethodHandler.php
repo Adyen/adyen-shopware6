@@ -39,20 +39,4 @@ class SepaPaymentMethodHandler extends AbstractPaymentMethodHandler implements A
     {
         return 'sepadirectdebit';
     }
-
-    public function pay(
-        AsyncPaymentTransactionStruct $transaction,
-        RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext
-    ): RedirectResponse {
-        return parent::pay($transaction, $dataBag, $salesChannelContext);
-    }
-
-    public function finalize(
-        AsyncPaymentTransactionStruct $transaction,
-        Request $request,
-        SalesChannelContext $salesChannelContext
-    ): void {
-        parent::finalize($transaction, $request, $salesChannelContext);
-    }
 }
