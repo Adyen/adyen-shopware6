@@ -223,7 +223,7 @@ class PaymentSubscriber implements EventSubscriberInterface
 
             //If this is an Adyen PM installed it will only be enabled if it's present in the /paymentMethods response
             if (strpos($paymentMethodEntity->getFormattedHandlerIdentifier(), 'adyen') !== false) {
-                $pmCode = 'scheme'; //TODO get from payment method handler instead of hardcoding PM type
+                $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
                 // In case the paymentMethods response has no payment methods, remove it from the list
                 if (empty($adyenPaymentMethods)) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());

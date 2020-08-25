@@ -45,10 +45,10 @@
                                                 </div>
                                             {% endblock %}
                                         </label>
-                                        {% if payment.formattedHandlerIdentifier == "handler_adyen_cardspaymentmethodhandler" %}
+                                        {% if "adyen" in payment.formattedHandlerIdentifier %}
                                             <div class="adyen-payment-method-container-div"
                                                  data-adyen-payment-method-id="{{ payment.id }}"
-                                                 data-adyen-payment-method="handler_adyen_cardspaymentmethodhandler"
+                                                 data-adyen-payment-method="{{ payment.formattedHandlerIdentifier }}"
                                             >
                                                 <div data-adyen-update-payment-details class="adyen-update-payment-details">
                                                     <button type="button" class="btn btn-primary" onclick="window.showPaymentMethodDetails()">{{ "adyen.updateDetails"|trans }}</button>

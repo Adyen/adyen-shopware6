@@ -51,24 +51,30 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function activate(ActivateContext $activateContext): void
     {
-        $this->setPaymentMethodIsActive(true, $activateContext->getContext());
+        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+            $this->setPaymentMethodIsActive(true, $activateContext->getContext(), $paymentMethod);
+        }
         parent::activate($activateContext);
     }
 
     public function deactivate(DeactivateContext $deactivateContext): void
     {
-        $this->setPaymentMethodIsActive(false, $deactivateContext->getContext());
+        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+            $this->setPaymentMethodIsActive(false, $deactivateContext->getContext(), $paymentMethod);
+        }
         parent::deactivate($deactivateContext);
     }
 
     public function uninstall(UninstallContext $uninstallContext): void
     {
-        $this->setPaymentMethodIsActive(false, $uninstallContext->getContext());
+        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+            $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), $paymentMethod);
+        }
     }
 
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
     {
-        $paymentMethodExists = $this->getPaymentMethodId();
+        $paymentMethodExists = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
 
         // Payment method exists already, no need to continue here
         if ($paymentMethodExists) {
@@ -92,7 +98,7 @@ class AdyenPaymentShopware6 extends Plugin
         $paymentRepository->create([$paymentData], $context);
     }
 
-    private function getPaymentMethodId(): ?string
+    private function getPaymentMethodId(string $paymentMethodHandler): ?string
     {
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
@@ -101,7 +107,7 @@ class AdyenPaymentShopware6 extends Plugin
 
         $paymentCriteria = (new Criteria())->addFilter(new EqualsFilter(
             'handlerIdentifier',
-            CardsPaymentMethodHandler::class
+            $paymentMethodHandler
         ));
 
         $paymentIds = $paymentRepository->searchIds($paymentCriteria, Context::createDefaultContext());
@@ -113,12 +119,12 @@ class AdyenPaymentShopware6 extends Plugin
         return $paymentIds->getIds()[0];
     }
 
-    private function setPaymentMethodIsActive(bool $active, Context $context): void
+    private function setPaymentMethodIsActive(bool $active, Context $context, string $paymentMethodHandler): void
     {
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
-        $paymentMethodId = $this->getPaymentMethodId();
+        $paymentMethodId = $this->getPaymentMethodId($paymentMethodHandler);
 
         // Payment does not even exist, so nothing to (de-)activate here
         if (!$paymentMethodId) {
