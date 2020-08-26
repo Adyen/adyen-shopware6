@@ -306,6 +306,9 @@ abstract class AbstractPaymentMethodHandler
             $salesChannelContext->getToken()
         );
 
+        //Generate returnUrl
+        $returnUrl = $this->getAdyenReturnUrl($transaction->getReturnUrl());
+
         if ($stateData) {
             $request = json_decode($stateData->getStateData(), true);
         } else {
@@ -440,6 +443,11 @@ abstract class AbstractPaymentMethodHandler
             $countryCode = $request['countryCode'];
         }
 
+        //Redirect parameters for 3DS1 payments
+        $request['redirectFromIssuerMethod'] = 'GET';
+        $request['redirectToIssuerMethod'] = 'POST';
+        $request['returnUrl'] = $returnUrl;
+
         $request = $this->browserBuilder->buildBrowserData(
             $userAgent,
             $acceptHeader,
@@ -476,7 +484,7 @@ abstract class AbstractPaymentMethodHandler
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount(),
-            $this->getAdyenReturnUrl($transaction->getReturnUrl()),
+            $returnUrl,
             $request
         );
 
