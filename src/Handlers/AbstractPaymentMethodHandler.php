@@ -257,7 +257,7 @@ abstract class AbstractPaymentMethodHandler
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction->getReturnUrl()));
+        return new RedirectResponse($transaction->getReturnUrl());
     }
 
     /**
@@ -307,7 +307,7 @@ abstract class AbstractPaymentMethodHandler
         );
 
         //Generate returnUrl
-        $returnUrl = $this->getAdyenReturnUrl($transaction->getReturnUrl());
+        $returnUrl = $transaction->getReturnUrl();
 
         if ($stateData) {
             $request = json_decode($stateData->getStateData(), true);
@@ -514,6 +514,9 @@ abstract class AbstractPaymentMethodHandler
      * @param $returnUrl
      * @return string
      * @throws PaymentException
+     * @deprecated using redirectToIssuerMethod and redirectFromIssuerMethod in the
+     * /payments call is not necessary to modify the CSRF token
+     *
      */
     protected function getAdyenReturnUrl($returnUrl)
     {
