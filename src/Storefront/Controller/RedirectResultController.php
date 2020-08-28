@@ -35,7 +35,6 @@ use Symfony\Component\Routing\Annotation\Route;
 use Shopware\Core\Checkout\Payment\Controller\PaymentController;
 
 /**
- * also legal
  * @deprecated using redirectToIssuerMethod and redirectFromIssuerMethod in the
  * /payments call is not necessary to process the redirect separately
  */
