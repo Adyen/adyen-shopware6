@@ -34,6 +34,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Shopware\Core\Checkout\Payment\Controller\PaymentController;
 
+/**
+ * @deprecated using redirectToIssuerMethod and redirectFromIssuerMethod in the
+ * /payments call is not necessary to process the redirect separately
+ */
 class RedirectResultController extends StorefrontController
 {
     const CSRF_TOKEN = '_csrf_token';

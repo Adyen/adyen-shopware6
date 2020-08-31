@@ -113,8 +113,8 @@ class ResultHandler
         if ('RedirectShopper' === $result->getResultCode()) {
             // Validate 3DS1 Post parameters
             // Get MD and PaRes to be validated
-            $md = $request->request->get('MD');
-            $paRes = $request->request->get('PaRes');
+            $md = $request->query->get('MD');
+            $paRes = $request->query->get('PaRes');
 
             if (empty($md) || empty($paRes)) {
                 throw new PaymentException('MD and/or PaRes parameter is missing from the redirect request');
