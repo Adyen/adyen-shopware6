@@ -82,6 +82,7 @@
             <argument type="service" id="Adyen\Service\Builder\Browser"/>
             <argument type="service" id="Adyen\Service\Builder\Address"/>
             <argument type="service" id="Adyen\Service\Builder\Payment"/>
+            <argument type="service" id="Adyen\Service\Builder\OpenInvoice"/>
             <argument type="service" id="Adyen\Util\Currency"/>
             <argument type="service" id="Adyen\Service\Builder\Customer"/>
             <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
@@ -123,6 +124,7 @@
         <service id="Adyen\Service\Builder\Address"/>
         <service id="Adyen\Service\Builder\Payment"/>
         <service id="Adyen\Service\Builder\Customer"/>
+        <service id="Adyen\Service\Builder\OpenInvoice"/>
         <service id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
         <service id="Adyen\Shopware\Handlers\ResultHandler" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
