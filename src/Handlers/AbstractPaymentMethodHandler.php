@@ -54,6 +54,8 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 abstract class AbstractPaymentMethodHandler
 {
 
+    static protected $isOpenInvoice = false;
+
     /**
      * @var CheckoutService
      */

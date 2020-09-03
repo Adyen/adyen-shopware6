@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\KlarnaPaymentMethodHandler;
+use Adyen\Shopware\Handlers\KlarnaPayNowPaymentMethodHandler;
 
-class KlarnaPaymentMethod implements PaymentMethodInterface
+class KlarnaPayNowPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class KlarnaPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Klarna Pay Later';
+        return 'Klarna Pay Now';
     }
 
     /**
@@ -55,7 +55,7 @@ class KlarnaPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return KlarnaPaymentMethodHandler::class;
+        return KlarnaPayNowPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class KlarnaPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_KLARNA';
+        return 'ADYEN_KLARNAPAYNOW';
     }
 
     /**

@@ -76,7 +76,7 @@
             <argument type="service" id="adyen_payment_state_data.repository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\CardsPaymentMethodHandler">
+        <service id="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler" abstract="true">
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\CheckoutService"/>
             <argument type="service" id="Adyen\Service\Builder\Browser"/>
@@ -94,86 +94,29 @@
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="security.csrf.token_manager"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\CardsPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\IdealPaymentMethodHandler">
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\CheckoutService"/>
-            <argument type="service" id="Adyen\Service\Builder\Browser"/>
-            <argument type="service" id="Adyen\Service\Builder\Address"/>
-            <argument type="service" id="Adyen\Service\Builder\Payment"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
-            <argument type="service" id="Adyen\Service\Builder\Customer"/>
-            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
-            <argument type="service"
-                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
-            <argument type="service" id="security.csrf.token_manager"/>
-            <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
+        <service id="Adyen\Shopware\Handlers\IdealPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\KlarnaPaymentMethodHandler">
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\CheckoutService"/>
-            <argument type="service" id="Adyen\Service\Builder\Browser"/>
-            <argument type="service" id="Adyen\Service\Builder\Address"/>
-            <argument type="service" id="Adyen\Service\Builder\Payment"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
-            <argument type="service" id="Adyen\Service\Builder\Customer"/>
-            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
-            <argument type="service"
-                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
-            <argument type="service" id="security.csrf.token_manager"/>
-            <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
+        <service id="Adyen\Shopware\Handlers\KlarnaPayNowPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\SepaPaymentMethodHandler">
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\CheckoutService"/>
-            <argument type="service" id="Adyen\Service\Builder\Browser"/>
-            <argument type="service" id="Adyen\Service\Builder\Address"/>
-            <argument type="service" id="Adyen\Service\Builder\Payment"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
-            <argument type="service" id="Adyen\Service\Builder\Customer"/>
-            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
-            <argument type="service"
-                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
-            <argument type="service" id="security.csrf.token_manager"/>
-            <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
+        <service id="Adyen\Shopware\Handlers\KlarnaPayLaterPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\SofortPaymentMethodHandler">
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\CheckoutService"/>
-            <argument type="service" id="Adyen\Service\Builder\Browser"/>
-            <argument type="service" id="Adyen\Service\Builder\Address"/>
-            <argument type="service" id="Adyen\Service\Builder\Payment"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
-            <argument type="service" id="Adyen\Service\Builder\Customer"/>
-            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
-            <argument type="service"
-                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
-            <argument type="service" id="security.csrf.token_manager"/>
-            <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
+        <service id="Adyen\Shopware\Handlers\SepaPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\SofortPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Adyen\Service\Builder\Browser"/>
