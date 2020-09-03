@@ -64,7 +64,7 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 abstract class AbstractPaymentMethodHandler
 {
 
-    static protected $isOpenInvoice = false;
+    protected static $isOpenInvoice = false;
 
     /**
      * @var CheckoutService
@@ -557,12 +557,15 @@ abstract class AbstractPaymentMethodHandler
                     $this->currency->sanitize(
                         $price->getUnitPrice() - $lineTax,
                         $this->getCurrency(
-                            $transaction->getOrder()->getCurrencyId(), $salesChannelContext->getContext()
+                            $transaction->getOrder()->getCurrencyId(),
+                            $salesChannelContext->getContext()
                         )
                     ),
-                    $this->currency->sanitize($lineTax,
+                    $this->currency->sanitize(
+                        $lineTax,
                         $this->getCurrency(
-                            $transaction->getOrder()->getCurrencyId(), $salesChannelContext->getContext()
+                            $transaction->getOrder()->getCurrencyId(),
+                            $salesChannelContext->getContext()
                         )
                     ),
                     $taxRate * 100,
