@@ -115,15 +115,13 @@ class ResultHandler
             // Get MD and PaRes to be validated
             $md = $request->query->get('MD');
             $paRes = $request->query->get('PaRes');
-
-            if (empty($md) || empty($paRes)) {
-                throw new PaymentException('MD and/or PaRes parameter is missing from the redirect request');
-            }
+            $redirectResult = $request->query->get('redirectResult');
 
             // Construct the details object for the paymentDetails request
             $details = [
                 'MD' => $md,
-                'PaRes' => $paRes
+                'PaRes' => $paRes,
+                'redirectResult' => $redirectResult
             ];
 
             // Validate the return
