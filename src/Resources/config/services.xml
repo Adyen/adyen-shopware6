@@ -94,6 +94,8 @@
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="currency.repository"/>
+            <argument type="service" id="product.repository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
         </service>
         <service id="Adyen\Shopware\Handlers\CardsPaymentMethodHandler"
