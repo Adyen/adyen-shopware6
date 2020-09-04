@@ -64,6 +64,8 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 abstract class AbstractPaymentMethodHandler
 {
 
+    const PROMOTION = 'promotion';
+
     protected static $isOpenInvoice = false;
 
     /**
@@ -541,19 +543,31 @@ abstract class AbstractPaymentMethodHandler
             $orderLines = $transaction->getOrder()->getLineItems();
             $lineItems = [];
             foreach ($orderLines->getElements() as $orderLine) {
+                //Getting line price
                 $price = $orderLine->getPrice();
-                $taxRate = $price->getCalculatedTaxes()->first();
+
+                //Getting order line information differently if it's a promotion or product
+                if (empty($orderLine->getProductId()) && $orderLine->getType() === self::PROMOTION) {
+                    $productName = $orderLine->getDescription();
+                    $productNumber = $orderLine->getPayload()['promotionId'];
+                } else {
+                    $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
+                    $productName = $product->getName();
+                    $productNumber = $product->getProductNumber();
+                }
+
+                //Getting line tax amount and rate
                 $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
-
-                $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
-
+                $taxRate = $price->getCalculatedTaxes()->first();
                 if (!empty($taxRate)) {
                     $taxRate = $taxRate->getTaxRate();
                 } else {
                     $taxRate = 0;
                 }
+
+                //Building open invoice line
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
-                    $product->getName(),
+                    $productName,
                     $this->currency->sanitize(
                         $price->getUnitPrice() - $lineTax,
                         $this->getCurrency(
@@ -571,7 +585,7 @@ abstract class AbstractPaymentMethodHandler
                     $taxRate * 100,
                     $orderLine->getQuantity(),
                     '',
-                    $product->getProductNumber()
+                    $productNumber
                 );
             }
 
