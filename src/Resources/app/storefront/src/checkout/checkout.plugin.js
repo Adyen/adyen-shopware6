@@ -86,6 +86,7 @@ export default class CheckoutPlugin extends Plugin {
             originKey,
             environment,
             showPayButton: false,
+            hasHolderName: true,
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
             onAdditionalDetails: handleOnAdditionalDetails.bind(this)
         };
