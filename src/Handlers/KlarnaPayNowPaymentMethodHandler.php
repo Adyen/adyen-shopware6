@@ -27,8 +27,8 @@ namespace Adyen\Shopware\Handlers;
 
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 
-class KlarnaPayNowPaymentMethodHandler extends AbstractPaymentMethodHandler
-    implements AsynchronousPaymentHandlerInterface
+// phpcs:ignore Generic.Files.LineLength.TooLong
+class KlarnaPayNowPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
 
     protected static $isOpenInvoice = true;
