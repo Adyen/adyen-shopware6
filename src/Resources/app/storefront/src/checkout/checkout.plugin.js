@@ -37,14 +37,16 @@ export default class CheckoutPlugin extends Plugin {
 
         const cardsFormattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
         const idealFormattedHandlerIdentifier = 'handler_adyen_idealpaymentmethodhandler';
-        const klarnaFormattedHandlerIdentifier = 'handler_adyen_klarnapaymentmethodhandler';
+        const klarnaPayNowFormattedHandlerIdentifier = 'handler_adyen_klarnapaynowpaymentmethodhandler';
+        const klarnaPayLaterFormattedHandlerIdentifier = 'handler_adyen_klarnapaylaterpaynowpaymentmethodhandler';
         const sepaFormattedHandlerIdentifier = 'handler_adyen_sepapaymentmethodhandler';
         const sofortFormattedHandlerIdentifier = 'handler_adyen_sofortpaymentmethodhandler';
 
         this.paymentMethodTypeHandlers = {
             'scheme': cardsFormattedHandlerIdentifier,
             'ideal': idealFormattedHandlerIdentifier,
-            'klarna': klarnaFormattedHandlerIdentifier,
+            'klarna': klarnaPayLaterFormattedHandlerIdentifier,
+            'klarna_paynow': klarnaPayNowFormattedHandlerIdentifier,
             'sepadirectdebit': sepaFormattedHandlerIdentifier,
             'sofort': sofortFormattedHandlerIdentifier
         };

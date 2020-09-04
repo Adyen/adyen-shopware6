@@ -36,6 +36,11 @@ use Psr\Log\LoggerInterface;
 
 class ResultHandler
 {
+
+    const PA_RES = 'PaRes';
+    const MD = 'MD';
+    const REDIRECT_RESULT = 'redirectResult';
+
     /**
      * @var CheckoutService
      */
@@ -113,18 +118,20 @@ class ResultHandler
         if ('RedirectShopper' === $result->getResultCode()) {
             // Validate 3DS1 Post parameters
             // Get MD and PaRes to be validated
-            $md = $request->query->get('MD');
-            $paRes = $request->query->get('PaRes');
-
-            if (empty($md) || empty($paRes)) {
-                throw new PaymentException('MD and/or PaRes parameter is missing from the redirect request');
-            }
+            $md = $request->query->get(self::MD);
+            $paRes = $request->query->get(self::PA_RES);
+            $redirectResult = $request->query->get(self::REDIRECT_RESULT);
 
             // Construct the details object for the paymentDetails request
-            $details = [
-                'MD' => $md,
-                'PaRes' => $paRes
-            ];
+            if (!empty($md)) {
+                $details[self::MD] = $md;
+            }
+            if (!empty($paRes)) {
+                $details[self::PA_RES] = $paRes;
+            }
+            if (!empty($redirectResult)) {
+                $details[self::REDIRECT_RESULT] = $redirectResult;
+            }
 
             // Validate the return
             $result = $this->paymentDetailsService->doPaymentDetails(

@@ -30,6 +30,7 @@ use Adyen\Service\Builder\Address;
 use Adyen\Service\Builder\Browser;
 use Adyen\Service\Builder\Customer;
 use Adyen\Service\Builder\Payment;
+use Adyen\Service\Builder\OpenInvoice;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Service\CheckoutService;
@@ -44,7 +45,16 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
+use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
+use Shopware\Core\Content\Product\ProductCollection;
+use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\Currency\CurrencyCollection;
+use Shopware\Core\System\Currency\CurrencyEntity;
+use Swag\PayPal\Payment\Exception\CurrencyNotFoundException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -53,6 +63,10 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 abstract class AbstractPaymentMethodHandler
 {
+
+    const PROMOTION = 'promotion';
+
+    protected static $isOpenInvoice = false;
 
     /**
      * @var CheckoutService
@@ -73,6 +87,11 @@ abstract class AbstractPaymentMethodHandler
      * @var Payment
      */
     protected $paymentBuilder;
+
+    /**
+     * @var OpenInvoice
+     */
+    protected $openInvoiceBuilder;
 
     /**
      * @var Currency
@@ -135,6 +154,16 @@ abstract class AbstractPaymentMethodHandler
     protected $csrfTokenManager;
 
     /**
+     * @var EntityRepositoryInterface
+     */
+    protected $currencyRepository;
+
+    /**
+     * @var EntityRepositoryInterface
+     */
+    protected $productRepository;
+
+    /**
      * CardsPaymentMethodHandler constructor.
      *
      * @param ConfigurationService $configurationService
@@ -142,6 +171,7 @@ abstract class AbstractPaymentMethodHandler
      * @param Browser $browserBuilder
      * @param Address $addressBuilder
      * @param Payment $paymentBuilder
+     * @param OpenInvoice $openInvoiceBuilder
      * @param Currency $currency
      * @param Customer $customerBuilder
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
@@ -151,7 +181,9 @@ abstract class AbstractPaymentMethodHandler
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
+     * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param LoggerInterface $logger
+     * @param EntityRepositoryInterface $currencyRepository
      */
     public function __construct(
         ConfigurationService $configurationService,
@@ -159,6 +191,7 @@ abstract class AbstractPaymentMethodHandler
         Browser $browserBuilder,
         Address $addressBuilder,
         Payment $paymentBuilder,
+        OpenInvoice $openInvoiceBuilder,
         Currency $currency,
         Customer $customerBuilder,
         CheckoutStateDataValidator $checkoutStateDataValidator,
@@ -169,11 +202,14 @@ abstract class AbstractPaymentMethodHandler
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $router,
         CsrfTokenManagerInterface $csrfTokenManager,
+        EntityRepositoryInterface $currencyRepository,
+        EntityRepositoryInterface $productRepository,
         LoggerInterface $logger
     ) {
         $this->checkoutService = $checkoutService;
         $this->browserBuilder = $browserBuilder;
         $this->addressBuilder = $addressBuilder;
+        $this->openInvoiceBuilder = $openInvoiceBuilder;
         $this->currency = $currency;
         $this->configurationService = $configurationService;
         $this->customerBuilder = $customerBuilder;
@@ -187,6 +223,8 @@ abstract class AbstractPaymentMethodHandler
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->router = $router;
         $this->csrfTokenManager = $csrfTokenManager;
+        $this->currencyRepository = $currencyRepository;
+        $this->productRepository = $productRepository;
     }
 
     abstract public static function getPaymentMethodCode();
@@ -328,6 +366,13 @@ abstract class AbstractPaymentMethodHandler
 
         //Validate state.data for payment and build request object
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
+
+        //Setting payment method type if not present in statedata
+        if (empty($request['paymentMethod']['type'])) {
+            $paymentMethodType = static::getPaymentMethodCode();
+        } else {
+            $paymentMethodType = $request['paymentMethod']['type'];
+        }
 
         //Setting browser info if not present in statedata
         if (empty($request['browserInfo']['acceptHeader'])) {
@@ -488,6 +533,65 @@ abstract class AbstractPaymentMethodHandler
             $request
         );
 
+        $request = $this->paymentBuilder->buildAlternativePaymentMethodData(
+            $paymentMethodType,
+            '',
+            $request
+        );
+
+        if (static::$isOpenInvoice) {
+            $orderLines = $transaction->getOrder()->getLineItems();
+            $lineItems = [];
+            foreach ($orderLines->getElements() as $orderLine) {
+                //Getting line price
+                $price = $orderLine->getPrice();
+
+                //Getting order line information differently if it's a promotion or product
+                if (empty($orderLine->getProductId()) && $orderLine->getType() === self::PROMOTION) {
+                    $productName = $orderLine->getDescription();
+                    $productNumber = $orderLine->getPayload()['promotionId'];
+                } else {
+                    $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
+                    $productName = $product->getName();
+                    $productNumber = $product->getProductNumber();
+                }
+
+                //Getting line tax amount and rate
+                $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
+                $taxRate = $price->getCalculatedTaxes()->first();
+                if (!empty($taxRate)) {
+                    $taxRate = $taxRate->getTaxRate();
+                } else {
+                    $taxRate = 0;
+                }
+
+                //Building open invoice line
+                $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
+                    $productName,
+                    $this->currency->sanitize(
+                        $price->getUnitPrice() - $lineTax,
+                        $this->getCurrency(
+                            $transaction->getOrder()->getCurrencyId(),
+                            $salesChannelContext->getContext()
+                        )
+                    ),
+                    $this->currency->sanitize(
+                        $lineTax,
+                        $this->getCurrency(
+                            $transaction->getOrder()->getCurrencyId(),
+                            $salesChannelContext->getContext()
+                        )
+                    ),
+                    $taxRate * 100,
+                    $orderLine->getQuantity(),
+                    '',
+                    $productNumber
+                );
+            }
+
+            $request['lineItems'] = $lineItems;
+        }
+
         //Setting info from statedata additionalData if present
         if (!empty($stateDataAdditionalData['origin'])) {
             $request['origin'] = $stateDataAdditionalData['origin'];
@@ -541,5 +645,45 @@ abstract class AbstractPaymentMethodHandler
 
         // Create the adyen redirect result URL with the same query as the original return URL
         return $adyenReturnUrl . '&' . $returnUrlQuery;
+    }
+
+    /**
+     * @param string $currencyId
+     * @param Context $context
+     * @return CurrencyEntity
+     */
+    private function getCurrency(string $currencyId, Context $context): CurrencyEntity
+    {
+        $criteria = new Criteria([$currencyId]);
+
+        /** @var CurrencyCollection $currencyCollection */
+        $currencyCollection = $this->currencyRepository->search($criteria, $context);
+
+        $currency = $currencyCollection->get($currencyId);
+        if ($currency === null) {
+            throw new CurrencyNotFoundException($currencyId);
+        }
+
+        return $currency;
+    }
+
+    /**
+     * @param string $productId
+     * @param Context $context
+     * @return ProductEntity
+     */
+    private function getProduct(string $productId, Context $context): ProductEntity
+    {
+        $criteria = new Criteria([$productId]);
+
+        /** @var ProductCollection $productCollection */
+        $productCollection = $this->productRepository->search($criteria, $context);
+
+        $product = $productCollection->get($productId);
+        if ($product === null) {
+            throw new ProductNotFoundException($productId);
+        }
+
+        return $product;
     }
 }

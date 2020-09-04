@@ -29,7 +29,8 @@ class PaymentMethods
     const PAYMENT_METHODS = [
         CardsPaymentMethod::class,
         IdealPaymentMethod::class,
-        KlarnaPaymentMethod::class,
+        KlarnaPayNowPaymentMethod::class,
+        KlarnaPayLaterPaymentMethod::class,
         SepaPaymentMethod::class,
         SofortPaymentMethod::class
     ];
