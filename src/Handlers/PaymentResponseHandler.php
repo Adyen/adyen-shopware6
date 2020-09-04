@@ -120,6 +120,13 @@ class PaymentResponseHandler
             $this->paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
         }
 
+        // Store response for cart until the payment is finalised
+        $this->paymentResponseService->insertPaymentResponse(
+            $response,
+            $orderNumber,
+            $salesChannelContext->getToken()
+        );
+
         // Based on the result code start different payment flows
         switch ($resultCode) {
             case self::REFUSED:
@@ -129,12 +136,6 @@ class PaymentResponseHandler
                     $response[self::MERCHANT_REFERENCE]
                 );
 
-                // Store response for cart until the payment is finalised
-                $this->paymentResponseService->insertPaymentResponse(
-                    $response,
-                    $orderNumber,
-                    $salesChannelContext->getToken()
-                );
                 break;
             case self::AUTHORISED:
             case self::REDIRECT_SHOPPER:
@@ -142,15 +143,7 @@ class PaymentResponseHandler
             case self::CHALLENGE_SHOPPER:
             case self::RECEIVED:
             case self::PRESENT_TO_SHOPPER:
-                // Store response for cart until the payment is finalised
-                $this->paymentResponseService->insertPaymentResponse(
-                    $response,
-                    $orderNumber,
-                    $salesChannelContext->getToken()
-                );
-
-                // Return the standard payment response handler result
-                return $this->paymentResponseHandlerResult;
+                // Do nothing here
                 break;
             case self::ERROR:
                 // Log error
@@ -159,10 +152,9 @@ class PaymentResponseHandler
                     ' Result code "Error" in response: ' . print_r($response, true)
                 );
 
-                //TODO check if insertPaymentResponse is needed
                 break;
             default:
-                // Unsupported resultCode
+                // Log unsupported resultCode
                 $this->logger->error(
                     "There was an error with the payment method. id:  " .
                     ' Unsupported result code in response: ' . print_r($response, true)
