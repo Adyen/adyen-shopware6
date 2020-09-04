@@ -97,6 +97,16 @@ class NotificationEntity extends Entity
     protected $processing;
 
     /**
+     * @var int
+     */
+    protected $errorCount;
+
+    /**
+     * @var string
+     */
+    protected $errorMessage;
+
+    /**
      * @return string
      */
     public function getPspReference(): string
@@ -302,5 +312,37 @@ class NotificationEntity extends Entity
     public function setProcessing(string $processing): void
     {
         $this->processing = $processing;
+    }
+
+    /**
+     * @return int
+     */
+    public function getErrorCount(): int
+    {
+        return $this->errorCount;
+    }
+
+    /**
+     * @param string $errorCount
+     */
+    public function setErrorCount(string $errorCount): void
+    {
+        $this->errorCount = $errorCount;
+    }
+
+    /**
+     * @return string
+     */
+    public function getErrorMessage(): string
+    {
+        return $this->errorMessage;
+    }
+
+    /**
+     * @param string $errorMessage
+     */
+    public function setErrorMessage(string $errorMessage): void
+    {
+        $this->errorMessage = $errorMessage;
     }
 }
