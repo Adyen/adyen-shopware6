@@ -14,6 +14,10 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     confirmOrder(event) {
+        if (!$('#confirmPaymentForm').find('input[name="paymentMethodId"]:checked').hasClass('adyen-payment-method-input-radio')) {
+            return true;
+        }
+
         if (!!adyenCheckoutOptions && !!adyenCheckoutOptions.paymentStatusUrl && adyenCheckoutOptions.checkoutOrderUrl) {
             event.preventDefault();
             const form = event.target;
