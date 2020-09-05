@@ -29,6 +29,7 @@ use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\OriginKeyService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
+use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -76,13 +77,20 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $paymentMethodsService;
 
     /**
+     * @var PluginIdProvider $pluginIdProvider
+     */
+    private $pluginIdProvider;
+
+    /**
      * PaymentSubscriber constructor.
+     *
      * @param PaymentStateDataService $paymentStateDataService
      * @param RouterInterface $router
      * @param OriginKeyService $originKeyService
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
+     * @param PluginIdProvider $pluginIdProvider
      */
     public function __construct(
         PaymentStateDataService $paymentStateDataService,
@@ -90,7 +98,8 @@ class PaymentSubscriber implements EventSubscriberInterface
         OriginKeyService $originKeyService,
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
-        PaymentMethodsService $paymentMethodsService
+        PaymentMethodsService $paymentMethodsService,
+        PluginIdProvider $pluginIdProvider
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
         $this->router = $router;
@@ -98,6 +107,7 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
+        $this->pluginIdProvider = $pluginIdProvider;
     }
 
     /**
@@ -157,6 +167,11 @@ class PaymentSubscriber implements EventSubscriberInterface
             $salesChannelContext->getToken()
         );
 
+        $adyenPluginId = $this->pluginIdProvider->getPluginIdByBaseClass(
+            \Adyen\Shopware\AdyenPaymentShopware6::class,
+            $salesChannelContext->getContext()
+        );
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -177,11 +192,14 @@ class PaymentSubscriber implements EventSubscriberInterface
                         'frontend.checkout.finish.page',
                         ['orderId' => '']
                     ),
-                    'paymentErrorUrl' => $this->router->generate('frontend.checkout.finish.page', [
-                        'orderId' => '',
-                        'changedPayment' => false,
-                        'paymentFailed' => true,
-                    ]),
+                    'paymentErrorUrl' => $this->router->generate(
+                        'frontend.checkout.finish.page',
+                        [
+                            'orderId' => '',
+                            'changedPayment' => false,
+                            'paymentFailed' => true,
+                        ]
+                    ),
                     'editPaymentUrl' => $this->router->generate(
                         'store-api.order.set-payment',
                         ['version' => 2]
@@ -198,7 +216,8 @@ class PaymentSubscriber implements EventSubscriberInterface
                         $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
                     ),
                     'orderId' => $orderId,
-                    'stateDataPaymentMethod' => $stateDataPaymentMethod
+                    'stateDataPaymentMethod' => $stateDataPaymentMethod,
+                    'pluginId' => $adyenPluginId
                 ]
             )
         );
