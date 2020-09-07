@@ -41,6 +41,7 @@ export default class CheckoutPlugin extends Plugin {
         const klarnaPayLaterFormattedHandlerIdentifier = 'handler_adyen_klarnapaylaterpaynowpaymentmethodhandler';
         const sepaFormattedHandlerIdentifier = 'handler_adyen_sepapaymentmethodhandler';
         const sofortFormattedHandlerIdentifier = 'handler_adyen_sofortpaymentmethodhandler';
+        const paypalFormattedHandlerIdentifier = 'handler_adyen_paypalpaymentmethodhandler';
 
         this.paymentMethodTypeHandlers = {
             'scheme': cardsFormattedHandlerIdentifier,
@@ -48,7 +49,8 @@ export default class CheckoutPlugin extends Plugin {
             'klarna': klarnaPayLaterFormattedHandlerIdentifier,
             'klarna_paynow': klarnaPayNowFormattedHandlerIdentifier,
             'sepadirectdebit': sepaFormattedHandlerIdentifier,
-            'sofort': sofortFormattedHandlerIdentifier
+            'sofort': sofortFormattedHandlerIdentifier,
+            'paypal': paypalFormattedHandlerIdentifier
         };
 
         //PMs that should show an 'Update Details' button if there's already a state.data for that PM stored for this context
