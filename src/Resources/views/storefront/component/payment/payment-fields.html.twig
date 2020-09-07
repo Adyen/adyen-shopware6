@@ -1,4 +1,5 @@
 {% sw_extends '@Storefront/storefront/component/payment/payment-fields.html.twig' %}
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
 {% block component_payment_methods %}
     <div class="payment-methods">
         <template data-adyen-payment></template>
@@ -16,7 +17,7 @@
                                                name="paymentMethodId"
                                                value="{{ payment.id }}"
                                                {% if payment.id is same as(defaultPaymentMethodId) %}checked="checked"{% endif %}
-                                               class="custom-control-input payment-method-input">
+                                               class="custom-control-input payment-method-input {% if payment.pluginId is same as(adyenFrontendData.pluginId) %}adyen-payment-method-input-radio{% endif %}">
                                     {% endblock %}
                                     {% block component_payment_method_label %}
                                         <label class="custom-control-label payment-method-label"
