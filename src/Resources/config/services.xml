@@ -28,7 +28,9 @@
         <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
-        <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
         <service id="Adyen\Shopware\Service\ClientService" autowire="true">
             <argument key="$genericLogger" type="service" id="monolog.logger.adyen_generic"/>
             <argument key="$apiLogger" type="service" id="monolog.logger.adyen_api"/>
@@ -40,7 +42,9 @@
         <service id="Adyen\Shopware\Service\PaymentDetailsService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
-        <service id="Adyen\Shopware\Service\CheckoutService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\CheckoutService" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
         <service id="Adyen\Util\Currency" autowire="true"/>
         <service id="Adyen\Util\HmacSignature" autowire="true"/>
         <service id="Adyen\Shopware\Service\ConfigurationService" autowire="true">
