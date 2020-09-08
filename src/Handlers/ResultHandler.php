@@ -40,6 +40,7 @@ class ResultHandler
     const PA_RES = 'PaRes';
     const MD = 'MD';
     const REDIRECT_RESULT = 'redirectResult';
+    const PAYLOAD = 'payload';
 
     /**
      * @var CheckoutService
@@ -121,16 +122,25 @@ class ResultHandler
             $md = $request->query->get(self::MD);
             $paRes = $request->query->get(self::PA_RES);
             $redirectResult = $request->query->get(self::REDIRECT_RESULT);
+            $payload = $request->query->get(self::PAYLOAD);
+
+            $details = [];
 
             // Construct the details object for the paymentDetails request
             if (!empty($md)) {
                 $details[self::MD] = $md;
             }
+
             if (!empty($paRes)) {
                 $details[self::PA_RES] = $paRes;
             }
+
             if (!empty($redirectResult)) {
                 $details[self::REDIRECT_RESULT] = $redirectResult;
+            }
+
+            if (!empty($payload)) {
+                $details[self::PAYLOAD] = $payload;
             }
 
             // Validate the return
