@@ -97,6 +97,7 @@ class PaymentMethodsService
         try {
             $requestData = $this->buildPaymentMethodsRequestData($context);
             if (!empty($requestData)) {
+                $this->checkoutService->startClient($context->getSalesChannel()->getId());
                 $responseData = $this->checkoutService->paymentMethods($requestData);
             }
         } catch (AdyenException $e) {
@@ -116,7 +117,7 @@ class PaymentMethodsService
         }
 
         $cart = $this->cartService->getCart($context->getToken(), $context);
-        $merchantAccount = $this->configurationService->getMerchantAccount();
+        $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
             $this->logger->error('No Merchant Account has been configured. ' .

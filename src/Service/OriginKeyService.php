@@ -65,14 +65,15 @@ class OriginKeyService
     /**
      * Get origin key for a specific origin using the adyen api library client
      * @param string $host
+     * @param string $salesChannelId
      * @return OriginKeyModel
      */
-    public function getOriginKeyForOrigin(string $host): OriginKeyModel
+    public function getOriginKeyForOrigin(string $host, string $salesChannelId): OriginKeyModel
     {
+        $client = $this->adyenCheckoutUtilityService->getClientBySalesChannelId($salesChannelId);
         $params = array("originDomains" => array($host));
-        $response = [];
         try {
-            $response = $this->adyenCheckoutUtilityService->originKeys($params);
+            $response = $client->originKeys($params);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
             return $this->originKeyModel->setOriginKey('');

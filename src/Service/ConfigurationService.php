@@ -48,100 +48,120 @@ class ConfigurationService
     }
 
     /**
+     * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function getMerchantAccount()
+    public function getMerchantAccount(?string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.merchantAccount');
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.merchantAccount', $salesChannelId);
     }
 
     /**
+     * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getApiKeyTest()
+    public function getApiKeyTest(string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.apiKeyTest');
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.apiKeyTest', $salesChannelId);
     }
 
     /**
+     * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getApiKeyLive()
+    public function getApiKeyLive(string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.apiKeyLive');
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.apiKeyLive', $salesChannelId);
     }
 
     /**
+     * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getEnvironment()
+    public function getEnvironment(?string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment') ?
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment', $salesChannelId) ?
             Environment::LIVE : Environment::TEST;
     }
 
     /**
+     * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getLiveEndpointUrlPrefix()
+    public function getLiveEndpointUrlPrefix(string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.liveEndpointUrlPrefix');
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.liveEndpointUrlPrefix',
+            $salesChannelId
+        );
     }
 
     /**
+     * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function getNotificationUsername()
+    public function getNotificationUsername(?string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.notificationUsername');
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.notificationUsername',
+            $salesChannelId
+        );
     }
 
     /**
+     * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function getNotificationPassword()
+    public function getNotificationPassword(?string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.notificationPassword');
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.notificationPassword',
+            $salesChannelId
+        );
     }
 
     /**
+     * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getHmacTest()
+    public function getHmacTest(string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.hmacTest');
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.hmacTest', $salesChannelId);
     }
 
     /**
+     * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getHmacLive()
+    public function getHmacLive(string $salesChannelId)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.hmacLive');
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.hmacLive', $salesChannelId);
     }
 
     /**
      * Returns HMAC Key based on the configured environment
+     * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function getHmacKey()
+    public function getHmacKey(?string $salesChannelId)
     {
-        if ($this->getEnvironment() === Environment::LIVE) {
-            return $this->getHmacLive();
+        if ($this->getEnvironment($salesChannelId) === Environment::LIVE) {
+            return $this->getHmacLive($salesChannelId);
         }
 
-        return $this->getHmacTest();
+        return $this->getHmacTest($salesChannelId);
     }
 
     /**
+     * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getApiKey()
+    public function getApiKey(string $salesChannelId)
     {
-        if ($this->getEnvironment() === Environment::LIVE) {
-            return $this->getApiKeyLive();
+        if ($this->getEnvironment($salesChannelId) === Environment::LIVE) {
+            return $this->getApiKeyLive($salesChannelId);
         }
 
-        return $this->getApiKeyTest();
+        return $this->getApiKeyTest($salesChannelId);
     }
 }
