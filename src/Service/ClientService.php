@@ -24,10 +24,11 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Client;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Store\Services\StoreService;
 
-class ClientService extends \Adyen\Client
+class ClientService extends Client
 {
     const MERCHANT_APPLICATION_NAME = 'adyen-shopware6';
     const EXTERNAL_PLATFORM_NAME = 'Shopware';
@@ -41,6 +42,11 @@ class ClientService extends \Adyen\Client
      * @var LoggerInterface
      */
     private $genericLogger;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $apiLogger;
 
     /**
      * @var ContainerParametersService
@@ -71,22 +77,30 @@ class ClientService extends \Adyen\Client
     ) {
         $this->configurationService = $configurationService;
         $this->genericLogger = $genericLogger;
+        $this->apiLogger = $apiLogger;
         $this->containerParametersService = $containerParametersService;
         $this->storeService = $storeService;
+    }
 
-        parent::__construct();
-
+    public function getClient($salesChannelId)
+    {
         try {
-            $environment = $this->configurationService->getEnvironment();
-            $apiKey = $this->configurationService->getApiKey();
-            $liveEndpointUrlPrefix = $this->configurationService->getLiveEndpointUrlPrefix();
+            if (empty($salesChannelId)) {
+                throw new \Adyen\AdyenException('The sales channel ID has not been configured.');
+            }
+            $environment = $this->configurationService->getEnvironment($salesChannelId);
+            $apiKey = $this->configurationService->getApiKey($salesChannelId);
+            $liveEndpointUrlPrefix = $this->configurationService->getLiveEndpointUrlPrefix($salesChannelId);
 
-            $this->setXApiKey($apiKey);
-            $this->setMerchantApplication(self::MERCHANT_APPLICATION_NAME, $this->getModuleVersion());
-            $this->setExternalPlatform(self::EXTERNAL_PLATFORM_NAME, $this->storeService->getShopwareVersion());
-            $this->setEnvironment($environment, $liveEndpointUrlPrefix);
+            $client = new Client();
+            $client->setXApiKey($apiKey);
+            $client->setMerchantApplication(self::MERCHANT_APPLICATION_NAME, $this->getModuleVersion());
+            $client->setExternalPlatform(self::EXTERNAL_PLATFORM_NAME, $this->storeService->getShopwareVersion());
+            $client->setEnvironment($environment, $liveEndpointUrlPrefix);
 
-            $this->setLogger($apiLogger);
+            $client->setLogger($this->apiLogger);
+
+            return $client;
         } catch (\Exception $e) {
             $this->genericLogger->error($e->getMessage());
             // TODO: check if $environment is test and, if so, exit with error message

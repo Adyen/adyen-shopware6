@@ -240,6 +240,7 @@ abstract class AbstractPaymentMethodHandler
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): RedirectResponse {
+        $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
         } catch (Exception $exception) {
@@ -308,6 +309,7 @@ abstract class AbstractPaymentMethodHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
+        $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentException $exception) {
@@ -528,7 +530,7 @@ abstract class AbstractPaymentMethodHandler
                 $salesChannelContext->getCurrency()->getIsoCode()
             ),
             $transaction->getOrder()->getOrderNumber(),
-            $this->configurationService->getMerchantAccount(),
+            $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
             $returnUrl,
             $request
         );
