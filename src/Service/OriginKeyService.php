@@ -70,7 +70,7 @@ class OriginKeyService
      */
     public function getOriginKeyForOrigin(string $host, string $salesChannelId): OriginKeyModel
     {
-        $client=$this->adyenCheckoutUtilityService->startClient($salesChannelId);
+        $client = $this->adyenCheckoutUtilityService->getClientBySalesChannelId($salesChannelId);
         $params = array("originDomains" => array($host));
         try {
             $response = $client->originKeys($params);

@@ -48,7 +48,7 @@ class CheckoutUtilityService extends CheckoutUtility
         $this->logger = $logger;
     }
 
-    public function startClient($salesChannelId)
+    public function getClientBySalesChannelId($salesChannelId)
     {
         try {
             $client = $this->client->getClient($salesChannelId);
