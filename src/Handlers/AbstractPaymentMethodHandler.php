@@ -32,7 +32,9 @@ use Adyen\Service\Builder\Customer;
 use Adyen\Service\Builder\Payment;
 use Adyen\Service\Builder\OpenInvoice;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentException;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
@@ -45,6 +47,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
+use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -287,11 +290,7 @@ abstract class AbstractPaymentMethodHandler
         try {
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
         } catch (PaymentException $exception) {
-            // Cancel payment in shopware
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                $exception->getMessage()
-            );
+            $this->handlePaymentException($exception, $transaction->getOrderTransaction()->getId());
         }
 
         // Payment had no error, continue the process
@@ -311,10 +310,7 @@ abstract class AbstractPaymentMethodHandler
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentException $exception) {
-            throw new AsyncPaymentFinalizeException(
-                $transaction->getOrderTransaction()->getId(),
-                $exception->getMessage()
-            );
+            $this->handlePaymentException($exception, $transaction->getOrderTransaction()->getId());
         }
     }
 
@@ -685,5 +681,33 @@ abstract class AbstractPaymentMethodHandler
         }
 
         return $product;
+    }
+
+    /**
+     * @param PaymentException $exception
+     * @param $transactionId
+     */
+    private function handlePaymentException(PaymentException $exception, $transactionId) {
+
+        $exceptionType = get_class($exception);
+
+        switch ($exceptionType) {
+            case PaymentCancelledException::class:
+                $this->logger->debug('ATTILA CANCELLED DEBUG');
+                throw new CustomerCanceledAsyncPaymentException(
+                    $transactionId,
+                    $exception->getMessage()
+                );
+            case PaymentFailedException::class:
+                throw new AsyncPaymentFinalizeException(
+                    $transactionId,
+                    $exception->getMessage()
+                );
+            default:
+                throw new AsyncPaymentFinalizeException(
+                    $transactionId,
+                    $exception->getMessage()
+                );
+        }
     }
 }
