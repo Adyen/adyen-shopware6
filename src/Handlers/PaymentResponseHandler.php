@@ -43,6 +43,7 @@ class PaymentResponseHandler
     const IDENTIFY_SHOPPER = 'IdentifyShopper';
     const CHALLENGE_SHOPPER = 'ChallengeShopper';
     const RECEIVED = 'Received';
+    const PENDING = 'Pending';
     const PRESENT_TO_SHOPPER = 'PresentToShopper';
     const ERROR = 'Error';
     const CANCELED = 'Canceled';
@@ -143,6 +144,7 @@ class PaymentResponseHandler
             case self::CHALLENGE_SHOPPER:
             case self::RECEIVED:
             case self::PRESENT_TO_SHOPPER:
+            case self::PENDING:
                 // Do nothing here
                 break;
             case self::ERROR:
@@ -258,6 +260,7 @@ class PaymentResponseHandler
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::PRESENT_TO_SHOPPER:
+            case self::PENDING:
                 return [
                     "isFinal" => false,
                     "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
