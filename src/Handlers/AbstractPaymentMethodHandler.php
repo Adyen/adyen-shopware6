@@ -693,7 +693,6 @@ abstract class AbstractPaymentMethodHandler
 
         switch ($exceptionType) {
             case PaymentCancelledException::class:
-                $this->logger->debug('ATTILA CANCELLED DEBUG');
                 throw new CustomerCanceledAsyncPaymentException(
                     $transactionId,
                     $exception->getMessage()
