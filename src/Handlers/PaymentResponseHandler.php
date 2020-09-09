@@ -222,16 +222,12 @@ class PaymentResponseHandler
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
                 break;
             case self::REFUSED:
-                //Sync response, do nothing, wait for finalize()
-                //$this->transactionStateHandler->fail($orderTransactionId, $context);
                 // Cancel the order
                 throw new PaymentFailedException(
                     'The payment was refused'
                 );
                 break;
             case self::CANCELLED:
-                //Sync response, do nothing, wait for finalize()
-                //$this->transactionStateHandler->fail($orderTransactionId, $context);
                 // Cancel the order
                 throw new PaymentCancelledException(
                     'The payment was cancelled'
