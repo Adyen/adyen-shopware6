@@ -687,7 +687,8 @@ abstract class AbstractPaymentMethodHandler
      * @param PaymentException $exception
      * @param $transactionId
      */
-    private function handlePaymentException(PaymentException $exception, $transactionId) {
+    private function handlePaymentException(PaymentException $exception, $transactionId)
+    {
 
         $exceptionType = get_class($exception);
 
