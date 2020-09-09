@@ -698,11 +698,8 @@ abstract class AbstractPaymentMethodHandler
                     $transactionId,
                     $exception->getMessage()
                 );
+                break;
             case PaymentFailedException::class:
-                throw new AsyncPaymentFinalizeException(
-                    $transactionId,
-                    $exception->getMessage()
-                );
             default:
                 throw new AsyncPaymentFinalizeException(
                     $transactionId,
