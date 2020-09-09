@@ -218,11 +218,18 @@ class SalesChannelApiController extends AbstractController
             return new JsonResponse('Order ID not provided');
         }
 
-        return new JsonResponse(
-            $this->paymentStatusService->getPaymentStatusWithOrderId(
-                $request->get('orderId'),
-                $context
-            )
-        );
+        try {
+            return new JsonResponse(
+                $this->paymentStatusService->getPaymentStatusWithOrderId(
+                    $request->get('orderId'),
+                    $context
+                )
+            );
+        } catch (\Exception $exception) {
+
+            // TODO log error message
+
+            return new JsonResponse(["isFinal" => true]);
+        }
     }
 }
