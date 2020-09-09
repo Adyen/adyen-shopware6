@@ -54,13 +54,13 @@ class PaymentStatusService
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getToken());
 
         if (empty($paymentResponse)) {
-            throw new MissingDataException('Payment response cannot be found!');
+            throw new MissingDataException('Payment response cannot be found for order id: ' . $orderId . '!');
         }
 
         $responseData = json_decode($paymentResponse->getResponse(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \JsonException('Payment response is an invalid JSON');
+            throw new \JsonException('Payment response is an invalid JSON for order id: ' . $orderId . '');
         }
 
         $result = $this->paymentResponseHandler->handlePaymentResponse(
