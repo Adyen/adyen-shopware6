@@ -281,8 +281,10 @@ abstract class AbstractPaymentMethodHandler
 
         try {
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
-        } catch (PaymentException $exception) {
-            $this->handlePaymentException($exception, $transaction->getOrderTransaction()->getId());
+        } catch (PaymentCancelledException $exception) {
+            throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
+        } catch (PaymentFailedException $exception) {
+            throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
         }
 
         // Payment had no error, continue the process
@@ -299,10 +301,13 @@ abstract class AbstractPaymentMethodHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
+        $transactionId = $transaction->getOrderTransaction()->getId();
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
-        } catch (PaymentException $exception) {
-            $this->handlePaymentException($exception, $transaction->getOrderTransaction()->getId());
+        } catch (PaymentCancelledException $exception) {
+            throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
+        } catch (PaymentFailedException $exception) {
+            throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
         }
     }
 
@@ -673,30 +678,5 @@ abstract class AbstractPaymentMethodHandler
         }
 
         return $product;
-    }
-
-    /**
-     * @param PaymentException $exception
-     * @param $transactionId
-     */
-    private function handlePaymentException(PaymentException $exception, $transactionId)
-    {
-
-        $exceptionType = get_class($exception);
-
-        switch ($exceptionType) {
-            case PaymentCancelledException::class:
-                throw new CustomerCanceledAsyncPaymentException(
-                    $transactionId,
-                    $exception->getMessage()
-                );
-                break;
-            case PaymentFailedException::class:
-            default:
-                throw new AsyncPaymentFinalizeException(
-                    $transactionId,
-                    $exception->getMessage()
-                );
-        }
     }
 }
