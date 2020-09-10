@@ -243,6 +243,7 @@ abstract class AbstractPaymentMethodHandler
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): RedirectResponse {
+        $transactionId = $transaction->getOrderTransaction()->getId();
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
         } catch (Exception $exception) {
@@ -252,10 +253,7 @@ abstract class AbstractPaymentMethodHandler
                 $exception->getMessage()
             );
             $this->logger->error($message);
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                $message
-            );
+            throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
         try {
@@ -269,20 +267,14 @@ abstract class AbstractPaymentMethodHandler
 
             $this->logger->error($message);
 
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                $message
-            );
+            throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
         $orderNumber = $transaction->getOrder()->getOrderNumber();
 
         if (empty($orderNumber)) {
             $message = 'Order number is missing';
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                $message
-            );
+            throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
         $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $salesChannelContext);
