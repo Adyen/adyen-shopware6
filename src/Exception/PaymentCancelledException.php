@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -22,17 +22,9 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\PaymentMethods;
+namespace Adyen\Shopware\Exception;
 
-class PaymentMethods
+class PaymentCancelledException extends PaymentException
 {
-    const PAYMENT_METHODS = [
-        CardsPaymentMethod::class,
-        IdealPaymentMethod::class,
-        KlarnaPayNowPaymentMethod::class,
-        KlarnaPayLaterPaymentMethod::class,
-        SepaPaymentMethod::class,
-        SofortPaymentMethod::class,
-        PaypalPaymentMethod::class
-    ];
+
 }

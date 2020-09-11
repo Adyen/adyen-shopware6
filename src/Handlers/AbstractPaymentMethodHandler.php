@@ -32,7 +32,9 @@ use Adyen\Service\Builder\Customer;
 use Adyen\Service\Builder\Payment;
 use Adyen\Service\Builder\OpenInvoice;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentException;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
@@ -45,6 +47,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
+use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -240,6 +243,7 @@ abstract class AbstractPaymentMethodHandler
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): RedirectResponse {
+        $transactionId = $transaction->getOrderTransaction()->getId();
         $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
@@ -250,10 +254,7 @@ abstract class AbstractPaymentMethodHandler
                 $exception->getMessage()
             );
             $this->logger->error($message);
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                $message
-            );
+            throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
         try {
@@ -267,32 +268,24 @@ abstract class AbstractPaymentMethodHandler
 
             $this->logger->error($message);
 
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                $message
-            );
+            throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
         $orderNumber = $transaction->getOrder()->getOrderNumber();
 
         if (empty($orderNumber)) {
             $message = 'Order number is missing';
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                $message
-            );
+            throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
         $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $salesChannelContext);
 
         try {
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
-        } catch (PaymentException $exception) {
-            // Cancel payment in shopware
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                $exception->getMessage()
-            );
+        } catch (PaymentCancelledException $exception) {
+            throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
+        } catch (PaymentFailedException $exception) {
+            throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
         }
 
         // Payment had no error, continue the process
@@ -309,14 +302,14 @@ abstract class AbstractPaymentMethodHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
+        $transactionId = $transaction->getOrderTransaction()->getId();
         $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
-        } catch (PaymentException $exception) {
-            throw new AsyncPaymentFinalizeException(
-                $transaction->getOrderTransaction()->getId(),
-                $exception->getMessage()
-            );
+        } catch (PaymentCancelledException $exception) {
+            throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
+        } catch (PaymentFailedException $exception) {
+            throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
         }
     }
 

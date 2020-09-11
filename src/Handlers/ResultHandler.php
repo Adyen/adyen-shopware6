@@ -25,7 +25,8 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
-use Adyen\Shopware\Exception\PaymentException;
+use Adyen\Shopware\Exception\PaymentCancelledException;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -39,6 +40,7 @@ class ResultHandler
     const PA_RES = 'PaRes';
     const MD = 'MD';
     const REDIRECT_RESULT = 'redirectResult';
+    const PAYLOAD = 'payload';
 
 
     /**
@@ -93,7 +95,8 @@ class ResultHandler
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
-     * @throws PaymentException
+     * @throws PaymentCancelledException
+     * @throws PaymentFailedException
      */
     public function processResult(
         AsyncPaymentTransactionStruct $transaction,
@@ -113,16 +116,25 @@ class ResultHandler
             $md = $request->query->get(self::MD);
             $paRes = $request->query->get(self::PA_RES);
             $redirectResult = $request->query->get(self::REDIRECT_RESULT);
+            $payload = $request->query->get(self::PAYLOAD);
+
+            $details = [];
 
             // Construct the details object for the paymentDetails request
             if (!empty($md)) {
                 $details[self::MD] = $md;
             }
+
             if (!empty($paRes)) {
                 $details[self::PA_RES] = $paRes;
             }
+
             if (!empty($redirectResult)) {
                 $details[self::REDIRECT_RESULT] = $redirectResult;
+            }
+
+            if (!empty($payload)) {
+                $details[self::PAYLOAD] = $payload;
             }
 
             // Validate the return
