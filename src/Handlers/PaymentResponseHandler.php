@@ -169,6 +169,13 @@ class PaymentResponseHandler
         return $this->paymentResponseHandlerResult;
     }
 
+    /**
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param SalesChannelContext $salesChannelContext
+     * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
+     * @throws PaymentCancelledException
+     * @throws PaymentFailedException
+     */
     public function handleShopwareApis(
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
