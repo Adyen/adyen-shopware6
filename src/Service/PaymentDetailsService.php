@@ -138,6 +138,7 @@ class PaymentDetailsService
         ];
 
         try {
+            $this->checkoutService->startClient($context->getSalesChannel()->getId());
             $response = $this->checkoutService->paymentsDetails($request);
             return $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $context);
         } catch (AdyenException $exception) {

@@ -206,12 +206,15 @@ class PaymentSubscriber implements EventSubscriberInterface
                     ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                     'originKey' => $this->originKeyService->getOriginKeyForOrigin(
-                        $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext)
+                        $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext),
+                        $salesChannelContext->getSalesChannel()->getId()
                     )->getOriginKey(),
                     'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
                         ->getLanguage()->getLocale()->getCode(),
 
-                    'environment' => $this->configurationService->getEnvironment(),
+                    'environment' => $this->configurationService->getEnvironment(
+                        $event->getSalesChannelContext()->getSalesChannel()->getId()
+                    ),
                     'paymentMethodsResponse' => json_encode(
                         $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
                     ),

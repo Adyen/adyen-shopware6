@@ -20,13 +20,17 @@
  *
  */
 
-export default class CardFormValidator {
-    constructor(cardInstance) {
-        this.cardInstance = cardInstance;
+export default class FormValidatorWithComponent {
+    constructor(component) {
+        this.component = component;
     }
 
     validateForm() {
-        this.cardInstance.showValidation();
-        return this.cardInstance.isValid;
+        if (!this.component.isValid) {
+            this.component.showValidation();
+            return false;
+        }
+
+        return true;
     }
 }

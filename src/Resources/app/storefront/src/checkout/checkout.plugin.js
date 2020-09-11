@@ -24,7 +24,7 @@ import DomAccess from 'src/helper/dom-access.helper';
 import Plugin from 'src/plugin-system/plugin.class';
 import StoreApiClient from 'src/service/store-api-client.service';
 import validatePaymentMethod from '../validator/paymentMethod';
-import CardFormValidator from '../validator/CardFormValidator';
+import FormValidatorWithComponent from '../validator/FormValidatorWithComponent';
 
 
 /* global adyenCheckoutConfiguration, AdyenCheckout, adyenCheckoutOptions */
@@ -97,6 +97,7 @@ export default class CheckoutPlugin extends Plugin {
 
         this.placeOrderAllowed = false;
         this.data = '';
+        this.formValidator = [];
 
         // use this object to iterate through the stored payment methods
         const paymentMethods = window.adyenCheckout.paymentMethodsResponse.paymentMethods;
@@ -145,11 +146,9 @@ export default class CheckoutPlugin extends Plugin {
             const paymentMethodInstance = window.adyenCheckout
                 .create(paymentMethod.type, configuration);
 
-            if (paymentMethod.type === 'scheme') {
-                this.cardFormValidator = new CardFormValidator(paymentMethodInstance);
-            }
-
             paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
+
+            this.formValidator[this.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
             console.log(err);
         }
@@ -159,8 +158,6 @@ export default class CheckoutPlugin extends Plugin {
             $('[data-adyen-payment-container]').hide();
             $('[data-adyen-update-payment-details]').show();
         }
-
-
     }
 
     /**
@@ -171,8 +168,11 @@ export default class CheckoutPlugin extends Plugin {
     }
 
     onConfirmPayment (event) {
-        //TODO Implement validation for multiple PMs
-        if (!this.cardFormValidator.validateForm() && false) {
+        if (!(this.getSelectedPaymentMethodHandlerIdentifyer() in this.formValidator)) {
+            return true;
+        }
+
+        if (!this.formValidator[this.getSelectedPaymentMethodHandlerIdentifyer()].validateForm()) {
             event.preventDefault();
         }
     }
@@ -187,5 +187,9 @@ export default class CheckoutPlugin extends Plugin {
             this.placeOrderAllowed = false;
             this.resetFields();
         }
+    }
+
+    getSelectedPaymentMethodHandlerIdentifyer() {
+        return $('[name=paymentMethodId]:checked').siblings('.adyen-payment-method-container-div').data('adyen-payment-method');
     }
 }

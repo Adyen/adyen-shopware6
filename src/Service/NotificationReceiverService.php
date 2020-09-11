@@ -114,7 +114,7 @@ class NotificationReceiverService
         }
 
         // Is the plugin configured to live environment
-        $pluginMode = $this->configurationService->getEnvironment();
+        $pluginMode = $this->configurationService->getEnvironment(null);
 
         // Validate notification and process the notification items
         if (!empty($request['live']) && $this->validateNotificationMode($request['live'], $pluginMode)) {
@@ -205,8 +205,8 @@ class NotificationReceiverService
     private function isAuthorized($isTestNotification, $requestUser, $requestPassword)
     {
         // Retrieve username and password from config
-        $userName = $this->configurationService->getNotificationUsername();
-        $password = $this->configurationService->getNotificationPassword();
+        $userName = $this->configurationService->getNotificationUsername(null);
+        $password = $this->configurationService->getNotificationPassword(null);
 
         // Validate if username and password is sent
         if ((is_null($requestUser) || is_null($requestPassword))) {
@@ -257,8 +257,8 @@ class NotificationReceiverService
      */
     protected function processNotificationItem($notificationItem)
     {
-        $merchantAccount = $this->configurationService->getMerchantAccount();
-        $hmacKey = $this->configurationService->getHmacKey();
+        $merchantAccount = $this->configurationService->getMerchantAccount(null);
+        $hmacKey = $this->configurationService->getHmacKey(null);
 
         // validate the notification
         if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)) {

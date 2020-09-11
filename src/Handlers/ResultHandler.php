@@ -31,7 +31,6 @@ use Adyen\Shopware\Service\PaymentDetailsService;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
-use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Psr\Log\LoggerInterface;
 
@@ -43,10 +42,6 @@ class ResultHandler
     const REDIRECT_RESULT = 'redirectResult';
     const PAYLOAD = 'payload';
 
-    /**
-     * @var CheckoutService
-     */
-    private $checkoutService;
 
     /**
      * @var PaymentResponseService
@@ -76,7 +71,6 @@ class ResultHandler
     /**
      * ResultHandler constructor.
      *
-     * @param CheckoutService $checkoutService
      * @param PaymentResponseService $paymentResponseService
      * @param LoggerInterface $logger
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -84,14 +78,12 @@ class ResultHandler
      * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
      */
     public function __construct(
-        CheckoutService $checkoutService,
         PaymentResponseService $paymentResponseService,
         LoggerInterface $logger,
         PaymentResponseHandler $paymentResponseHandler,
         PaymentDetailsService $paymentDetailsService,
         PaymentResponseHandlerResult $paymentResponseHandlerResult
     ) {
-        $this->checkoutService = $checkoutService;
         $this->paymentResponseService = $paymentResponseService;
         $this->logger = $logger;
         $this->paymentResponseHandler = $paymentResponseHandler;
@@ -119,7 +111,7 @@ class ResultHandler
         $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
 
         if ('RedirectShopper' === $result->getResultCode()) {
-            // Validate 3DS1 Post parameters
+            // Validate 3DS1 parameters
             // Get MD and PaRes to be validated
             $md = $request->query->get(self::MD);
             $paRes = $request->query->get(self::PA_RES);
