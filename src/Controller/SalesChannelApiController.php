@@ -31,6 +31,7 @@ use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -84,6 +85,11 @@ class SalesChannelApiController extends AbstractController
     private $paymentResponseHandler;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * SalesChannelApiController constructor.
      *
      * @param OriginKeyService $originKeyService
@@ -94,6 +100,7 @@ class SalesChannelApiController extends AbstractController
      * @param PaymentStatusService $paymentStatusService
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param PaymentResponseService $paymentResponseService
+     * @param LoggerInterface $logger
      */
     public function __construct(
         OriginKeyService $originKeyService,
@@ -103,7 +110,8 @@ class SalesChannelApiController extends AbstractController
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStatusService $paymentStatusService,
         PaymentResponseHandler $paymentResponseHandler,
-        PaymentResponseService $paymentResponseService
+        PaymentResponseService $paymentResponseService,
+        LoggerInterface $logger
     ) {
         $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
@@ -113,6 +121,7 @@ class SalesChannelApiController extends AbstractController
         $this->paymentStatusService = $paymentStatusService;
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->paymentResponseService = $paymentResponseService;
+        $this->logger = $logger;
     }
 
     /**
@@ -218,11 +227,16 @@ class SalesChannelApiController extends AbstractController
             return new JsonResponse('Order ID not provided');
         }
 
-        return new JsonResponse(
-            $this->paymentStatusService->getPaymentStatusWithOrderId(
-                $request->get('orderId'),
-                $context
-            )
-        );
+        try {
+            return new JsonResponse(
+                $this->paymentStatusService->getPaymentStatusWithOrderId(
+                    $request->get('orderId'),
+                    $context
+                )
+            );
+        } catch (\Exception $exception) {
+            $this->logger->error($exception->getMessage());
+            return new JsonResponse(["isFinal" => true]);
+        }
     }
 }

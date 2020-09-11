@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Exception\MissingDataException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -51,16 +52,23 @@ class PaymentStatusService
     public function getPaymentStatusWithOrderId(string $orderId, SalesChannelContext $context): array
     {
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getToken());
-        $responseData = json_decode($paymentResponse->getResponse(), true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            //TODO error handling
+
+        if (empty($paymentResponse)) {
+            throw new MissingDataException('Payment response cannot be found for order id: ' . $orderId . '!');
         }
+
+        $responseData = json_decode($paymentResponse->getResponse(), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \JsonException('Payment response is an invalid JSON for order id: ' . $orderId . '');
+        }
+
         $result = $this->paymentResponseHandler->handlePaymentResponse(
             $responseData,
             $paymentResponse->getOrderNumber(),
             $context
         );
+
         return $this->paymentResponseHandler->handleAdyenApis($result);
     }
 }
