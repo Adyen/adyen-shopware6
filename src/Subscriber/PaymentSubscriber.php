@@ -240,7 +240,6 @@ class PaymentSubscriber implements EventSubscriberInterface
         $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
 
         foreach ($originalPaymentMethods as $paymentMethodEntity) {
-            //TODO filter out unsupported PMs
             $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
 
             //If this is an Adyen PM installed it will only be enabled if it's present in the /paymentMethods response
