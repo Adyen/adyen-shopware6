@@ -127,7 +127,7 @@ class SalesChannelApiController extends AbstractController
     /**
      * @RouteScope(scopes={"sales-channel-api"})
      * @Route(
-     *     "/sales-channel-api/v1/adyen/origin-key",
+     *     "/sales-channel-api/v{version}/adyen/origin-key",
      *     name="sales-channel-api.action.adyen.origin-key",
      *     methods={"GET"}
      * )
@@ -149,7 +149,7 @@ class SalesChannelApiController extends AbstractController
     /**
      * @RouteScope(scopes={"sales-channel-api"})
      * @Route(
-     *     "/sales-channel-api/v1/adyen/payment-methods",
+     *     "/sales-channel-api/v{version}/adyen/payment-methods",
      *     name="sales-channel-api.action.adyen.payment-methods",
      *     methods={"GET"}
      * )
@@ -165,7 +165,7 @@ class SalesChannelApiController extends AbstractController
     /**
      * @RouteScope(scopes={"sales-channel-api"})
      * @Route(
-     *     "/sales-channel-api/v2/adyen/payment-details",
+     *     "/sales-channel-api/v{version}/adyen/payment-details",
      *     name="sales-channel-api.action.adyen.payment-details",
      *     methods={"POST"}
      * )
@@ -212,7 +212,7 @@ class SalesChannelApiController extends AbstractController
     /**
      * @RouteScope(scopes={"sales-channel-api"})
      * @Route(
-     *     "/sales-channel-api/v2/adyen/payment-status",
+     *     "/sales-channel-api/v{version}/adyen/payment-status",
      *     name="sales-channel-api.action.adyen.payment-status",
      *     methods={"POST"}
      * )
