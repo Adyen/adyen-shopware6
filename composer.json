@@ -11,6 +11,7 @@
     "license": "MIT",
     "require": {
         "shopware/core": ">=6.1 <=6.2.3",
+        "shopware/storefront": ">=6.1 <=6.2.3",
         "adyen/php-api-library": "^7",
         "monolog/monolog": "^1",
         "ext-json": "*"
