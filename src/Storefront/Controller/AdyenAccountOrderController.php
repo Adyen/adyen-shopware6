@@ -6,7 +6,6 @@ use Shopware\Core\Checkout\Order\SalesChannel\AbstractCancelOrderRoute;
 use Shopware\Core\Checkout\Order\SalesChannel\AbstractOrderRoute;
 use Shopware\Core\Checkout\Order\SalesChannel\AbstractSetPaymentOrderRoute;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
@@ -29,10 +28,8 @@ class AdyenAccountOrderController extends AccountOrderController
     private $contextSwitchRoute;
 
     public function __construct(
-        AccountOrderController $accountOrderController,
         AccountOrderPageLoader $orderPageLoader,
         AbstractOrderRoute $orderRoute,
-        RequestCriteriaBuilder $requestCriteriaBuilder,
         AccountEditOrderPageLoader $accountEditOrderPageLoader,
         ContextSwitchRoute $contextSwitchRoute,
         AbstractCancelOrderRoute $cancelOrderRoute,
@@ -44,7 +41,6 @@ class AdyenAccountOrderController extends AccountOrderController
         parent::__construct(
             $orderPageLoader,
             $orderRoute,
-            $requestCriteriaBuilder,
             $accountEditOrderPageLoader,
             $contextSwitchRoute,
             $cancelOrderRoute,
