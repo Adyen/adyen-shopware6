@@ -45,7 +45,7 @@ class KlarnaPayNowPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return ''; //TODO
+        return 'Direct debit payments';
     }
 
     /**

@@ -45,7 +45,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return ''; //TODO
+        return 'Online banking payments';
     }
 
     /**

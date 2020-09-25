@@ -45,7 +45,7 @@ class CardsPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Credit and debit card payments.';
+        return 'Credit and debit card payments';
     }
 
     /**
