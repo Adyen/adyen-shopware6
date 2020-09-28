@@ -1249,16 +1249,16 @@
         },
         {
             "name": "enqueue/dsn",
-            "version": "0.10.1",
+            "version": "0.10.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-enqueue/dsn.git",
-                "reference": "e503546bacc0f2e8d45590b089683140ecf91cd3"
+                "reference": "5c4150eebecafedc00f3c8e9ce84f5ae66abed1a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-enqueue/dsn/zipball/e503546bacc0f2e8d45590b089683140ecf91cd3",
-                "reference": "e503546bacc0f2e8d45590b089683140ecf91cd3",
+                "url": "https://api.github.com/repos/php-enqueue/dsn/zipball/5c4150eebecafedc00f3c8e9ce84f5ae66abed1a",
+                "reference": "5c4150eebecafedc00f3c8e9ce84f5ae66abed1a",
                 "shasum": ""
             },
             "require": {
@@ -1291,20 +1291,20 @@
                 "dsn",
                 "parse"
             ],
-            "time": "2020-01-26T23:45:10+00:00"
+            "time": "2020-07-30T18:38:01+00:00"
         },
         {
             "name": "enqueue/enqueue",
-            "version": "0.10.3",
+            "version": "0.10.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-enqueue/enqueue.git",
-                "reference": "49d22d26fc57bd1f17ccd7c22a8b0554c8c1e34c"
+                "reference": "1c4c6ab922049248a7e5f9418817473ded110e52"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-enqueue/enqueue/zipball/49d22d26fc57bd1f17ccd7c22a8b0554c8c1e34c",
-                "reference": "49d22d26fc57bd1f17ccd7c22a8b0554c8c1e34c",
+                "url": "https://api.github.com/repos/php-enqueue/enqueue/zipball/1c4c6ab922049248a7e5f9418817473ded110e52",
+                "reference": "1c4c6ab922049248a7e5f9418817473ded110e52",
                 "shasum": ""
             },
             "require": {
@@ -1380,7 +1380,7 @@
                 "queue",
                 "rabbitmq"
             ],
-            "time": "2020-07-30T15:40:15+00:00"
+            "time": "2020-09-24T14:24:16+00:00"
         },
         {
             "name": "enqueue/enqueue-bundle",
@@ -1461,16 +1461,16 @@
         },
         {
             "name": "enqueue/null",
-            "version": "0.10.1",
+            "version": "0.10.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-enqueue/null.git",
-                "reference": "7fb83a0f87ce3a95645a9aa2c495200e453dd366"
+                "reference": "8e17ca9195abdb5e6b2d6f55a4fd7292951ab715"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-enqueue/null/zipball/7fb83a0f87ce3a95645a9aa2c495200e453dd366",
-                "reference": "7fb83a0f87ce3a95645a9aa2c495200e453dd366",
+                "url": "https://api.github.com/repos/php-enqueue/null/zipball/8e17ca9195abdb5e6b2d6f55a4fd7292951ab715",
+                "reference": "8e17ca9195abdb5e6b2d6f55a4fd7292951ab715",
                 "shasum": ""
             },
             "require": {
@@ -1507,7 +1507,7 @@
                 "queue",
                 "testing"
             ],
-            "time": "2020-01-26T23:45:10+00:00"
+            "time": "2020-07-30T18:38:01+00:00"
         },
         {
             "name": "ezyang/htmlpurifier",
