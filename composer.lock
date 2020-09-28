@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "1ed11024789a3170f26c86a2a2fe4dd7",
+    "content-hash": "591824869fc0dc88212c02953cdf8e61",
     "packages": [
         {
             "name": "adyen/php-api-library",
