@@ -45,7 +45,7 @@ class KlarnaPayLaterPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return ''; //TODO
+        return 'Open invoice payment method';
     }
 
     /**

@@ -45,7 +45,7 @@ class PaypalPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return ''; //TODO
+        return 'eWallet'; //TODO
     }
 
     /**
