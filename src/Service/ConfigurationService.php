@@ -51,7 +51,7 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function getMerchantAccount(?string $salesChannelId)
+    public function getMerchantAccount(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.merchantAccount', $salesChannelId);
     }
@@ -78,7 +78,7 @@ class ConfigurationService
      * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getEnvironment(?string $salesChannelId)
+    public function getEnvironment(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment', $salesChannelId) ?
             Environment::LIVE : Environment::TEST;
@@ -100,7 +100,7 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function getNotificationUsername(?string $salesChannelId)
+    public function getNotificationUsername(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.notificationUsername',
@@ -112,7 +112,7 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function getNotificationPassword(?string $salesChannelId)
+    public function getNotificationPassword(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.notificationPassword',
@@ -143,7 +143,7 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function getHmacKey(?string $salesChannelId)
+    public function getHmacKey(string $salesChannelId = null)
     {
         if ($this->getEnvironment($salesChannelId) === Environment::LIVE) {
             return $this->getHmacLive($salesChannelId);
