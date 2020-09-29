@@ -23,6 +23,6 @@
 import './service/adyenConfigCheckService';
 import './component/adyen-config-check-button';
 
-import locale_en_GB from './snippet/en_GB.json';
+import localeEnGb from './snippet/en_GB.json';
 
-Shopware.Locale.extend('en-GB', locale_en_GB);
+Shopware.Locale.extend('en-GB', localeEnGb);
