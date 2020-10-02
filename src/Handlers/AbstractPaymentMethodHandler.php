@@ -430,7 +430,7 @@ abstract class AbstractPaymentMethodHandler
         //Setting customer data if not present in statedata
         if (empty($request['shopperName'])) {
             $shopperFirstName = $salesChannelContext->getCustomer()->getFirstName();
-            $shopperLastName = $salesChannelContext->getCustomer()->getFirstName();
+            $shopperLastName = $salesChannelContext->getCustomer()->getLastName();
         } else {
             $shopperFirstName = $request['shopperName']['firstName'];
             $shopperLastName = $request['shopperName']['lastName'];
