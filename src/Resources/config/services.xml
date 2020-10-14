@@ -33,6 +33,7 @@
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\ClientService" autowire="true">
+            <argument type="service" id="plugin.repository"/>
             <argument key="$genericLogger" type="service" id="monolog.logger.adyen_generic"/>
             <argument key="$apiLogger" type="service" id="monolog.logger.adyen_api"/>
         </service>
