@@ -153,6 +153,10 @@
         <service id="Adyen\Shopware\Service\ContainerParametersService" autowire="true">
         </service>
         <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
+        <service id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController">
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <tag name="controller.service_arguments"/>
+        </service>
 
         <!--Event subscribers-->
         <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">
@@ -173,18 +177,6 @@
         </service>
 
         <!--Service decorators-->
-        <service id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController"
-                 decorates="Shopware\Storefront\Controller\AccountOrderController">
-            <argument type="service" id="Shopware\Storefront\Page\Account\Order\AccountOrderPageLoader"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\OrderRoute"/>
-            <argument type="service" id="Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoader"/>
-            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\CancelOrderRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
-            <argument type="service" id="event_dispatcher"/>
-            <tag name="controller.service_arguments"/>
-        </service>
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"
                  decorates="Shopware\Storefront\Framework\Cookie\CookieProviderInterface">
             <argument type="service"
