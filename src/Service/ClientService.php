@@ -130,7 +130,8 @@ class ClientService extends Client
     }
 
     /**
-     * Get adyen module's version from PluginEntity
+     * Get adyen module's version from cache if exists or from PluginEntity
+     * Stores the module version in the cache when empty
      *
      * @return string
      */
