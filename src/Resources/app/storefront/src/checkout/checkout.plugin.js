@@ -37,6 +37,7 @@ export default class CheckoutPlugin extends Plugin {
 
         const cardsFormattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
         const idealFormattedHandlerIdentifier = 'handler_adyen_idealpaymentmethodhandler';
+        const klarnaAccountFormattedHandlerIdentifier = 'handler_adyen_klarnaaccountpaymentmethodhandler';
         const klarnaPayNowFormattedHandlerIdentifier = 'handler_adyen_klarnapaynowpaymentmethodhandler';
         const klarnaPayLaterFormattedHandlerIdentifier = 'handler_adyen_klarnapaylaterpaynowpaymentmethodhandler';
         const sepaFormattedHandlerIdentifier = 'handler_adyen_sepapaymentmethodhandler';
@@ -47,6 +48,7 @@ export default class CheckoutPlugin extends Plugin {
             'scheme': cardsFormattedHandlerIdentifier,
             'ideal': idealFormattedHandlerIdentifier,
             'klarna': klarnaPayLaterFormattedHandlerIdentifier,
+            'klarna_account': klarnaAccountFormattedHandlerIdentifier,
             'klarna_paynow': klarnaPayNowFormattedHandlerIdentifier,
             'sepadirectdebit': sepaFormattedHandlerIdentifier,
             'sofort': sofortFormattedHandlerIdentifier,
