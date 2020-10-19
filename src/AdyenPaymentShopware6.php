@@ -25,7 +25,6 @@
 
 namespace Adyen\Shopware;
 
-use Adyen\Shopware\Handlers\CardsPaymentMethodHandler;
 use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
 use Shopware\Core\Framework\Plugin;
@@ -52,7 +51,7 @@ class AdyenPaymentShopware6 extends Plugin
     public function activate(ActivateContext $activateContext): void
     {
         foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
-            $this->setPaymentMethodIsActive(true, $activateContext->getContext(), $paymentMethod);
+            $this->setPaymentMethodIsActive(true, $activateContext->getContext(), new $paymentMethod());
         }
         parent::activate($activateContext);
     }
@@ -60,7 +59,7 @@ class AdyenPaymentShopware6 extends Plugin
     public function deactivate(DeactivateContext $deactivateContext): void
     {
         foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
-            $this->setPaymentMethodIsActive(false, $deactivateContext->getContext(), $paymentMethod);
+            $this->setPaymentMethodIsActive(false, $deactivateContext->getContext(), new $paymentMethod());
         }
         parent::deactivate($deactivateContext);
     }
@@ -68,7 +67,7 @@ class AdyenPaymentShopware6 extends Plugin
     public function uninstall(UninstallContext $uninstallContext): void
     {
         foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
-            $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), $paymentMethod);
+            $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), new $paymentMethod());
         }
     }
 
@@ -119,24 +118,24 @@ class AdyenPaymentShopware6 extends Plugin
         return $paymentIds->getIds()[0];
     }
 
-    private function setPaymentMethodIsActive(bool $active, Context $context, string $paymentMethodHandler): void
+    private function setPaymentMethodIsActive(bool $active, Context $context, PaymentMethodInterface $paymentMethod): void
     {
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
-        $paymentMethodId = $this->getPaymentMethodId($paymentMethodHandler);
+        $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
 
         // Payment does not even exist, so nothing to (de-)activate here
         if (!$paymentMethodId) {
             return;
         }
 
-        $paymentMethod = [
+        $paymentMethodData = [
             'id' => $paymentMethodId,
             'active' => $active,
         ];
 
-        $paymentRepository->update([$paymentMethod], $context);
+        $paymentRepository->update([$paymentMethodData], $context);
     }
 }
 
