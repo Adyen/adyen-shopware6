@@ -25,6 +25,9 @@
 
 namespace Adyen\Shopware;
 
+use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
+use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
+use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
 use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -39,6 +42,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Doctrine\DBAL\Connection;
 
 class AdyenPaymentShopware6 extends Plugin
 {
@@ -68,6 +72,8 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function uninstall(UninstallContext $uninstallContext): void
     {
+        parent::uninstall($uninstallContext);
+
         //Deactivating payment methods
         foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), new $paymentMethod());
@@ -75,7 +81,6 @@ class AdyenPaymentShopware6 extends Plugin
 
         //Call parent function and exit if the user prefers to keep the plugin's data
         if ($uninstallContext->keepUserData()) {
-            parent::uninstall($uninstallContext);
             return;
         }
 
@@ -88,13 +93,17 @@ class AdyenPaymentShopware6 extends Plugin
             );
         $idSearchResult = $systemConfigRepository->searchIds($criteria, Context::createDefaultContext());
 
-        //Formatting IDs array and deleting
+        //Formatting IDs array and deleting config keys
         $ids = \array_map(static function ($id) {
             return ['id' => $id];
         }, $idSearchResult->getIds());
         $systemConfigRepository->delete($ids, Context::createDefaultContext());
 
-        parent::uninstall($uninstallContext);
+        //Dropping database tables
+        $connection = $this->container->get(Connection::class);
+        $connection->executeUpdate('DROP TABLE IF EXISTS `'.NotificationEntityDefinition::ENTITY_NAME.'`');
+        $connection->executeUpdate('DROP TABLE IF EXISTS `'.PaymentResponseEntityDefinition::ENTITY_NAME.'`');
+        $connection->executeUpdate('DROP TABLE IF EXISTS `'.PaymentStateDataEntityDefinition::ENTITY_NAME.'`');
     }
 
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
