@@ -118,8 +118,11 @@ class AdyenPaymentShopware6 extends Plugin
         return $paymentIds->getIds()[0];
     }
 
-    private function setPaymentMethodIsActive(bool $active, Context $context, PaymentMethodInterface $paymentMethod): void
-    {
+    private function setPaymentMethodIsActive(
+        bool $active,
+        Context $context,
+        PaymentMethodInterface $paymentMethod
+    ): void {
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
