@@ -27,6 +27,7 @@ namespace Adyen\Shopware;
 
 use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
+use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
@@ -36,6 +37,7 @@ use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 
 class AdyenPaymentShopware6 extends Plugin
@@ -66,9 +68,33 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function uninstall(UninstallContext $uninstallContext): void
     {
+        //Deactivating payment methods
         foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), new $paymentMethod());
         }
+
+        //Call parent function and exit if the user prefers to keep the plugin's data
+        if ($uninstallContext->keepUserData()) {
+            parent::uninstall($uninstallContext);
+            return;
+        }
+
+        //Search for config keys that contain the bundle's name
+        /** @var EntityRepositoryInterface $systemConfigRepository */
+        $systemConfigRepository = $this->container->get('system_config.repository');
+        $criteria = (new Criteria())
+            ->addFilter(
+                new ContainsFilter('configurationKey', ConfigurationService::BUNDLE_NAME . '.config')
+            );
+        $idSearchResult = $systemConfigRepository->searchIds($criteria, Context::createDefaultContext());
+
+        //Formatting IDs array and deleting
+        $ids = \array_map(static function ($id) {
+            return ['id' => $id];
+        }, $idSearchResult->getIds());
+        $systemConfigRepository->delete($ids, Context::createDefaultContext());
+
+        parent::uninstall($uninstallContext);
     }
 
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
