@@ -100,10 +100,15 @@ class AdyenPaymentShopware6 extends Plugin
         $systemConfigRepository->delete($ids, Context::createDefaultContext());
 
         //Dropping database tables
+        $tables = [
+            NotificationEntityDefinition::ENTITY_NAME,
+            PaymentStateDataEntityDefinition::ENTITY_NAME,
+            PaymentResponseEntityDefinition::ENTITY_NAME
+        ];
         $connection = $this->container->get(Connection::class);
-        $connection->executeUpdate('DROP TABLE IF EXISTS `'.NotificationEntityDefinition::ENTITY_NAME.'`');
-        $connection->executeUpdate('DROP TABLE IF EXISTS `'.PaymentResponseEntityDefinition::ENTITY_NAME.'`');
-        $connection->executeUpdate('DROP TABLE IF EXISTS `'.PaymentStateDataEntityDefinition::ENTITY_NAME.'`');
+        foreach ($tables as $table) {
+            $connection->executeUpdate(\sprintf('DROP TABLE IF EXISTS `%s`', $table));
+        }
     }
 
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
