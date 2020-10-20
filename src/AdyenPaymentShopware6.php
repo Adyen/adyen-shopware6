@@ -79,7 +79,7 @@ class AdyenPaymentShopware6 extends Plugin
             $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), new $paymentMethod());
         }
 
-        //Call parent function and exit if the user prefers to keep the plugin's data
+        //Exit here if the user prefers to keep the plugin's data
         if ($uninstallContext->keepUserData()) {
             return;
         }
