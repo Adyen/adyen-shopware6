@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  *                       ######
  *                       ######
@@ -22,18 +23,18 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\PaymentMethods;
+namespace Adyen\Shopware\Handlers;
 
-class PaymentMethods
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+// phpcs:ignore Generic.Files.LineLength.TooLong
+class KlarnaAccountPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
-    const PAYMENT_METHODS = [
-        CardsPaymentMethod::class,
-        IdealPaymentMethod::class,
-        KlarnaAccountPaymentMethod::class,
-        KlarnaPayNowPaymentMethod::class,
-        KlarnaPayLaterPaymentMethod::class,
-        SepaPaymentMethod::class,
-        SofortPaymentMethod::class,
-        PaypalPaymentMethod::class
-    ];
+
+    protected static $isOpenInvoice = true;
+
+    public static function getPaymentMethodCode()
+    {
+        return 'klarna_account';
+    }
 }
