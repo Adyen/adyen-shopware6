@@ -26,12 +26,19 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\Client;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Plugin\PluginEntity;
 use Shopware\Core\Framework\Store\Services\StoreService;
+use Psr\Cache\CacheItemPoolInterface;
 
 class ClientService extends Client
 {
     const MERCHANT_APPLICATION_NAME = 'adyen-shopware6';
     const EXTERNAL_PLATFORM_NAME = 'Shopware';
+    const MODULE_VERSION_CACHE_TAG = 'adyen_module_version';
 
     /**
      * @var ConfigurationService
@@ -59,27 +66,42 @@ class ClientService extends Client
     private $storeService;
 
     /**
+     * @var EntityRepositoryInterface
+     */
+    private $pluginRepository;
+
+    /**
+     * @var CacheItemPoolInterface
+     */
+    private $cache;
+
+    /**
      * Client constructor.
      *
+     * @param EntityRepositoryInterface $pluginRepository
      * @param LoggerInterface $genericLogger
      * @param LoggerInterface $apiLogger
      * @param ConfigurationService $configurationService
      * @param ContainerParametersService $containerParametersService
      * @param StoreService $storeService
-     * @throws \Adyen\AdyenException
+     * @param CacheItemPoolInterface $cache
      */
     public function __construct(
+        EntityRepositoryInterface $pluginRepository,
         LoggerInterface $genericLogger,
         LoggerInterface $apiLogger,
         ConfigurationService $configurationService,
         ContainerParametersService $containerParametersService,
-        StoreService $storeService
+        StoreService $storeService,
+        CacheItemPoolInterface $cache
     ) {
+        $this->pluginRepository = $pluginRepository;
         $this->configurationService = $configurationService;
         $this->genericLogger = $genericLogger;
         $this->apiLogger = $apiLogger;
         $this->containerParametersService = $containerParametersService;
         $this->storeService = $storeService;
+        $this->cache = $cache;
     }
 
     public function getClient($salesChannelId)
@@ -108,33 +130,38 @@ class ClientService extends Client
     }
 
     /**
-     * Get adyen module's version from composer.json
-     * TODO: switch to a shopware service to retrieve the module version instead of composer
+     * Get adyen module's version from cache if exists or from PluginEntity
+     * Stores the module version in the cache when empty
      *
      * @return string
      */
     public function getModuleVersion()
     {
-        $rootDir = $this->containerParametersService->getApplicationRootDir();
+        try {
+            $moduleVersionCacheItem = $this->cache->getItem(self::MODULE_VERSION_CACHE_TAG);
+        } catch (\Psr\Cache\InvalidArgumentException $e) {
+            $this->genericLogger->error($e->getMessage());
+        }
 
-        $composerJson = file_get_contents($rootDir . '/custom/plugins/adyen-shopware6/composer.json');
+        //Prefer the cached module version
+        if (!$moduleVersionCacheItem->isHit() || !$moduleVersionCacheItem->get()) {
+            /** @var PluginEntity $pluginEntity */
+            $pluginEntity = $this->pluginRepository->search(
+                (new Criteria())->addFilter(new EqualsFilter('name', ConfigurationService::BUNDLE_NAME)),
+                Context::createDefaultContext()
+            )->first();
+            $pluginVersion = $pluginEntity->getVersion();
+            $moduleVersionCacheItem->set($pluginVersion);
+            $this->cache->save($moduleVersionCacheItem);
+        } else {
+            $pluginVersion = $moduleVersionCacheItem->get();
+        }
 
-        if (false === $composerJson) {
-            $this->genericLogger->error('composer.json is not available in the Adyen plugin folder');
+        if (empty($pluginVersion)) {
+            $this->genericLogger->error('Adyen plugin version is not available');
             return "NA";
         }
 
-        $composerJson = json_decode($composerJson, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->genericLogger->error('composer.json is not a valid JSON in the Adyen plugin folder');
-            return "NA";
-        }
-
-        if (empty($composerJson['version'])) {
-            $this->genericLogger->error('Adyen plugin version is not available in composer.json');
-            return "NA";
-        }
-
-        return $composerJson['version'];
+        return $pluginVersion;
     }
 }
