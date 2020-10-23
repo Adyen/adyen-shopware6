@@ -38,7 +38,7 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
-    protected $salesChannelApiContextToken;
+    protected $token;
 
     /**
      * @var string
@@ -85,17 +85,17 @@ class PaymentResponseEntity extends Entity
     /**
      * @return string
      */
-    public function getSalesChannelApiContextToken(): string
+    public function getToken(): string
     {
-        return $this->salesChannelApiContextToken;
+        return $this->token;
     }
 
     /**
-     * @param string $salesChannelApiContextToken
+     * @param string $token
      */
-    public function setSalesChannelApiContextToken(string $salesChannelApiContextToken): void
+    public function setToken(string $token): void
     {
-        $this->salesChannelApiContextToken = $salesChannelApiContextToken;
+        $this->token = $token;
     }
 
     /**

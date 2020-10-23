@@ -2,19 +2,11 @@
 
 namespace Adyen\Shopware\Storefront\Controller;
 
-use Shopware\Core\Checkout\Order\SalesChannel\AbstractCancelOrderRoute;
-use Shopware\Core\Checkout\Order\SalesChannel\AbstractOrderRoute;
-use Shopware\Core\Checkout\Order\SalesChannel\AbstractSetPaymentOrderRoute;
-use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Storefront\Controller\AccountOrderController;
-use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
-use Shopware\Storefront\Page\Account\Order\AccountOrderPageLoader;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -23,35 +15,15 @@ use Symfony\Component\Routing\Annotation\Route;
 /**
  * @RouteScope(scopes={"storefront"})
  */
-class AdyenAccountOrderController extends AccountOrderController
+class AdyenAccountOrderController extends StorefrontController
 {
 
     private $contextSwitchRoute;
 
     public function __construct(
-        AccountOrderController $accountOrderController,
-        AccountOrderPageLoader $orderPageLoader,
-        AbstractOrderRoute $orderRoute,
-        RequestCriteriaBuilder $requestCriteriaBuilder,
-        AccountEditOrderPageLoader $accountEditOrderPageLoader,
-        ContextSwitchRoute $contextSwitchRoute,
-        AbstractCancelOrderRoute $cancelOrderRoute,
-        AbstractSetPaymentOrderRoute $setPaymentOrderRoute,
-        AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
-        EventDispatcherInterface $eventDispatcher
+        ContextSwitchRoute $contextSwitchRoute
     ) {
         $this->contextSwitchRoute = $contextSwitchRoute;
-        parent::__construct(
-            $orderPageLoader,
-            $orderRoute,
-            $requestCriteriaBuilder,
-            $accountEditOrderPageLoader,
-            $contextSwitchRoute,
-            $cancelOrderRoute,
-            $setPaymentOrderRoute,
-            $handlePaymentMethodRoute,
-            $eventDispatcher
-        );
     }
 
     /**

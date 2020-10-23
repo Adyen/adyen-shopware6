@@ -105,14 +105,6 @@ class PaymentDetailsService
         string $orderNumber,
         SalesChannelContext $context
     ): PaymentResponseHandlerResult {
-        // Validate if the payment is not paid yet
-        if (false /* TODO is transaction paid */) {
-            $this->logger->warning(
-                'paymentDetails is called for an already paid order. Sales channel Api context token: ' .
-                $context->getToken()
-            );
-        }
-
         // Get paymentData for the paymentDetails request
         $paymentResponse = $this->paymentResponseService->getWithSalesChannelApiContextTokenAndOrderNumber(
             $context->getToken(),
@@ -146,6 +138,7 @@ class PaymentDetailsService
         ];
 
         try {
+            $this->checkoutService->startClient($context->getSalesChannel()->getId());
             $response = $this->checkoutService->paymentsDetails($request);
             return $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $context);
         } catch (AdyenException $exception) {

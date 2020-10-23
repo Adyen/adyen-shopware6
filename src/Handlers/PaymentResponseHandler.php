@@ -26,10 +26,13 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentException;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -42,8 +45,10 @@ class PaymentResponseHandler
     const IDENTIFY_SHOPPER = 'IdentifyShopper';
     const CHALLENGE_SHOPPER = 'ChallengeShopper';
     const RECEIVED = 'Received';
+    const PENDING = 'Pending';
     const PRESENT_TO_SHOPPER = 'PresentToShopper';
     const ERROR = 'Error';
+    const CANCELLED = 'Cancelled';
 
     const PSP_REFERENCE = 'pspReference';
     const ORIGINAL_PSP_REFERENCE = 'originalPspReference';
@@ -118,6 +123,13 @@ class PaymentResponseHandler
             $this->paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
         }
 
+        // Store response for cart until the payment is finalised
+        $this->paymentResponseService->insertPaymentResponse(
+            $response,
+            $orderNumber,
+            $salesChannelContext->getToken()
+        );
+
         // Based on the result code start different payment flows
         switch ($resultCode) {
             case self::REFUSED:
@@ -127,28 +139,16 @@ class PaymentResponseHandler
                     $response[self::MERCHANT_REFERENCE]
                 );
 
-                // Store response for cart until the payment is finalised
-                $this->paymentResponseService->insertPaymentResponse(
-                    $response,
-                    $orderNumber,
-                    $salesChannelContext->getToken()
-                );
                 break;
+            case self::CANCELLED:
             case self::AUTHORISED:
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::RECEIVED:
             case self::PRESENT_TO_SHOPPER:
-                // Store response for cart until the payment is finalised
-                $this->paymentResponseService->insertPaymentResponse(
-                    $response,
-                    $orderNumber,
-                    $salesChannelContext->getToken()
-                );
-
-                // Return the standard payment response handler result
-                return $this->paymentResponseHandlerResult;
+            case self::PENDING:
+                // Do nothing here
                 break;
             case self::ERROR:
                 // Log error
@@ -157,10 +157,9 @@ class PaymentResponseHandler
                     ' Result code "Error" in response: ' . print_r($response, true)
                 );
 
-                //TODO check if insertPaymentResponse is needed
                 break;
             default:
-                // Unsupported resultCode
+                // Log unsupported resultCode
                 $this->logger->error(
                     "There was an error with the payment method. id:  " .
                     ' Unsupported result code in response: ' . print_r($response, true)
@@ -170,14 +169,27 @@ class PaymentResponseHandler
         return $this->paymentResponseHandlerResult;
     }
 
+    /**
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param SalesChannelContext $salesChannelContext
+     * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
+     * @throws PaymentCancelledException
+     * @throws PaymentFailedException
+     */
     public function handleShopwareApis(
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
         PaymentResponseHandlerResult $paymentResponseHandlerResult
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
-        $resultCode = $paymentResponseHandlerResult->getResultCode();
         $context = $salesChannelContext->getContext();
+        $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
+        $resultCode = $paymentResponseHandlerResult->getResultCode();
+
+        // Check if result is already handled
+        if ($this->isTransactionHandled($stateTechnicalName, $resultCode)) {
+            return;
+        }
 
         // Get already stored transaction custom fileds
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
@@ -217,11 +229,15 @@ class PaymentResponseHandler
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
                 break;
             case self::REFUSED:
-                //Sync response, do nothing, wait for finalize()
-                $this->transactionStateHandler->fail($orderTransactionId, $context);
                 // Cancel the order
-                throw new PaymentException(
+                throw new PaymentFailedException(
                     'The payment was refused'
+                );
+                break;
+            case self::CANCELLED:
+                // Cancel the order
+                throw new PaymentCancelledException(
+                    'The payment was cancelled'
                 );
                 break;
             case self::REDIRECT_SHOPPER:
@@ -229,13 +245,16 @@ class PaymentResponseHandler
             case self::CHALLENGE_SHOPPER:
             case self::RECEIVED:
             case self::PRESENT_TO_SHOPPER:
-                // Return to the frontend without throwing an exception
-                $this->transactionStateHandler->process($orderTransactionId, $context);
+                //The payment is in progress, transition order to do_pay if it's not already there
+                if ($stateTechnicalName !== 'in_progress') {
+                    // Return to the frontend without throwing an exception
+                    $this->transactionStateHandler->process($orderTransactionId, $context);
+                }
                 break;
             case self::ERROR:
             default:
                 // Cancel the order
-                throw new PaymentException(
+                throw new PaymentFailedException(
                     'The payment had an error or an unhandled result code'
                 );
         }
@@ -251,31 +270,68 @@ class PaymentResponseHandler
             case self::REFUSED:
             case self::ERROR:
                 return [
-                        "isFinal" => true,
-                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
-                    ];
+                    "isFinal" => true,
+                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                ];
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::PRESENT_TO_SHOPPER:
+            case self::PENDING:
                 return [
-                        "isFinal" => false,
-                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
-                        "action" => $this->paymentResponseHandlerResult->getAction()
-                    ];
+                    "isFinal" => false,
+                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                    "action" => $this->paymentResponseHandlerResult->getAction()
+                ];
                 break;
             case self::RECEIVED:
                 return [
-                        "isFinal" => true,
-                        "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
-                        "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
-                    ];
+                    "isFinal" => true,
+                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                    "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
+                ];
                 break;
             default:
                 return [
-                        "isFinal" => true,
-                        "resultCode" => self::ERROR,
-                    ];
+                    "isFinal" => true,
+                    "resultCode" => self::ERROR,
+                ];
         }
+    }
+
+    /**
+     * Validates if the state is already changed where the resultCode would switch it
+     * Example: Authorised -> paid, Refused -> failed
+     *
+     * @param string $transactionStateTechnicalName
+     * @param string $resultCode
+     * @return bool
+     */
+    private function isTransactionHandled(
+        $transactionStateTechnicalName,
+        $resultCode
+    ) {
+        // TODO check all the states and adyen resultCodes not just the straightforward ones
+        switch ($resultCode) {
+            case self::AUTHORISED:
+                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_PAID) {
+                    return true;
+                }
+                break;
+            case self::REFUSED:
+            case self::ERROR:
+                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_FAILED) {
+                    return true;
+                }
+                break;
+            case self::CANCELLED:
+                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_CANCELLED) {
+                    return true;
+                }
+                break;
+            default:
+        }
+
+        return false;
     }
 }

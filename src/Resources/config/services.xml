@@ -23,13 +23,17 @@
             <argument type="service" id="Adyen\Shopware\Service\PaymentStatusService"/>
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
-        <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
         <service id="Adyen\Shopware\Service\ClientService" autowire="true">
+            <argument type="service" id="plugin.repository"/>
             <argument key="$genericLogger" type="service" id="monolog.logger.adyen_generic"/>
             <argument key="$apiLogger" type="service" id="monolog.logger.adyen_api"/>
         </service>
@@ -40,7 +44,9 @@
         <service id="Adyen\Shopware\Service\PaymentDetailsService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
-        <service id="Adyen\Shopware\Service\CheckoutService" autowire="true"/>
+        <service id="Adyen\Shopware\Service\CheckoutService" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
         <service id="Adyen\Util\Currency" autowire="true"/>
         <service id="Adyen\Util\HmacSignature" autowire="true"/>
         <service id="Adyen\Shopware\Service\ConfigurationService" autowire="true">
@@ -76,12 +82,13 @@
             <argument type="service" id="adyen_payment_state_data.repository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\CardsPaymentMethodHandler">
+        <service id="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler" abstract="true">
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\CheckoutService"/>
             <argument type="service" id="Adyen\Service\Builder\Browser"/>
             <argument type="service" id="Adyen\Service\Builder\Address"/>
             <argument type="service" id="Adyen\Service\Builder\Payment"/>
+            <argument type="service" id="Adyen\Service\Builder\OpenInvoice"/>
             <argument type="service" id="Adyen\Util\Currency"/>
             <argument type="service" id="Adyen\Service\Builder\Customer"/>
             <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
@@ -93,13 +100,47 @@
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="currency.repository"/>
+            <argument type="service" id="product.repository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\CardsPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\IdealPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\KlarnaAccountPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\KlarnaPayNowPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\KlarnaPayLaterPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\SepaPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\SofortPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\PaypalPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Adyen\Service\Builder\Browser"/>
         <service id="Adyen\Service\Builder\Address"/>
         <service id="Adyen\Service\Builder\Payment"/>
         <service id="Adyen\Service\Builder\Customer"/>
+        <service id="Adyen\Service\Builder\OpenInvoice"/>
         <service id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
         <service id="Adyen\Shopware\Handlers\ResultHandler" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
@@ -117,6 +158,10 @@
         <service id="Adyen\Shopware\Service\ContainerParametersService" autowire="true">
         </service>
         <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
+        <service id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController">
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <tag name="controller.service_arguments"/>
+        </service>
 
         <!--Event subscribers-->
         <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">
@@ -126,6 +171,7 @@
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
+            <argument type="service" id="Shopware\Core\Framework\Plugin\Util\PluginIdProvider"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 
@@ -134,49 +180,19 @@
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
         </service>
-        <service id="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader" autowire="true">
-            <argument type="service" id="sales_channel.payment_method.repository"/>
-            <argument type="service" id="sales_channel.shipping_method.repository"/>
-            <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
-            <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader"/>
-        </service>
-        <service id="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPage" autowire="true"/>
 
         <!--Service decorators-->
-        <service id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPageLoader"
-                 decorates="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader">
-            <argument type="service"
-                      id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPageLoader.inner"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
-            <argument type="service" id="Adyen\Shopware\Service\OriginKeyService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-        </service>
-        <service id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPage"
-                 decorates="Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPage">
-            <argument type="service"
-                      id="Adyen\Shopware\Storefront\Page\Checkout\Confirm\AdyenCheckoutConfirmPage.inner"/>
-        </service>
-        <service id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController"
-                 decorates="Shopware\Storefront\Controller\AccountOrderController">
-            <argument type="service"
-                      id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController.inner"/>
-            <argument type="service" id="Shopware\Storefront\Page\Account\Order\AccountOrderPageLoader"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\OrderRoute"/>
-            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
-            <argument type="service" id="Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoader"/>
-            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\CancelOrderRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
-            <argument type="service" id="event_dispatcher"/>
-            <tag name="controller.service_arguments"/>
-        </service>
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"
                  decorates="Shopware\Storefront\Framework\Cookie\CookieProviderInterface">
             <argument type="service"
                       id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider.inner"/>
+        </service>
+        <service id="Adyen\Shopware\Controller\ApiTestController">
+            <argument type="service"
+                      key="$logger"
+                      id="monolog.logger.adyen_api"
+            />
+            <tag name="controller.service_arguments"/>
         </service>
     </services>
 </container>

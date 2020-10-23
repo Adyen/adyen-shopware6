@@ -1,0 +1,7 @@
+{
+    "adyen": {
+        "configTestTitle": "Configuration test",
+        "configTestSuccess": "Configuration is successfully tested",
+        "configTestFail": "There's an issue in your configuration"
+    }
+}

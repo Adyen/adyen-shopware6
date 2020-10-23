@@ -25,21 +25,23 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
-use Adyen\Shopware\Exception\PaymentException;
+use Adyen\Shopware\Exception\PaymentCancelledException;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
-use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Psr\Log\LoggerInterface;
 
 class ResultHandler
 {
-    /**
-     * @var CheckoutService
-     */
-    private $checkoutService;
+
+    const PA_RES = 'PaRes';
+    const MD = 'MD';
+    const REDIRECT_RESULT = 'redirectResult';
+    const PAYLOAD = 'payload';
+
 
     /**
      * @var PaymentResponseService
@@ -69,7 +71,6 @@ class ResultHandler
     /**
      * ResultHandler constructor.
      *
-     * @param CheckoutService $checkoutService
      * @param PaymentResponseService $paymentResponseService
      * @param LoggerInterface $logger
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -77,14 +78,12 @@ class ResultHandler
      * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
      */
     public function __construct(
-        CheckoutService $checkoutService,
         PaymentResponseService $paymentResponseService,
         LoggerInterface $logger,
         PaymentResponseHandler $paymentResponseHandler,
         PaymentDetailsService $paymentDetailsService,
         PaymentResponseHandlerResult $paymentResponseHandlerResult
     ) {
-        $this->checkoutService = $checkoutService;
         $this->paymentResponseService = $paymentResponseService;
         $this->logger = $logger;
         $this->paymentResponseHandler = $paymentResponseHandler;
@@ -96,7 +95,8 @@ class ResultHandler
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
-     * @throws PaymentException
+     * @throws PaymentCancelledException
+     * @throws PaymentFailedException
      */
     public function processResult(
         AsyncPaymentTransactionStruct $transaction,
@@ -111,20 +111,31 @@ class ResultHandler
         $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
 
         if ('RedirectShopper' === $result->getResultCode()) {
-            // Validate 3DS1 Post parameters
+            // Validate 3DS1 parameters
             // Get MD and PaRes to be validated
-            $md = $request->request->get('MD');
-            $paRes = $request->request->get('PaRes');
+            $md = $request->query->get(self::MD);
+            $paRes = $request->query->get(self::PA_RES);
+            $redirectResult = $request->query->get(self::REDIRECT_RESULT);
+            $payload = $request->query->get(self::PAYLOAD);
 
-            if (empty($md) || empty($paRes)) {
-                throw new PaymentException('MD and/or PaRes parameter is missing from the redirect request');
-            }
+            $details = [];
 
             // Construct the details object for the paymentDetails request
-            $details = [
-                'MD' => $md,
-                'PaRes' => $paRes
-            ];
+            if (!empty($md)) {
+                $details[self::MD] = $md;
+            }
+
+            if (!empty($paRes)) {
+                $details[self::PA_RES] = $paRes;
+            }
+
+            if (!empty($redirectResult)) {
+                $details[self::REDIRECT_RESULT] = $redirectResult;
+            }
+
+            if (!empty($payload)) {
+                $details[self::PAYLOAD] = $payload;
+            }
 
             // Validate the return
             $result = $this->paymentDetailsService->doPaymentDetails(

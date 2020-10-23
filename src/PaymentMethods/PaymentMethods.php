@@ -27,6 +27,13 @@ namespace Adyen\Shopware\PaymentMethods;
 class PaymentMethods
 {
     const PAYMENT_METHODS = [
-        CardsPaymentMethod::class
+        CardsPaymentMethod::class,
+        IdealPaymentMethod::class,
+        KlarnaAccountPaymentMethod::class,
+        KlarnaPayNowPaymentMethod::class,
+        KlarnaPayLaterPaymentMethod::class,
+        SepaPaymentMethod::class,
+        SofortPaymentMethod::class,
+        PaypalPaymentMethod::class
     ];
 }

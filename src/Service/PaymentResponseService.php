@@ -102,7 +102,7 @@ class PaymentResponseService
     public function getWithSalesChannelApiContextTokenAndOrderNumber(
         string $salesChannelApiContextToken,
         string $orderNumber
-    ): PaymentResponseEntity {
+    ): ?PaymentResponseEntity {
         return $this->repository
             ->search(
                 (new Criteria())

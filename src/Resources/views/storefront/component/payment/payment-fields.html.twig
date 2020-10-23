@@ -1,8 +1,9 @@
 {% sw_extends '@Storefront/storefront/component/payment/payment-fields.html.twig' %}
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
 {% block component_payment_methods %}
     <div class="payment-methods">
         <template data-adyen-payment></template>
-        {% include '@AdyenPayment/storefront/component/payment/adyencheckout.html.twig' %}
+        {% include '@AdyenPaymentShopware6/storefront/component/payment/adyencheckout.html.twig' %}
         {% for payment in page.paymentMethods %}
             {% block component_payment_method %}
                 <div class="payment-method">
@@ -16,7 +17,7 @@
                                                name="paymentMethodId"
                                                value="{{ payment.id }}"
                                                {% if payment.id is same as(defaultPaymentMethodId) %}checked="checked"{% endif %}
-                                               class="custom-control-input payment-method-input">
+                                               class="custom-control-input payment-method-input {% if 'handler_adyen_' in payment.formattedHandlerIdentifier %}adyen-payment-method-input-radio{% endif %}">
                                     {% endblock %}
                                     {% block component_payment_method_label %}
                                         <label class="custom-control-label payment-method-label"
@@ -45,10 +46,10 @@
                                                 </div>
                                             {% endblock %}
                                         </label>
-                                        {% if payment.formattedHandlerIdentifier == "handler_adyen_cardspaymentmethodhandler" %}
+                                        {% if "adyen" in payment.formattedHandlerIdentifier %}
                                             <div class="adyen-payment-method-container-div"
                                                  data-adyen-payment-method-id="{{ payment.id }}"
-                                                 data-adyen-payment-method="handler_adyen_cardspaymentmethodhandler"
+                                                 data-adyen-payment-method="{{ payment.formattedHandlerIdentifier }}"
                                             >
                                                 <div data-adyen-update-payment-details class="adyen-update-payment-details">
                                                     <button type="button" class="btn btn-primary" onclick="window.showPaymentMethodDetails()">{{ "adyen.updateDetails"|trans }}</button>

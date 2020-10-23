@@ -96,7 +96,7 @@ class NotificationReceiverService
         // Validate if notification is not empty
         if (empty($request)) {
             $message = 'Notification is empty';
-            $this->logger->info($message);
+            $this->logger->critical($message);
             return new JsonResponse(
                 [
                     'success' => false,
@@ -142,7 +142,7 @@ class NotificationReceiverService
             );
         } else {
             $message = 'Mismatch between Live/Test modes of Shopware store and the Adyen platform';
-            $this->logger->info($message);
+            $this->logger->critical($message);
             return new JsonResponse(
                 array(
                     'success' => false,

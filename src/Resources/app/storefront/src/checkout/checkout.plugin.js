@@ -24,7 +24,7 @@ import DomAccess from 'src/helper/dom-access.helper';
 import Plugin from 'src/plugin-system/plugin.class';
 import StoreApiClient from 'src/service/store-api-client.service';
 import validatePaymentMethod from '../validator/paymentMethod';
-import CardFormValidator from '../validator/CardFormValidator';
+import FormValidatorWithComponent from '../validator/FormValidatorWithComponent';
 
 
 /* global adyenCheckoutConfiguration, AdyenCheckout, adyenCheckoutOptions */
@@ -35,14 +35,28 @@ export default class CheckoutPlugin extends Plugin {
         const confirmPaymentForm = DomAccess.querySelector(document, '#confirmPaymentForm');
         confirmPaymentForm.addEventListener('submit', this.onConfirmPayment.bind(this));
 
-        const formattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
+        const cardsFormattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
+        const idealFormattedHandlerIdentifier = 'handler_adyen_idealpaymentmethodhandler';
+        const klarnaAccountFormattedHandlerIdentifier = 'handler_adyen_klarnaaccountpaymentmethodhandler';
+        const klarnaPayNowFormattedHandlerIdentifier = 'handler_adyen_klarnapaynowpaymentmethodhandler';
+        const klarnaPayLaterFormattedHandlerIdentifier = 'handler_adyen_klarnapaylaterpaynowpaymentmethodhandler';
+        const sepaFormattedHandlerIdentifier = 'handler_adyen_sepapaymentmethodhandler';
+        const sofortFormattedHandlerIdentifier = 'handler_adyen_sofortpaymentmethodhandler';
+        const paypalFormattedHandlerIdentifier = 'handler_adyen_paypalpaymentmethodhandler';
 
         this.paymentMethodTypeHandlers = {
-            'scheme': formattedHandlerIdentifier
+            'scheme': cardsFormattedHandlerIdentifier,
+            'ideal': idealFormattedHandlerIdentifier,
+            'klarna': klarnaPayLaterFormattedHandlerIdentifier,
+            'klarna_account': klarnaAccountFormattedHandlerIdentifier,
+            'klarna_paynow': klarnaPayNowFormattedHandlerIdentifier,
+            'sepadirectdebit': sepaFormattedHandlerIdentifier,
+            'sofort': sofortFormattedHandlerIdentifier,
+            'paypal': paypalFormattedHandlerIdentifier
         };
 
         //PMs that should show an 'Update Details' button if there's already a state.data for that PM stored for this context
-        this.updatablePaymentMethods = ['scheme'];
+        this.updatablePaymentMethods = ['scheme', 'ideal', 'sepadirectdebit'];
 
         this.client = new StoreApiClient();
 
@@ -76,6 +90,7 @@ export default class CheckoutPlugin extends Plugin {
             originKey,
             environment,
             showPayButton: false,
+            hasHolderName: true,
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
             onAdditionalDetails: handleOnAdditionalDetails.bind(this)
         };
@@ -84,6 +99,7 @@ export default class CheckoutPlugin extends Plugin {
 
         this.placeOrderAllowed = false;
         this.data = '';
+        this.formValidator = [];
 
         // use this object to iterate through the stored payment methods
         const paymentMethods = window.adyenCheckout.paymentMethodsResponse.paymentMethods;
@@ -132,11 +148,9 @@ export default class CheckoutPlugin extends Plugin {
             const paymentMethodInstance = window.adyenCheckout
                 .create(paymentMethod.type, configuration);
 
-            if (paymentMethod.type === 'scheme') {
-                this.cardFormValidator = new CardFormValidator(paymentMethodInstance);
-            }
-
             paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
+
+            this.formValidator[this.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
             console.log(err);
         }
@@ -146,8 +160,6 @@ export default class CheckoutPlugin extends Plugin {
             $('[data-adyen-payment-container]').hide();
             $('[data-adyen-update-payment-details]').show();
         }
-
-
     }
 
     /**
@@ -158,7 +170,11 @@ export default class CheckoutPlugin extends Plugin {
     }
 
     onConfirmPayment (event) {
-        if (!this.cardFormValidator.validateForm()) {
+        if (!(this.getSelectedPaymentMethodHandlerIdentifyer() in this.formValidator)) {
+            return true;
+        }
+
+        if (!this.formValidator[this.getSelectedPaymentMethodHandlerIdentifyer()].validateForm()) {
             event.preventDefault();
         }
     }
@@ -173,5 +189,9 @@ export default class CheckoutPlugin extends Plugin {
             this.placeOrderAllowed = false;
             this.resetFields();
         }
+    }
+
+    getSelectedPaymentMethodHandlerIdentifyer() {
+        return $('[name=paymentMethodId]:checked').siblings('.adyen-payment-method-container-div').data('adyen-payment-method');
     }
 }

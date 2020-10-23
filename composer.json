@@ -6,21 +6,33 @@
         }
     ],
     "description": "Official Shopware 6 Plugin to connect to Payment Service Provider Adyen",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "require": {
+        "shopware/core": "^6.3.1.1",
+        "shopware/storefront": "^6.3.1.1",
         "adyen/php-api-library": "^7",
         "monolog/monolog": "^1",
         "ext-json": "*"
     },
     "extra": {
-        "shopware-plugin-class": "Adyen\\Shopware\\AdyenPayment",
+        "shopware-plugin-class": "Adyen\\Shopware\\AdyenPaymentShopware6",
         "label": {
-            "en-GB": "Adyen Payment"
+            "en-GB": "Adyen Payment",
+            "de-DE": "Adyen Payment"
         },
         "description": {
-            "en-GB": "Official Shopware 6 Plugin to connect to Payment Service Provider Adyen"
+            "en-GB": "Official Shopware 6 Plugin to connect to Payment Service Provider Adyen",
+            "de-DE": "Offizielles Shopware 6 Plugin zur Verbindung mit dem Zahlungsdienstleister Adyen"
+        },
+        "manufacturerLink": {
+            "en-GB": "https://docs.adyen.com/plugins",
+            "de-DE": "https://docs.adyen.com/plugins"
+        },
+        "supportLink": {
+            "en-GB": "https://support.adyen.com/hc/en-us/requests/new?ticket_form_id=360000705420",
+            "de-DE": "https://support.adyen.com/hc/en-us/requests/new?ticket_form_id=360000705420"
         }
     },
     "autoload": {

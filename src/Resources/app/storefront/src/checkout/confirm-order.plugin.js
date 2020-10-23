@@ -14,6 +14,10 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     confirmOrder(event) {
+        if (!$('#confirmPaymentForm').find('input[name="paymentMethodId"]:checked').hasClass('adyen-payment-method-input-radio')) {
+            return true;
+        }
+
         if (!!adyenCheckoutOptions && !!adyenCheckoutOptions.paymentStatusUrl && adyenCheckoutOptions.checkoutOrderUrl) {
             event.preventDefault();
             const form = event.target;
@@ -27,19 +31,17 @@ export default class ConfirmOrderPlugin extends Plugin {
             ElementLoadingIndicatorUtil.create(document.body);
 
             const orderId = adyenCheckoutOptions.orderId;
-            const request = new XMLHttpRequest();
+            let url = null;
             let callback = null;
             if (!!orderId) { //Only used if the order is being edited
                 formData.set('orderId', orderId);
-                request.open('POST', adyenCheckoutOptions.editPaymentUrl);
+                url = adyenCheckoutOptions.editPaymentUrl;
                 callback = this.afterSetPayment.bind(this);
             } else {
-                request.open('POST', adyenCheckoutOptions.checkoutOrderUrl);
+                url = adyenCheckoutOptions.checkoutOrderUrl;
                 callback = this.afterCreateOrder.bind(this);
             }
-            request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            request.setRequestHeader('sw-language-id', adyenCheckoutOptions.languageId);
-            this._client._sendRequest(request, formData, callback);
+            this._client.post(url, formData, callback);
         }
     }
 
@@ -106,7 +108,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 .createFromAction(paymentActionResponse.action)
                 .mount('[data-adyen-payment-action-container]');
         } catch (e) {
-            console.log('error');
+            console.log(e);
         }
 
     }
