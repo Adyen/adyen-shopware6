@@ -104,11 +104,13 @@ class ResultHandler
         SalesChannelContext $salesChannelContext
     ) {
         // Retrieve paymentResponse and if it is
-        $orderId = $transaction->getOrderTransaction()->getOrderId();
-        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $salesChannelContext->getToken());
-        $orderNumber = $paymentResponse->getOrderNumber();
+        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction(
+            $transaction->getOrderTransaction()
+        );
 
-        $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
+        $result = $this->paymentResponseHandlerResult->createFromPaymentResponse(
+            $paymentResponse
+        );
 
         if ('RedirectShopper' === $result->getResultCode()) {
             // Validate 3DS1 parameters
@@ -140,8 +142,7 @@ class ResultHandler
             // Validate the return
             $result = $this->paymentDetailsService->doPaymentDetails(
                 $details,
-                $orderNumber,
-                $salesChannelContext
+                $transaction->getOrderTransaction()
             );
         }
 

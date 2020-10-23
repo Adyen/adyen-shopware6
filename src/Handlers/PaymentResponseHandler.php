@@ -27,10 +27,10 @@ declare(strict_types=1);
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\Shopware\Exception\PaymentCancelledException;
-use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -95,13 +95,12 @@ class PaymentResponseHandler
 
     /**
      * @param array $response
-     * @param SalesChannelContext $salesChannelContext
-     * @return
+     * @param OrderTransactionEntity $orderTransaction
+     * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
         array $response,
-        string $orderNumber,
-        SalesChannelContext $salesChannelContext
+        OrderTransactionEntity $orderTransaction
     ): PaymentResponseHandlerResult {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
@@ -126,8 +125,7 @@ class PaymentResponseHandler
         // Store response for cart until the payment is finalised
         $this->paymentResponseService->insertPaymentResponse(
             $response,
-            $orderNumber,
-            $salesChannelContext->getToken()
+            $orderTransaction
         );
 
         // Based on the result code start different payment flows
