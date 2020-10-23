@@ -245,8 +245,11 @@ class PaymentResponseHandler
             case self::CHALLENGE_SHOPPER:
             case self::RECEIVED:
             case self::PRESENT_TO_SHOPPER:
-                // Return to the frontend without throwing an exception
-                $this->transactionStateHandler->process($orderTransactionId, $context);
+                //The payment is in progress, transition order to do_pay if it's not already there
+                if ($stateTechnicalName !== 'in_progress') {
+                    // Return to the frontend without throwing an exception
+                    $this->transactionStateHandler->process($orderTransactionId, $context);
+                }
                 break;
             case self::ERROR:
             default:
