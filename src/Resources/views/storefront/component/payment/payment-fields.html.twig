@@ -17,7 +17,7 @@
                                                name="paymentMethodId"
                                                value="{{ payment.id }}"
                                                {% if payment.id is same as(defaultPaymentMethodId) %}checked="checked"{% endif %}
-                                               class="custom-control-input payment-method-input {% if payment.pluginId is same as(adyenFrontendData.pluginId) %}adyen-payment-method-input-radio{% endif %}">
+                                               class="custom-control-input payment-method-input {% if 'handler_adyen_' in payment.formattedHandlerIdentifier %}adyen-payment-method-input-radio{% endif %}">
                                     {% endblock %}
                                     {% block component_payment_method_label %}
                                         <label class="custom-control-label payment-method-label"
