@@ -115,8 +115,8 @@ class ResultHandler
         if ('RedirectShopper' === $result->getResultCode()) {
             // Validate 3DS1 parameters
             // Get MD and PaRes to be validated
-            $md = $request->query->get(self::MD);
-            $paRes = $request->query->get(self::PA_RES);
+            $md = $request->request->get('MD');
+            $paRes = $request->request->get('PaRes');
             $redirectResult = $request->query->get(self::REDIRECT_RESULT);
             $payload = $request->query->get(self::PAYLOAD);
 
