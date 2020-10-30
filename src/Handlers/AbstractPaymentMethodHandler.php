@@ -278,7 +278,7 @@ abstract class AbstractPaymentMethodHandler
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
-        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $salesChannelContext);
+        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $transaction->getOrderTransaction());
 
         try {
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);

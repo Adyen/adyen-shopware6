@@ -31,6 +31,7 @@ use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
+use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -180,8 +181,10 @@ class SalesChannelApiController extends AbstractController
     ): JsonResponse {
 
         $orderId = $request->request->get('orderId');
-        if (empty($orderId)) {
-            // TODO error handling
+        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
+        if (!$paymentResponse) {
+            $this->logger->error('Could not find a transaction', ['orderId' => $orderId]);
+            return new JsonResponse([], 404);
         }
 
         // Get state data object if sent
@@ -193,17 +196,18 @@ class SalesChannelApiController extends AbstractController
         }
 
         if (empty($stateData['details'])) {
-            // handle error
+            $this->logger->error(
+                'Details missing in $stateData',
+                ['stateData' => $stateData]
+            );
+            return new JsonResponse([], 400);
         }
 
         $details = $stateData['details'];
 
         $result = $this->paymentDetailsService->doPaymentDetails(
             $details,
-            $this->paymentResponseService
-                ->getWithOrderId($orderId, $context->getToken())
-                ->getOrderNumber(),
-            $context
+            $paymentResponse->getOrderTransaction()
         );
 
         return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
@@ -229,12 +233,9 @@ class SalesChannelApiController extends AbstractController
 
         try {
             return new JsonResponse(
-                $this->paymentStatusService->getPaymentStatusWithOrderId(
-                    $request->get('orderId'),
-                    $context
-                )
+                $this->paymentStatusService->getWithOrderId($request->get('orderId'))
             );
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->logger->error($exception->getMessage());
             return new JsonResponse(["isFinal" => true]);
         }

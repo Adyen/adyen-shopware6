@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Entity\PaymentResponse;
 
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
@@ -33,12 +34,12 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
-    protected $orderNumber;
+    protected $orderTransactionId;
 
     /**
-     * @var string
+     * @var OrderTransactionEntity
      */
-    protected $token;
+    protected $orderTransaction;
 
     /**
      * @var string
@@ -53,17 +54,33 @@ class PaymentResponseEntity extends Entity
     /**
      * @return string
      */
-    public function getOrderNumber(): string
+    public function getOrderTransactionId(): string
     {
-        return $this->orderNumber;
+        return $this->orderTransactionId;
     }
 
     /**
-     * @param string $orderNumber
+     * @param string $orderTransactionId
      */
-    public function setOrderNumber(string $orderNumber): void
+    public function setOrderTransactionId(string $orderTransactionId): void
     {
-        $this->orderNumber = $orderNumber;
+        $this->orderTransactionId = $orderTransactionId;
+    }
+
+    /**
+     * @return OrderTransactionEntity|null
+     */
+    public function getOrderTransaction(): ?OrderTransactionEntity
+    {
+        return $this->orderTransaction;
+    }
+
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     */
+    public function setOrderTransaction(OrderTransactionEntity $orderTransaction): void
+    {
+        $this->orderTransaction = $orderTransaction;
     }
 
     /**
@@ -80,22 +97,6 @@ class PaymentResponseEntity extends Entity
     public function setResultCode(string $resultCode): void
     {
         $this->resultCode = $resultCode;
-    }
-
-    /**
-     * @return string
-     */
-    public function getToken(): string
-    {
-        return $this->token;
-    }
-
-    /**
-     * @param string $token
-     */
-    public function setToken(string $token): void
-    {
-        $this->token = $token;
     }
 
     /**
