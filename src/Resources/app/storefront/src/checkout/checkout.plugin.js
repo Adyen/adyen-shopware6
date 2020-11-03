@@ -144,6 +144,10 @@ export default class CheckoutPlugin extends Plugin {
             onChange: this.onPaymentMethodChange.bind(this)
         });
 
+        if (paymentMethod.type === 'scheme') {
+            configuration.enableStoreDetails = true;
+        }
+
         try {
             const paymentMethodInstance = window.adyenCheckout
                 .create(paymentMethod.type, configuration);
