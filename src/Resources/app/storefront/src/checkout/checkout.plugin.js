@@ -233,17 +233,15 @@ export default class CheckoutPlugin extends Plugin {
         }
 
         if (selectedPaymentMethod === this.paymentMethodTypeHandlers.oneclick) {
-            let validators = this.formValidator[selectedPaymentMethod];
-            for (let storedPaymentID in validators) {
-                if (!validators.hasOwnProperty(storedPaymentID)) {
-                    continue;
-                }
-                if (!validators[storedPaymentID].validateForm()) {
-                    event.preventDefault();
-                    return;
-                }
+            let selectedStoredPaymentMethodID = this.getSelectedStoredPaymentMethodID();
+            if (!(selectedStoredPaymentMethodID in this.formValidator[selectedPaymentMethod])) {
+                return;
             }
-            return true;
+
+            if (!this.formValidator[selectedPaymentMethod][selectedStoredPaymentMethodID].validateForm()) {
+                event.preventDefault();
+            }
+            return;
         }
 
         if (!this.formValidator[selectedPaymentMethod].validateForm()) {
@@ -265,5 +263,9 @@ export default class CheckoutPlugin extends Plugin {
 
     getSelectedPaymentMethodHandlerIdentifyer() {
         return $('[name=paymentMethodId]:checked').siblings('.adyen-payment-method-container-div').data('adyen-payment-method');
+    }
+
+    getSelectedStoredPaymentMethodID() {
+        return $('[name=adyenStoredPaymentMethodId]:checked').val();
     }
 }
