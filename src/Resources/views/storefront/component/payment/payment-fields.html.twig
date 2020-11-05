@@ -57,7 +57,10 @@
                                                 <div data-adyen-payment-container>
                                                     {% if "oneclick" in payment.formattedHandlerIdentifier %}
                                                         {% for storedPaymentMethod in adyenFrontendData.storedPaymentMethods %}
-                                                            <div data-adyen-stored-payment-method-id="{{ storedPaymentMethod }}"></div>
+                                                            {% if loop.first == true  %}<hr>{% endif%}
+                                                            <span>{{ "%s ending in %s" |format(storedPaymentMethod.name, storedPaymentMethod.lastFour) }}</span>
+                                                            <div data-adyen-stored-payment-method-id="{{ storedPaymentMethod.id }}"></div>
+                                                            {% if loop.last == false  %}<hr>{% endif%}
                                                         {% endfor %}
                                                     {% endif %}
                                                 </div>

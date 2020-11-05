@@ -275,12 +275,16 @@ class PaymentSubscriber implements EventSubscriberInterface
      */
     private function filterOneClickPaymentMethods(array $paymentMethods)
     {
-        $ids = [];
+        $options = [];
         if (!empty($paymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
             foreach ($paymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()] as $method) {
-                $ids[] = $method["id"];
+                $options[] = [
+                    "id" => $method["id"] ?? "",
+                    "name" => $method["name"] ?? "",
+                    "lastFour" => $method["lastFour"] ?? ""
+                ];
             }
         }
-        return $ids;
+        return $options;
     }
 }
