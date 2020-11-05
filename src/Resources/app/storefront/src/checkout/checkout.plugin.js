@@ -109,6 +109,7 @@ export default class CheckoutPlugin extends Plugin {
 
         // Iterate through the payment methods list we got from the adyen checkout component
         paymentMethods.forEach(this.renderPaymentMethod.bind(this));
+        this.formValidator[this.paymentMethodTypeHandlers.oneclick] = {};
         storedPaymentMethods.forEach(this.renderStoredPaymentMethod.bind(this));
 
         /**
@@ -123,7 +124,7 @@ export default class CheckoutPlugin extends Plugin {
     }
 
     renderPaymentMethod (paymentMethod) {
-        //  if the container doesn't exits don't try to render the component
+        //  if the container doesn't exist don't try to render the component
         const paymentMethodContainer = $('[data-adyen-payment-method="' + this.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
 
         // container doesn't exist, something went wrong on the template side
@@ -206,7 +207,7 @@ export default class CheckoutPlugin extends Plugin {
             paymentMethodInstance.mount(
                 paymentMethodContainer.find(`[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`).get(0));
 
-            this.formValidator[this.paymentMethodTypeHandlers.oneclick][storedPaymentMethodId] = new FormValidatorWithComponent(paymentMethodInstance);
+            this.formValidator[this.paymentMethodTypeHandlers.oneclick][paymentMethod.storedPaymentMethodId] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
             console.log(err);
         }
@@ -226,11 +227,26 @@ export default class CheckoutPlugin extends Plugin {
     }
 
     onConfirmPayment (event) {
-        if (!(this.getSelectedPaymentMethodHandlerIdentifyer() in this.formValidator)) {
+        let selectedPaymentMethod = this.getSelectedPaymentMethodHandlerIdentifyer();
+        if (!(selectedPaymentMethod in this.formValidator)) {
             return true;
         }
 
-        if (!this.formValidator[this.getSelectedPaymentMethodHandlerIdentifyer()].validateForm()) {
+        if (selectedPaymentMethod === this.paymentMethodTypeHandlers.oneclick) {
+            let validators = this.formValidator[selectedPaymentMethod];
+            for (let storedPaymentID in validators) {
+                if (!validators.hasOwnProperty(storedPaymentID)) {
+                    continue;
+                }
+                if (!validators[storedPaymentID].validateForm()) {
+                    event.preventDefault();
+                    return;
+                }
+            }
+            return true;
+        }
+
+        if (!this.formValidator[selectedPaymentMethod].validateForm()) {
             event.preventDefault();
         }
     }
