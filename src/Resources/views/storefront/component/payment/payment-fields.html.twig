@@ -54,7 +54,13 @@
                                                 <div data-adyen-update-payment-details class="adyen-update-payment-details">
                                                     <button type="button" class="btn btn-primary" onclick="window.showPaymentMethodDetails()">{{ "adyen.updateDetails"|trans }}</button>
                                                 </div>
-                                                <div data-adyen-payment-container></div>
+                                                <div data-adyen-payment-container>
+                                                    {% if "oneclick" in payment.formattedHandlerIdentifier %}
+                                                        {% for storedPaymentMethod in adyenFrontendData.storedPaymentMethods %}
+                                                            <div data-adyen-stored-payment-method-id="{{ storedPaymentMethod }}"></div>
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         {% endif %}
                                     {% endblock %}

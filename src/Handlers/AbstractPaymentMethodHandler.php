@@ -366,7 +366,7 @@ abstract class AbstractPaymentMethodHandler
             $paymentMethodType = $request['paymentMethod']['type'];
         }
 
-        if ($request['storePaymentMethod'] === true) {
+        if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
             $request['recurringProcessingModel'] = 'CardOnFile';
             $request['shopperInteraction'] = 'Ecommerce';
         }

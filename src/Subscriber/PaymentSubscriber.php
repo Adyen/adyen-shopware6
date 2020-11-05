@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Subscriber;
 
 use Adyen\AdyenException;
+use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\OriginKeyService;
 use Adyen\Shopware\Service\PaymentMethodsService;
@@ -172,6 +173,8 @@ class PaymentSubscriber implements EventSubscriberInterface
             $salesChannelContext->getContext()
         );
 
+        $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -215,12 +218,11 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'environment' => $this->configurationService->getEnvironment(
                         $event->getSalesChannelContext()->getSalesChannel()->getId()
                     ),
-                    'paymentMethodsResponse' => json_encode(
-                        $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
-                    ),
+                    'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                     'orderId' => $orderId,
                     'stateDataPaymentMethod' => $stateDataPaymentMethod,
-                    'pluginId' => $adyenPluginId
+                    'pluginId' => $adyenPluginId,
+                    'storedPaymentMethods' => $this->filterOneClickPaymentMethods($paymentMethodsResponse)
                 ]
             )
         );
@@ -258,11 +260,29 @@ class PaymentSubscriber implements EventSubscriberInterface
                     }
                 );
 
-                if (empty($pmFound)) {
+                if (
+                    empty($pmFound) &&
+                    empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])
+                ) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
             }
         }
         return $originalPaymentMethods;
+    }
+
+    /**
+     * @param $paymentMethods
+     * @return array
+     */
+    private function filterOneClickPaymentMethods(array $paymentMethods)
+    {
+        $ids = [];
+        if (!empty($paymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
+            foreach ($paymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()] as $method) {
+                $ids[] = $method["id"];
+            }
+        }
+        return $ids;
     }
 }
