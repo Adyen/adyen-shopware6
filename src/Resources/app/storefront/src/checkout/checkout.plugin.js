@@ -101,7 +101,7 @@ export default class CheckoutPlugin extends Plugin {
 
         this.placeOrderAllowed = false;
         this.data = '';
-        this.formValidator = [];
+        this.formValidator = {};
 
         // use this object to iterate through the paymentMethods response
         const paymentMethods = window.adyenCheckout.paymentMethodsResponse.paymentMethods;
@@ -203,11 +203,10 @@ export default class CheckoutPlugin extends Plugin {
         try {
             const paymentMethodInstance = window.adyenCheckout
                 .create(paymentMethod.type, configuration);
-            console.log($(`[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`));
             paymentMethodInstance.mount(
                 paymentMethodContainer.find(`[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`).get(0));
 
-            this.formValidator[this.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
+            this.formValidator[this.paymentMethodTypeHandlers.oneclick][storedPaymentMethodId] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
             console.log(err);
         }
