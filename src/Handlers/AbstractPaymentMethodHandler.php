@@ -366,6 +366,11 @@ abstract class AbstractPaymentMethodHandler
             $paymentMethodType = $request['paymentMethod']['type'];
         }
 
+        if ($request['storePaymentMethod'] === true) {
+            $request['recurringProcessingModel'] = 'CardOnFile';
+            $request['shopperInteraction'] = 'Ecommerce';
+        }
+
         //Setting browser info if not present in statedata
         if (empty($request['browserInfo']['acceptHeader'])) {
             $acceptHeader = $_SERVER['HTTP_ACCEPT'];
