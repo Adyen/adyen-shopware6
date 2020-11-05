@@ -260,10 +260,8 @@ class PaymentSubscriber implements EventSubscriberInterface
                     }
                 );
 
-                if (
-                    empty($pmFound) &&
-                    empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])
-                ) {
+                if (empty($pmFound) &&
+                    empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
             }
