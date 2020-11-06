@@ -45,7 +45,7 @@ class OneClickPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return ''; //TODO
+        return 'Saved card details';
     }
 
     /**
