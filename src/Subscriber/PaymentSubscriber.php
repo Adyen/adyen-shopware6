@@ -237,7 +237,6 @@ class PaymentSubscriber implements EventSubscriberInterface
      */
     private function filterShopwarePaymentMethods($originalPaymentMethods, SalesChannelContext $salesChannelContext)
     {
-        //TODO do this in an event instead
         //Adyen /paymentMethods response
         $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
 
@@ -260,8 +259,12 @@ class PaymentSubscriber implements EventSubscriberInterface
                     }
                 );
 
+                //Remove the PM if it isn't in the paymentMethods response or if it isn't OneClick
                 if (empty($pmFound) &&
-                    empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
+                    ($pmCode != OneClickPaymentMethodHandler::getPaymentMethodCode() &&
+                        empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])
+                    )
+                ) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
             }
