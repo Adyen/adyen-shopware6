@@ -222,7 +222,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'orderId' => $orderId,
                     'stateDataPaymentMethod' => $stateDataPaymentMethod,
                     'pluginId' => $adyenPluginId,
-                    'storedPaymentMethods' => $this->filterOneClickPaymentMethods($paymentMethodsResponse)
+                    'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? []
                 ]
             )
         );
@@ -270,24 +270,5 @@ class PaymentSubscriber implements EventSubscriberInterface
             }
         }
         return $originalPaymentMethods;
-    }
-
-    /**
-     * @param $paymentMethods
-     * @return array
-     */
-    private function filterOneClickPaymentMethods(array $paymentMethods)
-    {
-        $options = [];
-        if (!empty($paymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
-            foreach ($paymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()] as $method) {
-                $options[] = [
-                    "id" => $method["id"] ?? "",
-                    "name" => $method["name"] ?? "",
-                    "lastFour" => $method["lastFour"] ?? ""
-                ];
-            }
-        }
-        return $options;
     }
 }
