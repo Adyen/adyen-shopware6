@@ -126,7 +126,7 @@ class PaymentStateDataService
         }
 
         //storedPaymentMethods are type=scheme. If storedPaymentMethodId is present we return storedPaymentMethods
-        if(!empty($stateDataArray['paymentMethod']['storedPaymentMethodId'])){
+        if (!empty($stateDataArray['paymentMethod']['storedPaymentMethodId'])) {
             return OneClickPaymentMethodHandler::getPaymentMethodCode();
         }
 
