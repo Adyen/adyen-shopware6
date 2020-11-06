@@ -58,7 +58,7 @@ export default class CheckoutPlugin extends Plugin {
         };
 
         //PMs that should show an 'Update Details' button if there's already a state.data for that PM stored for this context
-        this.updatablePaymentMethods = ['scheme', 'ideal', 'sepadirectdebit'];
+        this.updatablePaymentMethods = ['scheme', 'ideal', 'sepadirectdebit', 'oneclick'];
 
         this.client = new StoreApiClient();
 
@@ -112,6 +112,12 @@ export default class CheckoutPlugin extends Plugin {
         this.formValidator[this.paymentMethodTypeHandlers.oneclick] = {};
         storedPaymentMethods.forEach(this.renderStoredPaymentMethod.bind(this));
 
+        //Show the payment method's contents if it's selected by default
+        $(`[data-adyen-payment-method-id="${validatePaymentMethod()}"]`).show();
+
+        //Hiding component contents if there's already state.data saved for this PM
+        this.updatablePaymentMethods.forEach(element => this.hideStateData(element));
+
         /**
          * Shows the payment method component in order to update the previously saved details
          */
@@ -131,11 +137,6 @@ export default class CheckoutPlugin extends Plugin {
         // If payment method doesn't have details, just skip it
         if (!paymentMethodContainer || !paymentMethod.details) {
             return;
-        }
-
-        //Show the payment method's contents if it's selected by default
-        if (validatePaymentMethod()) {
-            $('[data-adyen-payment-method-id]').show();
         }
 
         //Hide other payment method's contents when selecting an option
@@ -163,12 +164,6 @@ export default class CheckoutPlugin extends Plugin {
         } catch (err) {
             console.log(err);
         }
-
-        //Hiding component contents if there's already state.data saved for this PM
-        if (this.updatablePaymentMethods.includes(paymentMethod.type) && adyenCheckoutOptions.statedataPaymentMethod === paymentMethod.type) {
-            $('[data-adyen-payment-container]').hide();
-            $('[data-adyen-update-payment-details]').show();
-        }
     }
 
     renderStoredPaymentMethod(paymentMethod) {
@@ -176,14 +171,8 @@ export default class CheckoutPlugin extends Plugin {
         const paymentMethodContainer = $('[data-adyen-payment-method="' + this.paymentMethodTypeHandlers["oneclick"] + '"]');
 
         // container doesn't exist, something went wrong on the template side
-        // If payment method doesn't have details, just skip it
         if (!paymentMethodContainer) {
             return;
-        }
-
-        //Show the payment method's contents if it's selected by default
-        if (validatePaymentMethod()) {
-            $('[data-adyen-payment-method-id]').show();
         }
 
         //Hide other payment method's contents when selecting an option
@@ -197,10 +186,6 @@ export default class CheckoutPlugin extends Plugin {
             onChange: this.onPaymentMethodChange.bind(this)
         });
 
-        if (paymentMethod.type === 'scheme') {
-            configuration.enableStoreDetails = true;
-        }
-
         try {
             const paymentMethodInstance = window.adyenCheckout
                 .create(paymentMethod.type, configuration);
@@ -211,13 +196,24 @@ export default class CheckoutPlugin extends Plugin {
         } catch (err) {
             console.log(err);
         }
-
-        //Hiding component contents if there's already state.data saved for this PM
-        if (this.updatablePaymentMethods.includes(paymentMethod.type) && adyenCheckoutOptions.statedataPaymentMethod === paymentMethod.type) {
-            $('[data-adyen-payment-container]').hide();
-            $('[data-adyen-update-payment-details]').show();
-        }
     }
+
+    hideStateData(method) {
+        let element = $(`[data-adyen-payment-method=${this.paymentMethodTypeHandlers[method]}]`);
+        if (method === adyenCheckoutOptions.statedataPaymentMethod) {
+            //The state data stored matches this method, show update details button
+            element.find('[data-adyen-payment-container]').hide();
+            element.find('[data-adyen-update-payment-details]').show();
+        } else if (method === 'oneclick' && adyenCheckoutOptions.statedataPaymentMethod === 'storedPaymentMethods') {
+            //The state data stored matches storedPaymentMethods, show update details button for oneclick
+            $(`[data-adyen-payment-method=${this.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-payment-container]').hide();
+            $(`[data-adyen-payment-method=${this.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-update-payment-details]').show();
+        } else {
+            //The state data stored does not match this method, show the form
+            element.find('[data-adyen-payment-container]').show();
+            element.find('[data-adyen-update-payment-details]').hide();
+        }
+    };
 
     /**
      * Reset card details
