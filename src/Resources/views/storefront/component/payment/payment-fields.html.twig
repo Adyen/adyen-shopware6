@@ -61,8 +61,13 @@
                                                             <div class="row">
                                                                 <div class="col-sm-12">
                                                                     <label>
-                                                                        <input type="radio" name="adyenStoredPaymentMethodId" value="{{ storedPaymentMethod.id }}">
-                                                                        {{ "%s ending in %s" |format(storedPaymentMethod.name, storedPaymentMethod.lastFour) }}
+                                                                        <input type="radio"
+                                                                               name="adyenStoredPaymentMethodId"
+                                                                               value="{{ storedPaymentMethod.id }}"
+                                                                               class="form-check-input"
+                                                                               {% if loop.first == true  %}checked="checked"{% endif%}
+                                                                        >
+                                                                            {{ "%s ending in %s" |format(storedPaymentMethod.name, storedPaymentMethod.lastFour) }}
                                                                     </label>
                                                                 </div>
                                                                 <div class="col-sm-12" data-adyen-stored-payment-method-id="{{ storedPaymentMethod.id }}"></div>

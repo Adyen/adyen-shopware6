@@ -101,6 +101,7 @@ export default class CheckoutPlugin extends Plugin {
 
         this.placeOrderAllowed = false;
         this.data = '';
+        this.storedPaymentMethodData = {};
         this.formValidator = {};
 
         // use this object to iterate through the paymentMethods response
@@ -183,14 +184,17 @@ export default class CheckoutPlugin extends Plugin {
 
         /*Use the storedPaymentMethod object and the custom onChange function as the configuration object together*/
         const configuration = Object.assign(paymentMethod, {
-            onChange: this.onPaymentMethodChange.bind(this)
+            onChange: this.onStoredPaymentMethodChange.bind(this)
         });
 
         try {
             const paymentMethodInstance = window.adyenCheckout
                 .create(paymentMethod.type, configuration);
             paymentMethodInstance.mount(
-                paymentMethodContainer.find(`[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`).get(0));
+                paymentMethodContainer.find(`[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`).get(0)
+            );
+
+            paymentMethodContainer.data('paymentMethodInstance', paymentMethodInstance);
 
             this.formValidator[this.paymentMethodTypeHandlers.oneclick][paymentMethod.storedPaymentMethodId] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
@@ -230,6 +234,15 @@ export default class CheckoutPlugin extends Plugin {
 
         if (selectedPaymentMethod === this.paymentMethodTypeHandlers.oneclick) {
             let selectedStoredPaymentMethodID = this.getSelectedStoredPaymentMethodID();
+            if (!selectedStoredPaymentMethodID) {
+                event.preventDefault();
+                return;
+            }
+
+            $('#adyenStateData').val(JSON.stringify(
+                this.storedPaymentMethodData[selectedStoredPaymentMethodID]
+            ));
+
             if (!(selectedStoredPaymentMethodID in this.formValidator[selectedPaymentMethod])) {
                 return;
             }
@@ -237,6 +250,7 @@ export default class CheckoutPlugin extends Plugin {
             if (!this.formValidator[selectedPaymentMethod][selectedStoredPaymentMethodID].validateForm()) {
                 event.preventDefault();
             }
+
             return;
         }
 
@@ -254,6 +268,22 @@ export default class CheckoutPlugin extends Plugin {
         } else {
             this.placeOrderAllowed = false;
             this.resetFields();
+        }
+    }
+
+    onStoredPaymentMethodChange (state) {
+        if (!state || !state.data || !state.data.paymentMethod) {
+            return;
+        }
+        let storedPaymentMethodId = state.data.paymentMethod.storedPaymentMethodId;
+        if (state.isValid) {
+            this.storedPaymentMethodData[storedPaymentMethodId] = state.data;
+            $('#adyenStateData').val(JSON.stringify(state.data));
+            $('#adyenOrigin').val(window.location.origin);
+            this.placeOrderAllowed = true;
+        } else {
+            this.placeOrderAllowed = false;
+            this.storedPaymentMethodData[storedPaymentMethodId] = '';
         }
     }
 
