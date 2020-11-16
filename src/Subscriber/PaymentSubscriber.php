@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Subscriber;
 
 use Adyen\AdyenException;
+use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\OriginKeyService;
 use Adyen\Shopware\Service\PaymentMethodsService;
@@ -172,6 +173,8 @@ class PaymentSubscriber implements EventSubscriberInterface
             $salesChannelContext->getContext()
         );
 
+        $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -215,12 +218,11 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'environment' => $this->configurationService->getEnvironment(
                         $event->getSalesChannelContext()->getSalesChannel()->getId()
                     ),
-                    'paymentMethodsResponse' => json_encode(
-                        $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
-                    ),
+                    'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                     'orderId' => $orderId,
                     'stateDataPaymentMethod' => $stateDataPaymentMethod,
-                    'pluginId' => $adyenPluginId
+                    'pluginId' => $adyenPluginId,
+                    'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? []
                 ]
             )
         );
@@ -235,7 +237,6 @@ class PaymentSubscriber implements EventSubscriberInterface
      */
     private function filterShopwarePaymentMethods($originalPaymentMethods, SalesChannelContext $salesChannelContext)
     {
-        //TODO do this in an event instead
         //Adyen /paymentMethods response
         $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
 
@@ -258,7 +259,12 @@ class PaymentSubscriber implements EventSubscriberInterface
                     }
                 );
 
-                if (empty($pmFound)) {
+                //Remove the PM if it isn't in the paymentMethods response or if it isn't OneClick
+                if (empty($pmFound) &&
+                    ($pmCode != OneClickPaymentMethodHandler::getPaymentMethodCode() &&
+                        empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])
+                    )
+                ) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
             }

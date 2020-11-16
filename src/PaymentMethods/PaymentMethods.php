@@ -34,6 +34,7 @@ class PaymentMethods
         KlarnaPayLaterPaymentMethod::class,
         SepaPaymentMethod::class,
         SofortPaymentMethod::class,
-        PaypalPaymentMethod::class
+        PaypalPaymentMethod::class,
+        OneClickPaymentMethod::class
     ];
 }
