@@ -24,6 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
+use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
@@ -58,18 +59,25 @@ class PaymentMethodsService
     private $salesChannelRepository;
 
     /**
+     * @var OrderRepository
+     */
+    private $orderRepository;
+
+    /**
      * @var LoggerInterface
      */
     private $logger;
 
     /**
      * PaymentMethodsService constructor.
+     *
      * @param LoggerInterface $logger
      * @param CheckoutService $checkoutService
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param CartService $cartService
      * @param SalesChannelRepository $salesChannelRepository
+     * @param OrderRepository $orderRepository
      */
     public function __construct(
         LoggerInterface $logger,
@@ -77,7 +85,8 @@ class PaymentMethodsService
         ConfigurationService $configurationService,
         Currency $currency,
         CartService $cartService,
-        SalesChannelRepository $salesChannelRepository
+        SalesChannelRepository $salesChannelRepository,
+        OrderRepository $orderRepository
     ) {
         $this->checkoutService = $checkoutService;
         $this->configurationService = $configurationService;
@@ -85,17 +94,19 @@ class PaymentMethodsService
         $this->cartService = $cartService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->logger = $logger;
+        $this->orderRepository = $orderRepository;
     }
 
     /**
      * @param SalesChannelContext $context
+     * @param string $orderId
      * @return array
      */
-    public function getPaymentMethods(SalesChannelContext $context): array
+    public function getPaymentMethods(SalesChannelContext $context, $orderId = ''): array
     {
         $responseData = [];
         try {
-            $requestData = $this->buildPaymentMethodsRequestData($context);
+            $requestData = $this->buildPaymentMethodsRequestData($context, $orderId);
             if (!empty($requestData)) {
                 $this->checkoutService->startClient($context->getSalesChannel()->getId());
                 $responseData = $this->checkoutService->paymentMethods($requestData);
@@ -108,15 +119,15 @@ class PaymentMethodsService
 
     /**
      * @param SalesChannelContext $context
+     * @param string $orderId
      * @return array
      */
-    private function buildPaymentMethodsRequestData(SalesChannelContext $context)
+    private function buildPaymentMethodsRequestData(SalesChannelContext $context, $orderId = '')
     {
         if (is_null($context->getCustomer())) {
             return [];
         }
 
-        $cart = $this->cartService->getCart($context->getToken(), $context);
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
@@ -125,11 +136,20 @@ class PaymentMethodsService
             return [];
         }
 
+        // Retrieve data from cart if no order is created yet
+        if ($orderId === '') {
+            $currency = $context->getCurrency()->getIsoCode();
+            $cart = $this->cartService->getCart($context->getToken(), $context);
+            $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
+        } else {
+            $order = $this->orderRepository->getOrder($orderId, $context->getContext());
+            $currency = $order->getCurrency()->getIsoCode();
+            $amount = $this->currency->sanitize($order->getPrice()->getTotalPrice(), $currency);
+        }
+
         $salesChannelAssocLocale = $this->salesChannelRepository->getSalesChannelAssocLocale($context);
         $shopperLocale = $salesChannelAssocLocale->getLanguage()->getLocale()->getCode();
 
-        $currency = $context->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
         if ($context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso()) {
             $countryCode = $context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
         } else {
