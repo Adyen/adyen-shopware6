@@ -25,7 +25,7 @@ import Plugin from 'src/plugin-system/plugin.class';
 import StoreApiClient from 'src/service/store-api-client.service';
 import validatePaymentMethod from '../validator/paymentMethod';
 import FormValidatorWithComponent from '../validator/FormValidatorWithComponent';
-
+import adyenConfiguration from '../configuration/adyen';
 
 /* global adyenCheckoutConfiguration, AdyenCheckout, adyenCheckoutOptions */
 /* eslint-disable no-unused-vars */
@@ -34,31 +34,6 @@ export default class CheckoutPlugin extends Plugin {
     init() {
         const confirmPaymentForm = DomAccess.querySelector(document, '#confirmPaymentForm');
         confirmPaymentForm.addEventListener('submit', this.onConfirmPayment.bind(this));
-
-        const cardsFormattedHandlerIdentifier = 'handler_adyen_cardspaymentmethodhandler';
-        const idealFormattedHandlerIdentifier = 'handler_adyen_idealpaymentmethodhandler';
-        const klarnaAccountFormattedHandlerIdentifier = 'handler_adyen_klarnaaccountpaymentmethodhandler';
-        const klarnaPayNowFormattedHandlerIdentifier = 'handler_adyen_klarnapaynowpaymentmethodhandler';
-        const klarnaPayLaterFormattedHandlerIdentifier = 'handler_adyen_klarnapaylaterpaynowpaymentmethodhandler';
-        const sepaFormattedHandlerIdentifier = 'handler_adyen_sepapaymentmethodhandler';
-        const sofortFormattedHandlerIdentifier = 'handler_adyen_sofortpaymentmethodhandler';
-        const paypalFormattedHandlerIdentifier = 'handler_adyen_paypalpaymentmethodhandler';
-        const oneClickFormattedHandlerIdentifier = 'handler_adyen_oneclickpaymentmethodhandler';
-
-        this.paymentMethodTypeHandlers = {
-            'scheme': cardsFormattedHandlerIdentifier,
-            'ideal': idealFormattedHandlerIdentifier,
-            'klarna': klarnaPayLaterFormattedHandlerIdentifier,
-            'klarna_account': klarnaAccountFormattedHandlerIdentifier,
-            'klarna_paynow': klarnaPayNowFormattedHandlerIdentifier,
-            'sepadirectdebit': sepaFormattedHandlerIdentifier,
-            'sofort': sofortFormattedHandlerIdentifier,
-            'paypal': paypalFormattedHandlerIdentifier,
-            'oneclick': oneClickFormattedHandlerIdentifier
-        };
-
-        //PMs that should show an 'Update Details' button if there's already a state.data for that PM stored for this context
-        this.updatablePaymentMethods = ['scheme', 'ideal', 'sepadirectdebit', 'oneclick'];
 
         this.client = new StoreApiClient();
 
@@ -110,14 +85,14 @@ export default class CheckoutPlugin extends Plugin {
 
         // Iterate through the payment methods list we got from the adyen checkout component
         paymentMethods.forEach(this.renderPaymentMethod.bind(this));
-        this.formValidator[this.paymentMethodTypeHandlers.oneclick] = {};
+        this.formValidator[adyenConfiguration.paymentMethodTypeHandlers.oneclick] = {};
         storedPaymentMethods.forEach(this.renderStoredPaymentMethod.bind(this));
 
         //Show the payment method's contents if it's selected by default
         $(`[data-adyen-payment-method-id="${validatePaymentMethod()}"]`).show();
 
         //Hiding component contents if there's already state.data saved for this PM
-        this.updatablePaymentMethods.forEach(element => this.hideStateData(element));
+        adyenConfiguration.updatablePaymentMethods.forEach(element => this.hideStateData(element));
 
         /**
          * Shows the payment method component in order to update the previously saved details
@@ -132,7 +107,7 @@ export default class CheckoutPlugin extends Plugin {
 
     renderPaymentMethod (paymentMethod) {
         //  if the container doesn't exist don't try to render the component
-        const paymentMethodContainer = $('[data-adyen-payment-method="' + this.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
+        const paymentMethodContainer = $('[data-adyen-payment-method="' + adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
 
         // container doesn't exist, something went wrong on the template side
         // If payment method doesn't have details, just skip it
@@ -161,7 +136,7 @@ export default class CheckoutPlugin extends Plugin {
 
             paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
 
-            this.formValidator[this.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
+            this.formValidator[adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
             console.log(err);
         }
@@ -169,7 +144,7 @@ export default class CheckoutPlugin extends Plugin {
 
     renderStoredPaymentMethod(paymentMethod) {
         //  if the container doesn't exits don't try to render the component
-        const paymentMethodContainer = $('[data-adyen-payment-method="' + this.paymentMethodTypeHandlers["oneclick"] + '"]');
+        const paymentMethodContainer = $('[data-adyen-payment-method="' + adyenConfiguration.paymentMethodTypeHandlers["oneclick"] + '"]');
 
         // container doesn't exist, something went wrong on the template side
         if (!paymentMethodContainer) {
@@ -196,22 +171,22 @@ export default class CheckoutPlugin extends Plugin {
 
             paymentMethodContainer.data('paymentMethodInstance', paymentMethodInstance);
 
-            this.formValidator[this.paymentMethodTypeHandlers.oneclick][paymentMethod.storedPaymentMethodId] = new FormValidatorWithComponent(paymentMethodInstance);
+            this.formValidator[adyenConfiguration.paymentMethodTypeHandlers.oneclick][paymentMethod.storedPaymentMethodId] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
             console.log(err);
         }
     }
 
     hideStateData(method) {
-        let element = $(`[data-adyen-payment-method=${this.paymentMethodTypeHandlers[method]}]`);
+        let element = $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers[method]}]`);
         if (method === adyenCheckoutOptions.statedataPaymentMethod) {
             //The state data stored matches this method, show update details button
             element.find('[data-adyen-payment-container]').hide();
             element.find('[data-adyen-update-payment-details]').show();
         } else if (method === 'oneclick' && adyenCheckoutOptions.statedataPaymentMethod === 'storedPaymentMethods') {
             //The state data stored matches storedPaymentMethods, show update details button for oneclick
-            $(`[data-adyen-payment-method=${this.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-payment-container]').hide();
-            $(`[data-adyen-payment-method=${this.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-update-payment-details]').show();
+            $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-payment-container]').hide();
+            $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-update-payment-details]').show();
         } else {
             //The state data stored does not match this method, show the form
             element.find('[data-adyen-payment-container]').show();
@@ -232,7 +207,7 @@ export default class CheckoutPlugin extends Plugin {
             return true;
         }
 
-        if (selectedPaymentMethod === this.paymentMethodTypeHandlers.oneclick) {
+        if (selectedPaymentMethod === adyenConfiguration.paymentMethodTypeHandlers.oneclick) {
             let selectedStoredPaymentMethodID = this.getSelectedStoredPaymentMethodID();
             if (!selectedStoredPaymentMethodID) {
                 event.preventDefault();
