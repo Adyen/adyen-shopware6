@@ -222,7 +222,9 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'orderId' => $orderId,
                     'stateDataPaymentMethod' => $stateDataPaymentMethod,
                     'pluginId' => $adyenPluginId,
-                    'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? []
+                    'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
+                    'selectedPaymentMethodHandler' => $salesChannelContext->getPaymentMethod()->getFormattedHandlerIdentifier(),
+                    'selectedPaymentMethodPluginId' => $salesChannelContext->getPaymentMethod()->getPluginId()
                 ]
             )
         );
