@@ -151,6 +151,7 @@ class PaymentSubscriber implements EventSubscriberInterface
     public function onCheckoutConfirmLoaded(PageLoadedEvent $event)
     {
         $salesChannelContext = $event->getSalesChannelContext();
+        $paymentMethod = $salesChannelContext->getPaymentMethod();
         $page = $event->getPage();
         $orderId = '';
         if (method_exists($page, 'getOrder')) {
@@ -223,8 +224,8 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'stateDataPaymentMethod' => $stateDataPaymentMethod,
                     'pluginId' => $adyenPluginId,
                     'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
-                    'selectedPaymentMethodHandler' => $salesChannelContext->getPaymentMethod()->getFormattedHandlerIdentifier(),
-                    'selectedPaymentMethodPluginId' => $salesChannelContext->getPaymentMethod()->getPluginId()
+                    'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
+                    'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId()
                 ]
             )
         );
