@@ -1,0 +1,8 @@
+{
+  "adyen": {
+    "required_cookie": {
+        "name": "Adyen-Zahlungen",
+        "description": "Erforderliche Cookies für die Verarbeitung von Zahlungen mit Adyen"
+    }
+  }
+}
