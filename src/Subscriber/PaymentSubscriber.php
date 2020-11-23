@@ -174,7 +174,7 @@ class PaymentSubscriber implements EventSubscriberInterface
             $salesChannelContext->getContext()
         );
 
-        $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+        $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, $orderId);
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
