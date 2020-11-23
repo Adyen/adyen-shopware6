@@ -91,8 +91,7 @@ class PaymentStatusService
 
         if (empty($paymentResponse)) {
             throw new MissingDataException(
-                'Payment response cannot be found for order number: ' .
-                $paymentResponse->getOrderTransaction()->getOrder()->getOrderNumber() . '!'
+                'Payment response cannot be found for order id: ' . $orderId . '!'
             );
         }
 
