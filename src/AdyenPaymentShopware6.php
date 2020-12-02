@@ -36,6 +36,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -111,6 +112,13 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    public function update(UpdateContext $updateContext): void
+    {
+        if (\version_compare($updateContext->getCurrentPluginVersion(), '1.2.0', '<')) {
+            $this->updateTo120($updateContext);
+        }
+    }
+
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
     {
         $paymentMethodExists = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
@@ -179,6 +187,20 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $context);
+    }
+
+    private function updateTo120(UpdateContext $updateContext): void
+    {
+        //Version 1.2.0 introduces storedPaymentMethod
+        $this->addPaymentMethod(
+            new \Adyen\Shopware\PaymentMethods\OneClickPaymentMethod,
+            $updateContext->getContext()
+        );
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            new \Adyen\Shopware\PaymentMethods\OneClickPaymentMethod
+        );
     }
 }
 
