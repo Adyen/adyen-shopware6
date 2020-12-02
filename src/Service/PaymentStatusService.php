@@ -26,8 +26,10 @@ declare(strict_types=1);
 namespace Adyen\Shopware\Service;
 
 use Adyen\Exception\MissingDataException;
+use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use JsonException;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 
 class PaymentStatusService
 {
@@ -49,24 +51,62 @@ class PaymentStatusService
         $this->paymentResponseHandler = $paymentResponseHandler;
     }
 
-    public function getPaymentStatusWithOrderId(string $orderId, SalesChannelContext $context): array
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     * @return array
+     * @throws MissingDataException
+     * @throws JsonException
+     */
+    public function getPaymentStatusWithOrderTransaction(OrderTransactionEntity $orderTransaction): array
     {
-        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getToken());
+        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($orderTransaction);
 
         if (empty($paymentResponse)) {
-            throw new MissingDataException('Payment response cannot be found for order id: ' . $orderId . '!');
+            throw new MissingDataException(
+                'Payment response cannot be found for order number: ' .
+                $orderTransaction->getOrder()->getOrderNumber() . '!'
+            );
         }
 
         $responseData = json_decode($paymentResponse->getResponse(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \JsonException('Payment response is an invalid JSON for order id: ' . $orderId . '');
+            throw new JsonException(
+                'Payment response is an invalid JSON for order number: ' .
+                $orderTransaction->getOrder()->getOrderNumber() . '!'
+            );
         }
 
         $result = $this->paymentResponseHandler->handlePaymentResponse(
             $responseData,
-            $paymentResponse->getOrderNumber(),
-            $context
+            $orderTransaction
+        );
+
+        return $this->paymentResponseHandler->handleAdyenApis($result);
+    }
+
+    public function getWithOrderId(string $orderId): array
+    {
+        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
+
+        if (empty($paymentResponse)) {
+            throw new MissingDataException(
+                'Payment response cannot be found for order id: ' . $orderId . '!'
+            );
+        }
+
+        $responseData = json_decode($paymentResponse->getResponse(), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new JsonException(
+                'Payment response is an invalid JSON for order number: ' .
+                $paymentResponse->getOrderTransaction()->getOrder()->getOrderNumber() . '!'
+            );
+        }
+
+        $result = $this->paymentResponseHandler->handlePaymentResponse(
+            $responseData,
+            $paymentResponse->getOrderTransaction()
         );
 
         return $this->paymentResponseHandler->handleAdyenApis($result);

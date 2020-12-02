@@ -278,7 +278,7 @@ abstract class AbstractPaymentMethodHandler
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
-        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $orderNumber, $salesChannelContext);
+        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $transaction->getOrderTransaction());
 
         try {
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
@@ -289,7 +289,7 @@ abstract class AbstractPaymentMethodHandler
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($transaction->getReturnUrl());
+        return new RedirectResponse($this->getAdyenReturnUrl($transaction->getReturnUrl()));
     }
 
     /**
@@ -339,9 +339,6 @@ abstract class AbstractPaymentMethodHandler
             $salesChannelContext->getToken()
         );
 
-        //Generate returnUrl
-        $returnUrl = $transaction->getReturnUrl();
-
         if ($stateData) {
             $request = json_decode($stateData->getStateData(), true);
         } else {
@@ -367,6 +364,11 @@ abstract class AbstractPaymentMethodHandler
             $paymentMethodType = static::getPaymentMethodCode();
         } else {
             $paymentMethodType = $request['paymentMethod']['type'];
+        }
+
+        if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
+            $request['recurringProcessingModel'] = 'CardOnFile';
+            $request['shopperInteraction'] = 'Ecommerce';
         }
 
         //Setting browser info if not present in statedata
@@ -483,11 +485,6 @@ abstract class AbstractPaymentMethodHandler
             $countryCode = $request['countryCode'];
         }
 
-        //Redirect parameters for 3DS1 payments
-        $request['redirectFromIssuerMethod'] = 'GET';
-        $request['redirectToIssuerMethod'] = 'POST';
-        $request['returnUrl'] = $returnUrl;
-
         $request = $this->browserBuilder->buildBrowserData(
             $userAgent,
             $acceptHeader,
@@ -524,7 +521,7 @@ abstract class AbstractPaymentMethodHandler
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $returnUrl,
+            $this->getAdyenReturnUrl($transaction->getReturnUrl()),
             $request
         );
 
@@ -613,9 +610,6 @@ abstract class AbstractPaymentMethodHandler
      * @param $returnUrl
      * @return string
      * @throws PaymentException
-     * @deprecated using redirectToIssuerMethod and redirectFromIssuerMethod in the
-     * /payments call is not necessary to modify the CSRF token
-     *
      */
     protected function getAdyenReturnUrl($returnUrl)
     {

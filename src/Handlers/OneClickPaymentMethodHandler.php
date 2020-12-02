@@ -1,4 +1,6 @@
-/*
+<?php declare(strict_types=1);
+
+/**
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -12,14 +14,24 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
  * Copyright (c) 2020 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
+ * Author: Adyen <shopware@adyen.com>
  */
 
-export default function () {
-    return $('[name=paymentMethodId]:checked').val();
+namespace Adyen\Shopware\Handlers;
+
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class OneClickPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+{
+
+    public static function getPaymentMethodCode()
+    {
+        return 'storedPaymentMethods';
+    }
 }

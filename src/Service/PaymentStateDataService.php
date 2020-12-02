@@ -26,6 +26,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntity;
+use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -122,6 +123,11 @@ class PaymentStateDataService
         $stateDataArray = json_decode($stateData->getStateData(), true);
         if (empty($stateDataArray['paymentMethod']['type'])) {
             return null;
+        }
+
+        //storedPaymentMethods are type=scheme. If storedPaymentMethodId is present we return storedPaymentMethods
+        if (!empty($stateDataArray['paymentMethod']['storedPaymentMethodId'])) {
+            return OneClickPaymentMethodHandler::getPaymentMethodCode();
         }
 
         return $stateDataArray['paymentMethod']['type'];

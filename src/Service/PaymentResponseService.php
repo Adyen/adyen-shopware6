@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
-use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -43,12 +43,19 @@ class PaymentResponseService
      */
     private $orderRepository;
 
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $orderTransactionRepository;
+
     public function __construct(
         EntityRepositoryInterface $repository,
-        EntityRepositoryInterface $orderRepository
+        EntityRepositoryInterface $orderRepository,
+        EntityRepositoryInterface $orderTransactionRepository
     ) {
         $this->repository = $repository;
         $this->orderRepository = $orderRepository;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     public function getWithOrderNumber(string $orderNumber): ?PaymentResponseEntity
@@ -62,54 +69,51 @@ class PaymentResponseService
             ->first();
     }
 
-    public function getWithOrderId(string $orderId, string $contextToken): ?PaymentResponseEntity
+    public function getWithOrderId(string $orderId): ?PaymentResponseEntity
     {
-        $order = $this->orderRepository
+        $orderTransaction = $this->orderTransactionRepository
             ->search(
                 (new Criteria())
-                    ->addFilter(new EqualsFilter('id', $orderId)),
+                    ->addFilter((new EqualsFilter('orderId', $orderId)))
+                    ->addAssociation('order'),
                 Context::createDefaultContext()
             )
             ->first();
-        return $this->getWithSalesChannelApiContextTokenAndOrderNumber($contextToken, $order->getOrderNumber());
+        return $this->getWithOrderTransaction($orderTransaction);
+    }
+
+    public function getWithOrderTransaction(OrderTransactionEntity $orderTransaction): ?PaymentResponseEntity
+    {
+        return $this->repository
+            ->search(
+                (new Criteria())
+                    ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
+                    ->addAssociation('orderTransaction.order'),
+                Context::createDefaultContext()
+            )
+            ->first();
     }
 
     public function insertPaymentResponse(
         array $paymentResponse,
-        string $orderNumber,
-        string $salesChannelContextToken
+        OrderTransactionEntity $orderTransaction
     ): void {
         if (empty($paymentResponse)) {
             //TODO log error
         }
 
-        $storedPaymentResponse = $this->getWithOrderNumber($orderNumber);
+        $storedPaymentResponse = $this->getWithOrderTransaction($orderTransaction);
         if ($storedPaymentResponse) {
             $fields['id'] = $storedPaymentResponse->getId();
         }
 
-        $fields['token'] = $salesChannelContextToken;
+        $fields['orderTransactionId'] = $orderTransaction->getId();
         $fields['resultCode'] = $paymentResponse["resultCode"];
-        $fields['orderNumber'] = $orderNumber;
         $fields['response'] = json_encode($paymentResponse);
 
         $this->repository->upsert(
             [$fields],
             Context::createDefaultContext()
         );
-    }
-
-    public function getWithSalesChannelApiContextTokenAndOrderNumber(
-        string $salesChannelApiContextToken,
-        string $orderNumber
-    ): ?PaymentResponseEntity {
-        return $this->repository
-            ->search(
-                (new Criteria())
-                    ->addFilter(new EqualsFilter('orderNumber', $orderNumber))
-                    ->addFilter(new EqualsFilter('token', $salesChannelApiContextToken)),
-                Context::createDefaultContext()
-            )
-            ->first();
     }
 }
