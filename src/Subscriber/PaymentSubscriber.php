@@ -176,6 +176,8 @@ class PaymentSubscriber implements EventSubscriberInterface
 
         $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, $orderId);
 
+        $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -209,16 +211,17 @@ class PaymentSubscriber implements EventSubscriberInterface
                         ['version' => 2]
                     ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
-                    'originKey' => $this->originKeyService->getOriginKeyForOrigin(
-                        $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext),
-                        $salesChannelContext->getSalesChannel()->getId()
-                    )->getOriginKey(),
+                    'originKey' => empty($this->configurationService->getClientKey($salesChannelId)) ?
+                        $this->originKeyService->getOriginKeyForOrigin(
+                            $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext),
+                            $salesChannelId
+                        )->getOriginKey() :
+                        false,
+                    'clientKey' => $this->configurationService->getClientKey($salesChannelId),
                     'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
                         ->getLanguage()->getLocale()->getCode(),
 
-                    'environment' => $this->configurationService->getEnvironment(
-                        $event->getSalesChannelContext()->getSalesChannel()->getId()
-                    ),
+                    'environment' => $this->configurationService->getEnvironment($salesChannelId),
                     'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                     'orderId' => $orderId,
                     'stateDataPaymentMethod' => $stateDataPaymentMethod,
