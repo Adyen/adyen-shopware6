@@ -40,6 +40,22 @@
             <name>hmacLive</name>
             <label>HMAC Key for live</label>
         </input-field>
+        <input-field type="password">
+            <name>clientKeyTest</name>
+            <label>Client Key for test</label>
+            <helpText>
+                We use your client key to authenticate requests from your payment environment.
+                See docs.adyen.com for more information.
+            </helpText>
+        </input-field>
+        <input-field type="password">
+            <name>clientKeyLive</name>
+            <label>Client Key for live</label>
+            <helpText>
+                We use your client key to authenticate requests from your payment environment.
+                See docs.adyen.com for more information.
+            </helpText>
+        </input-field>
         <component name="adyen-config-check-button">
             <name>configTest</name>
             <label>Test configuration</label>
