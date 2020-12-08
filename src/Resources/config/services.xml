@@ -177,6 +177,9 @@
         <service id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler">
             <argument type="service" id="scheduled_task.repository" />
             <tag name="messenger.message_handler" />
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            </call>
         </service>
         <service id="Adyen\Shopware\ScheduledTask\ScheduleNotifications">
             <tag name="shopware.scheduled.task" />
@@ -184,6 +187,9 @@
         <service id="Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler">
             <argument type="service" id="scheduled_task.repository" />
             <tag name="messenger.message_handler" />
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            </call>
         </service>
 
         <!--Event subscribers-->

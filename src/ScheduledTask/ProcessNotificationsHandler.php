@@ -24,10 +24,13 @@
 
 namespace Adyen\Shopware\ScheduledTask;
 
+use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 
 class ProcessNotificationsHandler extends ScheduledTaskHandler
 {
+    use LoggerAwareTrait;
+
     public static function getHandledMessages(): iterable
     {
         return [ ProcessNotifications::class ];
@@ -35,6 +38,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     public function run()
     {
-        // import logger and add debug lines
+        // @todo do the business
+        $this->logger->debug(ProcessNotifications::class . ' tasks are running.');
     }
 }
