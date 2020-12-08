@@ -28,6 +28,9 @@ use Adyen\AdyenException;
 use Adyen\Shopware\Models\OriginKeyModel;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @deprecated Version 2.0.0 will use client key only
+ */
 class OriginKeyService
 {
 

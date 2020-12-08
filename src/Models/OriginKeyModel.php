@@ -24,6 +24,9 @@
 
 namespace Adyen\Shopware\Models;
 
+/**
+ * @deprecated Version 2.0.0 will use client key only
+ */
 class OriginKeyModel
 {
 
