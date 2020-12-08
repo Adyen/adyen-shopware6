@@ -36,7 +36,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         return [ ProcessNotifications::class ];
     }
 
-    public function run()
+    public function run(): void
     {
         // @todo do the business
         $this->logger->debug(ProcessNotifications::class . ' tasks are running.');
