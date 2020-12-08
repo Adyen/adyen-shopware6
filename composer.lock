@@ -4,36 +4,37 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "d0857dc22c2b44a07787d6f4b0c156c6",
+    "content-hash": "849eba4a2e2bbe20cca8d801ea833259",
     "packages": [
         {
             "name": "adyen/php-api-library",
-            "version": "7.1.0",
+            "version": "8.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Adyen/adyen-php-api-library.git",
-                "reference": "e8285bf020b135944e556220b82c6e2c30311c39"
+                "reference": "6e5332997e0b0012fbbe775b913134b15aed0cfb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/e8285bf020b135944e556220b82c6e2c30311c39",
-                "reference": "e8285bf020b135944e556220b82c6e2c30311c39",
+                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/6e5332997e0b0012fbbe775b913134b15aed0cfb",
+                "reference": "6e5332997e0b0012fbbe775b913134b15aed0cfb",
                 "shasum": ""
             },
             "require": {
                 "ext-ctype": "*",
+                "ext-curl": "*",
+                "ext-json": "*",
                 "ext-mbstring": "*",
                 "ext-openssl": "*",
                 "monolog/monolog": ">=1.16",
                 "php": ">=5.6"
             },
             "require-dev": {
-                "dms/phpunit-arraysubset-asserts": "0.2.0",
-                "ext-json": "*",
+                "dms/phpunit-arraysubset-asserts": "0.2.1",
                 "friendsofphp/php-cs-fixer": "*",
-                "php-coveralls/php-coveralls": "2.2.0",
-                "phpunit/phpunit": "9.2.6",
-                "squizlabs/php_codesniffer": "3.5.5"
+                "php-coveralls/php-coveralls": "2.4.1",
+                "phpunit/phpunit": "9.4.0",
+                "squizlabs/php_codesniffer": "3.5.6"
             },
             "type": "library",
             "autoload": {
@@ -50,7 +51,7 @@
             "keywords": [
                 "adyen"
             ],
-            "time": "2020-08-10T10:57:23+00:00"
+            "time": "2020-10-09T13:53:07+00:00"
         },
         {
             "name": "aws/aws-sdk-php",
