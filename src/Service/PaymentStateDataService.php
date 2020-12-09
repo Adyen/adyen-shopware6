@@ -145,4 +145,16 @@ class PaymentStateDataService
             Context::createDefaultContext()
         );
     }
+
+    /**
+     * @param string $contextToken
+     */
+    public function deletePaymentStateDataFromContextToken(string $contextToken): void
+    {
+        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
+        if (!empty($stateData)) {
+            $this->deletePaymentStateData($stateData);
+        }
+
+    }
 }
