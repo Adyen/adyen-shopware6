@@ -171,6 +171,26 @@
             <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\ScheduledTask\ProcessNotifications">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <tag name="messenger.message_handler" />
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
+            </call>
+        </service>
+        <service id="Adyen\Shopware\ScheduledTask\ScheduleNotifications">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <tag name="messenger.message_handler" />
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
+            </call>
+        </service>
 
         <!--Event subscribers-->
         <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">
