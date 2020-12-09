@@ -78,6 +78,24 @@ class ConfigurationService
      * @param string $salesChannelId
      * @return array|mixed|null
      */
+    private function getClientKeyTest(string $salesChannelId)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.clientKeyTest', $salesChannelId);
+    }
+
+    /**
+     * @param string $salesChannelId
+     * @return array|mixed|null
+     */
+    private function getClientKeyLive(string $salesChannelId)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.clientKeyLive', $salesChannelId);
+    }
+
+    /**
+     * @param string $salesChannelId
+     * @return array|mixed|null
+     */
     public function getEnvironment(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment', $salesChannelId) ?
@@ -163,5 +181,18 @@ class ConfigurationService
         }
 
         return $this->getApiKeyTest($salesChannelId);
+    }
+
+    /**
+     * @param string $salesChannelId
+     * @return array|mixed|null
+     */
+    public function getClientKey(string $salesChannelId)
+    {
+        if ($this->getEnvironment($salesChannelId) === Environment::LIVE) {
+            return $this->getClientKeyLive($salesChannelId);
+        }
+
+        return $this->getClientKeyTest($salesChannelId);
     }
 }

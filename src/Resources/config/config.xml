@@ -16,6 +16,22 @@
             <name>apiKeyLive</name>
             <label>API Key for live</label>
         </input-field>
+        <input-field type="password">
+            <name>clientKeyTest</name>
+            <label>Client Key for test</label>
+            <helpText>
+                We use your client key to authenticate requests from your payment environment.
+                See https://docs.adyen.com/plugins/shopware-6#generate-a-client-key for more information.
+            </helpText>
+        </input-field>
+        <input-field type="password">
+            <name>clientKeyLive</name>
+            <label>Client Key for live</label>
+            <helpText>
+                We use your client key to authenticate requests from your payment environment.
+                See https://docs.adyen.com/plugins/shopware-6#generate-a-client-key for more information.
+            </helpText>
+        </input-field>
         <input-field type="bool">
             <name>environment</name>
             <label>Live environment</label>

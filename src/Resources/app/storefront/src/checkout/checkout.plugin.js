@@ -61,10 +61,11 @@ export default class CheckoutPlugin extends Plugin {
             );
         }
 
-        const { locale, originKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
+        const { locale, originKey, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
             originKey,
+            clientKey,
             environment,
             showPayButton: false,
             hasHolderName: true,
