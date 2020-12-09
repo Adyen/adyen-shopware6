@@ -146,7 +146,6 @@ class PaymentSubscriber implements EventSubscriberInterface
         $stateData = $event->getRequestDataBag()->get('adyenStateData');
 
         if ($stateData) {
-
             //Convert the state data into an array
             $stateDataArray = json_decode($stateData, true);
 
@@ -165,8 +164,6 @@ class PaymentSubscriber implements EventSubscriberInterface
             //Only store the state data if it matches the selected PM
             if ($stateDataIsStoredPM == $selectedPaymentMethodIsStoredPM) {
                 try {
-                    //Clearing previous state.data
-
                     $this->paymentStateDataService->insertPaymentStateData(
                         $event->getSalesChannelContext()->getToken(),
                         $event->getRequestDataBag()->get('adyenStateData'),
