@@ -156,8 +156,8 @@ class PaymentSubscriber implements EventSubscriberInterface
                 Context::createDefaultContext()
             )->first();
 
-            $selectedPaymentMethodIsStoredPM = $selectedPaymentMethod->getFormattedHandlerIdentifier() ==
-                'handler_adyen_oneclickpaymentmethodhandler';
+            $selectedPaymentMethodIsStoredPM =
+                $selectedPaymentMethod->getFormattedHandlerIdentifier() == 'handler_adyen_oneclickpaymentmethodhandler';
 
             $stateDataIsStoredPM = !empty($stateDataArray["paymentMethod"]["storedPaymentMethodId"]);
 

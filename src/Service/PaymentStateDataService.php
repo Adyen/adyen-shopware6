@@ -155,6 +155,5 @@ class PaymentStateDataService
         if (!empty($stateData)) {
             $this->deletePaymentStateData($stateData);
         }
-
     }
 }
