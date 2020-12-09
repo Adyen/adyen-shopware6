@@ -97,6 +97,11 @@ class NotificationEntity extends Entity
     protected $processing;
 
     /**
+     * @var \DateTimeInterface|null
+     */
+    protected $scheduledProcessingTime;
+
+    /**
      * @var int
      */
     protected $errorCount;
@@ -312,6 +317,22 @@ class NotificationEntity extends Entity
     public function setProcessing(string $processing): void
     {
         $this->processing = $processing;
+    }
+
+    /**
+     * @return \DateTimeInterface|null
+     */
+    public function getScheduledProcessingTime(): ?\DateTimeInterface
+    {
+        return $this->scheduledProcessingTime;
+    }
+
+    /**
+     * @param \DateTimeInterface $scheduleProcessingTime
+     */
+    public function setScheduledProcessingTime(\DateTimeInterface $scheduleProcessingTime): void
+    {
+        $this->scheduledProcessingTime = $scheduleProcessingTime;
     }
 
     /**
