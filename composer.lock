@@ -4,36 +4,37 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "d0857dc22c2b44a07787d6f4b0c156c6",
+    "content-hash": "849eba4a2e2bbe20cca8d801ea833259",
     "packages": [
         {
             "name": "adyen/php-api-library",
-            "version": "7.1.0",
+            "version": "8.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Adyen/adyen-php-api-library.git",
-                "reference": "e8285bf020b135944e556220b82c6e2c30311c39"
+                "reference": "e733a086830db8ada73a40544137ddf3f98a6c36"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/e8285bf020b135944e556220b82c6e2c30311c39",
-                "reference": "e8285bf020b135944e556220b82c6e2c30311c39",
+                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/e733a086830db8ada73a40544137ddf3f98a6c36",
+                "reference": "e733a086830db8ada73a40544137ddf3f98a6c36",
                 "shasum": ""
             },
             "require": {
                 "ext-ctype": "*",
+                "ext-curl": "*",
+                "ext-json": "*",
                 "ext-mbstring": "*",
                 "ext-openssl": "*",
                 "monolog/monolog": ">=1.16",
                 "php": ">=5.6"
             },
             "require-dev": {
-                "dms/phpunit-arraysubset-asserts": "0.2.0",
-                "ext-json": "*",
+                "dms/phpunit-arraysubset-asserts": "0.2.1",
                 "friendsofphp/php-cs-fixer": "*",
-                "php-coveralls/php-coveralls": "2.2.0",
-                "phpunit/phpunit": "9.2.6",
-                "squizlabs/php_codesniffer": "3.5.5"
+                "php-coveralls/php-coveralls": "2.4.2",
+                "phpunit/phpunit": "9.5.0",
+                "squizlabs/php_codesniffer": "3.5.8"
             },
             "type": "library",
             "autoload": {
@@ -50,7 +51,7 @@
             "keywords": [
                 "adyen"
             ],
-            "time": "2020-08-10T10:57:23+00:00"
+            "time": "2020-12-09T11:46:03+00:00"
         },
         {
             "name": "aws/aws-sdk-php",
@@ -460,16 +461,16 @@
         },
         {
             "name": "composer/spdx-licenses",
-            "version": "1.5.4",
+            "version": "1.5.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/spdx-licenses.git",
-                "reference": "6946f785871e2314c60b4524851f3702ea4f2223"
+                "reference": "de30328a7af8680efdc03e396aad24befd513200"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/spdx-licenses/zipball/6946f785871e2314c60b4524851f3702ea4f2223",
-                "reference": "6946f785871e2314c60b4524851f3702ea4f2223",
+                "url": "https://api.github.com/repos/composer/spdx-licenses/zipball/de30328a7af8680efdc03e396aad24befd513200",
+                "reference": "de30328a7af8680efdc03e396aad24befd513200",
                 "shasum": ""
             },
             "require": {
@@ -481,7 +482,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -516,7 +517,7 @@
                 "spdx",
                 "validator"
             ],
-            "time": "2020-07-15T15:35:07+00:00"
+            "time": "2020-12-03T16:04:16+00:00"
         },
         {
             "name": "composer/xdebug-handler",
@@ -3843,22 +3844,23 @@
         },
         {
             "name": "shopware/core",
-            "version": "6.3.3.1",
+            "version": "6.3.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/shopware/core.git",
-                "reference": "b44fba4d275e3c859ce9765bdb6a911b96f8e8a7"
+                "reference": "735103456fbb129cfa5f4778fcd51e252f7a45bb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/shopware/core/zipball/b44fba4d275e3c859ce9765bdb6a911b96f8e8a7",
-                "reference": "b44fba4d275e3c859ce9765bdb6a911b96f8e8a7",
+                "url": "https://api.github.com/repos/shopware/core/zipball/735103456fbb129cfa5f4778fcd51e252f7a45bb",
+                "reference": "735103456fbb129cfa5f4778fcd51e252f7a45bb",
                 "shasum": ""
             },
             "require": {
                 "aws/aws-sdk-php": "3.133.6",
                 "cocur/slugify": "4.0.0",
                 "composer/composer": "1.10.15",
+                "composer/package-versions-deprecated": "^1.8.0",
                 "composer/semver": "1.7.1",
                 "doctrine/annotations": "1.8.0",
                 "doctrine/dbal": "2.10.1",
@@ -3991,20 +3993,20 @@
                 "shop",
                 "shopware"
             ],
-            "time": "2020-11-05T03:24:19+00:00"
+            "time": "2020-12-07T03:24:26+00:00"
         },
         {
             "name": "shopware/storefront",
-            "version": "6.3.3.1",
+            "version": "6.3.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/shopware/storefront.git",
-                "reference": "94e27ca752acc252bdfea661521716baa5c44928"
+                "reference": "8a7dad9ec2efa9d5b76d146ab6e2c919e3a35ba7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/shopware/storefront/zipball/94e27ca752acc252bdfea661521716baa5c44928",
-                "reference": "94e27ca752acc252bdfea661521716baa5c44928",
+                "url": "https://api.github.com/repos/shopware/storefront/zipball/8a7dad9ec2efa9d5b76d146ab6e2c919e3a35ba7",
+                "reference": "8a7dad9ec2efa9d5b76d146ab6e2c919e3a35ba7",
                 "shasum": ""
             },
             "require": {
@@ -4057,7 +4059,7 @@
                 "MIT"
             ],
             "description": "Storefront for Shopware",
-            "time": "2020-11-05T03:24:19+00:00"
+            "time": "2020-12-07T03:24:27+00:00"
         },
         {
             "name": "sroze/messenger-enqueue-transport",
