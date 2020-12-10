@@ -182,6 +182,9 @@
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\Util\PluginIdProvider"/>
             <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="Symfony\Component\HttpFoundation\Session\SessionInterface"/>
+            <argument type="service" id="Psr\Container\ContainerInterface"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

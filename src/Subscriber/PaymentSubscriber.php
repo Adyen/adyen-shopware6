@@ -29,7 +29,11 @@ use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\OriginKeyService;
 use Adyen\Shopware\Service\PaymentMethodsService;
+use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
+use JsonException;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -43,7 +47,7 @@ use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Adyen\Shopware\Service\PaymentStateDataService;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\RouterInterface;
 
 class PaymentSubscriber implements EventSubscriberInterface
@@ -92,6 +96,21 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $paymentMethodRepository;
 
     /**
+     * @var SessionInterface $session
+     */
+    private $session;
+
+    /**
+     * @var ContainerInterface $container
+     */
+    private $container;
+
+    /**
+     * @var LoggerInterface $logger
+     */
+    private $logger;
+
+    /**
      * PaymentSubscriber constructor.
      *
      * @param PaymentStateDataService $paymentStateDataService
@@ -102,6 +121,7 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @param PaymentMethodsService $paymentMethodsService
      * @param PluginIdProvider $pluginIdProvider
      * @param EntityRepositoryInterface $paymentMethodRepository
+     * @param LoggerInterface $logger
      */
     public function __construct(
         PaymentStateDataService $paymentStateDataService,
@@ -111,7 +131,10 @@ class PaymentSubscriber implements EventSubscriberInterface
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
         PluginIdProvider $pluginIdProvider,
-        EntityRepositoryInterface $paymentMethodRepository
+        EntityRepositoryInterface $paymentMethodRepository,
+        SessionInterface $session,
+        ContainerInterface $container,
+        LoggerInterface $logger
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
         $this->router = $router;
@@ -121,6 +144,10 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->paymentMethodsService = $paymentMethodsService;
         $this->pluginIdProvider = $pluginIdProvider;
         $this->paymentMethodRepository = $paymentMethodRepository;
+        $this->paymentMethodRepository = $paymentMethodRepository;
+        $this->session = $session;
+        $this->container = $container;
+        $this->logger = $logger;
     }
 
     /**
@@ -148,6 +175,12 @@ class PaymentSubscriber implements EventSubscriberInterface
         if ($stateData) {
             //Convert the state data into an array
             $stateDataArray = json_decode($stateData, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->logger->error('Payment state data is an invalid JSON: ' . json_last_error_msg());
+                $this->session->getFlashBag()->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+                return;
+            }
 
             //Payment method selected from the Shopware methods form
             $selectedPaymentMethod = $this->paymentMethodRepository->search(
@@ -314,5 +347,12 @@ class PaymentSubscriber implements EventSubscriberInterface
             }
         }
         return $originalPaymentMethods;
+    }
+
+    private function trans(string $snippet, array $parameters = []): string
+    {
+        return $this->container
+            ->get('translator')
+            ->trans($snippet, $parameters);
     }
 }
