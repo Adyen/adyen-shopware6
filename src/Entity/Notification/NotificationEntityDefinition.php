@@ -31,6 +31,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -74,6 +75,7 @@ class NotificationEntityDefinition extends EntityDefinition
             new StringField('additional_data', 'additionalData'),
             new BoolField('done', 'done'),
             new BoolField('processing', 'processing'),
+            new DateTimeField('scheduled_processing_time', 'scheduledProcessingTime'),
             new IntField('error_count', 'errorCount'),
             new StringField('error_message', 'errorMessage'),
             new CreatedAtField(),
