@@ -31,6 +31,7 @@ export default {
         'sepadirectdebit': 'handler_adyen_sepapaymentmethodhandler',
         'sofort': 'handler_adyen_sofortpaymentmethodhandler',
         'paypal': 'handler_adyen_paypalpaymentmethodhandler',
-        'oneclick': 'handler_adyen_oneclickpaymentmethodhandler'
+        'oneclick': 'handler_adyen_oneclickpaymentmethodhandler',
+        'giropay': 'handler_adyen_giropaypaymentmethodhandler'
     }
 }
