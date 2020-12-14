@@ -72,38 +72,38 @@ class NotificationService
     {
         //TODO Handle the notification as a model object to avoid this?
         $fields = [];
-        if (!empty($notification['pspreference'])) {
-            $fields['pspreference'] = $notification['pspreference'];
+        if (!empty($notification['pspReference'])) {
+            $fields['pspreference'] = $notification['pspReference'];
         }
-        if (!empty($notification['original_reference'])) {
-            $fields['original_reference'] = $notification['original_reference'];
+        if (!empty($notification['originalReference'])) {
+            $fields['originalReference'] = $notification['originalReference'];
         }
-        if (!empty($notification['merchant_reference'])) {
-            $fields['merchant_reference'] = $notification['merchant_reference'];
+        if (!empty($notification['merchantReference'])) {
+            $fields['merchantReference'] = $notification['merchantReference'];
         }
-        if (!empty($notification['event_code'])) {
-            $fields['event_code'] = $notification['event_code'];
+        if (!empty($notification['eventCode'])) {
+            $fields['eventCode'] = $notification['eventCode'];
         }
         if (!empty($notification['success'])) {
-            $fields['success'] = (bool)$notification['success'];
+            $fields['success'] = "true" === $notification['success'];
         }
-        if (!empty($notification['payment_method'])) {
-            $fields['payment_method'] = $notification['payment_method'];
+        if (!empty($notification['paymentMethod'])) {
+            $fields['paymentMethod'] = $notification['paymentMethod'];
         }
-        if (!empty($notification['amount_value'])) {
-            $fields['amount_value'] = $notification['amount_value'];
+        if (!empty($notification['amount']['value'])) {
+            $fields['amountValue'] = (string)$notification['amount']['value'];
         }
-        if (!empty($notification['amount_currency'])) {
-            $fields['amount_currency'] = $notification['amount_currency'];
+        if (!empty($notification['amount']['currency'])) {
+            $fields['amountCurrency'] = $notification['amount']['currency'];
         }
         if (!empty($notification['reason'])) {
             $fields['reason'] = $notification['reason'];
         }
         if (!empty($notification['live'])) {
-            $fields['live'] = $notification['live'];
+            $fields['live'] = "true" === $notification['live'];
         }
-        if (!empty($notification['additional_data'])) {
-            $fields['additional_data'] = $notification['additional_data'];
+        if (!empty($notification['additionalData'])) {
+            $fields['additionalData'] = json_encode($notification['additionalData']);
         }
 
         $this->notificationRepository->create(

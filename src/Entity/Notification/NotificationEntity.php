@@ -34,7 +34,7 @@ class NotificationEntity extends Entity
     /**
      * @var string
      */
-    protected $pspReference;
+    protected $pspreference;
 
     /**
      * @var string
@@ -114,17 +114,17 @@ class NotificationEntity extends Entity
     /**
      * @return string
      */
-    public function getPspReference(): string
+    public function getPspreference(): string
     {
-        return $this->pspReference;
+        return $this->pspreference;
     }
 
     /**
-     * @param string $pspReference
+     * @param string $pspreference
      */
-    public function setPspReference(string $pspReference): void
+    public function setPspreference(string $pspreference): void
     {
-        $this->pspReference = $pspReference;
+        $this->pspreference = $pspreference;
     }
 
     /**

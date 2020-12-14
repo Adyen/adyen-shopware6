@@ -122,6 +122,7 @@ class NotificationReceiverService
 
             // Process each notification item
             foreach ($request['notificationItems'] as $notificationItem) {
+                $notificationItem['NotificationRequestItem']['live'] = $request['live'];
                 if (!$this->processNotificationItem($notificationItem['NotificationRequestItem'])) {
                     throw new ValidationException();
                 }
