@@ -90,6 +90,7 @@ class NotificationReceiverService
     public function process(Request $requestObject)
     {
         $request = $requestObject->request->all();
+        $salesChannelId = $requestObject->attributes->get('sw-sales-channel-id');
         $basicAuthUser = $requestObject->server->get('PHP_AUTH_USER');
         $basicAuthPassword = $requestObject->server->get('PHP_AUTH_PW');
 
@@ -123,7 +124,7 @@ class NotificationReceiverService
             // Process each notification item
             foreach ($request['notificationItems'] as $notificationItem) {
                 $notificationItem['NotificationRequestItem']['live'] = $request['live'];
-                if (!$this->processNotificationItem($notificationItem['NotificationRequestItem'])) {
+                if (!$this->processNotificationItem($notificationItem['NotificationRequestItem'], $salesChannelId)) {
                     throw new ValidationException();
                 }
             }
@@ -250,16 +251,17 @@ class NotificationReceiverService
      * Save notification into the database for cron job to execute notification
      *
      * @param $notificationItem
+     * @param $salesChannelId
      * @return bool
      * @throws AdyenException
      * @throws AuthenticationException
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
      */
-    protected function processNotificationItem($notificationItem)
+    protected function processNotificationItem($notificationItem, $salesChannelId)
     {
         $merchantAccount = $this->configurationService->getMerchantAccount();
-        $hmacKey = $this->configurationService->getHmacKey();
+        $hmacKey = $this->configurationService->getHmacKey($salesChannelId);
 
         // validate the notification
         if ($this->isValidated($notificationItem, $merchantAccount, $hmacKey)) {
@@ -268,12 +270,10 @@ class NotificationReceiverService
                 print_r($notificationItem, true));
 
             // skip report notifications
-            {
             if ($this->isReportNotification($notificationItem['eventCode'])) {
                 $this->logger->info('Notification is a REPORT notification from ' .
                     'Adyen Customer Area');
                 return true;
-            }
             }
 
             // check if notification already exists
