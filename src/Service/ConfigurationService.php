@@ -93,8 +93,8 @@ class ConfigurationService
     }
 
     /**
-     * @param string $salesChannelId
-     * @return array|mixed|null
+     * @param string|null $salesChannelId
+     * @return string
      */
     public function getEnvironment(string $salesChannelId = null)
     {

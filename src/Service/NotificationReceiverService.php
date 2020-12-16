@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Environment;
 use Adyen\Shopware\Exception\AuthenticationException;
 use Adyen\Shopware\Exception\AuthorizationException;
 use Adyen\Shopware\Exception\HMACKeyValidationException;
@@ -94,7 +95,7 @@ class NotificationReceiverService
         $basicAuthUser = $requestObject->server->get('PHP_AUTH_USER');
         $basicAuthPassword = $requestObject->server->get('PHP_AUTH_PW');
 
-        // Validate if notification is not empty
+        // Checks if notification is empty
         if (empty($request)) {
             $message = 'Notification is empty';
             $this->logger->critical($message);
@@ -114,35 +115,16 @@ class NotificationReceiverService
             throw new AuthorizationException();
         }
 
-        // Is the plugin configured to live environment
-        $pluginMode = $this->configurationService->getEnvironment();
+        // Is the plugin configured to live environment?
+        $pluginIsLive = $this->configurationService->getEnvironment() === Environment::LIVE;
 
-        // Validate notification and process the notification items
-        if (!empty($request['live']) && $this->validateNotificationMode($request['live'], $pluginMode)) {
-            $acceptedMessage = '[accepted]';
+        // Is the notification coming from live environment?
+        if(!is_bool($request['live'] ?? null)) {
+            $request['live'] = isset($request['live']) && $request['live'] === 'true';
+        }
 
-            // Process each notification item
-            foreach ($request['notificationItems'] as $notificationItem) {
-                $notificationItem['NotificationRequestItem']['live'] = $request['live'];
-                if (!$this->processNotificationItem($notificationItem['NotificationRequestItem'], $salesChannelId)) {
-                    throw new ValidationException();
-                }
-            }
-
-            // Run the query for checking unprocessed notifications, do this only for test notifications coming from
-            // the Adyen Customer Area
-            if ($isTestNotification) {
-                $unprocessedNotifications = $this->notificationService->getNumberOfUnprocessedNotifications();
-                if ($unprocessedNotifications > 0) {
-                    $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
-                }
-            }
-            $this->logger->info('The result is accepted');
-
-            return new JsonResponse(
-                $this->returnAccepted($acceptedMessage)
-            );
-        } else {
+        // Checks if notification mode and the store mode configuration matches
+        if ($request['live'] !== $pluginIsLive) {
             $message = 'Mismatch between Live/Test modes of Shopware store and the Adyen platform';
             $this->logger->critical($message);
             return new JsonResponse(
@@ -152,6 +134,30 @@ class NotificationReceiverService
                 )
             );
         }
+
+        $acceptedMessage = '[accepted]';
+
+        // Process each notification item
+        foreach ($request['notificationItems'] as $notificationItem) {
+            $notificationItem['NotificationRequestItem']['live'] = $request['live'];
+            if (!$this->processNotificationItem($notificationItem['NotificationRequestItem'], $salesChannelId)) {
+                throw new ValidationException();
+            }
+        }
+
+        // Run the query for checking unprocessed notifications, do this only for test notifications coming from
+        // the Adyen Customer Area
+        if ($isTestNotification) {
+            $unprocessedNotifications = $this->notificationService->getNumberOfUnprocessedNotifications();
+            if ($unprocessedNotifications > 0) {
+                $acceptedMessage .= "\nYou have $unprocessedNotifications unprocessed notifications.";
+            }
+        }
+        $this->logger->info('The result is accepted');
+
+        return new JsonResponse(
+            $this->returnAccepted($acceptedMessage)
+        );
     }
 
     /**
@@ -166,7 +172,7 @@ class NotificationReceiverService
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
      */
-    protected function isValidated($notification, $merchantAccount, $hmacKey)
+    private function isValidated($notification, $merchantAccount, $hmacKey)
     {
         // Check if the notification is a test notification
         $isTestNotification = $this->isTestNotificationPspReference($notification['pspReference']);
@@ -258,7 +264,7 @@ class NotificationReceiverService
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
      */
-    protected function processNotificationItem($notificationItem, $salesChannelId)
+    private function processNotificationItem($notificationItem, $salesChannelId)
     {
         $merchantAccount = $this->configurationService->getMerchantAccount();
         $hmacKey = $this->configurationService->getHmacKey($salesChannelId);
@@ -292,31 +298,12 @@ class NotificationReceiverService
     }
 
     /**
-     * Checks if notification mode and the store mode configuration matches
-     *
-     * @param string|bool $notificationMode
-     * @param bool $pluginMode
-     * @return bool
-     */
-    protected function validateNotificationMode($notificationMode, $pluginMode)
-    {
-        // Notification mode can be a string or a boolean
-        if (($pluginMode && ($notificationMode == 'false' || $notificationMode == false)) ||
-            (!$pluginMode && ($notificationMode == 'true' || $notificationMode == true))
-        ) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * Checks if the notification object was sent for testing purposes from the CA
      *
-     * @param $notification
+     * @param array $notification
      * @return bool
      */
-    private function isTestNotification($notification)
+    private function isTestNotification(array $notification)
     {
         // Get notification item from notification
         if (empty($notification['notificationItems'][0])) {
@@ -333,10 +320,10 @@ class NotificationReceiverService
     /**
      * If notification is a test notification from Adyen Customer Area
      *
-     * @param $pspReference
+     * @param string $pspReference
      * @return bool
      */
-    protected function isTestNotificationPspReference($pspReference)
+    private function isTestNotificationPspReference(string $pspReference)
     {
         if (strpos(strtolower($pspReference), 'test_') !== false
             || strpos(strtolower($pspReference), 'testnotification_') !== false
@@ -350,10 +337,10 @@ class NotificationReceiverService
     /**
      * Check if notification is a report notification
      *
-     * @param $eventCode
+     * @param string $eventCode
      * @return bool
      */
-    protected function isReportNotification($eventCode)
+    private function isReportNotification(string $eventCode)
     {
         if (strpos($eventCode, 'REPORT_') !== false) {
             return true;
