@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use DateTimeInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -115,13 +114,15 @@ class NotificationService
         );
     }
 
-    public function scheduleNotification(NotificationEntity $notification, DateTimeInterface $scheduledProcessingTime)
+    public function setNotificationSchedule(string $notificationId, DateTimeInterface $scheduledProcessingTime)
     {
-        $fields = $notification->getVars();
-        $fields['scheduledProcessingTime'] = $scheduledProcessingTime;
-
         $this->notificationRepository->update(
-            [$fields],
+            [
+                [
+                    'id' => $notificationId,
+                    'scheduledProcessingTime' => $scheduledProcessingTime
+                ]
+            ],
             Context::createDefaultContext()
         );
     }
