@@ -62,7 +62,7 @@ class NotificationEntityDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
-            new StringField('pspreference', 'pspReference'),
+            new StringField('pspreference', 'pspreference'),
             new StringField('original_reference', 'originalReference'),
             new StringField('merchant_reference', 'merchantReference'),
             new StringField('event_code', 'eventCode'),
