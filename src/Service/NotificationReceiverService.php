@@ -115,10 +115,11 @@ class NotificationReceiverService
         }
 
         $acceptedMessage = '[accepted]';
+        $isLive = isset($request['live']) && $request['live'] === 'true';
 
         // Process each notification item
         foreach ($request['notificationItems'] as $notificationItem) {
-            $notificationItem['NotificationRequestItem']['live'] = isset($request['live']) && $request['live'] === 'true';
+            $notificationItem['NotificationRequestItem']['live'] = $isLive;
             if (!$this->processNotificationItem($notificationItem['NotificationRequestItem'], $salesChannelId)) {
                 throw new ValidationException();
             }
