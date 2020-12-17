@@ -134,8 +134,7 @@ class NotificationService
     public function getScheduledUnprocessedNotifications(): EntityCollection
     {
         return $this->notificationRepository->search(
-            (new Criteria())
-                ->addFilter(
+            (new Criteria())->addFilter(
                 new EqualsFilter('done', 0),
                 new EqualsFilter('processing', 0),
                 new NotFilter(
@@ -150,7 +149,8 @@ class NotificationService
                     ]
                 )
             )
-            ->addSorting(new FieldSorting('scheduledProcessingTime', FieldSorting::ASCENDING)),
+            ->addSorting(new FieldSorting('scheduledProcessingTime', FieldSorting::ASCENDING))
+            ->setLimit(100),
             Context::createDefaultContext()
         )->getEntities();
     }
