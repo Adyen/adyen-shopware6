@@ -119,7 +119,7 @@ class NotificationReceiverService
         $pluginIsLive = $this->configurationService->getEnvironment() === Environment::LIVE;
 
         // Is the notification coming from live environment?
-        if(!is_bool($request['live'] ?? null)) {
+        if (!is_bool($request['live'] ?? null)) {
             $request['live'] = isset($request['live']) && $request['live'] === 'true';
         }
 
