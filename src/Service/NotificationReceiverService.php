@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Environment;
 use Adyen\Shopware\Exception\AuthenticationException;
 use Adyen\Shopware\Exception\AuthorizationException;
 use Adyen\Shopware\Exception\HMACKeyValidationException;
@@ -115,31 +114,11 @@ class NotificationReceiverService
             throw new AuthorizationException();
         }
 
-        // Is the plugin configured to live environment?
-        $pluginIsLive = $this->configurationService->getEnvironment() === Environment::LIVE;
-
-        // Is the notification coming from live environment?
-        if (!is_bool($request['live'] ?? null)) {
-            $request['live'] = isset($request['live']) && $request['live'] === 'true';
-        }
-
-        // Checks if notification mode and the store mode configuration matches
-        if ($request['live'] !== $pluginIsLive) {
-            $message = 'Mismatch between Live/Test modes of Shopware store and the Adyen platform';
-            $this->logger->critical($message);
-            return new JsonResponse(
-                array(
-                    'success' => false,
-                    'message' => $message
-                )
-            );
-        }
-
         $acceptedMessage = '[accepted]';
 
         // Process each notification item
         foreach ($request['notificationItems'] as $notificationItem) {
-            $notificationItem['NotificationRequestItem']['live'] = $request['live'];
+            $notificationItem['NotificationRequestItem']['live'] = isset($request['live']) && $request['live'] === 'true';
             if (!$this->processNotificationItem($notificationItem['NotificationRequestItem'], $salesChannelId)) {
                 throw new ValidationException();
             }
