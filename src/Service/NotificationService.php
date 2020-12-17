@@ -26,9 +26,13 @@ namespace Adyen\Shopware\Service;
 
 use DateTimeInterface;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class NotificationService
 {
@@ -114,7 +118,7 @@ class NotificationService
         );
     }
 
-    public function setNotificationSchedule(string $notificationId, DateTimeInterface $scheduledProcessingTime)
+    public function setNotificationSchedule(string $notificationId, DateTimeInterface $scheduledProcessingTime): void
     {
         $this->notificationRepository->update(
             [
@@ -125,5 +129,29 @@ class NotificationService
             ],
             Context::createDefaultContext()
         );
+    }
+
+    public function getScheduledUnprocessedNotifications(): EntityCollection
+    {
+        return $this->notificationRepository->search(
+            (new Criteria())
+                ->addFilter(
+                new EqualsFilter('done', 0),
+                new EqualsFilter('processing', 0),
+                new NotFilter(
+                    NotFilter::CONNECTION_AND,
+                    [ new EqualsFilter('scheduledProcessingTime', null) ]
+                ),
+                new RangeFilter(
+                    'scheduledProcessingTime',
+                    [
+                        RangeFilter::GTE => (new \DateTime())->sub(new \DateInterval('P1D')),
+                        RangeFilter::LT => (new \DateTime())->sub(new \DateInterval('PT1M'))
+                    ]
+                )
+            )
+            ->addSorting(new FieldSorting('scheduledProcessingTime', FieldSorting::ASCENDING)),
+            Context::createDefaultContext()
+        )->getEntities();
     }
 }
