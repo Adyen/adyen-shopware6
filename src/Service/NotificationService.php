@@ -78,37 +78,37 @@ class NotificationService
     {
         //TODO Handle the notification as a model object to avoid this?
         $fields = [];
-        if (array_key_exists('pspReference', $notification)) {
+        if (isset($notification['pspReference'])) {
             $fields['pspreference'] = $notification['pspReference'];
         }
-        if (array_key_exists('originalReference', $notification)) {
+        if (isset($notification['originalReference'])) {
             $fields['originalReference'] = $notification['originalReference'];
         }
-        if (array_key_exists('merchantReference', $notification)) {
+        if (isset($notification['merchantReference'])) {
             $fields['merchantReference'] = $notification['merchantReference'];
         }
-        if (array_key_exists('eventCode', $notification)) {
+        if (isset($notification['eventCode'])) {
             $fields['eventCode'] = $notification['eventCode'];
         }
-        if (array_key_exists('success', $notification)) {
+        if (isset($notification['success'])) {
             $fields['success'] = "true" === $notification['success'];
         }
-        if (array_key_exists('paymentMethod', $notification)) {
+        if (isset($notification['paymentMethod'])) {
             $fields['paymentMethod'] = $notification['paymentMethod'];
         }
-        if (array_key_exists('value', $notification['amount'] ?? [])) {
+        if (isset($notification['amount']['value'])) {
             $fields['amountValue'] = (string) $notification['amount']['value'];
         }
-        if (array_key_exists('currency', $notification['amount'] ?? [])) {
+        if (isset($notification['amount']['currency'])) {
             $fields['amountCurrency'] = $notification['amount']['currency'];
         }
-        if (array_key_exists('reason', $notification)) {
+        if (isset($notification['reason'])) {
             $fields['reason'] = $notification['reason'];
         }
-        if (array_key_exists('live', $notification)) {
+        if (isset($notification['live'])) {
             $fields['live'] = $notification['live'];
         }
-        if (array_key_exists('additionalData', $notification)) {
+        if (isset($notification['additionalData'])) {
             $fields['additionalData'] = json_encode($notification['additionalData']);
         }
 
