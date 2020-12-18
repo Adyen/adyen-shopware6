@@ -55,17 +55,17 @@ class NotificationService
     public function isDuplicateNotification(array $notification): bool
     {
         $filters = [];
-        if (!empty($notification['pspreference'])) {
-            $filters[] = new EqualsFilter('pspReference', $notification['pspreference']);
+        if (!empty($notification['pspReference'])) {
+            $filters[] = new EqualsFilter('pspreference', $notification['pspReference']);
         }
         if (!empty($notification['success'])) {
             $filters[] = new EqualsFilter('success', $notification['success']);
         }
-        if (!empty($notification['event_code'])) {
-            $filters[] = new EqualsFilter('eventCode', $notification['event_code']);
+        if (!empty($notification['eventCode'])) {
+            $filters[] = new EqualsFilter('eventCode', $notification['eventCode']);
         }
-        if (!empty($notification['original_reference'])) {
-            $filters[] = new EqualsFilter('originalReference', $notification['original_reference']);
+        if (!empty($notification['originalReference'])) {
+            $filters[] = new EqualsFilter('originalReference', $notification['originalReference']);
         }
 
         return $this->notificationRepository->search(
@@ -133,6 +133,8 @@ class NotificationService
 
     public function getScheduledUnprocessedNotifications(): EntityCollection
     {
+        $oneDayAgo = (new \DateTime())->sub(new \DateInterval('P1D'));
+        $oneMinuteAgo = (new \DateTime())->sub(new \DateInterval('PT1M'));
         return $this->notificationRepository->search(
             (new Criteria())->addFilter(
                 new EqualsFilter('done', 0),
@@ -144,8 +146,8 @@ class NotificationService
                 new RangeFilter(
                     'scheduledProcessingTime',
                     [
-                        RangeFilter::GTE => (new \DateTime())->sub(new \DateInterval('P1D')),
-                        RangeFilter::LT => (new \DateTime())->sub(new \DateInterval('PT1M'))
+                        RangeFilter::GTE => $oneDayAgo->format('Y-m-d H:i:s'),
+                        RangeFilter::LT => $oneMinuteAgo->format('Y-m-d H:i:s')
                     ]
                 )
             )
