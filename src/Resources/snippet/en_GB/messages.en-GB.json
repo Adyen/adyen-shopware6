@@ -1,6 +1,7 @@
 {
     "adyen": {
         "updateDetails": "Update payment details",
-        "loading": "Loading..."
+        "loading": "Loading...",
+        "paymentMethodSelectionError": "Unfortunately, something went wrong saving the payment method selection. Please select a different payment method."
     }
 }
