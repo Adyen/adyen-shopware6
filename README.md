@@ -1,6 +1,3 @@
-**This plugin is currently under development. 
-Please do not use this project until the first official release!**
-
 # Adyen Payment plugin for Shopware 6
 Use Adyen's plugin for Shopware 6 to offer frictionless payments online, in-app, and in-store.
 
@@ -18,6 +15,7 @@ This plugin supports Shopware 6. For Shopware 5 support please see our Shopware 
 ## Documentation
 Please find the relevant documentation for
  - [How to start with Adyen](https://www.adyen.com/get-started)
+ - [Adyen Plugin for Shopware 6](https://docs.adyen.com/plugins/shopware-6)
  - [Adyen PHP API Library](https://docs.adyen.com/development-resources/libraries#php)
 
 ## Support
