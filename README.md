@@ -27,6 +27,17 @@ contact our [support team](https://support.adyen.com/hc/en-us/requests/new?ticke
 ## Integration
 The plugin integrates card component (Secured Fields) using Adyen Checkout for all card payments.
 
+### Supported payment methods
+ - Credit and debit cards (non 3D secure, 3D secure 1, 3D secure 2 native)
+ - Stored card payment methods (One click payment methods)
+ - iDeal
+ - Klarna Pay Later
+ - Klarna Pay Over Time
+ - Klarna Pay Now
+ - PayPal (redirect)
+ - SEPA Direct Debit
+ - Sofort
+
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
 <a href="https://github.com/Adyen/adyen-php-api-library" target="_blank">This library can be found here</a>
