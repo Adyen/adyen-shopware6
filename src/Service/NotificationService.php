@@ -131,6 +131,20 @@ class NotificationService
         );
     }
 
+    public function getUnscheduledNotifications(): EntityCollection
+    {
+        return $this->notificationRepository->search(
+            (new Criteria())->addFilter(
+                new EqualsFilter('done', 0),
+                new EqualsFilter('processing', 0),
+                new EqualsFilter('scheduledProcessingTime', null)
+            )
+            ->addSorting(new FieldSorting('createdAt'))
+            ->setLimit(100),
+            Context::createDefaultContext()
+        )->getEntities();
+    }
+
     public function getScheduledUnprocessedNotifications(): EntityCollection
     {
         $oneDayAgo = (new \DateTime())->sub(new \DateInterval('P1D'));
