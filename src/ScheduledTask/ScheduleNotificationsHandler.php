@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\ScheduledTask;
 
-use Adyen\Service\Notification;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\NotificationService;
 use Psr\Log\LoggerAwareTrait;
@@ -64,15 +63,16 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
 
         foreach ($unscheduledNotifications->getElements() as $notification) {
             /** @var NotificationEntity $notification */
+
             $scheduledProcessingTime = $notification->getCreatedAt();
             switch ($notification->getEventCode()) {
                 case 'AUTHORISATION':
                     if (!$notification->isSuccess()) {
-                        $scheduledProcessingTime->add(new \DateInterval('PT30M'));
+                        $scheduledProcessingTime = $scheduledProcessingTime->add(new \DateInterval('PT30M'));
                     }
                     break;
                 case 'OFFER_CLOSED':
-                    $scheduledProcessingTime->add(new \DateInterval('PT30M'));
+                    $scheduledProcessingTime = $scheduledProcessingTime->add(new \DateInterval('PT30M'));
                     break;
                 default:
                     break;

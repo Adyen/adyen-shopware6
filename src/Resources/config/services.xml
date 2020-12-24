@@ -190,6 +190,7 @@
         </service>
         <service id="Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler">
             <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="Adyen\Shopware\Service\NotificationService" />
             <tag name="messenger.message_handler" />
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
