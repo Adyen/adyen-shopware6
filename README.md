@@ -1,6 +1,3 @@
-**This plugin is currently under development. 
-Please do not use this project until the first official release!**
-
 # Adyen Payment plugin for Shopware 6
 Use Adyen's plugin for Shopware 6 to offer frictionless payments online, in-app, and in-store.
 
@@ -18,6 +15,7 @@ This plugin supports Shopware 6. For Shopware 5 support please see our Shopware 
 ## Documentation
 Please find the relevant documentation for
  - [How to start with Adyen](https://www.adyen.com/get-started)
+ - [Adyen Plugin for Shopware 6](https://docs.adyen.com/plugins/shopware-6)
  - [Adyen PHP API Library](https://docs.adyen.com/development-resources/libraries#php)
 
 ## Support
@@ -28,6 +26,18 @@ contact our [support team](https://support.adyen.com/hc/en-us/requests/new?ticke
 
 ## Integration
 The plugin integrates card component (Secured Fields) using Adyen Checkout for all card payments.
+
+### Supported payment methods
+ - Credit and debit cards (non 3D secure, 3D secure 1, 3D secure 2 native)
+ - Stored card payment methods (One click payment methods)
+ - GiroPay
+ - iDeal
+ - Klarna Pay Later
+ - Klarna Pay Over Time
+ - Klarna Pay Now
+ - PayPal (redirect)
+ - SEPA Direct Debit
+ - Sofort
 
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
