@@ -24,12 +24,27 @@
 
 namespace Adyen\Shopware\ScheduledTask;
 
+use Adyen\Service\Notification;
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Service\NotificationService;
 use Psr\Log\LoggerAwareTrait;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 
 class ScheduleNotificationsHandler extends ScheduledTaskHandler
 {
     use LoggerAwareTrait;
+
+    /**
+     * @var NotificationService
+     */
+    private $notificationService;
+
+    public function __construct(EntityRepositoryInterface $scheduledTaskRepository, NotificationService $notificationService)
+    {
+        parent::__construct($scheduledTaskRepository);
+        $this->notificationService = $notificationService;
+    }
 
     public static function getHandledMessages(): iterable
     {
@@ -38,7 +53,31 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
 
     public function run(): void
     {
-        // @todo do the business
-        $this->logger->debug(ScheduleNotifications::class . ' tasks are running.');
+        $unscheduledNotifications = $this->notificationService->getUnscheduledNotifications();
+
+        if ($unscheduledNotifications->count() == 0) {
+            $this->logger->debug("No unscheduled notifications found.");
+            return;
+        }
+
+        foreach ($unscheduledNotifications->getElements() as $notification) {
+            /** @var NotificationEntity $notification */
+            $scheduledProcessingTime = $notification->getCreatedAt();
+            switch ($notification->getEventCode()) {
+                case 'AUTHORISATION':
+                    if (!$notification->isSuccess())
+                    {
+                        $scheduledProcessingTime->add(new \DateInterval('PT30M'));
+                    }
+                    break;
+                case 'OFFER_CLOSED':
+                    $scheduledProcessingTime->add(new \DateInterval('PT30M'));
+                    break;
+                default:
+                    break;
+            }
+
+            $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
+        }
     }
 }
