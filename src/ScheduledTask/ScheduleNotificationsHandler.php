@@ -40,7 +40,10 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
      */
     private $notificationService;
 
-    public function __construct(EntityRepositoryInterface $scheduledTaskRepository, NotificationService $notificationService)
+    public function __construct(
+        EntityRepositoryInterface $scheduledTaskRepository,
+        NotificationService $notificationService
+    )
     {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
@@ -65,8 +68,7 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
             $scheduledProcessingTime = $notification->getCreatedAt();
             switch ($notification->getEventCode()) {
                 case 'AUTHORISATION':
-                    if (!$notification->isSuccess())
-                    {
+                    if (!$notification->isSuccess()) {
                         $scheduledProcessingTime->add(new \DateInterval('PT30M'));
                     }
                     break;
