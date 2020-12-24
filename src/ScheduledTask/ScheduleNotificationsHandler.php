@@ -43,8 +43,7 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
     public function __construct(
         EntityRepositoryInterface $scheduledTaskRepository,
         NotificationService $notificationService
-    )
-    {
+    ) {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
     }
