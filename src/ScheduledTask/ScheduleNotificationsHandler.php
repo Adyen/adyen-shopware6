@@ -80,5 +80,6 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
 
             $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
         }
+        $this->logger->info('Scheduled ' . $unscheduledNotifications->count() . ' notifications.');
     }
 }
