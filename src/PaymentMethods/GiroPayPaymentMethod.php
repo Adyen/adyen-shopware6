@@ -85,7 +85,7 @@ class GiroPayPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/giropay.png';
+        return 'giropay.png';
     }
 
     /**

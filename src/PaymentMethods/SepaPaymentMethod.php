@@ -85,7 +85,7 @@ class SepaPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/sepa.png';
+        return 'sepa.png';
     }
 
     /**

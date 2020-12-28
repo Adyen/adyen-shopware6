@@ -85,7 +85,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/ideal.png';
+        return 'ideal.png';
     }
 
     /**
