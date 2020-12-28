@@ -62,7 +62,7 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
     public function run(): void
     {
         $environment = $this->configurationService->getEnvironment();
-        $logosDirectory = __DIR__ . '/../Resources/public/logos/';
+        $logosDirectory = __DIR__ . '/../Resources/public/images/logos/';
 
         foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $logo = (new $paymentMethod())->getLogo();
