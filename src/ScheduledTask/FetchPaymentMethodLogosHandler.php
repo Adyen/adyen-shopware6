@@ -26,6 +26,7 @@ namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\Service\ConfigurationService;
+use Exception;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
@@ -72,7 +73,12 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 $logo
             );
             $target = $logosDirectory . $logo;
-            $this->filesystem->copy($source, $target);
+            try {
+                $this->filesystem->copy($source, $target);
+            } catch (Exception $exception) {
+                $this->logger->notice("Unable to update {$logo}: {$exception->getMessage()}");
+                continue;
+            }
         }
     }
 }
