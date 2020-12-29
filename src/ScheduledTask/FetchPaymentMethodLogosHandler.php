@@ -72,11 +72,10 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 $environment,
                 $logo
             );
-            $target = $logosDirectory . $logo;
             try {
-                $this->filesystem->copy($source, $target);
+                $this->filesystem->copy($source, $logosDirectory . $logo);
             } catch (Exception $exception) {
-                $this->logger->notice("Unable to update {$logo}: {$exception->getMessage()}");
+                $this->logger->notice(sprintf("Failed to update %s: %s", $logo, $exception->getMessage()));
                 continue;
             }
         }
