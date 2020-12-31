@@ -24,13 +24,19 @@
 
 namespace Adyen\Shopware\ScheduledTask;
 
+use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
 use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\Service\ConfigurationService;
 use Exception;
 use Psr\Log\LoggerAwareTrait;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopware\Core\Content\Media\MediaService;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
-use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\Request;
 
 class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
 {
@@ -41,18 +47,30 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
      */
     private $configurationService;
     /**
-     * @var Filesystem
+     * @var MediaService
      */
-    private $filesystem;
+    private $mediaService;
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $paymentMethodRepository;
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $mediaRepository;
 
     public function __construct(
         EntityRepositoryInterface $scheduledTaskRepository,
         ConfigurationService $configurationService,
-        Filesystem $filesystem
+        MediaService $mediaService,
+        EntityRepositoryInterface $paymentMethodRepository,
+        EntityRepositoryInterface $mediaRepository
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->configurationService = $configurationService;
-        $this->filesystem = $filesystem;
+        $this->mediaService = $mediaService;
+        $this->paymentMethodRepository = $paymentMethodRepository;
+        $this->mediaRepository = $mediaRepository;
     }
 
     public static function getHandledMessages(): iterable
@@ -62,22 +80,65 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
 
     public function run(): void
     {
+        $context = Context::createDefaultContext();
         $environment = $this->configurationService->getEnvironment();
-        $logosDirectory = __DIR__ . '/../Resources/public/images/logos/';
+        foreach (PaymentMethods::PAYMENT_METHODS as $identifier) {
+            /** @var PaymentMethodInterface $paymentMethod */
+            $paymentMethod = new $identifier();
 
-        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
-            $logo = (new $paymentMethod())->getLogo();
-            $source = sprintf(
-                'https://checkoutshopper-%s.adyen.com/checkoutshopper/images/logos/medium/%s',
-                $environment,
-                $logo
+            // Look up corresponding payment_method entity.
+            $result = $this->paymentMethodRepository->search(
+                (new Criteria())->addFilter(new EqualsFilter(
+                    'handlerIdentifier',
+                    $paymentMethod->getPaymentHandler()
+                )),
+                $context
             );
-            try {
-                $this->filesystem->copy($source, $logosDirectory . $logo);
-            } catch (Exception $exception) {
-                $this->logger->notice(sprintf("Failed to update %s: %s", $logo, $exception->getMessage()));
+            if ($result->getTotal() === 0) {
                 continue;
             }
+            /** @var PaymentMethodEntity $paymentMethodEntity */
+            $paymentMethodEntity = $result->getEntities()->first();
+
+            // Delete old associated media.
+            $mediaId = $paymentMethodEntity->getMediaId();
+            if ($mediaId) {
+                $this->mediaRepository->delete([['id' => $mediaId]], $context);
+            }
+
+            $this->fetchAndAttachLogo($paymentMethod, $paymentMethodEntity->getId(), $context, $environment);
         }
+    }
+
+    private function fetchAndAttachLogo (
+        PaymentMethodInterface $paymentMethod,
+        string $paymentMethodEntityId,
+        Context $context,
+        string $environment
+    ): void {
+        $source = sprintf(
+            'https://checkoutshopper-%s.adyen.com/checkoutshopper/images/logos/medium/%s',
+            $environment,
+            $paymentMethod->getLogo()
+        );
+        $request = new Request();
+        $request->query->set('extension', 'png');
+        $request->request->set('url', $source);
+        $request->headers->set('content-type', 'application/json');
+
+        $media = $this->mediaService->fetchFile($request);
+        $mediaId = $this->mediaService->createMediaInFolder('adyen', $context, false);
+        $this->mediaService->saveMediaFile(
+            $media,
+            strtolower($paymentMethod->getGatewayCode()),
+            $context, 'adyen', $mediaId
+        );
+
+        $this->paymentMethodRepository->update([
+            [
+                'id' => $paymentMethodEntityId,
+                'mediaId' => $mediaId
+            ]
+        ], $context);
     }
 }

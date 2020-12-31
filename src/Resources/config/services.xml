@@ -181,7 +181,9 @@
         <service id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler">
             <argument type="service" id="scheduled_task.repository" />
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Symfony\Component\Filesystem\Filesystem"/>
+            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="media.repository"/>
             <tag name="messenger.message_handler" />
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_cron"/>
