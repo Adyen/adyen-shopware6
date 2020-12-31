@@ -110,7 +110,7 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         }
     }
 
-    private function fetchAndAttachLogo (
+    private function fetchAndAttachLogo(
         PaymentMethodInterface $paymentMethod,
         string $paymentMethodEntityId,
         Context $context,
@@ -131,7 +131,9 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         $this->mediaService->saveMediaFile(
             $media,
             strtolower($paymentMethod->getGatewayCode()),
-            $context, 'adyen', $mediaId
+            $context,
+            'adyen',
+            $mediaId
         );
 
         $this->paymentMethodRepository->update([

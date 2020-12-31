@@ -29,15 +29,27 @@ class Migration1609373668AdyenMediaFolder extends MigrationStep
                 'createdAt' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)
             ]);
             $connection->executeUpdate("
-                INSERT INTO `media_folder_configuration` (`id`, `thumbnail_quality`, `create_thumbnails`, `private`, created_at)
-                VALUES (:id, 80, 1, 0, :createdAt)
+                INSERT INTO `media_folder_configuration`
+                    (`id`, `thumbnail_quality`, `create_thumbnails`, `private`, created_at)
+                VALUES
+                    (:id, 80, 1, 0, :createdAt)
             ", [
                 'id' => $configurationId,
                 'createdAt' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)
             ]);
             $connection->executeUpdate('
-                INSERT into `media_folder` (`id`, `name`, `default_folder_id`, `media_folder_configuration_id`, `use_parent_configuration`, `child_count`, `created_at`)
-                VALUES (:id, :folderName, :defaultFolderId, :configurationId, 0, 0, :createdAt)
+                INSERT INTO `media_folder`
+                    (
+                        `id`,
+                        `name`,
+                        `default_folder_id`,
+                        `media_folder_configuration_id`,
+                        `use_parent_configuration`,
+                        `child_count`,
+                        `created_at`
+                    )
+                VALUES
+                    (:id, :folderName, :defaultFolderId, :configurationId, 0, 0, :createdAt)
             ', [
                 'id' => Uuid::randomBytes(),
                 'folderName' => 'Adyen Media',
