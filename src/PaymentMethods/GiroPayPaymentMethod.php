@@ -45,7 +45,7 @@ class GiroPayPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return ''; //TODO
+        return 'German online banking payment method';
     }
 
     /**
