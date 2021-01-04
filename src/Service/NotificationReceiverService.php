@@ -104,14 +104,12 @@ class NotificationReceiverService
         $firstNotificationItem = $request['notificationItems'][0]['NotificationRequestItem'];
 
         // Authorize notification
-        if (
-            !$this->notificationReceiver->isAuthenticated(
+        if (!$this->notificationReceiver->isAuthenticated(
                 $firstNotificationItem,
                 $this->configurationService->getMerchantAccount(),
                 $basicAuthUser,
                 $basicAuthPassword
-            )
-        ) {
+        )) {
             throw new AuthenticationException();
         }
 
