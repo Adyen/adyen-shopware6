@@ -26,7 +26,6 @@ namespace Adyen\Shopware\Storefront\Controller;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Exception\AuthenticationException;
-use Adyen\Shopware\Exception\AuthorizationException;
 use Adyen\Shopware\Exception\HMACKeyValidationException;
 use Adyen\Shopware\Exception\MerchantAccountCodeException;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -59,7 +58,6 @@ class NotificationReceiverController extends StorefrontController
      * @return JsonResponse
      * @throws AdyenException
      * @throws AuthenticationException
-     * @throws AuthorizationException
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
      */
