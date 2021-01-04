@@ -179,7 +179,7 @@
             <tag name="shopware.scheduled.task" />
         </service>
         <service id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler">
-            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="scheduled_task.repository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
             <argument type="service" id="payment_method.repository"/>
@@ -189,6 +189,12 @@
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_cron"/>
             </call>
+        </service>
+
+        <!--Commands-->
+        <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
+            <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
+            <tag name="console.command"/>
         </service>
 
         <!--Event subscribers-->

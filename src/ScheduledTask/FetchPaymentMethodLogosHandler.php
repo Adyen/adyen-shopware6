@@ -107,13 +107,13 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 $context
             );
 
-            // Skip if the payment method is not registered in ShopWare
+            // Skip if the payment method is not registered in ShopWare.
             if ($result->getTotal() === 0) {
                 continue;
             }
 
-            // Skip if the remote file is temporarily unavailable.
             $media = $this->fetchLogoFromUrl($paymentMethod, $environment);
+            // Skip if the remote file is temporarily unavailable.
             if (!$media) {
                 continue;
             }
