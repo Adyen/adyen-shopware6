@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\IdealPaymentMethodHandler;
+use Adyen\Shopware\Handlers\GiroPayPaymentMethodHandler;
 
-class IdealPaymentMethod implements PaymentMethodInterface
+class GiroPayPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'iDeal';
+        return 'GiroPay';
     }
 
     /**
@@ -45,7 +45,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Online banking payments';
+        return 'German online banking payment method';
     }
 
     /**
@@ -55,7 +55,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return IdealPaymentMethodHandler::class;
+        return GiroPayPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_IDEAL';
+        return 'ADYEN_GIROPAY';
     }
 
     /**
@@ -85,7 +85,7 @@ class IdealPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'ideal.png';
+        return 'giropay.png';
     }
 
     /**

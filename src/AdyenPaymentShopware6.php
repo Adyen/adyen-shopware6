@@ -117,6 +117,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($updateContext->getCurrentPluginVersion(), '1.2.0', '<')) {
             $this->updateTo120($updateContext);
         }
+
+        if (\version_compare($updateContext->getCurrentPluginVersion(), '1.4.0', '<')) {
+            $this->updateTo140($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
@@ -200,6 +204,20 @@ class AdyenPaymentShopware6 extends Plugin
             true,
             $updateContext->getContext(),
             new \Adyen\Shopware\PaymentMethods\OneClickPaymentMethod
+        );
+    }
+
+    private function updateTo140(UpdateContext $updateContext): void
+    {
+        //Version 1.4.0 introduces giropay
+        $this->addPaymentMethod(
+            new \Adyen\Shopware\PaymentMethods\GiroPayPaymentMethod,
+            $updateContext->getContext()
+        );
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            new \Adyen\Shopware\PaymentMethods\GiroPayPaymentMethod
         );
     }
 }

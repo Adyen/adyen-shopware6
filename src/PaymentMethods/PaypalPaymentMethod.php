@@ -85,7 +85,7 @@ class PaypalPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/paypal.png';
+        return 'paypal.png';
     }
 
     /**

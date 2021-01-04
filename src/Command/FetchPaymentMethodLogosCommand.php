@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -22,20 +22,36 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\PaymentMethods;
+namespace Adyen\Shopware\Command;
 
-class PaymentMethods
+use Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+class FetchPaymentMethodLogosCommand extends Command
 {
-    const PAYMENT_METHODS = [
-        CardsPaymentMethod::class,
-        IdealPaymentMethod::class,
-        KlarnaAccountPaymentMethod::class,
-        KlarnaPayNowPaymentMethod::class,
-        KlarnaPayLaterPaymentMethod::class,
-        SepaPaymentMethod::class,
-        SofortPaymentMethod::class,
-        PaypalPaymentMethod::class,
-        OneClickPaymentMethod::class,
-        GiroPayPaymentMethod::class
-    ];
+    protected static $defaultName = 'adyen:fetch-logos';
+
+    /**
+     * @var FetchPaymentMethodLogosHandler
+     */
+    protected $handler;
+
+    public function __construct(FetchPaymentMethodLogosHandler $handler)
+    {
+        parent::__construct();
+        $this->handler = $handler;
+    }
+
+    protected function configure()
+    {
+        $this->setDescription('Fetch and update logos for Adyen payment methods.');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $this->handler->run();
+        $output->writeln('All available logos have been updated.');
+    }
 }

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -22,20 +22,19 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\PaymentMethods;
+namespace Adyen\Shopware\ScheduledTask;
 
-class PaymentMethods
+use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTask;
+
+class FetchPaymentMethodLogos extends ScheduledTask
 {
-    const PAYMENT_METHODS = [
-        CardsPaymentMethod::class,
-        IdealPaymentMethod::class,
-        KlarnaAccountPaymentMethod::class,
-        KlarnaPayNowPaymentMethod::class,
-        KlarnaPayLaterPaymentMethod::class,
-        SepaPaymentMethod::class,
-        SofortPaymentMethod::class,
-        PaypalPaymentMethod::class,
-        OneClickPaymentMethod::class,
-        GiroPayPaymentMethod::class
-    ];
+    public static function getTaskName(): string
+    {
+        return 'adyen.fetch_payment_method_logos';
+    }
+
+    public static function getDefaultInterval(): int
+    {
+        return 604800; // 7 days
+    }
 }

@@ -1,6 +1,7 @@
 {
     "adyen": {
         "updateDetails": "Zahlungsdetails aktualisieren",
-        "loading": "Laden..."
+        "loading": "Laden...",
+        "paymentMethodSelectionError": "Leider ist beim Speichern der Auswahl der Zahlungsmethode ein Fehler aufgetreten. Bitte wählen Sie eine andere Zahlungsmethode."
     }
 }
