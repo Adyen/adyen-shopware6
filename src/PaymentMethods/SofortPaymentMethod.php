@@ -85,7 +85,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/sofort.png';
+        return 'sofort.png';
     }
 
     /**

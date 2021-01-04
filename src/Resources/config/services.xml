@@ -175,6 +175,27 @@
             <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogos">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler">
+            <argument type="service" id="scheduled_task.repository"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="media.repository"/>
+            <argument>%shopware.media.enable_url_upload_feature%</argument>
+            <tag name="messenger.message_handler" />
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_cron"/>
+            </call>
+        </service>
+
+        <!--Commands-->
+        <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
+            <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
+            <tag name="console.command"/>
+        </service>
 
         <!--Event subscribers-->
         <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">

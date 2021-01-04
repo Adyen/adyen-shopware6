@@ -85,7 +85,7 @@ class KlarnaAccountPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/klarna_account.png';
+        return 'klarna_account.png';
     }
 
     /**
