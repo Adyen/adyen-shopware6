@@ -45,7 +45,7 @@ class GiroPayPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return ''; //TODO
+        return 'German online banking payment method';
     }
 
     /**
@@ -85,7 +85,7 @@ class GiroPayPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/giropay.png';
+        return 'giropay.png';
     }
 
     /**

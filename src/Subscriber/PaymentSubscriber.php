@@ -144,7 +144,6 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->paymentMethodsService = $paymentMethodsService;
         $this->pluginIdProvider = $pluginIdProvider;
         $this->paymentMethodRepository = $paymentMethodRepository;
-        $this->paymentMethodRepository = $paymentMethodRepository;
         $this->session = $session;
         $this->container = $container;
         $this->logger = $logger;
@@ -360,8 +359,12 @@ class PaymentSubscriber implements EventSubscriberInterface
                 );
             }
             return true;
+        } else {
+            //PM selected doesn't have state.data, clear previous state.data
+            $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
+                $event->getSalesChannelContext()->getToken()
+            );
+            return true;
         }
-        $this->logger->error('Payment state data not available.');
-        return false;
     }
 }
