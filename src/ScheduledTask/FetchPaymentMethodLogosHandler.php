@@ -106,6 +106,8 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 )),
                 $context
             );
+
+            // Skip if the payment method is not registered in ShopWare
             if ($result->getTotal() === 0) {
                 continue;
             }
