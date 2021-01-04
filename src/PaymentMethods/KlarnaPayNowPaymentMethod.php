@@ -85,7 +85,7 @@ class KlarnaPayNowPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'klarna.png';
+        return 'klarna_paynow.png';
     }
 
     /**
