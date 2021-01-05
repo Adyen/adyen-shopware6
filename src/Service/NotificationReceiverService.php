@@ -90,6 +90,14 @@ class NotificationReceiverService
     {
         $request = $requestObject->request->all();
         $salesChannelId = $requestObject->attributes->get('sw-sales-channel-id');
+        $notificationUsername = $this->configurationService->getNotificationUsername($salesChannelId);
+        $notificationPassword = $this->configurationService->getNotificationPassword($salesChannelId);
+
+        if (!$notificationUsername || !$notificationPassword) {
+            $message = 'Unable to process payment notifications. Notification credentials are not set in config.';
+            $this->logger->critical($message);
+            return new JsonResponse(['success' => false, 'message' => $message]);
+        }
 
         // Checks if notification is empty
         if (empty($request) || empty($request['notificationItems'][0])) {
@@ -105,8 +113,8 @@ class NotificationReceiverService
         if (!$this->notificationReceiver->isAuthenticated(
             $firstNotificationItem,
             $this->configurationService->getMerchantAccount($salesChannelId),
-            $this->configurationService->getNotificationUsername($salesChannelId),
-            $this->configurationService->getNotificationPassword($salesChannelId)
+            $notificationUsername,
+            $notificationPassword
         )) {
             throw new AuthenticationException();
         }
