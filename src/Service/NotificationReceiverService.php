@@ -90,8 +90,6 @@ class NotificationReceiverService
     {
         $request = $requestObject->request->all();
         $salesChannelId = $requestObject->attributes->get('sw-sales-channel-id');
-        $basicAuthUser = $requestObject->server->get('PHP_AUTH_USER');
-        $basicAuthPassword = $requestObject->server->get('PHP_AUTH_PW');
 
         // Checks if notification is empty
         if (empty($request) || empty($request['notificationItems'][0])) {
@@ -106,9 +104,9 @@ class NotificationReceiverService
         // Authorize notification
         if (!$this->notificationReceiver->isAuthenticated(
             $firstNotificationItem,
-            $this->configurationService->getMerchantAccount(),
-            $basicAuthUser,
-            $basicAuthPassword
+            $this->configurationService->getMerchantAccount($salesChannelId),
+            $this->configurationService->getNotificationUsername($salesChannelId),
+            $this->configurationService->getNotificationPassword($salesChannelId)
         )) {
             throw new AuthenticationException();
         }
