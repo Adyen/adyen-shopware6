@@ -95,9 +95,4 @@ class BaseProcessor implements NotificationProcessorInterface
     {
         $this->transactionStateHandler = $transactionStateHandler;
     }
-
-    protected function isAdyenPaymentMethod(PaymentMethodEntity $paymentMethod)
-    {
-        return $paymentMethod;
-    }
 }

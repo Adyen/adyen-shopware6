@@ -30,7 +30,7 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 
 class NotificationProcessorFactory
 {
-    private static $processors = [
+    private static $adyenEventCodeProcessors = [
         NotificationEvents::EVENT_AUTHORISATION => AuthorisationProcessor::class,
         NotificationEvents::EVENT_OFFER_CLOSED => OfferClosedProcessor::class,
     ];
@@ -41,8 +41,8 @@ class NotificationProcessorFactory
         OrderTransactionStateHandler $transactionStateHandler
     ) {
         /** @var BaseProcessor $notificationProcessor */
-        $notificationProcessor = array_key_exists($notification->getEventCode(), self::$processors)
-            ? new self::$processors[$notification->getEventCode()]()
+        $notificationProcessor = array_key_exists($notification->getEventCode(), self::$adyenEventCodeProcessors)
+            ? new self::$adyenEventCodeProcessors[$notification->getEventCode()]()
             : new BaseProcessor();
 
         $notificationProcessor->setOrder($order);
