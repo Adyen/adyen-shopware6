@@ -26,17 +26,13 @@ namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\AdyenPaymentShopware6;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
-use Adyen\Shopware\NotificationProcessor\NotificationEvents;
 use Adyen\Shopware\NotificationProcessor\NotificationProcessorFactory;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -67,6 +63,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @var PluginIdProvider
      */
     private $pluginIdProvider;
+    /**
+     * @var array|null
+     */
+    private $adyenPaymentMethodIds = null;
 
     public function __construct(
         EntityRepositoryInterface $scheduledTaskRepository,
@@ -97,7 +97,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         foreach ($notifications->getElements() as $notification) {
             /** @var NotificationEntity $notification */
 
-            $this->markAsProcessing($notification, $context);
+            $this->markAsProcessing($notification->getId(), $context);
 
             $order = $this->orderRepository->getWithOrderNumber(
                 $notification->getMerchantReference(),
@@ -106,48 +106,33 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             if (!$order) {
                 $this->logger->warning("Order with order_number {$notification->getMerchantReference()} not found.");
-                $this->markAsDone($notification, $context);
+                $this->markAsDone($notification->getId(), $context);
                 continue;
             }
 
             // Skip when the last payment method was non-Adyen.
-            if(!$this->isAdyenPaymentMethod($order->getTransactions()->first()->getPaymentMethodId(), $context)) {
-                $this->markAsDone($notification, $context);
+            if (!$this->isAdyenPaymentMethod($order->getTransactions()->first()->getPaymentMethodId(), $context)) {
+                $this->markAsDone($notification->getId(), $context);
                 continue;
             }
 
-            $notificationProcessor = NotificationProcessorFactory::create($notification, $order, $this->transactionStateHandler);
-            $result = $notificationProcessor->process();
+            $notificationProcessor = NotificationProcessorFactory::create(
+                $notification,
+                $order,
+                $this->transactionStateHandler
+            );
 
-            if ($result) {
-                $this->markAsDone($notification, $context);
+            try {
+                $notificationProcessor->process();
+            } catch (\Exception $exception) {
+                $this->logger->error($exception->getMessage());
+                // set notification error and error and error count
+                // what to do with the notification state?
+
+                continue;
             }
 
-            /*$lastTransaction = $order->getTransactions()->first();
-            $state = $lastTransaction->getStateMachineState()->getTechnicalName();
-            switch ($notification->getEventCode()) {
-                case NotificationEvents::EVENT_AUTHORISATION:
-                    // process
-                    if ($notification->isSuccess()) {
-                        if ($state !== OrderTransactionStates::STATE_PAID) {
-                            $this->transactionStateHandler->paid($lastTransaction->getId(), $context);
-                        }
-                    } else {
-                        if ($state == OrderTransactionStates::STATE_IN_PROGRESS) {
-                            $this->transactionStateHandler->fail($lastTransaction->getId(), $context);
-                        }
-                    }
-                    break;
-                case NotificationEvents::EVENT_OFFER_CLOSED:
-                    // process
-                    if ($notification->isSuccess()) {
-                        $this->transactionStateHandler->fail($lastTransaction->getId(), $context);
-                    }
-                    break;
-                default:
-                    // do nothing, log it
-                    break;
-            }*/
+            $this->markAsDone($notification->getId(), $context);
         }
 
         $this->logger->debug(ProcessNotifications::class . ' tasks are running.');
@@ -155,31 +140,38 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     private function isAdyenPaymentMethod(string $paymentMethodId, Context $context)
     {
-        $adyenPaymentMethodIds = $this->paymentMethodRepository->searchIds(
-            (new Criteria())->addFilter(
-                new EqualsFilter(
-                    'pluginId',
-                    $this->pluginIdProvider->getPluginIdByBaseClass(
-                        AdyenPaymentShopware6::class,
-                        $context
+        if (!is_array($this->adyenPaymentMethodIds)) {
+            $this->adyenPaymentMethodIds = $this->paymentMethodRepository->searchIds(
+                (new Criteria())->addFilter(
+                    new EqualsFilter(
+                        'pluginId',
+                        $this->pluginIdProvider->getPluginIdByBaseClass(
+                            AdyenPaymentShopware6::class,
+                            $context
+                        )
                     )
-                )
-            ),
-            $context
-        )->getIds();
+                ),
+                $context
+            )->getIds();
+        }
 
-        return in_array($paymentMethodId, $adyenPaymentMethodIds);
+        return in_array($paymentMethodId, $this->adyenPaymentMethodIds);
     }
 
-    private function markAsProcessing(NotificationEntity $notification, Context $context)
+    private function markAsProcessing(string $notificationId, Context $context)
     {
         // mark as processing
+        $this->notificationService->changeNotificationState($notificationId, 'processing', true);
         // log
+        $this->logger->debug("Payment notification {$notificationId} marked as processing.");
     }
 
-    private function markAsDone(NotificationEntity $notification, Context $context)
+    private function markAsDone(string $notificationId, Context $context)
     {
         // mark as done
+        $this->notificationService->changeNotificationState($notificationId, 'processing', false);
+        $this->notificationService->changeNotificationState($notificationId, 'done', true);
         // log
+        $this->logger->debug("Payment notification {$notificationId} marked as done.");
     }
 }

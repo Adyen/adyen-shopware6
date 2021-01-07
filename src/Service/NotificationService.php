@@ -170,4 +170,17 @@ class NotificationService
             Context::createDefaultContext()
         )->getEntities();
     }
+
+    public function changeNotificationState(string $notificationId, string $property, bool $state): void
+    {
+        $this->notificationRepository->update(
+            [
+                [
+                    'id' => $notificationId,
+                    $property => $state
+                ]
+            ],
+            Context::createDefaultContext()
+        );
+    }
 }
