@@ -68,6 +68,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private $adyenPaymentMethodIds = null;
 
+    private const MAX_ERROR_COUNT = 3;
+
     public function __construct(
         EntityRepositoryInterface $scheduledTaskRepository,
         NotificationService $notificationService,
@@ -91,13 +93,14 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     public function run(): void
     {
+        $this->logger->debug(ProcessNotifications::class . ' task is running.');
         $context = Context::createDefaultContext();
         $notifications = $this->notificationService->getScheduledUnprocessedNotifications();
 
         foreach ($notifications->getElements() as $notification) {
             /** @var NotificationEntity $notification */
 
-            $this->markAsProcessing($notification->getId(), $context);
+            $this->markAsProcessing($notification->getId());
 
             $order = $this->orderRepository->getWithOrderNumber(
                 $notification->getMerchantReference(),
@@ -106,13 +109,18 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             if (!$order) {
                 $this->logger->warning("Order with order_number {$notification->getMerchantReference()} not found.");
-                $this->markAsDone($notification->getId(), $context);
+                $this->markAsDone($notification->getId());
                 continue;
             }
 
             // Skip when the last payment method was non-Adyen.
             if (!$this->isAdyenPaymentMethod($order->getTransactions()->first()->getPaymentMethodId(), $context)) {
-                $this->markAsDone($notification->getId(), $context);
+                $this->logger->info(sprintf(
+                    "%s notification for order %s was ignored. Non-Adyen payment method used.",
+                    $notification->getEventCode(),
+                    $notification->getMerchantReference()
+                ));
+                $this->markAsDone($notification->getId());
                 continue;
             }
 
@@ -126,16 +134,20 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $notificationProcessor->process();
             } catch (\Exception $exception) {
                 $this->logger->error($exception->getMessage());
-                // set notification error and error and error count
-                // what to do with the notification state?
+                // set notification error and increment error count
+                $errorMessage = $exception->getTraceAsString();
+                $errorCount = $notification->getErrorCount();
+                $this->notificationService->saveError($notification->getId(), $errorMessage, ++$errorCount);
+
+                if ($errorCount < self::MAX_ERROR_COUNT) {
+                    $this->requeueNotification($notification->getId());
+                }
 
                 continue;
             }
 
-            $this->markAsDone($notification->getId(), $context);
+            $this->markAsDone($notification->getId());
         }
-
-        $this->logger->debug(ProcessNotifications::class . ' tasks are running.');
     }
 
     private function isAdyenPaymentMethod(string $paymentMethodId, Context $context)
@@ -158,20 +170,23 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         return in_array($paymentMethodId, $this->adyenPaymentMethodIds);
     }
 
-    private function markAsProcessing(string $notificationId, Context $context)
+    private function markAsProcessing(string $notificationId)
     {
-        // mark as processing
         $this->notificationService->changeNotificationState($notificationId, 'processing', true);
-        // log
         $this->logger->debug("Payment notification {$notificationId} marked as processing.");
     }
 
-    private function markAsDone(string $notificationId, Context $context)
+    private function requeueNotification(string $notificationId)
     {
-        // mark as done
+        $this->notificationService->changeNotificationState($notificationId, 'processing', false);
+        $this->notificationService->setNotificationSchedule($notificationId, new \DateTime());
+        $this->logger->debug("Payment notification {$notificationId} requeued.");
+    }
+
+    private function markAsDone(string $notificationId)
+    {
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
         $this->notificationService->changeNotificationState($notificationId, 'done', true);
-        // log
         $this->logger->debug("Payment notification {$notificationId} marked as done.");
     }
 }

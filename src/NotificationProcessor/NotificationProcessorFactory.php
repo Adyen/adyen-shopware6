@@ -42,8 +42,8 @@ class NotificationProcessorFactory
     ) {
         /** @var BaseProcessor $notificationProcessor */
         $notificationProcessor = array_key_exists($notification->getEventCode(), self::$adyenEventCodeProcessors)
-            ? new self::$adyenEventCodeProcessors[$notification->getEventCode()]()
-            : new BaseProcessor();
+            ? new self::$adyenEventCodeProcessors[$notification->getEventCode()]
+            : new BaseProcessor;
 
         $notificationProcessor->setOrder($order);
         $notificationProcessor->setNotification($notification);

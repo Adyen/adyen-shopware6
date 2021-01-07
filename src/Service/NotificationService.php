@@ -183,4 +183,18 @@ class NotificationService
             Context::createDefaultContext()
         );
     }
+
+    public function saveError(string $notificationId, string $errorMessage, int $errorCount): void
+    {
+        $this->notificationRepository->update(
+            [
+                [
+                    'id' => $notificationId,
+                    'errorMessage' => $errorMessage,
+                    'errorCount' => $errorCount,
+                ]
+            ],
+            Context::createDefaultContext()
+        );
+    }
 }
