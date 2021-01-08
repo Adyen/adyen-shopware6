@@ -93,7 +93,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     public function run(): void
     {
-        $this->logger->debug(ProcessNotifications::class . ' task is running.');
         $context = Context::createDefaultContext();
         $notifications = $this->notificationService->getScheduledUnprocessedNotifications();
 
@@ -129,7 +128,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $notificationProcessor = NotificationProcessorFactory::create(
                 $notification,
                 $order,
-                $this->transactionStateHandler
+                $this->transactionStateHandler,
+                $this->logger
             );
 
             try {
@@ -149,9 +149,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 continue;
             }
 
-            $this->logger->info('Notification processed successfully.', $logContext);
             $this->markAsDone($notification->getId());
         }
+
+        $this->logger->info('Processed ' . $notifications->count() . ' notifications.');
     }
 
     private function isAdyenPaymentMethod(string $paymentMethodId, Context $context)

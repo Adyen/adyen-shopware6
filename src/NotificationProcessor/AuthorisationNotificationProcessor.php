@@ -34,16 +34,25 @@ class AuthorisationNotificationProcessor extends NotificationProcessor implement
         $orderTransaction = $this->getOrder()->getTransactions()->first();
         $state = $orderTransaction->getStateMachineState()->getTechnicalName();
         $context = Context::createDefaultContext();
+        $logContext = [
+            'orderId' => $this->getOrder()->getId(),
+            'orderNumber' => $this->getOrder()->getOrderNumber(),
+            'eventCode' => NotificationEventCodes::AUTHORISATION,
+            'originalState' => $state
+        ];
 
-        $paymentMethod = $orderTransaction->getPaymentMethod();
         if ($this->getNotification()->isSuccess()) {
             if ($state !== OrderTransactionStates::STATE_PAID) {
                 $this->getTransactionStateHandler()->paid($orderTransaction->getId(), $context);
+                $logContext['newState'] = OrderTransactionStates::STATE_PAID;
             }
         } else {
             if ($state === OrderTransactionStates::STATE_IN_PROGRESS) {
                 $this->getTransactionStateHandler()->fail($orderTransaction->getId(), $context);
+                $logContext['newState'] = OrderTransactionStates::STATE_FAILED;
             }
         }
+
+        $this->logger->info('Processed ' . NotificationEventCodes::AUTHORISATION . ' notification.', $logContext);
     }
 }

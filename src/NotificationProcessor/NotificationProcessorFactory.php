@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\NotificationProcessor;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\OrderEntity;
 
@@ -38,7 +39,8 @@ class NotificationProcessorFactory
     public static function create(
         NotificationEntity $notification,
         OrderEntity $order,
-        OrderTransactionStateHandler $transactionStateHandler
+        OrderTransactionStateHandler $transactionStateHandler,
+        LoggerInterface $logger
     ): NotificationProcessorInterface {
         /** @var NotificationProcessor $notificationProcessor */
         $notificationProcessor = array_key_exists($notification->getEventCode(), self::$adyenEventCodeProcessors)
@@ -48,6 +50,7 @@ class NotificationProcessorFactory
         $notificationProcessor->setOrder($order);
         $notificationProcessor->setNotification($notification);
         $notificationProcessor->setTransactionStateHandler($transactionStateHandler);
+        $notificationProcessor->setLogger($logger);
 
         return $notificationProcessor;
     }

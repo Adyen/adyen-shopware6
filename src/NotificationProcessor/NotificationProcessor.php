@@ -25,12 +25,15 @@
 namespace Adyen\Shopware\NotificationProcessor;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 
 abstract class NotificationProcessor
 {
+    use LoggerAwareTrait;
+
     /**
      * @var OrderEntity
      */

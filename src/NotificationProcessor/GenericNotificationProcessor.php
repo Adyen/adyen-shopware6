@@ -31,5 +31,8 @@ class GenericNotificationProcessor extends NotificationProcessor implements Noti
         // For other notification event codes that are not listed
         // in \Adyen\Shopware\NotificationProcessor\NotificationEventCodes
         // we do nothing.
+        $this->logger->info(
+            'Processed ' . $this->getNotification()->getEventCode() . ' notification. No action taken.'
+        );
     }
 }

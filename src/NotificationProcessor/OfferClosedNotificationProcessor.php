@@ -34,9 +34,18 @@ class OfferClosedNotificationProcessor extends NotificationProcessor implements 
         $orderTransaction = $this->getOrder()->getTransactions()->first();
         $state = $orderTransaction->getStateMachineState()->getTechnicalName();
         $context = Context::createDefaultContext();
+        $logContext = [
+            'orderId' => $this->getOrder()->getId(),
+            'orderNumber' => $this->getOrder()->getOrderNumber(),
+            'eventCode' => NotificationEventCodes::OFFER_CLOSED,
+            'originalState' => $state
+        ];
 
         if ($this->getNotification()->isSuccess() && $state === OrderTransactionStates::STATE_IN_PROGRESS) {
             $this->getTransactionStateHandler()->fail($orderTransaction->getId(), $context);
+            $logContext['newState'] = OrderTransactionStates::STATE_FAILED;
         }
+
+        $this->logger->info('Processed ' . NotificationEventCodes::OFFER_CLOSED . ' notification.', $logContext);
     }
 }
