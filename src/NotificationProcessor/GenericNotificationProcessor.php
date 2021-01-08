@@ -26,7 +26,7 @@ namespace Adyen\Shopware\NotificationProcessor;
 
 class GenericNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
 {
-    public function process()
+    public function process(): void
     {
         // For other notification event codes that are not listed
         // in \Adyen\Shopware\NotificationProcessor\NotificationEventCodes

@@ -26,5 +26,5 @@ namespace Adyen\Shopware\NotificationProcessor;
 
 interface NotificationProcessorInterface
 {
-    public function process();
+    public function process(): void;
 }

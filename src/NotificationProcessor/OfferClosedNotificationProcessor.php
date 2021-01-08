@@ -29,7 +29,7 @@ use Shopware\Core\Framework\Context;
 
 class OfferClosedNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
 {
-    public function process()
+    public function process(): void
     {
         $orderTransaction = $this->getOrder()->getTransactions()->first();
         $state = $orderTransaction->getStateMachineState()->getTechnicalName();

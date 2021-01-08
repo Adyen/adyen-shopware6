@@ -113,13 +113,15 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 continue;
             }
 
+            $logContext = [
+                'orderId' => $order->getId(),
+                'orderNumber' => $order->getOrderNumber(),
+                'eventCode' => $notification->getEventCode(),
+            ];
+
             // Skip when the last payment method was non-Adyen.
             if (!$this->isAdyenPaymentMethod($order->getTransactions()->first()->getPaymentMethodId(), $context)) {
-                $this->logger->info(sprintf(
-                    "%s notification for order %s was ignored. Non-Adyen payment method used.",
-                    $notification->getEventCode(),
-                    $notification->getMerchantReference()
-                ));
+                $this->logger->info('Notification ignored: non-Adyen payment method last used, .', $logContext);
                 $this->markAsDone($notification->getId());
                 continue;
             }
@@ -138,6 +140,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $errorMessage = $exception->getTraceAsString();
                 $errorCount = $notification->getErrorCount();
                 $this->notificationService->saveError($notification->getId(), $errorMessage, ++$errorCount);
+                $this->logger->error('Notification processing failed.', $logContext);
 
                 if ($errorCount < self::MAX_ERROR_COUNT) {
                     $this->requeueNotification($notification->getId());
@@ -146,6 +149,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 continue;
             }
 
+            $this->logger->info('Notification processed successfully.', $logContext);
             $this->markAsDone($notification->getId());
         }
     }
