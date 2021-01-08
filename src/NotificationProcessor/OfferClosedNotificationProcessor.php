@@ -27,7 +27,7 @@ namespace Adyen\Shopware\NotificationProcessor;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 
-class AuthorisationProcessor extends BaseProcessor
+class OfferClosedNotificationProcessor extends BaseNotificationProcessor
 {
     public function process()
     {
@@ -35,15 +35,8 @@ class AuthorisationProcessor extends BaseProcessor
         $state = $orderTransaction->getStateMachineState()->getTechnicalName();
         $context = Context::createDefaultContext();
 
-        $paymentMethod = $orderTransaction->getPaymentMethod();
-        if ($this->getNotification()->isSuccess()) {
-            if ($state !== OrderTransactionStates::STATE_PAID) {
-                $this->getTransactionStateHandler()->paid($orderTransaction->getId(), $context);
-            }
-        } else {
-            if ($state === OrderTransactionStates::STATE_IN_PROGRESS) {
-                $this->getTransactionStateHandler()->fail($orderTransaction->getId(), $context);
-            }
+        if ($this->getNotification()->isSuccess() && $state === OrderTransactionStates::STATE_IN_PROGRESS) {
+            $this->getTransactionStateHandler()->fail($orderTransaction->getId(), $context);
         }
     }
 }

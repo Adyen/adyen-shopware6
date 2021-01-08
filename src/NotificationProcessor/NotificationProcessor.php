@@ -29,7 +29,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 
-class BaseProcessor implements NotificationProcessorInterface
+abstract class BaseNotificationProcessor
 {
     /**
      * @var OrderEntity

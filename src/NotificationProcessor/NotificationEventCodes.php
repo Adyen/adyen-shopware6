@@ -24,8 +24,8 @@
 
 namespace Adyen\Shopware\NotificationProcessor;
 
-final class NotificationEvents
+final class NotificationEventCodes
 {
-    public const EVENT_AUTHORISATION = 'AUTHORISATION';
-    public const EVENT_OFFER_CLOSED = 'OFFER_CLOSED';
+    public const AUTHORISATION = 'AUTHORISATION';
+    public const OFFER_CLOSED = 'OFFER_CLOSED';
 }
