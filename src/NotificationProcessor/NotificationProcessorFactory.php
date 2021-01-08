@@ -39,11 +39,11 @@ class NotificationProcessorFactory
         NotificationEntity $notification,
         OrderEntity $order,
         OrderTransactionStateHandler $transactionStateHandler
-    ) {
-        /** @var BaseNotificationProcessor $notificationProcessor */
+    ): NotificationProcessorInterface {
+        /** @var NotificationProcessor $notificationProcessor */
         $notificationProcessor = array_key_exists($notification->getEventCode(), self::$adyenEventCodeProcessors)
             ? new self::$adyenEventCodeProcessors[$notification->getEventCode()]
-            : new BaseNotificationProcessor;
+            : new GenericNotificationProcessor;
 
         $notificationProcessor->setOrder($order);
         $notificationProcessor->setNotification($notification);

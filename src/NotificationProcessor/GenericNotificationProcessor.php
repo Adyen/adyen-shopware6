@@ -24,19 +24,12 @@
 
 namespace Adyen\Shopware\NotificationProcessor;
 
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
-use Shopware\Core\Framework\Context;
-
-class OfferClosedNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
+class GenericNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
 {
     public function process()
     {
-        $orderTransaction = $this->getOrder()->getTransactions()->first();
-        $state = $orderTransaction->getStateMachineState()->getTechnicalName();
-        $context = Context::createDefaultContext();
-
-        if ($this->getNotification()->isSuccess() && $state === OrderTransactionStates::STATE_IN_PROGRESS) {
-            $this->getTransactionStateHandler()->fail($orderTransaction->getId(), $context);
-        }
+        // For other notification event codes that are not listed
+        // in \Adyen\Shopware\NotificationProcessor\NotificationEventCodes
+        // we do nothing.
     }
 }

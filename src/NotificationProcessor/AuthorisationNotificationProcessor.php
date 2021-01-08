@@ -27,7 +27,7 @@ namespace Adyen\Shopware\NotificationProcessor;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 
-class AuthorisationNotificationProcessor extends BaseNotificationProcessor
+class AuthorisationNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
 {
     public function process()
     {
