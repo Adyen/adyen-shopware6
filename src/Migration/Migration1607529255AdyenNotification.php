@@ -15,8 +15,8 @@ class Migration1607529255AdyenNotification extends MigrationStep
     public function update(Connection $connection): void
     {
         $connection->executeUpdate("
-            alter table `adyen_notification`
-            add column scheduled_processing_time datetime null after processing;
+            ALTER TABLE `adyen_notification`
+            ADD COLUMN `scheduled_processing_time` DATETIME(3) NULL AFTER `processing` COMMENT 'Scheduled for';
         ");
     }
 
