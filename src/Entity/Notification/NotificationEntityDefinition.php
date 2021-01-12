@@ -78,7 +78,7 @@ class NotificationEntityDefinition extends EntityDefinition
             new BoolField('processing', 'processing'),
             new DateTimeField('scheduled_processing_time', 'scheduledProcessingTime'),
             new IntField('error_count', 'errorCount'),
-            new StringField('error_message', 'errorMessage'),
+            new LongTextField('error_message', 'errorMessage'),
             new CreatedAtField(),
             new UpdatedAtField()
         ]);
