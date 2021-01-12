@@ -29,6 +29,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
@@ -72,12 +73,12 @@ class NotificationEntityDefinition extends EntityDefinition
             new StringField('amount_currency', 'amountCurrency'),
             new StringField('reason', 'reason'),
             new BoolField('live', 'live'),
-            new StringField('additional_data', 'additionalData'),
+            new LongTextField('additional_data', 'additionalData'),
             new BoolField('done', 'done'),
             new BoolField('processing', 'processing'),
             new DateTimeField('scheduled_processing_time', 'scheduledProcessingTime'),
             new IntField('error_count', 'errorCount'),
-            new StringField('error_message', 'errorMessage'),
+            new LongTextField('error_message', 'errorMessage'),
             new CreatedAtField(),
             new UpdatedAtField()
         ]);
