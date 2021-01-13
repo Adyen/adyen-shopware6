@@ -16,7 +16,11 @@ class Migration1607529255AdyenNotification extends MigrationStep
     {
         $connection->executeUpdate("
             ALTER TABLE `adyen_notification`
-            ADD COLUMN `scheduled_processing_time` DATETIME(3) NULL AFTER `processing` COMMENT 'Scheduled for';
+            ADD COLUMN `scheduled_processing_time` DATETIME(3) NULL AFTER `processing`;
+        ");
+        $connection->executeUpdate("
+            ALTER TABLE `adyen_notification`
+            CHANGE `scheduled_processing_time` `scheduled_processing_time` DATETIME(3) NULL COMMENT 'Scheduled For';
         ");
     }
 
