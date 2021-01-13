@@ -34,7 +34,7 @@ class NotificationEntity extends Entity
     /**
      * @var string
      */
-    protected $pspReference;
+    protected $pspreference;
 
     /**
      * @var string
@@ -97,6 +97,11 @@ class NotificationEntity extends Entity
     protected $processing;
 
     /**
+     * @var \DateTimeInterface|null
+     */
+    protected $scheduledProcessingTime;
+
+    /**
      * @var int
      */
     protected $errorCount;
@@ -109,17 +114,17 @@ class NotificationEntity extends Entity
     /**
      * @return string
      */
-    public function getPspReference(): string
+    public function getPspreference(): string
     {
-        return $this->pspReference;
+        return $this->pspreference;
     }
 
     /**
-     * @param string $pspReference
+     * @param string $pspreference
      */
-    public function setPspReference(string $pspReference): void
+    public function setPspreference(string $pspreference): void
     {
-        $this->pspReference = $pspReference;
+        $this->pspreference = $pspreference;
     }
 
     /**
@@ -312,6 +317,22 @@ class NotificationEntity extends Entity
     public function setProcessing(string $processing): void
     {
         $this->processing = $processing;
+    }
+
+    /**
+     * @return \DateTimeInterface|null
+     */
+    public function getScheduledProcessingTime(): ?\DateTimeInterface
+    {
+        return $this->scheduledProcessingTime;
+    }
+
+    /**
+     * @param \DateTimeInterface $scheduleProcessingTime
+     */
+    public function setScheduledProcessingTime(\DateTimeInterface $scheduleProcessingTime): void
+    {
+        $this->scheduledProcessingTime = $scheduleProcessingTime;
     }
 
     /**
