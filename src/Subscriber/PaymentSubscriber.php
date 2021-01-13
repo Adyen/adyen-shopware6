@@ -213,15 +213,19 @@ class PaymentSubscriber implements EventSubscriberInterface
             new ArrayEntity(
                 [
                     'paymentStatusUrl' => $this->router->generate(
-                        'sales-channel-api.action.adyen.payment-status',
+                        'store-api.action.adyen.payment-status',
                         ['version' => 2]
                     ),
                     'checkoutOrderUrl' => $this->router->generate(
-                        'sales-channel-api.checkout.order.create',
+                        'store-api.checkout.cart.order',
+                        ['version' => 2]
+                    ),
+                    'paymentHandleUrl' => $this->router->generate(
+                        'store-api.payment.handle',
                         ['version' => 2]
                     ),
                     'paymentDetailsUrl' => $this->router->generate(
-                        'sales-channel-api.action.adyen.payment-details',
+                        'store-api.action.adyen.payment-details',
                         ['version' => 2]
                     ),
                     'paymentFinishUrl' => $this->router->generate(

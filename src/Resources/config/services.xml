@@ -30,6 +30,17 @@
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\Controller\StoreApiController">
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentDetailsService"/>
+            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentStatusService"/>
+            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <tag name="controller.service_arguments"/>
+        </service>
         <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
