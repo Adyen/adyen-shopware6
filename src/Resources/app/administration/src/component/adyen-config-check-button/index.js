@@ -42,7 +42,10 @@ Component.register('adyen-config-check-button', {
 
     computed: {
         pluginConfig() {
-            return this.$parent.$parent.$parent.actualConfigData[this.$parent.$parent.$parent.currentSalesChannelId];
+            let selectedSalesChannelId = this.$parent.$parent.$parent.currentSalesChannelId;
+            let config = this.$parent.$parent.$parent.actualConfigData;
+            // Properties NOT set in the sales channel config will be inherited from default config.
+            return Object.assign({}, config.null, config[selectedSalesChannelId]);
         }
     },
 
