@@ -42,7 +42,7 @@ Component.register('adyen-config-check-button', {
 
     computed: {
         pluginConfig() {
-            return this.$parent.$parent.$parent.actualConfigData.null;
+            return this.$parent.$parent.$parent.actualConfigData[this.$parent.$parent.$parent.currentSalesChannelId];
         }
     },
 
