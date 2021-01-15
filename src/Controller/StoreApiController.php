@@ -1,5 +1,4 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -16,7 +15,7 @@ declare(strict_types=1);
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
@@ -31,69 +30,53 @@ use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
-use Exception;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\Request;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Adyen\Shopware\Service\OriginKeyService;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
+use Psr\Log\LoggerInterface;
+use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Store\Api\AbstractStoreController;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 
-class SalesChannelApiController extends AbstractController
+class StoreApiController extends AbstractStoreController
 {
-
-    /**
-     * @var OriginKeyService
-     */
-    private $originKeyService;
-
     /**
      * @var PaymentMethodsService
      */
     private $paymentMethodsService;
-
     /**
      * @var SalesChannelRepository
      */
     private $salesChannelRepository;
-
     /**
      * @var PaymentDetailsService
      */
     private $paymentDetailsService;
-
     /**
      * @var CheckoutStateDataValidator
      */
     private $checkoutStateDataValidator;
-
     /**
      * @var PaymentStatusService
      */
     private $paymentStatusService;
-
-    /**
-     * @var PaymentResponseService
-     */
-    private $paymentResponseService;
-
     /**
      * @var PaymentResponseHandler
      */
     private $paymentResponseHandler;
-
+    /**
+     * @var PaymentResponseService
+     */
+    private $paymentResponseService;
     /**
      * @var LoggerInterface
      */
     private $logger;
 
     /**
-     * SalesChannelApiController constructor.
+     * StoreApiController constructor.
      *
-     * @param OriginKeyService $originKeyService
      * @param PaymentMethodsService $paymentMethodsService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentDetailsService $paymentDetailsService
@@ -104,7 +87,6 @@ class SalesChannelApiController extends AbstractController
      * @param LoggerInterface $logger
      */
     public function __construct(
-        OriginKeyService $originKeyService,
         PaymentMethodsService $paymentMethodsService,
         SalesChannelRepository $salesChannelRepository,
         PaymentDetailsService $paymentDetailsService,
@@ -114,7 +96,6 @@ class SalesChannelApiController extends AbstractController
         PaymentResponseService $paymentResponseService,
         LoggerInterface $logger
     ) {
-        $this->originKeyService = $originKeyService;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -126,34 +107,10 @@ class SalesChannelApiController extends AbstractController
     }
 
     /**
-     * @RouteScope(scopes={"sales-channel-api"})
+     * @RouteScope(scopes={"store-api"})
      * @Route(
-     *     "/sales-channel-api/v{version}/adyen/origin-key",
-     *     name="sales-channel-api.action.adyen.origin-key",
-     *     methods={"GET"}
-     * )
-     *
-     * @deprecated Version 2.0.0 will use client key only
-     *
-     * @param SalesChannelContext $context
-     * @return JsonResponse
-     */
-    public function originKey(SalesChannelContext $context): JsonResponse
-    {
-        return new JsonResponse(
-            [
-                $this->originKeyService
-                    ->getOriginKeyForOrigin($this->salesChannelRepository->getSalesChannelUrl($context))
-                    ->getOriginKey()
-            ]
-        );
-    }
-
-    /**
-     * @RouteScope(scopes={"sales-channel-api"})
-     * @Route(
-     *     "/sales-channel-api/v{version}/adyen/payment-methods",
-     *     name="sales-channel-api.action.adyen.payment-methods",
+     *     "/store-api/v{version}/adyen/payment-methods",
+     *     name="store-api.action.adyen.payment-methods",
      *     methods={"GET"}
      * )
      *
@@ -166,10 +123,10 @@ class SalesChannelApiController extends AbstractController
     }
 
     /**
-     * @RouteScope(scopes={"sales-channel-api"})
+     * @RouteScope(scopes={"store-api"})
      * @Route(
-     *     "/sales-channel-api/v{version}/adyen/payment-details",
-     *     name="sales-channel-api.action.adyen.payment-details",
+     *     "/store-api/v{version}/adyen/payment-details",
+     *     name="store-api.action.adyen.payment-details",
      *     methods={"POST"}
      * )
      *
@@ -216,10 +173,10 @@ class SalesChannelApiController extends AbstractController
     }
 
     /**
-     * @RouteScope(scopes={"sales-channel-api"})
+     * @RouteScope(scopes={"store-api"})
      * @Route(
-     *     "/sales-channel-api/v{version}/adyen/payment-status",
-     *     name="sales-channel-api.action.adyen.payment-status",
+     *     "/store-api/v{version}/adyen/payment-status",
+     *     name="store-api.action.adyen.payment-status",
      *     methods={"POST"}
      * )
      *
