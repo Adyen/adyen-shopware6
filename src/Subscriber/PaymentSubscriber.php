@@ -292,19 +292,21 @@ class PaymentSubscriber implements EventSubscriberInterface
                     continue;
                 }
 
-                $pmFound = array_filter(
+                $methodFoundInResponse = array_filter(
                     $adyenPaymentMethods['paymentMethods'],
                     function ($value) use ($pmCode) {
                         return $value['type'] == $pmCode;
                     }
                 );
 
-                //Remove the PM if it isn't in the paymentMethods response or if it isn't OneClick
-                if (empty($pmFound) &&
-                    ($pmCode != OneClickPaymentMethodHandler::getPaymentMethodCode() &&
-                        empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])
-                    )
-                ) {
+                $shopwareMethodIsOneClick = $pmCode == OneClickPaymentMethodHandler::getPaymentMethodCode();
+                $oneClickInResponse = !empty(
+                    $adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()]
+                );
+
+                //Remove the PM if it isn't in the paymentMethods response
+                //and if it is OneClick while not present in the response
+                if (empty($methodFoundInResponse) && ($shopwareMethodIsOneClick && !$oneClickInResponse)) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
             }
