@@ -110,9 +110,15 @@ export default class CheckoutPlugin extends Plugin {
         //  if the container doesn't exist don't try to render the component
         const paymentMethodContainer = $('[data-adyen-payment-method="' + adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
 
+        var showPayButton = false;
+
+        if (adyenConfiguration.componentsWithPayButton.includes(paymentMethod.type)) {
+            showPayButton = true;
+        }
+
         // container doesn't exist, something went wrong on the template side
-        // If payment method doesn't have details, just skip it
-        if (!paymentMethodContainer || !paymentMethod.details) {
+        // If payment method doesn't have details and the pay button does not needs to be rendered by the component, just skip it
+        if (!paymentMethodContainer || (!showPayButton && !paymentMethod.details)) {
             return;
         }
 
@@ -124,7 +130,28 @@ export default class CheckoutPlugin extends Plugin {
 
         /*Use the storedPaymentMethod object and the custom onChange function as the configuration object together*/
         const configuration = Object.assign(paymentMethod, {
-            onChange: this.onPaymentMethodChange.bind(this)
+            onChange: this.onPaymentMethodChange.bind(this),
+            showPayButton:showPayButton,
+            countryCode: 'NL',
+            currency: 'EUR',
+            amount: { // Use this after above removed
+                value: 600, //TODO replace with real values
+                currency: 'EUR',
+            },
+            totalPriceLabel: 'merchantDisplayName',
+            onClick: function(resolve, reject) {
+                // for paypal add a workaround, remove when component fixes it
+                if (paymentMethod.type ===
+                    'paypal') {
+                    return true;
+                } else {
+                    //if (self.validate()) {
+                        resolve();
+                    //} else {
+                      //  reject();
+                    //}
+                }
+            },
         });
 
         if (paymentMethod.type === 'scheme') {
@@ -135,11 +162,27 @@ export default class CheckoutPlugin extends Plugin {
             const paymentMethodInstance = window.adyenCheckout
                 .create(paymentMethod.type, configuration);
 
-            paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
+            if ('isAvailable' in paymentMethodInstance) {
+                paymentMethodInstance.isAvailable().then(() => {
+                    if (paymentMethod.type === 'paywithgoogle') {
+                        debugger;
+                    }
+                    console.log(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
+                                paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
+
+                }).catch(e => {
+                    //result.isAvailable(false);
+                    console.log(paymentMethod.type +
+                        ' is not available, the method will be hidden from the payment list');
+                });
+            } else {
+                            paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
+
+            }
 
             this.formValidator[adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
-            console.log(err);
+            console.log(paymentMethod.type + err);
         }
     }
 
@@ -174,7 +217,7 @@ export default class CheckoutPlugin extends Plugin {
 
             this.formValidator[adyenConfiguration.paymentMethodTypeHandlers.oneclick][paymentMethod.storedPaymentMethodId] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
-            console.log(err);
+            console.log(paymentMethod.type + err);
         }
     }
 
