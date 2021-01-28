@@ -22,7 +22,7 @@
 
 export default {
     updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick'],
-    componentsWithPayButton: ['paywithgoogle', 'applepay'],
+    componentsWithPayButton: ['applepay', 'paywithgoogle', 'paypal'], // todo rename
     paymentMethodTypeHandlers: {
         'scheme': 'handler_adyen_cardspaymentmethodhandler',
         'ideal': 'handler_adyen_idealpaymentmethodhandler',

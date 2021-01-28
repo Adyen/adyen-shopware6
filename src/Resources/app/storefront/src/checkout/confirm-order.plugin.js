@@ -2,15 +2,16 @@ import Plugin from 'src/plugin-system/plugin.class';
 import DomAccess from 'src/helper/dom-access.helper';
 import StoreApiClient from 'src/service/store-api-client.service';
 import FormSerializeUtil from 'src/utility/form/form-serialize.util';
-import ElementLoadingIndicatorUtil
-    from 'src/utility/loading-indicator/element-loading-indicator.util';
+import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 import adyenConfiguration from '../configuration/adyen';
+//import CheckoutPlugin from './checkout.plugin';
 
-/* global adyenCheckoutOptions */
+/* global adyenCheckoutOptions, adyenCheckoutConfiguration, AdyenCheckout */
 /* eslint-disable no-unused-vars */
 export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
+        this.initializeCustomPayButton();
         const confirmOrderForm = DomAccess.querySelector(document,
             '#confirmOrderForm');
         confirmOrderForm.addEventListener('submit',
@@ -29,13 +30,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             event.preventDefault();
 
             // get selected payment method
-            let selectedAdyenPaymentMethodHandler = adyenCheckoutOptions.selectedPaymentMethodHandler;
-
-            let selectedAdyenPaymentMethod = Object.keys(
-                adyenConfiguration.paymentMethodTypeHandlers).
-                find(
-                    key => adyenConfiguration.paymentMethodTypeHandlers[key] ===
-                        selectedAdyenPaymentMethodHandler);
+            let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
 
             const confirmPaymentModal = $('#confirmPaymentModal');
             // Do validation if the payment method has all the required data submitted by the customer
@@ -145,11 +140,69 @@ export default class ConfirmOrderPlugin extends Plugin {
             if (paymentActionResponse.isFinal) {
                 location.href = window.returnUrl;
             }
-            window.adyenCheckout.createFromAction(paymentActionResponse.action).
+            if (!!paymentActionResponse.action) {
+                window.adyenCheckout.createFromAction(paymentActionResponse.action).
                 mount('[data-adyen-payment-action-container]');
+            }
         } catch (e) {
             console.log(e);
         }
 
+    }
+
+    initializeCustomPayButton() {
+        // get selected payment method
+        let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
+        if (!adyenConfiguration.componentsWithPayButton.includes(selectedAdyenPaymentMethod)) {
+            return;
+        }
+
+        let config = Object.assign({}, adyenCheckoutConfiguration);
+        config.paymentMethodsResponse = JSON.parse(config.paymentMethodsResponse);
+        let adyenCheckout = new AdyenCheckout(config);
+
+        // get selected payment method object
+        let selectedPaymentMethodObject = adyenCheckout.paymentMethodsResponse.paymentMethods.filter(item => item.type == selectedAdyenPaymentMethod)[0];
+
+        const paymentMethodInstance = adyenCheckout.create(
+            selectedPaymentMethodObject.type,
+            Object.assign(selectedPaymentMethodObject, {
+                showPayButton: true,
+                countryCode: 'NL',
+                currency: 'EUR',
+                amount: { // Use this after above removed
+                    value: 600, //TODO replace with real values
+                    currency: 'EUR',
+                },
+                totalPriceLabel: 'merchantDisplayName',
+                onClick: function (resolve, reject) {
+                    resolve();
+                }
+            })
+        );
+
+        try {
+            if ('isAvailable' in paymentMethodInstance) {
+                paymentMethodInstance.isAvailable().then(() => {
+                    $('#confirmFormSubmit').remove();
+                    let confirmButtonContainer = $('<div id="adyen-confirm-button" data-adyen-confirm-button></div>');
+                    $('#confirmOrderForm').append(confirmButtonContainer);
+                    paymentMethodInstance.mount(confirmButtonContainer.get(0));
+                }).catch(e => {
+                    console.log(selectedPaymentMethodObject.type +
+                        ' is not available, the method will be hidden from the payment list', e);
+                });
+            }
+        } catch (e) {
+            console.log(e);
+        }
+        console.log(selectedPaymentMethodObject.type, ' button initialized.');
+    }
+
+    getSelectedPaymentMethodKey() {
+        return Object.keys(
+            adyenConfiguration.paymentMethodTypeHandlers).find(
+                key => adyenConfiguration.paymentMethodTypeHandlers[key] ===
+                    adyenCheckoutOptions.selectedPaymentMethodHandler);
     }
 }
