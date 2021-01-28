@@ -231,7 +231,6 @@ export default class CheckoutPlugin extends Plugin {
             return;
         }
 
-        // console.log(this.formValidator[selectedPaymentMethod].validateForm());
         if (!this.formValidator[selectedPaymentMethod].validateForm()) {
             event.preventDefault();
         }

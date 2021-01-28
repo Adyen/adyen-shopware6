@@ -38,6 +38,6 @@ class PaymentMethods
         OneClickPaymentMethod::class,
         GiroPayPaymentMethod::class,
         ApplePayPaymentMethod::class,
-        GooglePayPaymentMethod::class
+        GooglePayPaymentMethod::class,
     ];
 }

@@ -4,7 +4,6 @@ import StoreApiClient from 'src/service/store-api-client.service';
 import FormSerializeUtil from 'src/utility/form/form-serialize.util';
 import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 import adyenConfiguration from '../configuration/adyen';
-//import CheckoutPlugin from './checkout.plugin';
 
 /* global adyenCheckoutOptions, adyenCheckoutConfiguration, AdyenCheckout */
 /* eslint-disable no-unused-vars */
