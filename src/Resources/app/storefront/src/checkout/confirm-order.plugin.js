@@ -83,8 +83,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterCreateOrder(response) {
-        //response.subscribe(res =>
-            console.log('afterCreateOrder', response);//);
         let order;
 
         try {
@@ -115,8 +113,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterSetPayment(response) {
-        //response.subscribe(res =>
-        console.log('afterSetPayment', response);//);
         try {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
@@ -129,9 +125,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterPayOrder(orderId, response) {
-        //response.subscribe(res =>
-        console.log('afterPayOrder', response);//);
-        debugger;
         try {
             response = JSON.parse(response);
             window.returnUrl = response.redirectUrl;
@@ -147,18 +140,17 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     handlePaymentAction(paymentAction) {
-        console.log('handlePaymentAction', paymentAction);
         try {
             const paymentActionResponse = JSON.parse(paymentAction);
-            if (paymentActionResponse.isFinal) {
-                location.href = window.returnUrl;
-            }
             if (!!paymentActionResponse.action) {
                 window.adyenCheckout.createFromAction(paymentActionResponse.action).mount('[data-adyen-payment-action-container]');
+                return;
+            }
+            if (paymentActionResponse.isFinal) {
+                location.href = window.returnUrl;
             }
         } catch (e) {
             console.log(e);
         }
-
     }
 }
