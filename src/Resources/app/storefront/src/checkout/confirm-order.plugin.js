@@ -14,10 +14,10 @@ export default class ConfirmOrderPlugin extends Plugin {
         const confirmOrderForm = DomAccess.querySelector(document,
             '#confirmOrderForm');
         confirmOrderForm.addEventListener('submit',
-            this.confirmOrder.bind(this));
+            this.validateAndConfirmOrder.bind(this));
     }
 
-    confirmOrder(event) {
+    validateAndConfirmOrder(event) {
         // Non adyen payment method selected
         if (adyenCheckoutOptions.selectedPaymentMethodPluginId !==
             adyenCheckoutOptions.adyenPluginId) {
@@ -55,25 +55,30 @@ export default class ConfirmOrderPlugin extends Plugin {
             if (!form.checkValidity()) {
                 return;
             }
-
-            this._client = new StoreApiClient();
-            const formData = FormSerializeUtil.serialize(form);
-
             ElementLoadingIndicatorUtil.create(document.body);
 
-            const orderId = adyenCheckoutOptions.orderId;
-            let url = null;
-            let callback = null;
-            if (!!orderId) { //Only used if the order is being edited
-                formData.set('orderId', orderId);
-                url = adyenCheckoutOptions.editPaymentUrl;
-                callback = this.afterSetPayment.bind(this);
-            } else {
-                url = adyenCheckoutOptions.checkoutOrderUrl;
-                callback = this.afterCreateOrder.bind(this);
-            }
-            this._client.post(url, formData, callback);
+            const formData = FormSerializeUtil.serialize(form);
+
+            this.confirmOrder(formData);
         }
+    }
+
+    confirmOrder(formData) {
+        console.log('confirmOrder', formData);
+        this._client = new StoreApiClient();
+
+        const orderId = adyenCheckoutOptions.orderId;
+        let url = null;
+        let callback = null;
+        if (!!orderId) { //Only used if the order is being edited
+            formData.set('orderId', orderId);
+            url = adyenCheckoutOptions.editPaymentUrl;
+            callback = this.afterSetPayment.bind(this);
+        } else {
+            url = adyenCheckoutOptions.checkoutOrderUrl;
+            callback = this.afterCreateOrder.bind(this);
+        }
+        this._client.post(url, formData, callback);
     }
 
     afterCreateOrder(response) {
@@ -86,6 +91,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             // TODO error handling
             return;
         }
+        window.order = order;
+        console.log('afterCreateOrder', window.order);
         window.orderId = !!order.data ? order.data.id : order.id;
         const finishUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentFinishUrl);
@@ -107,6 +114,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterSetPayment(response) {
+        console.log('afterSetPayment', JSON.parse(response));
         try {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
@@ -119,6 +127,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     afterPayOrder(orderId, response) {
+        console.log('afterPayOrder', orderId, JSON.parse(response));
         try {
             response = JSON.parse(response);
             window.returnUrl = response.redirectUrl;
@@ -134,6 +143,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     handlePaymentAction(paymentAction) {
+        console.log('handlePaymentAction', paymentAction);
         try {
             const paymentActionResponse = JSON.parse(paymentAction);
             if (paymentActionResponse.isFinal) {
@@ -156,28 +166,43 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        let config = Object.assign({}, adyenCheckoutConfiguration);
-        config.paymentMethodsResponse = JSON.parse(config.paymentMethodsResponse);
-        let adyenCheckout = new AdyenCheckout(config);
+        let adyenCheckout = new AdyenCheckout(Object.assign(
+            {},
+            adyenCheckoutConfiguration,
+            {paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)}
+        ));
 
         // get selected payment method object
-        let selectedPaymentMethodObject = adyenCheckout.paymentMethodsResponse.paymentMethods.filter(item => item.type == selectedAdyenPaymentMethod)[0];
+        let selectedPaymentMethodObject = adyenCheckout.paymentMethodsResponse.paymentMethods
+            .filter(item => item.type == selectedAdyenPaymentMethod)[0];
 
-        const paymentMethodInstance = adyenCheckout.create(
-            selectedPaymentMethodObject.type,
-            Object.assign(selectedPaymentMethodObject, {
-                showPayButton: true,
-                countryCode: 'NL',
+        const PAY_BUTTON_CONFIG = Object.assign(selectedPaymentMethodObject, {
+            showPayButton: true,
+            countryCode: 'NL',
+            currency: 'EUR',
+            amount: { // Use this after above removed
+                value: 100, //TODO replace with real values
                 currency: 'EUR',
-                amount: { // Use this after above removed
-                    value: 600, //TODO replace with real values
-                    currency: 'EUR',
-                },
-                totalPriceLabel: 'merchantDisplayName',
-                onClick: function (resolve, reject) {
-                    resolve();
-                }
-            })
+            },
+            totalPriceLabel: 'merchantDisplayName',
+            onClick: (resolve, reject) => {
+                ElementLoadingIndicatorUtil.create(document.body);
+                resolve();
+            },
+            onSubmit: (state) => {
+                console.log('onSubmit:', state);
+                this.confirmOrder(new FormData());
+            },
+            onAuthorized: (data) => {
+                console.log('onAuthorized:', data);
+            },
+            onError: (error) => {
+                console.log('error:', error);
+            }
+        });
+        let paymentMethodInstance = adyenCheckout.create(
+            selectedPaymentMethodObject.type,
+            PAY_BUTTON_CONFIG
         );
 
         try {

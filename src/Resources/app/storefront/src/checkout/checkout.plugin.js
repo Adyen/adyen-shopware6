@@ -33,7 +33,7 @@ export default class CheckoutPlugin extends Plugin {
 
     init() {
         const confirmPaymentForm = DomAccess.querySelector(document, '#confirmPaymentForm');
-        confirmPaymentForm.addEventListener('submit', this.onConfirmPayment.bind(this));
+        confirmPaymentForm.addEventListener('submit', this.onConfirmPaymentMethod.bind(this));
 
         const { locale, originKey, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
         const ADYEN_CHECKOUT_CONFIG = {
@@ -110,7 +110,6 @@ export default class CheckoutPlugin extends Plugin {
         const paymentMethodContainer = $('[data-adyen-payment-method="' + adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
 
         if (adyenConfiguration.componentsWithPayButton.includes(paymentMethod.type)) {
-            console.log(paymentMethod.type + ' button will be shown on the main checkout page.');
             return;
         }
 
@@ -203,7 +202,7 @@ export default class CheckoutPlugin extends Plugin {
         this.data = '';
     }
 
-    onConfirmPayment (event) {
+    onConfirmPaymentMethod (event) {
         let selectedPaymentMethod = this.getSelectedPaymentMethodHandlerIdentifyer();
         if (!(selectedPaymentMethod in this.formValidator)) {
             return true;
