@@ -34,6 +34,8 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEnti
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentResponseHandler
@@ -81,16 +83,23 @@ class PaymentResponseHandler
      */
     private $paymentResponseHandlerResult;
 
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $orderTransactionRepository;
+
     public function __construct(
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult
+        PaymentResponseHandlerResult $paymentResponseHandlerResult,
+        EntityRepositoryInterface $orderTransactionRepository
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
@@ -220,6 +229,17 @@ class PaymentResponseHandler
         );
 
         $transaction->getOrderTransaction()->setCustomFields($customFields);
+        $context->scope(
+            Context::SYSTEM_SCOPE,
+            function (Context $context) use ($orderTransactionId, $customFields) {
+                $this->orderTransactionRepository->update([
+                    [
+                        'id' => $orderTransactionId,
+                        'customFields' => $customFields,
+                    ]
+                ], $context);
+            }
+        );
 
         switch ($resultCode) {
             case self::AUTHORISED:
