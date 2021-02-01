@@ -30,6 +30,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class PaymentResponseService
 {
@@ -75,7 +76,8 @@ class PaymentResponseService
             ->search(
                 (new Criteria())
                     ->addFilter((new EqualsFilter('orderId', $orderId)))
-                    ->addAssociation('order'),
+                    ->addAssociation('order')
+                ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
                 Context::createDefaultContext()
             )
             ->first();

@@ -92,7 +92,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             // TODO error handling
             return;
         }
-        window.orderId = !!order.data ? order.data.id : order.id;
+        window.orderId = order.id;
         const finishUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentFinishUrl);
         finishUrl.searchParams.set('orderId', order.id);
