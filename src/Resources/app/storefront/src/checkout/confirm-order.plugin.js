@@ -92,7 +92,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             // TODO error handling
             return;
         }
-        window.orderId = !!order.data ? order.data.id : order.id;
+        window.orderId = order.id;
         const finishUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentFinishUrl);
         finishUrl.searchParams.set('orderId', order.id);
@@ -142,14 +142,15 @@ export default class ConfirmOrderPlugin extends Plugin {
     handlePaymentAction(paymentAction) {
         try {
             const paymentActionResponse = JSON.parse(paymentAction);
+            if (!!paymentActionResponse.action) {
+                window.adyenCheckout.createFromAction(paymentActionResponse.action).mount('[data-adyen-payment-action-container]');
+                return;
+            }
             if (paymentActionResponse.isFinal) {
                 location.href = window.returnUrl;
             }
-            window.adyenCheckout.createFromAction(paymentActionResponse.action).
-                mount('[data-adyen-payment-action-container]');
         } catch (e) {
             console.log(e);
         }
-
     }
 }
