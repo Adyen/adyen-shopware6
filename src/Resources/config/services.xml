@@ -176,6 +176,7 @@
         </service>
         <service id="Adyen\Shopware\Handlers\PaymentResponseHandler" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <argument key="$orderTransactionRepository" type="service" id="order_transaction.repository"/>
         </service>
         <service id="Adyen\Shopware\Service\ContainerParametersService" autowire="true">
         </service>

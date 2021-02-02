@@ -186,13 +186,14 @@ class StoreApiController extends AbstractStoreController
      */
     public function getPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
     {
-        if (empty($request->get('orderId'))) {
+        $orderId = $request->get('orderId');
+        if (empty($orderId)) {
             return new JsonResponse('Order ID not provided');
         }
 
         try {
             return new JsonResponse(
-                $this->paymentStatusService->getWithOrderId($request->get('orderId'))
+                $this->paymentStatusService->getWithOrderId($orderId)
             );
         } catch (Exception $exception) {
             $this->logger->error($exception->getMessage());
