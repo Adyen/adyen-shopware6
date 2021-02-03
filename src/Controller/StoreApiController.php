@@ -29,6 +29,7 @@ use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
+use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Psr\Log\LoggerInterface;
@@ -73,6 +74,10 @@ class StoreApiController extends AbstractStoreController
      * @var LoggerInterface
      */
     private $logger;
+    /**
+     * @var PaymentStateDataService
+     */
+    private $paymentStateDataService;
 
     /**
      * StoreApiController constructor.
@@ -94,6 +99,7 @@ class StoreApiController extends AbstractStoreController
         PaymentStatusService $paymentStatusService,
         PaymentResponseHandler $paymentResponseHandler,
         PaymentResponseService $paymentResponseService,
+        PaymentStateDataService $paymentStateDataService,
         LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
@@ -103,6 +109,7 @@ class StoreApiController extends AbstractStoreController
         $this->paymentStatusService = $paymentStatusService;
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->paymentResponseService = $paymentResponseService;
+        $this->paymentStateDataService = $paymentStateDataService;
         $this->logger = $logger;
     }
 
@@ -199,5 +206,30 @@ class StoreApiController extends AbstractStoreController
             $this->logger->error($exception->getMessage());
             return new JsonResponse(["isFinal" => true]);
         }
+    }
+
+    /**
+     * @RouteScope(scopes={"store-api"})
+     * @Route(
+     *     "/store-api/v{version}/adyen/payment-state-data",
+     *     name="store-api.action.adyen.payment-state-data",
+     *     methods={"POST"}
+     * )
+     * @param Request $request
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function postPaymentStateData(Request $request, SalesChannelContext $context)
+    {
+        $stateData = $request->request->get('adyenStateData');
+        $origin = $request->request->get('adyenOrigin');
+        $token = $context->getToken();
+        try {
+            $this->paymentStateDataService->insertPaymentStateData($token, json_encode($stateData), $origin);
+        } catch (Exception $exception) {
+            $this->logger->error($exception->getMessage());
+            return new JsonResponse('Failed to save state data', 500);
+        }
+        return new JsonResponse(null, 202);
     }
 }

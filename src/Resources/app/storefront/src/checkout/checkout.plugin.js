@@ -35,6 +35,32 @@ export default class CheckoutPlugin extends Plugin {
         const confirmPaymentForm = DomAccess.querySelector(document, '#confirmPaymentForm');
         confirmPaymentForm.addEventListener('submit', this.onConfirmPaymentMethod.bind(this));
 
+        this.client = new StoreApiClient();
+
+        const handleOnAdditionalDetails = function (state) {
+            this.client.post(
+                `${adyenCheckoutOptions.paymentDetailsUrl}`,
+                JSON.stringify({orderId: window.orderId, stateData: state.data}),
+                function (paymentAction) {
+                    // TODO: clean-up
+                    const paymentActionResponse = JSON.parse(paymentAction);
+
+                    if (paymentActionResponse.isFinal) {
+                        location.href = window.returnUrl;
+                    }
+
+                    try {
+                        window.adyenCheckout
+                            .createFromAction(paymentActionResponse.action)
+                            .mount('[data-adyen-payment-action-container]');
+                        $('[data-adyen-payment-action-modal]').modal({show: true});
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+            );
+        }
+
         const { locale, originKey, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
@@ -44,7 +70,7 @@ export default class CheckoutPlugin extends Plugin {
             showPayButton: false,
             hasHolderName: true,
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
-            onAdditionalDetails: this.handleOnAdditionalDetails.bind(this)
+            onAdditionalDetails: handleOnAdditionalDetails.bind(this)
         };
 
         window.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
@@ -78,31 +104,6 @@ export default class CheckoutPlugin extends Plugin {
         }
 
         /* eslint-enable no-unused-vars */
-    }
-
-    handleOnAdditionalDetails (state) {
-        this.client = new StoreApiClient();
-        this.client.post(
-            `${adyenCheckoutOptions.paymentDetailsUrl}`,
-            JSON.stringify({orderId: window.orderId, stateData: state.data}),
-            function (paymentAction) {
-                // TODO: clean-up
-                const paymentActionResponse = JSON.parse(paymentAction);
-
-                if (paymentActionResponse.isFinal) {
-                    location.href = window.returnUrl;
-                }
-
-                try {
-                    window.adyenCheckout
-                        .createFromAction(paymentActionResponse.action)
-                        .mount('[data-adyen-payment-action-container]');
-                    $('[data-adyen-payment-action-modal]').modal({show: true});
-                } catch (e) {
-                    console.log(e);
-                }
-            }
-        );
     }
 
     renderPaymentMethod (paymentMethod) {
