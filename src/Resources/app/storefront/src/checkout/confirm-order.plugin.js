@@ -167,22 +167,6 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        const handleSubmit = function (state) {
-            let params = {
-                adyenStateData: state.data,
-                adyenOrigin: window.location.origin,
-            };
-            this._client.post(adyenCheckoutOptions.stateDataUrl, JSON.stringify(params), (response) => {
-                let formData = new FormData();
-                if (adyenCheckoutOptions.orderId) {
-                    const paymentMethodId = $(`[data-adyen-payment-method="${adyenCheckoutOptions.selectedPaymentMethodHandler}"]`)
-                        .attr('data-adyen-payment-method-id');
-                    formData.set('paymentMethodId', paymentMethodId);
-                }
-                this.confirmOrder(formData);
-            });
-        }
-
         const ADYEN_CHECKOUT_CONFIG = Object.assign({}, adyenCheckoutConfiguration, {
             paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)
         });
@@ -196,51 +180,83 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
         let selectedPaymentMethodObject = selectedPaymentMethod[0];
 
-        const PAY_BUTTON_CONFIG = Object.assign({}, selectedPaymentMethodObject, {
-            showPayButton: true,
-            countryCode: 'NL',
-            currency: 'EUR',
-            amount: { // Use this after above removed
-                value: 100, //TODO replace with real values
-                currency: 'EUR',
-            },
-            totalPriceLabel: 'merchantDisplayName',
-            onClick: (resolve, reject) => {
-                let tos = $('input#tos');
-                if (tos.is(':checked')) {
-                    ElementLoadingIndicatorUtil.create(document.body);
-                    resolve();
-                } else {
-                    tos.focus();
-                    reject();
+        let paymentMethodInstance;
+
+        const createPayButton = function (response) {
+            console.log(response);
+            let cart = JSON.parse(response);
+            let price = cart.price.totalPrice * 100;
+
+            debugger;
+            const PAY_BUTTON_CONFIG = Object.assign({}, selectedPaymentMethodObject, {
+                showPayButton: true,
+                //countryCode: 'NL',
+                //currency: 'EUR',
+                amount: { // Use this after above removed
+                    value: price, //TODO replace with real values
+                    currency: adyenCheckoutOptions.currency,
+                },
+                totalPriceLabel: 'merchantDisplayName',
+                onClick: (resolve, reject) => {
+                    let tos = $('input#tos');
+                    if (tos.is(':checked')) {
+                        ElementLoadingIndicatorUtil.create(document.body);
+                        resolve();
+                    } else {
+                        tos.focus();
+                        reject();
+                    }
+                },
+                onSubmit: function (state) {
+                    let params = {
+                        adyenStateData: state.data,
+                        adyenOrigin: window.location.origin,
+                    };
+                    this._client.post(adyenCheckoutOptions.stateDataUrl, JSON.stringify(params), (response) => {
+                        let formData = new FormData();
+                        if (adyenCheckoutOptions.orderId) {
+                            const paymentMethodId = $(`[data-adyen-payment-method="${adyenCheckoutOptions.selectedPaymentMethodHandler}"]`)
+                                .attr('data-adyen-payment-method-id');
+                            formData.set('paymentMethodId', paymentMethodId);
+                        }
+                        this.confirmOrder(formData);
+                    });
+                },
+                onError: (error) => {
+                    //redirect to error url @todo
+                    console.log('Error: ', error);
                 }
-            },
-            onSubmit: handleSubmit.bind(this),
-            onError: (error) => {
-                //redirect to error url @todo
-                console.log('Error: ', error);
+            });
+
+            paymentMethodInstance = adyenCheckout.create(
+                selectedPaymentMethodObject.type,
+                PAY_BUTTON_CONFIG
+            );
+
+            try {
+                if ('isAvailable' in paymentMethodInstance) {
+                    paymentMethodInstance.isAvailable().then(() => {
+                        $('#confirmOrderForm button[type=submit]').remove();
+                        let confirmButtonContainer = $('<div id="adyen-confirm-button" data-adyen-confirm-button></div>');
+                        $('#confirmOrderForm').append(confirmButtonContainer);
+                        paymentMethodInstance.mount(confirmButtonContainer.get(0));
+                    }).catch(e => {
+                        console.log(selectedPaymentMethodObject.type +
+                            ' is not available, the method will be hidden from the payment list', e);
+                    });
+                }
+            } catch (e) {
+                console.log(e);
             }
-        });
-        let paymentMethodInstance = adyenCheckout.create(
-            selectedPaymentMethodObject.type,
-            PAY_BUTTON_CONFIG
-        );
+        }
 
         try {
-            if ('isAvailable' in paymentMethodInstance) {
-                paymentMethodInstance.isAvailable().then(() => {
-                    $('#confirmOrderForm button[type=submit]').remove();
-                    let confirmButtonContainer = $('<div id="adyen-confirm-button" data-adyen-confirm-button></div>');
-                    $('#confirmOrderForm').append(confirmButtonContainer);
-                    paymentMethodInstance.mount(confirmButtonContainer.get(0));
-                }).catch(e => {
-                    console.log(selectedPaymentMethodObject.type +
-                        ' is not available, the method will be hidden from the payment list', e);
-                });
-            }
+            this._client.post(adyenCheckoutOptions.cartUrl, new FormData(), createPayButton.bind(this));
         } catch (e) {
-            console.log(e);
+            console.log('Failed to load cart information for ' + selectedAdyenPaymentMethod, e);
+            return;
         }
+
     }
 
     getSelectedPaymentMethodKey() {

@@ -248,6 +248,10 @@ class PaymentSubscriber implements EventSubscriberInterface
                         'store-api.action.adyen.payment-state-data',
                         ['version' => 2]
                     ),
+                    'cartUrl' => $this->router->generate(
+                        'store-api.checkout.cart.read',
+                        ['version' => 2]
+                    ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                     'originKey' => empty($this->configurationService->getClientKey($salesChannelId)) ?
                         $this->originKeyService->getOriginKeyForOrigin(
@@ -258,7 +262,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'clientKey' => $this->configurationService->getClientKey($salesChannelId),
                     'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
                         ->getLanguage()->getLocale()->getCode(),
-
+                    'currency' => $salesChannelContext->getCurrency()->getShortName(),
                     'environment' => $this->configurationService->getEnvironment($salesChannelId),
                     'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                     'orderId' => $orderId,
