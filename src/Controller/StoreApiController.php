@@ -71,13 +71,13 @@ class StoreApiController extends AbstractStoreController
      */
     private $paymentResponseService;
     /**
-     * @var LoggerInterface
-     */
-    private $logger;
-    /**
      * @var PaymentStateDataService
      */
     private $paymentStateDataService;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * StoreApiController constructor.
@@ -89,6 +89,7 @@ class StoreApiController extends AbstractStoreController
      * @param PaymentStatusService $paymentStatusService
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param PaymentResponseService $paymentResponseService
+     * @param PaymentStateDataService $paymentStateDataService
      * @param LoggerInterface $logger
      */
     public function __construct(

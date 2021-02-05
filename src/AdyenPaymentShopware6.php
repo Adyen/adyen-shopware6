@@ -124,8 +124,8 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo140($updateContext);
         }
 
-        if (\version_compare($currentVersion, '1.5.0', '<')) {
-            $this->updateTo150($updateContext);
+        if (\version_compare($currentVersion, '1.6.0', '<')) {
+            $this->updateTo160($updateContext);
         }
     }
 
@@ -227,9 +227,9 @@ class AdyenPaymentShopware6 extends Plugin
         );
     }
 
-    private function updateTo150(UpdateContext $updateContext): void
+    private function updateTo160(UpdateContext $updateContext): void
     {
-        //Version 1.5.0 introduces applepay and paywithgoogle
+        //Version 1.6.0 introduces applepay and paywithgoogle
         foreach ([
                      new \Adyen\Shopware\PaymentMethods\ApplePayPaymentMethod,
                      new \Adyen\Shopware\PaymentMethods\GooglePayPaymentMethod

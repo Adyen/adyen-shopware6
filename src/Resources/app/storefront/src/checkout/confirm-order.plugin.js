@@ -172,14 +172,20 @@ export default class ConfirmOrderPlugin extends Plugin {
                 adyenStateData: state.data,
                 adyenOrigin: window.location.origin,
             };
-            this._client.post(adyenCheckoutOptions.stateDataUrl, JSON.stringify(params), this.confirmOrder.bind(this));
+            this._client.post(adyenCheckoutOptions.stateDataUrl, JSON.stringify(params), (response) => {
+                let formData = new FormData();
+                if (adyenCheckoutOptions.orderId) {
+                    const paymentMethodId = $(`[data-adyen-payment-method="${adyenCheckoutOptions.selectedPaymentMethodHandler}"]`)
+                        .attr('data-adyen-payment-method-id');
+                    formData.set('paymentMethodId', paymentMethodId);
+                }
+                this.confirmOrder(formData);
+            });
         }
 
-        const ADYEN_CHECKOUT_CONFIG = Object.assign(
-            {},
-            adyenCheckoutConfiguration,
-            {paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)}
-        );
+        const ADYEN_CHECKOUT_CONFIG = Object.assign({}, adyenCheckoutConfiguration, {
+            paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)
+        });
         let adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
         // get selected payment method object
         let selectedPaymentMethod = adyenCheckout.paymentMethodsResponse.paymentMethods
@@ -200,11 +206,18 @@ export default class ConfirmOrderPlugin extends Plugin {
             },
             totalPriceLabel: 'merchantDisplayName',
             onClick: (resolve, reject) => {
-                ElementLoadingIndicatorUtil.create(document.body);
-                resolve();
+                let tos = $('input#tos');
+                if (tos.is(':checked')) {
+                    ElementLoadingIndicatorUtil.create(document.body);
+                    resolve();
+                } else {
+                    tos.focus();
+                    reject();
+                }
             },
             onSubmit: handleSubmit.bind(this),
             onError: (error) => {
+                //redirect to error url @todo
                 console.log('Error: ', error);
             }
         });
@@ -216,7 +229,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             if ('isAvailable' in paymentMethodInstance) {
                 paymentMethodInstance.isAvailable().then(() => {
-                    $('#confirmFormSubmit').remove();
+                    $('#confirmOrderForm button[type=submit]').remove();
                     let confirmButtonContainer = $('<div id="adyen-confirm-button" data-adyen-confirm-button></div>');
                     $('#confirmOrderForm').append(confirmButtonContainer);
                     paymentMethodInstance.mount(confirmButtonContainer.get(0));
