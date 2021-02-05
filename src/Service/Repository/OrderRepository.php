@@ -57,4 +57,14 @@ class OrderRepository
 
         return $order;
     }
+
+    public function getWithOrderNumber(string $orderNumber, Context $context): ?OrderEntity
+    {
+        return $this->orderRepository->search(
+            (new Criteria())
+            ->addFilter(new EqualsFilter('orderNumber', $orderNumber))
+            ->addAssociation('transactions'),
+            $context
+        )->first();
+    }
 }

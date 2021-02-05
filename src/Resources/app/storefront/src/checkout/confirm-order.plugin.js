@@ -25,7 +25,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
 
         if (!!adyenCheckoutOptions && !!adyenCheckoutOptions.paymentStatusUrl &&
-            adyenCheckoutOptions.checkoutOrderUrl) {
+            adyenCheckoutOptions.checkoutOrderUrl && adyenCheckoutOptions.paymentHandleUrl) {
             event.preventDefault();
 
             // get selected payment method
@@ -92,20 +92,21 @@ export default class ConfirmOrderPlugin extends Plugin {
             // TODO error handling
             return;
         }
-        window.orderId = order.data.id;
+        window.orderId = order.id;
         const finishUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentFinishUrl);
-        finishUrl.searchParams.set('orderId', order.data.id);
+        finishUrl.searchParams.set('orderId', order.id);
         const errorUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
-        errorUrl.searchParams.set('orderId', order.data.id);
+        errorUrl.searchParams.set('orderId', order.id);
         const params = {
+            'orderId': window.orderId,
             'finishUrl': finishUrl.toString(),
             'errorUrl': errorUrl.toString(),
         };
 
         this._client.post(
-            `${adyenCheckoutOptions.checkoutOrderUrl}/${window.orderId}/pay`,
+            adyenCheckoutOptions.paymentHandleUrl,
             JSON.stringify(params),
             this.afterPayOrder.bind(this, window.orderId),
         );
@@ -116,7 +117,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
                 this.afterCreateOrder(
-                    JSON.stringify({data: {id: adyenCheckoutOptions.orderId}}));
+                    JSON.stringify({id: adyenCheckoutOptions.orderId}));
             }
         } catch (e) {
             console.log(e);
@@ -126,7 +127,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     afterPayOrder(orderId, response) {
         try {
             response = JSON.parse(response);
-            window.returnUrl = response.paymentUrl;
+            window.returnUrl = response.redirectUrl;
 
             this._client.post(
                 `${adyenCheckoutOptions.paymentStatusUrl}`,
@@ -141,14 +142,15 @@ export default class ConfirmOrderPlugin extends Plugin {
     handlePaymentAction(paymentAction) {
         try {
             const paymentActionResponse = JSON.parse(paymentAction);
+            if (!!paymentActionResponse.action) {
+                window.adyenCheckout.createFromAction(paymentActionResponse.action).mount('[data-adyen-payment-action-container]');
+                return;
+            }
             if (paymentActionResponse.isFinal) {
                 location.href = window.returnUrl;
             }
-            window.adyenCheckout.createFromAction(paymentActionResponse.action).
-                mount('[data-adyen-payment-action-container]');
         } catch (e) {
             console.log(e);
         }
-
     }
 }

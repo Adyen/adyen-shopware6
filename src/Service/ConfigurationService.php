@@ -93,8 +93,8 @@ class ConfigurationService
     }
 
     /**
-     * @param string $salesChannelId
-     * @return array|mixed|null
+     * @param string|null $salesChannelId
+     * @return string
      */
     public function getEnvironment(string $salesChannelId = null)
     {
@@ -158,10 +158,10 @@ class ConfigurationService
 
     /**
      * Returns HMAC Key based on the configured environment
-     * @param string|null $salesChannelId
+     * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getHmacKey(string $salesChannelId = null)
+    public function getHmacKey(string $salesChannelId)
     {
         if ($this->getEnvironment($salesChannelId) === Environment::LIVE) {
             return $this->getHmacLive($salesChannelId);

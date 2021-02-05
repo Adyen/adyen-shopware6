@@ -67,12 +67,6 @@ class ApiTestController
 
             $params = array(
                 'merchantAccount' => $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.merchantAccount'),
-                'countryCode' => 'NL',
-                'amount' => array(
-                    'currency' => 'EUR',
-                    'value' => 1000
-                ),
-                'channel' => 'Web'
             );
             $result = $service->paymentMethods($params);
 

@@ -213,15 +213,19 @@ class PaymentSubscriber implements EventSubscriberInterface
             new ArrayEntity(
                 [
                     'paymentStatusUrl' => $this->router->generate(
-                        'sales-channel-api.action.adyen.payment-status',
+                        'store-api.action.adyen.payment-status',
                         ['version' => 2]
                     ),
                     'checkoutOrderUrl' => $this->router->generate(
-                        'sales-channel-api.checkout.order.create',
+                        'store-api.checkout.cart.order',
+                        ['version' => 2]
+                    ),
+                    'paymentHandleUrl' => $this->router->generate(
+                        'store-api.payment.handle',
                         ['version' => 2]
                     ),
                     'paymentDetailsUrl' => $this->router->generate(
-                        'sales-channel-api.action.adyen.payment-details',
+                        'store-api.action.adyen.payment-details',
                         ['version' => 2]
                     ),
                     'paymentFinishUrl' => $this->router->generate(
@@ -288,19 +292,21 @@ class PaymentSubscriber implements EventSubscriberInterface
                     continue;
                 }
 
-                $pmFound = array_filter(
+                $methodFoundInResponse = array_filter(
                     $adyenPaymentMethods['paymentMethods'],
                     function ($value) use ($pmCode) {
                         return $value['type'] == $pmCode;
                     }
                 );
 
-                //Remove the PM if it isn't in the paymentMethods response or if it isn't OneClick
-                if (empty($pmFound) &&
-                    ($pmCode != OneClickPaymentMethodHandler::getPaymentMethodCode() &&
-                        empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])
-                    )
-                ) {
+                $shopwareMethodIsOneClick = $pmCode == OneClickPaymentMethodHandler::getPaymentMethodCode();
+                $oneClickInResponse = !empty(
+                    $adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()]
+                );
+
+                //Remove the PM if it isn't in the paymentMethods response
+                //and if it is OneClick while not present in the response
+                if (empty($methodFoundInResponse) && ($shopwareMethodIsOneClick && !$oneClickInResponse)) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
             }
