@@ -148,12 +148,13 @@ export default class ConfirmOrderPlugin extends Plugin {
     handlePaymentAction(paymentAction) {
         try {
             const paymentActionResponse = JSON.parse(paymentAction);
-            if (!!paymentActionResponse.action) {
-                window.adyenCheckout.createFromAction(paymentActionResponse.action).mount('[data-adyen-payment-action-container]');
-                return;
-            }
             if (paymentActionResponse.isFinal) {
                 location.href = window.returnUrl;
+            }
+            if (!!paymentActionResponse.action) {
+                window.adyenCheckout
+                    .createFromAction(paymentActionResponse.action)
+                    .mount('[data-adyen-payment-action-container]');
             }
         } catch (e) {
             console.log(e);
@@ -167,9 +168,11 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        const ADYEN_CHECKOUT_CONFIG = Object.assign({}, adyenCheckoutConfiguration, {
-            paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)
-        });
+        const ADYEN_CHECKOUT_CONFIG = Object.assign(
+            {},
+            adyenCheckoutConfiguration,
+            {paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)}
+        );
         let adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
         // get selected payment method object
         let selectedPaymentMethod = adyenCheckout.paymentMethodsResponse.paymentMethods
@@ -180,23 +183,15 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
         let selectedPaymentMethodObject = selectedPaymentMethod[0];
 
-        let paymentMethodInstance;
-
         const createPayButton = function (response) {
-            console.log(response);
             let cart = JSON.parse(response);
-            let price = cart.price.totalPrice * 100;
 
-            debugger;
             const PAY_BUTTON_CONFIG = Object.assign({}, selectedPaymentMethodObject, {
                 showPayButton: true,
-                //countryCode: 'NL',
-                //currency: 'EUR',
-                amount: { // Use this after above removed
-                    value: price, //TODO replace with real values
+                amount: {
+                    value: cart.price.totalPrice * 100,
                     currency: adyenCheckoutOptions.currency,
                 },
-                totalPriceLabel: 'merchantDisplayName',
                 onClick: (resolve, reject) => {
                     let tos = $('input#tos');
                     if (tos.is(':checked')) {
@@ -208,25 +203,30 @@ export default class ConfirmOrderPlugin extends Plugin {
                     }
                 },
                 onSubmit: function (state) {
-                    let params = {
-                        adyenStateData: state.data,
-                        adyenOrigin: window.location.origin,
-                    };
-                    this._client.post(adyenCheckoutOptions.stateDataUrl, JSON.stringify(params), (response) => {
-                        let formData = new FormData();
-                        if (adyenCheckoutOptions.orderId) {
-                            const paymentMethodId = $(`[data-adyen-payment-method="${adyenCheckoutOptions.selectedPaymentMethodHandler}"]`)
-                                .attr('data-adyen-payment-method-id');
-                            formData.set('paymentMethodId', paymentMethodId);
-                        }
-                        this.confirmOrder(formData);
-                    });
-                },
+                    if (state.isValid) {
+                        let params = {
+                            adyenStateData: state.data,
+                            adyenOrigin: window.location.origin,
+                        };
+                        this._client.post(adyenCheckoutOptions.stateDataUrl, JSON.stringify(params), (response) => {
+                            let formData = new FormData();
+                            if (adyenCheckoutOptions.orderId) {
+                                const paymentMethodId = $(`[data-adyen-payment-method="${adyenCheckoutOptions.selectedPaymentMethodHandler}"]`)
+                                    .attr('data-adyen-payment-method-id');
+                                formData.set('paymentMethodId', paymentMethodId);
+                            }
+                            this.confirmOrder(formData);
+                        });
+                    } else {
+                        console.log('Payment failed: ', state);
+                    }
+                }.bind(this),
                 onError: (error) => {
-                    //redirect to error url @todo
                     console.log('Error: ', error);
                 }
             });
+
+            let paymentMethodInstance;
 
             paymentMethodInstance = adyenCheckout.create(
                 selectedPaymentMethodObject.type,
@@ -241,8 +241,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                         $('#confirmOrderForm').append(confirmButtonContainer);
                         paymentMethodInstance.mount(confirmButtonContainer.get(0));
                     }).catch(e => {
-                        console.log(selectedPaymentMethodObject.type +
-                            ' is not available, the method will be hidden from the payment list', e);
+                        console.log(selectedPaymentMethodObject.type + ' is not available', e);
                     });
                 }
             } catch (e) {
@@ -253,7 +252,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             this._client.post(adyenCheckoutOptions.cartUrl, new FormData(), createPayButton.bind(this));
         } catch (e) {
-            console.log('Failed to load cart information for ' + selectedAdyenPaymentMethod, e);
+            console.log('Error: ', e);
             return;
         }
 
