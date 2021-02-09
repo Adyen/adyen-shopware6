@@ -31,9 +31,14 @@ use Adyen\Shopware\Service\OriginKeyService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
+use Adyen\Util\Currency;
 use JsonException;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Cart\Cart;
+use Shopware\Core\Checkout\Cart\CartCalculator;
+use Shopware\Core\Checkout\Cart\CartPersisterInterface;
+use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -106,6 +111,21 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $container;
 
     /**
+     * @var CartPersisterInterface
+     */
+    private $cartPersister;
+
+    /**
+     * @var CartCalculator
+     */
+    private $cartCalculator;
+
+    /**
+     * @var Currency
+     */
+    private $currency;
+
+    /**
      * @var LoggerInterface $logger
      */
     private $logger;
@@ -121,6 +141,10 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @param PaymentMethodsService $paymentMethodsService
      * @param PluginIdProvider $pluginIdProvider
      * @param EntityRepositoryInterface $paymentMethodRepository
+     * @param SessionInterface $session
+     * @param ContainerInterface $container
+     * @param CartPersisterInterface $cartPersister
+     * @param CartCalculator $cartCalculator
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -134,6 +158,9 @@ class PaymentSubscriber implements EventSubscriberInterface
         EntityRepositoryInterface $paymentMethodRepository,
         SessionInterface $session,
         ContainerInterface $container,
+        CartPersisterInterface $cartPersister,
+        CartCalculator $cartCalculator,
+        Currency $currency,
         LoggerInterface $logger
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
@@ -146,6 +173,9 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->session = $session;
         $this->container = $container;
+        $this->cartPersister = $cartPersister;
+        $this->cartCalculator = $cartCalculator;
+        $this->currency = $currency;
         $this->logger = $logger;
     }
 
@@ -208,6 +238,18 @@ class PaymentSubscriber implements EventSubscriberInterface
 
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
 
+        /** @var Cart $cart */
+        try {
+            $cart = $this->cartCalculator->calculate(
+                $this->cartPersister->load($salesChannelContext->getToken(), $salesChannelContext),
+                $salesChannelContext
+            );
+        } catch (CartTokenNotFoundException $exception) {
+            $cart = null;
+        }
+
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $amount = $cart ? $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency) : null;
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -262,7 +304,8 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'clientKey' => $this->configurationService->getClientKey($salesChannelId),
                     'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
                         ->getLanguage()->getLocale()->getCode(),
-                    'currency' => $salesChannelContext->getCurrency()->getShortName(),
+                    'currency' => $currency,
+                    'amount' => $amount,
                     'environment' => $this->configurationService->getEnvironment($salesChannelId),
                     'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                     'orderId' => $orderId,
