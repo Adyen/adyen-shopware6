@@ -64,22 +64,22 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
-    confirmOrder(formData) {
+    confirmOrder(formData, extraParams= {}) {
         const orderId = adyenCheckoutOptions.orderId;
         let url = null;
         let callback = null;
         if (!!orderId) { //Only used if the order is being edited
             formData.set('orderId', orderId);
             url = adyenCheckoutOptions.editPaymentUrl;
-            callback = this.afterSetPayment.bind(this);
+            callback = this.afterSetPayment.bind(this, extraParams);
         } else {
             url = adyenCheckoutOptions.checkoutOrderUrl;
-            callback = this.afterCreateOrder.bind(this);
+            callback = this.afterCreateOrder.bind(this, extraParams);
         }
         this._client.post(url, formData, callback);
     }
 
-    afterCreateOrder(response) {
+    afterCreateOrder(extraParams= {}, response) {
         let order;
 
         try {
@@ -96,11 +96,14 @@ export default class ConfirmOrderPlugin extends Plugin {
         window.errorUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
         window.errorUrl.searchParams.set('orderId', order.id);
-        const params = {
+        let params = {
             'orderId': window.orderId,
             'finishUrl': window.finishUrl.toString(),
             'errorUrl': window.errorUrl.toString(),
         };
+        for (const property in extraParams) {
+            params[property] = JSON.stringify(extraParams[property]);
+        }
 
         this._client.post(
             adyenCheckoutOptions.paymentHandleUrl,
@@ -109,12 +112,12 @@ export default class ConfirmOrderPlugin extends Plugin {
         );
     }
 
-    afterSetPayment(response) {
+    afterSetPayment(extraParams={}, response) {
         try {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
                 this.afterCreateOrder(
-                    JSON.stringify({id: adyenCheckoutOptions.orderId}));
+                    JSON.stringify({id: adyenCheckoutOptions.orderId}), extraParams);
             }
         } catch (e) {
             console.log(e);
@@ -204,26 +207,24 @@ export default class ConfirmOrderPlugin extends Plugin {
                     reject();
                 }
             },
-            onSubmit: function (state) {
+            onSubmit: function (state, component) {
                 if (state.isValid) {
                     let params = {
-                        adyenStateData: state.data,
-                        adyenOrigin: window.location.origin,
+                        stateData: state.data
                     };
-                    this._client.post(adyenCheckoutOptions.stateDataUrl, JSON.stringify(params), (response) => {
-                        let formData = new FormData();
-                        if (adyenCheckoutOptions.orderId) {
-                            const paymentMethodId = $(`[data-adyen-payment-method="${adyenCheckoutOptions.selectedPaymentMethodHandler}"]`)
-                                .attr('data-adyen-payment-method-id');
-                            formData.set('paymentMethodId', paymentMethodId);
-                        }
-                        this.confirmOrder(formData);
-                    });
+                    let formData = new FormData();
+                    if (adyenCheckoutOptions.orderId) {
+                        const paymentMethodId = $(`[data-adyen-payment-method="${adyenCheckoutOptions.selectedPaymentMethodHandler}"]`)
+                            .attr('data-adyen-payment-method-id');
+                        formData.set('paymentMethodId', paymentMethodId);
+                    }
+                    this.confirmOrder(formData, params);
                 } else {
+                    component.showValidation();
                     console.log('Payment failed: ', state);
                 }
             }.bind(this),
-            onError: (error) => {
+            onError: function (error) {
                 console.log('Error: ', error);
             }
         });

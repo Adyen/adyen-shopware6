@@ -217,6 +217,20 @@ class PaymentSubscriber implements EventSubscriberInterface
         if (method_exists($page, 'getOrder')) {
             $orderId = $page->getOrder()->getId();
         }
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $amount = null;
+        try {
+            $cart = $this->cartCalculator->calculate(
+                $this->cartPersister->load($salesChannelContext->getToken(), $salesChannelContext),
+                $salesChannelContext
+            );
+            $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
+        } catch (CartTokenNotFoundException $exception) {
+            $cart = null;
+            if (!empty($orderId)) {
+                $amount = $this->currency->sanitize($page->getOrder()->getPrice()->getTotalPrice(), $currency);
+            }
+        }
 
         $filteredPaymentMethods = $this->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),
@@ -238,18 +252,6 @@ class PaymentSubscriber implements EventSubscriberInterface
 
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
 
-        /** @var Cart $cart */
-        try {
-            $cart = $this->cartCalculator->calculate(
-                $this->cartPersister->load($salesChannelContext->getToken(), $salesChannelContext),
-                $salesChannelContext
-            );
-        } catch (CartTokenNotFoundException $exception) {
-            $cart = null;
-        }
-
-        $currency = $salesChannelContext->getCurrency()->getIsoCode();
-        $amount = $cart ? $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency) : null;
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
