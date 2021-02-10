@@ -141,7 +141,7 @@ export default class CheckoutPlugin extends Plugin {
             paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
             this.formValidator[adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
-            console.log(paymentMethod.type + err);
+            console.log(paymentMethod.type, err);
         }
     }
 
@@ -176,7 +176,7 @@ export default class CheckoutPlugin extends Plugin {
 
             this.formValidator[adyenConfiguration.paymentMethodTypeHandlers.oneclick][paymentMethod.storedPaymentMethodId] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
-            console.log(paymentMethod.type + err);
+            console.log(paymentMethod.type, err);
         }
     }
 

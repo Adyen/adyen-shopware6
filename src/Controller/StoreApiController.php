@@ -29,7 +29,6 @@ use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
-use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Psr\Log\LoggerInterface;
@@ -71,10 +70,6 @@ class StoreApiController extends AbstractStoreController
      */
     private $paymentResponseService;
     /**
-     * @var PaymentStateDataService
-     */
-    private $paymentStateDataService;
-    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -89,7 +84,6 @@ class StoreApiController extends AbstractStoreController
      * @param PaymentStatusService $paymentStatusService
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param PaymentResponseService $paymentResponseService
-     * @param PaymentStateDataService $paymentStateDataService
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -100,7 +94,6 @@ class StoreApiController extends AbstractStoreController
         PaymentStatusService $paymentStatusService,
         PaymentResponseHandler $paymentResponseHandler,
         PaymentResponseService $paymentResponseService,
-        PaymentStateDataService $paymentStateDataService,
         LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
@@ -110,7 +103,6 @@ class StoreApiController extends AbstractStoreController
         $this->paymentStatusService = $paymentStatusService;
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->paymentResponseService = $paymentResponseService;
-        $this->paymentStateDataService = $paymentStateDataService;
         $this->logger = $logger;
     }
 
