@@ -288,10 +288,6 @@ class PaymentSubscriber implements EventSubscriberInterface
                         'store-api.order.set-payment',
                         ['version' => 2]
                     ),
-                    'stateDataUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-state-data',
-                        ['version' => 2]
-                    ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                     'originKey' => empty($this->configurationService->getClientKey($salesChannelId)) ?
                         $this->originKeyService->getOriginKeyForOrigin(
