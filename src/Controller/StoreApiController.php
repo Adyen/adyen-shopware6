@@ -208,29 +208,4 @@ class StoreApiController extends AbstractStoreController
             return new JsonResponse(["isFinal" => true]);
         }
     }
-
-    /**
-     * @RouteScope(scopes={"store-api"})
-     * @Route(
-     *     "/store-api/v{version}/adyen/payment-state-data",
-     *     name="store-api.action.adyen.payment-state-data",
-     *     methods={"POST"}
-     * )
-     * @param Request $request
-     * @param SalesChannelContext $context
-     * @return JsonResponse
-     */
-    public function postPaymentStateData(Request $request, SalesChannelContext $context)
-    {
-        $stateData = $request->request->get('adyenStateData');
-        $origin = $request->request->get('adyenOrigin');
-        $token = $context->getToken();
-        try {
-            $this->paymentStateDataService->insertPaymentStateData($token, json_encode($stateData), $origin);
-        } catch (Exception $exception) {
-            $this->logger->error($exception->getMessage());
-            return new JsonResponse('Failed to save state data', 500);
-        }
-        return new JsonResponse(null, 202);
-    }
 }
