@@ -11,11 +11,11 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new StoreApiClient();
-        this.initializeCustomPayButton();
-        const confirmOrderForm = DomAccess.querySelector(document,
+        this.confirmOrderForm = DomAccess.querySelector(document,
             '#confirmOrderForm');
-        confirmOrderForm.addEventListener('submit',
+        this.confirmOrderForm.addEventListener('submit',
             this.validateAndConfirmOrder.bind(this));
+        this.initializeCustomPayButton();
     }
 
     validateAndConfirmOrder(event) {
@@ -116,8 +116,8 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
-                this.afterCreateOrder(
-                    JSON.stringify({id: adyenCheckoutOptions.orderId}), extraParams);
+                this.afterCreateOrder(extraParams,
+                    JSON.stringify({id: adyenCheckoutOptions.orderId}));
             }
         } catch (e) {
             console.log(e);
@@ -187,7 +187,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         let selectedPaymentMethodObject = selectedPaymentMethod[0];
 
         if (!!!adyenCheckoutOptions.amount) {
-            console.error('Failed to fetch Cart total amount.');
+            console.error('Failed to fetch Cart/Order total amount.');
             return;
         }
 
@@ -198,13 +198,11 @@ export default class ConfirmOrderPlugin extends Plugin {
                 currency: adyenCheckoutOptions.currency,
             },
             onClick: (resolve, reject) => {
-                let tos = $('input#tos');
-                if (tos.is(':checked')) {
+                if (!this.confirmOrderForm.checkValidity()) {
+                    reject();
+                } else {
                     ElementLoadingIndicatorUtil.create(document.body);
                     resolve();
-                } else {
-                    tos.focus();
-                    reject();
                 }
             },
             onSubmit: function (state, component) {
