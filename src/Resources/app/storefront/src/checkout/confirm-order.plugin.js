@@ -79,7 +79,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this._client.post(url, formData, callback);
     }
 
-    afterCreateOrder(extraParams= {}, response) {
+    afterCreateOrder(extraParams={}, response) {
         let order;
         try {
             order = JSON.parse(response);
@@ -100,8 +100,9 @@ export default class ConfirmOrderPlugin extends Plugin {
             'finishUrl': this.finishUrl.toString(),
             'errorUrl': this.errorUrl.toString(),
         };
+        // Append any extra parameters passed, e.g. stateData
         for (const property in extraParams) {
-            params[property] = JSON.stringify(extraParams[property]);
+            params[property] = extraParams[property];
         }
 
         this._client.post(
@@ -209,7 +210,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             onSubmit: function (state, component) {
                 if (state.isValid) {
                     let extraParams = {
-                        stateData: state.data
+                        stateData: JSON.stringify(state.data)
                     };
                     let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
                     this.confirmOrder(formData, extraParams);
