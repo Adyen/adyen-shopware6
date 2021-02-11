@@ -88,7 +88,9 @@ export default class ConfirmOrderPlugin extends Plugin {
             // TODO error handling
             return;
         }
-        this.orderId = order.id;
+        // orderId and returnUrl are stored on window to be consumed by CheckoutPlugin.handleOnAdditionalDetails
+        // in the case of a 3ds payment, @todo refactor
+        window.orderId = order.id;
         this.finishUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentFinishUrl);
         this.finishUrl.searchParams.set('orderId', order.id);
@@ -96,7 +98,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', order.id);
         let params = {
-            'orderId': this.orderId,
+            'orderId': window.orderId,
             'finishUrl': this.finishUrl.toString(),
             'errorUrl': this.errorUrl.toString(),
         };
@@ -108,7 +110,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this._client.post(
             adyenCheckoutOptions.paymentHandleUrl,
             JSON.stringify(params),
-            this.afterPayOrder.bind(this, this.orderId),
+            this.afterPayOrder.bind(this, window.orderId),
         );
     }
 
@@ -127,7 +129,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     afterPayOrder(orderId, response) {
         try {
             response = JSON.parse(response);
-            this.returnUrl = response.redirectUrl;
+            window.returnUrl = response.redirectUrl;
         } catch (e) {
             console.log(e);
             return;
@@ -135,8 +137,8 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         // If payment call returns the errorUrl, then no need to proceed further.
         // Redirect to error page.
-        if (this.returnUrl == this.errorUrl.toString()) {
-            location.href = this.returnUrl;
+        if (window.returnUrl == this.errorUrl.toString()) {
+            location.href = window.returnUrl;
         }
 
         try {
@@ -154,7 +156,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             const paymentActionResponse = JSON.parse(paymentAction);
             if (paymentActionResponse.isFinal) {
-                location.href = this.returnUrl;
+                location.href = window.returnUrl;
             }
             if (!!paymentActionResponse.action) {
                 window.adyenCheckout
