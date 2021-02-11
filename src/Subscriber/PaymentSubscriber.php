@@ -145,6 +145,7 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @param ContainerInterface $container
      * @param CartPersisterInterface $cartPersister
      * @param CartCalculator $cartCalculator
+     * @param Currency $currency
      * @param LoggerInterface $logger
      */
     public function __construct(
