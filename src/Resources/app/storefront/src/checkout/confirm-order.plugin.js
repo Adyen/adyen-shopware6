@@ -132,6 +132,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
+        // If payment call returns the errorUrl, then no need to proceed further.
+        // Redirect to error page.
         if (this.returnUrl == this.errorUrl.toString()) {
             location.href = this.returnUrl;
         }
