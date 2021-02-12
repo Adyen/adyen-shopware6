@@ -190,7 +190,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
         let selectedPaymentMethodObject = selectedPaymentMethod[0];
 
-        if (!!!adyenCheckoutOptions.amount) {
+        if (!adyenCheckoutOptions.amount) {
             console.error('Failed to fetch Cart/Order total amount.');
             return;
         }
