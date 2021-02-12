@@ -245,8 +245,10 @@ abstract class AbstractPaymentMethodHandler
     ): RedirectResponse {
         $transactionId = $transaction->getOrderTransaction()->getId();
         $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
+        $stateData = $dataBag->get('stateData', null);
+
         try {
-            $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
+            $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $stateData);
         } catch (Exception $exception) {
             $message = sprintf(
                 "There was an error with the payment method. Order number: %s Missing data: %s",
@@ -332,17 +334,21 @@ abstract class AbstractPaymentMethodHandler
      */
     public function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
-        AsyncPaymentTransactionStruct $transaction
+        AsyncPaymentTransactionStruct $transaction,
+        ?string $stateData = null
     ) {
-        //Get state.data using the context token
-        $stateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
-            $salesChannelContext->getToken()
-        );
+        $request = [];
 
         if ($stateData) {
-            $request = json_decode($stateData->getStateData(), true);
+            $request = json_decode($stateData, true);
         } else {
-            $request = [];
+            // Get state.data using the context token
+            $stateDataEntity = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
+                $salesChannelContext->getToken()
+            );
+            if ($stateDataEntity) {
+                $request = json_decode($stateDataEntity->getStateData(), true);
+            }
         }
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -595,9 +601,9 @@ abstract class AbstractPaymentMethodHandler
 
         $request['channel'] = 'web';
 
-        //Remove the used state.data
-        if ($stateData) {
-            $this->paymentStateDataService->deletePaymentStateData($stateData);
+        // Remove the used state.data
+        if (isset($stateDataEntity)) {
+            $this->paymentStateDataService->deletePaymentStateData($stateDataEntity);
         }
 
         return $request;

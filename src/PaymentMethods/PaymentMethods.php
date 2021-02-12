@@ -36,6 +36,8 @@ class PaymentMethods
         SofortPaymentMethod::class,
         PaypalPaymentMethod::class,
         OneClickPaymentMethod::class,
-        GiroPayPaymentMethod::class
+        GiroPayPaymentMethod::class,
+        ApplePayPaymentMethod::class,
+        GooglePayPaymentMethod::class,
     ];
 }

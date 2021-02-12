@@ -114,12 +114,18 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function update(UpdateContext $updateContext): void
     {
-        if (\version_compare($updateContext->getCurrentPluginVersion(), '1.2.0', '<')) {
+        $currentVersion = $updateContext->getCurrentPluginVersion();
+
+        if (\version_compare($currentVersion, '1.2.0', '<')) {
             $this->updateTo120($updateContext);
         }
 
-        if (\version_compare($updateContext->getCurrentPluginVersion(), '1.4.0', '<')) {
+        if (\version_compare($currentVersion, '1.4.0', '<')) {
             $this->updateTo140($updateContext);
+        }
+
+        if (\version_compare($currentVersion, '1.6.0', '<')) {
+            $this->updateTo160($updateContext);
         }
     }
 
@@ -219,6 +225,25 @@ class AdyenPaymentShopware6 extends Plugin
             $updateContext->getContext(),
             new \Adyen\Shopware\PaymentMethods\GiroPayPaymentMethod
         );
+    }
+
+    private function updateTo160(UpdateContext $updateContext): void
+    {
+        //Version 1.6.0 introduces applepay and paywithgoogle
+        foreach ([
+                     new \Adyen\Shopware\PaymentMethods\ApplePayPaymentMethod,
+                     new \Adyen\Shopware\PaymentMethods\GooglePayPaymentMethod
+                 ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
     }
 }
 
