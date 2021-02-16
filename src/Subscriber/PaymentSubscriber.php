@@ -347,10 +347,12 @@ class PaymentSubscriber implements EventSubscriberInterface
                 $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
 
                 if ($pmCode == OneClickPaymentMethodHandler::getPaymentMethodCode()) {
+                    // For OneClick, remove it if /paymentMethod response has no stored payment methods
                     if (empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                 } else {
+                    // For all other PMs, search in /paymentMethods response for payment method with matching `type`
                     $paymentMethodFoundInResponse = array_filter(
                         $adyenPaymentMethods['paymentMethods'],
                         function ($value) use ($pmCode) {
@@ -358,7 +360,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                         }
                     );
 
-                    //Remove the PM if it isn't in the paymentMethods response
+                    // Remove the PM if it isn't in the paymentMethods response
                     if (empty($paymentMethodFoundInResponse)) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
