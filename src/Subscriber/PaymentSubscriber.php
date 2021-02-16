@@ -328,14 +328,13 @@ class PaymentSubscriber implements EventSubscriberInterface
         PaymentMethodCollection $originalPaymentMethods,
         SalesChannelContext $salesChannelContext,
         string $adyenPluginId
-    ): PaymentMethodCollection
-    {
+    ): PaymentMethodCollection {
         // Get Adyen /paymentMethods response
         $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
 
         // If the /paymentMethods response returns empty, remove all Adyen payment methods from the list and return
-        if(empty($adyenPaymentMethods['paymentMethods'])) {
-            return $originalPaymentMethods->filter(function(PaymentMethodEntity $item) use ($adyenPluginId) {
+        if (empty($adyenPaymentMethods['paymentMethods'])) {
+            return $originalPaymentMethods->filter(function (PaymentMethodEntity $item) use ($adyenPluginId) {
                 return $item->getPluginId() !== $adyenPluginId;
             });
         }
