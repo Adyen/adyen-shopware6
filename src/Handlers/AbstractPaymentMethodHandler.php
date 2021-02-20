@@ -629,7 +629,7 @@ abstract class AbstractPaymentMethodHandler
 
         // Generate the custom Adyen endpoint to receive the redirect from the issuer page
         $adyenReturnUrl = $this->router->generate(
-            'adyen_redirect_result',
+            'payment.adyen.redirect_result',
             [
                 RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
                     'payment.finalize.transaction'
