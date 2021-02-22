@@ -3,7 +3,7 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
-        <title>Minimal configuration</title>
+        <title>Adyen Payment Configuration</title>
         <input-field type="text">
             <name>merchantAccount</name>
             <label>Merchant account</label>
@@ -58,7 +58,6 @@
         </input-field>
         <component name="adyen-config-check-button">
             <name>configTest</name>
-            <label>Test configuration</label>
         </component>
     </card>
 </config>

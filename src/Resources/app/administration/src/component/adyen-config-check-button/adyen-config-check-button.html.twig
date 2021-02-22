@@ -1,8 +1,9 @@
-<div>
+<template>
     <sw-button-process
+            :disabled="isLoading"
             :isLoading="isLoading"
             :processSuccess="isSaveSuccessful"
             @process-finish="saveFinish"
             @click="check"
-    >{{ label }}</sw-button-process>
-</div>
+    >Test Configuration</sw-button-process>
+</template>
