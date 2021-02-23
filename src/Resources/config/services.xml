@@ -107,6 +107,7 @@
             <argument type="service" id="security.csrf.token_manager"/>
             <argument type="service" id="currency.repository"/>
             <argument type="service" id="product.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Tax\TaxDetector"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
         </service>
         <service id="Adyen\Shopware\Handlers\CardsPaymentMethodHandler"

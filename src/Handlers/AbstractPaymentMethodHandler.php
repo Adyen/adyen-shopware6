@@ -43,6 +43,7 @@ use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
 use Exception;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Cart\Tax\TaxDetector;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
@@ -167,8 +168,12 @@ abstract class AbstractPaymentMethodHandler
     protected $productRepository;
 
     /**
-     * CardsPaymentMethodHandler constructor.
-     *
+     * @var TaxDetector
+     */
+    protected $taxDetector;
+
+    /**
+     * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
      * @param CheckoutService $checkoutService
      * @param Browser $browserBuilder
@@ -185,8 +190,10 @@ abstract class AbstractPaymentMethodHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
      * @param CsrfTokenManagerInterface $csrfTokenManager
-     * @param LoggerInterface $logger
      * @param EntityRepositoryInterface $currencyRepository
+     * @param EntityRepositoryInterface $productRepository
+     * @param TaxDetector $taxDetector
+     * @param LoggerInterface $logger
      */
     public function __construct(
         ConfigurationService $configurationService,
@@ -207,6 +214,7 @@ abstract class AbstractPaymentMethodHandler
         CsrfTokenManagerInterface $csrfTokenManager,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
+        TaxDetector $taxDetector,
         LoggerInterface $logger
     ) {
         $this->checkoutService = $checkoutService;
@@ -228,6 +236,7 @@ abstract class AbstractPaymentMethodHandler
         $this->csrfTokenManager = $csrfTokenManager;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
+        $this->taxDetector = $taxDetector;
     }
 
     abstract public static function getPaymentMethodCode();
@@ -567,7 +576,8 @@ abstract class AbstractPaymentMethodHandler
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
                     $this->currency->sanitize(
-                        $price->getUnitPrice() - $lineTax,
+                        $price->getUnitPrice() -
+                        ($this->taxDetector->useGross($salesChannelContext) ? $lineTax : 0),
                         $this->getCurrency(
                             $transaction->getOrder()->getCurrencyId(),
                             $salesChannelContext->getContext()
