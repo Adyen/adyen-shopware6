@@ -43,7 +43,6 @@ use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
 use Exception;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Checkout\Cart\Tax\TaxDetector;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
@@ -168,11 +167,6 @@ abstract class AbstractPaymentMethodHandler
     protected $productRepository;
 
     /**
-     * @var TaxDetector
-     */
-    protected $taxDetector;
-
-    /**
      * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
      * @param CheckoutService $checkoutService
@@ -192,7 +186,6 @@ abstract class AbstractPaymentMethodHandler
      * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param EntityRepositoryInterface $currencyRepository
      * @param EntityRepositoryInterface $productRepository
-     * @param TaxDetector $taxDetector
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -214,7 +207,6 @@ abstract class AbstractPaymentMethodHandler
         CsrfTokenManagerInterface $csrfTokenManager,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
-        TaxDetector $taxDetector,
         LoggerInterface $logger
     ) {
         $this->checkoutService = $checkoutService;
@@ -236,7 +228,6 @@ abstract class AbstractPaymentMethodHandler
         $this->csrfTokenManager = $csrfTokenManager;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
-        $this->taxDetector = $taxDetector;
     }
 
     abstract public static function getPaymentMethodCode();
@@ -577,7 +568,7 @@ abstract class AbstractPaymentMethodHandler
                     $productName,
                     $this->currency->sanitize(
                         $price->getUnitPrice() -
-                        ($this->taxDetector->useGross($salesChannelContext) ? $lineTax : 0),
+                        ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
                         $this->getCurrency(
                             $transaction->getOrder()->getCurrencyId(),
                             $salesChannelContext->getContext()
