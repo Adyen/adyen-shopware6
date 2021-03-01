@@ -167,8 +167,7 @@ abstract class AbstractPaymentMethodHandler
     protected $productRepository;
 
     /**
-     * CardsPaymentMethodHandler constructor.
-     *
+     * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
      * @param CheckoutService $checkoutService
      * @param Browser $browserBuilder
@@ -185,8 +184,9 @@ abstract class AbstractPaymentMethodHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
      * @param CsrfTokenManagerInterface $csrfTokenManager
-     * @param LoggerInterface $logger
      * @param EntityRepositoryInterface $currencyRepository
+     * @param EntityRepositoryInterface $productRepository
+     * @param LoggerInterface $logger
      */
     public function __construct(
         ConfigurationService $configurationService,
@@ -567,7 +567,8 @@ abstract class AbstractPaymentMethodHandler
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
                     $this->currency->sanitize(
-                        $price->getUnitPrice() - $lineTax,
+                        $price->getUnitPrice() -
+                        ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
                         $this->getCurrency(
                             $transaction->getOrder()->getCurrencyId(),
                             $salesChannelContext->getContext()
