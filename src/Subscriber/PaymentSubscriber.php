@@ -195,14 +195,13 @@ class PaymentSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * Persists the Adyen payment state data on payment method confirmation/update
-     *
      * @param SalesChannelContextSwitchEvent $event
      */
     public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
     {
-        if (!$this->saveStateData($event)) {
-            $this->session->getFlashBag()->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+        // Save (or clear) state.data if payment method is selected/updated
+        if ($event->getRequestDataBag()->has('paymentMethodId')) {
+            $this->saveStateData($event);
         }
     }
 
@@ -377,7 +376,11 @@ class PaymentSubscriber implements EventSubscriberInterface
             ->trans($snippet, $parameters);
     }
 
-    private function saveStateData(SalesChannelContextSwitchEvent $event): bool
+    /**
+     * Persists the Adyen payment state data on payment method confirmation/update
+     * @param SalesChannelContextSwitchEvent $event
+     */
+    private function saveStateData(SalesChannelContextSwitchEvent $event)
     {
         //State data from the frontend
         $stateData = $event->getRequestDataBag()->get('adyenStateData');
@@ -388,14 +391,16 @@ class PaymentSubscriber implements EventSubscriberInterface
 
             if (json_last_error() !== JSON_ERROR_NONE) {
                 $this->logger->error('Payment state data is an invalid JSON: ' . json_last_error_msg());
-                return false;
+                $this->session->getFlashBag()
+                    ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+                return;
             }
 
             //Payment method selected from the Shopware methods form
             $selectedPaymentMethod = $this->paymentMethodRepository->search(
                 (new Criteria())
                     ->addFilter(new EqualsFilter('id', $event->getRequestDataBag()->get('paymentMethodId'))),
-                Context::createDefaultContext()
+                $event->getSalesChannelContext()
             )->first();
 
             $selectedPaymentMethodIsStoredPM =
@@ -412,7 +417,9 @@ class PaymentSubscriber implements EventSubscriberInterface
                         $event->getRequestDataBag()->get('adyenOrigin')
                     );
                 } catch (AdyenException $exception) {
-                    return false;
+                    $this->session->getFlashBag()
+                        ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+                    return;
                 }
             } else {
                 //PM selected and state.data don't match, clear previous state.data
@@ -420,13 +427,11 @@ class PaymentSubscriber implements EventSubscriberInterface
                     $event->getSalesChannelContext()->getToken()
                 );
             }
-            return true;
         } else {
             //PM selected doesn't have state.data, clear previous state.data
             $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
                 $event->getSalesChannelContext()->getToken()
             );
-            return true;
         }
     }
 }
