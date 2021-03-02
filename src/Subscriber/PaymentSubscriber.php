@@ -400,7 +400,7 @@ class PaymentSubscriber implements EventSubscriberInterface
             $selectedPaymentMethod = $this->paymentMethodRepository->search(
                 (new Criteria())
                     ->addFilter(new EqualsFilter('id', $event->getRequestDataBag()->get('paymentMethodId'))),
-                $event->getSalesChannelContext()
+                Context::createDefaultContext()
             )->first();
 
             $selectedPaymentMethodIsStoredPM =
