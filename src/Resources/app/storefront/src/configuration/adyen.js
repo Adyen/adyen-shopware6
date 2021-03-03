@@ -37,6 +37,6 @@ export default {
         'applepay': 'handler_adyen_applepaypaymentmethodhandler',
         'paywithgoogle': 'handler_adyen_googlepaypaymentmethodhandler',
         'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
-        'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler'
+        'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
     }
 }
