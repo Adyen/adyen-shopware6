@@ -45,6 +45,8 @@ class PaymentStateDataService
      */
     protected $logger;
 
+    const CHECKOUT_TYPES_AS_BRAND = ['bcmc'];
+
     /**
      * PaymentStateDataService constructor.
      * @param EntityRepositoryInterface $paymentStateDataRepository
@@ -130,7 +132,14 @@ class PaymentStateDataService
             return OneClickPaymentMethodHandler::getPaymentMethodCode();
         }
 
-        return $stateDataArray['paymentMethod']['type'];
+        $type = $stateDataArray['paymentMethod']['type'];
+        if ($type == 'scheme'
+            && isset($stateDataArray['paymentMethod']['brand'])
+            && in_array($stateDataArray['paymentMethod']['brand'], self::CHECKOUT_TYPES_AS_BRAND)) {
+            return $stateDataArray['paymentMethod']['brand'];
+        }
+
+        return $type;
     }
 
     /**
