@@ -201,6 +201,10 @@ class PaymentSubscriber implements EventSubscriberInterface
     {
         // Save (or clear) state.data if payment method is selected/updated
         if ($event->getRequestDataBag()->has('paymentMethodId')) {
+            $this->removeCurrentStateData($event);
+        }
+
+        if ($event->getRequestDataBag()->get('adyenStateData')) {
             $this->saveStateData($event);
         }
     }
@@ -385,53 +389,59 @@ class PaymentSubscriber implements EventSubscriberInterface
         //State data from the frontend
         $stateData = $event->getRequestDataBag()->get('adyenStateData');
 
-        if ($stateData) {
-            //Convert the state data into an array
-            $stateDataArray = json_decode($stateData, true);
+        //Convert the state data into an array
+        $stateDataArray = json_decode($stateData, true);
 
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $this->logger->error('Payment state data is an invalid JSON: ' . json_last_error_msg());
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->logger->error('Payment state data is an invalid JSON: ' . json_last_error_msg());
+            $this->session->getFlashBag()
+                ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+            return;
+        }
+
+        //Use payment method selected in the same request if available, otherwise get payment method from context
+        $paymentMethodId = $event->getRequestDataBag()->get('paymentMethodId')
+            ?? $event->getSalesChannelContext()->getPaymentMethod()->getId();
+        if (!$paymentMethodId) {
+            $this->logger->error('A payment method must be selected before saving payment state data.');
+            $this->session->getFlashBag()
+                ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+            return;
+        }
+        $selectedPaymentMethod = $this->paymentMethodRepository->search(
+            (new Criteria())
+                ->addFilter(new EqualsFilter('id', $paymentMethodId)),
+            $event->getContext()
+        )->first();
+
+        $selectedPaymentMethodIsStoredPM =
+            $selectedPaymentMethod->getFormattedHandlerIdentifier() == 'handler_adyen_oneclickpaymentmethodhandler';
+
+        $stateDataIsStoredPM = !empty($stateDataArray["paymentMethod"]["storedPaymentMethodId"]);
+
+        //Only store the state data if it matches the selected PM
+        if ($stateDataIsStoredPM == $selectedPaymentMethodIsStoredPM) {
+            try {
+                $this->paymentStateDataService->insertPaymentStateData(
+                    $event->getSalesChannelContext()->getToken(),
+                    $event->getRequestDataBag()->get('adyenStateData'),
+                    $event->getRequestDataBag()->get('adyenOrigin')
+                );
+            } catch (AdyenException $exception) {
                 $this->session->getFlashBag()
                     ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
                 return;
             }
-
-            //Payment method selected from the Shopware methods form
-            $selectedPaymentMethod = $this->paymentMethodRepository->search(
-                (new Criteria())
-                    ->addFilter(new EqualsFilter('id', $event->getRequestDataBag()->get('paymentMethodId'))),
-                Context::createDefaultContext()
-            )->first();
-
-            $selectedPaymentMethodIsStoredPM =
-                $selectedPaymentMethod->getFormattedHandlerIdentifier() == 'handler_adyen_oneclickpaymentmethodhandler';
-
-            $stateDataIsStoredPM = !empty($stateDataArray["paymentMethod"]["storedPaymentMethodId"]);
-
-            //Only store the state data if it matches the selected PM
-            if ($stateDataIsStoredPM == $selectedPaymentMethodIsStoredPM) {
-                try {
-                    $this->paymentStateDataService->insertPaymentStateData(
-                        $event->getSalesChannelContext()->getToken(),
-                        $event->getRequestDataBag()->get('adyenStateData'),
-                        $event->getRequestDataBag()->get('adyenOrigin')
-                    );
-                } catch (AdyenException $exception) {
-                    $this->session->getFlashBag()
-                        ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
-                    return;
-                }
-            } else {
-                //PM selected and state.data don't match, clear previous state.data
-                $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
-                    $event->getSalesChannelContext()->getToken()
-                );
-            }
         } else {
-            //PM selected doesn't have state.data, clear previous state.data
-            $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
-                $event->getSalesChannelContext()->getToken()
-            );
+            //PM selected and state.data don't match, clear previous state.data
+            $this->removeCurrentStateData($event);
         }
+    }
+
+    private function removeCurrentStateData(SalesChannelContextSwitchEvent $event)
+    {
+        $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
+            $event->getSalesChannelContext()->getToken()
+        );
     }
 }
