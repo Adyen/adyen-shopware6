@@ -133,6 +133,11 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $logger;
 
     /**
+     * @var string
+     */
+    private $adyenPluginId;
+
+    /**
      * PaymentSubscriber constructor.
      *
      * @param PaymentStateDataService $paymentStateDataService
@@ -180,6 +185,10 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->cartCalculator = $cartCalculator;
         $this->currency = $currency;
         $this->logger = $logger;
+        $this->adyenPluginId = $this->pluginIdProvider->getPluginIdByBaseClass(
+            \Adyen\Shopware\AdyenPaymentShopware6::class,
+            Context::createDefaultContext()
+        );
     }
 
     /**
@@ -199,13 +208,32 @@ class PaymentSubscriber implements EventSubscriberInterface
      */
     public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
     {
-        // Save (or clear) state.data if payment method is selected/updated
+        // Clear state.data if payment method is updated
         if ($event->getRequestDataBag()->has('paymentMethodId')) {
             $this->removeCurrentStateData($event);
         }
 
+        // Save state data, only if Adyen payment method is selected
         if ($event->getRequestDataBag()->get('adyenStateData')) {
-            $this->saveStateData($event);
+            // Use payment method selected in the same request if available, otherwise get payment method from context
+            $paymentMethodId = $event->getRequestDataBag()->get('paymentMethodId')
+                ?? $event->getSalesChannelContext()->getPaymentMethod()->getId();
+            if (!$paymentMethodId) {
+                $this->logger->error('A payment method must be selected before saving payment state data.');
+                $this->session->getFlashBag()
+                    ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+                return;
+            }
+            /** @var PaymentMethodEntity $paymentMethod */
+            $paymentMethod = $this->paymentMethodRepository->search(
+                (new Criteria())
+                    ->addFilter(new EqualsFilter('id', $paymentMethodId)),
+                $event->getContext()
+            )->first();
+
+            if ($paymentMethod->getPluginId() === $this->adyenPluginId) {
+                $this->saveStateData($event, $paymentMethod);
+            }
         }
     }
 
@@ -238,15 +266,10 @@ class PaymentSubscriber implements EventSubscriberInterface
             }
         }
 
-        $adyenPluginId = $this->pluginIdProvider->getPluginIdByBaseClass(
-            \Adyen\Shopware\AdyenPaymentShopware6::class,
-            $salesChannelContext->getContext()
-        );
-
         $filteredPaymentMethods = $this->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),
             $salesChannelContext,
-            $adyenPluginId
+            $this->adyenPluginId
         );
 
         $page->setPaymentMethods($filteredPaymentMethods);
@@ -311,7 +334,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                     'orderId' => $orderId,
                     'stateDataPaymentMethod' => $stateDataPaymentMethod,
-                    'pluginId' => $adyenPluginId,
+                    'pluginId' => $this->adyenPluginId,
                     'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                     'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
                     'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId()
@@ -384,7 +407,7 @@ class PaymentSubscriber implements EventSubscriberInterface
      * Persists the Adyen payment state data on payment method confirmation/update
      * @param SalesChannelContextSwitchEvent $event
      */
-    private function saveStateData(SalesChannelContextSwitchEvent $event)
+    private function saveStateData(SalesChannelContextSwitchEvent $event, PaymentMethodEntity $selectedPaymentMethod)
     {
         //State data from the frontend
         $stateData = $event->getRequestDataBag()->get('adyenStateData');
@@ -398,21 +421,6 @@ class PaymentSubscriber implements EventSubscriberInterface
                 ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
             return;
         }
-
-        //Use payment method selected in the same request if available, otherwise get payment method from context
-        $paymentMethodId = $event->getRequestDataBag()->get('paymentMethodId')
-            ?? $event->getSalesChannelContext()->getPaymentMethod()->getId();
-        if (!$paymentMethodId) {
-            $this->logger->error('A payment method must be selected before saving payment state data.');
-            $this->session->getFlashBag()
-                ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
-            return;
-        }
-        $selectedPaymentMethod = $this->paymentMethodRepository->search(
-            (new Criteria())
-                ->addFilter(new EqualsFilter('id', $paymentMethodId)),
-            $event->getContext()
-        )->first();
 
         $selectedPaymentMethodIsStoredPM =
             $selectedPaymentMethod->getFormattedHandlerIdentifier() == 'handler_adyen_oneclickpaymentmethodhandler';
