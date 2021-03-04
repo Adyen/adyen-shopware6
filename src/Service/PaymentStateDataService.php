@@ -133,6 +133,7 @@ class PaymentStateDataService
         }
 
         $type = $stateDataArray['paymentMethod']['type'];
+        // Workaround for checkout components with type: 'scheme' but the component type is stored as 'brand'
         if ($type == 'scheme'
             && isset($stateDataArray['paymentMethod']['brand'])
             && in_array($stateDataArray['paymentMethod']['brand'], self::CHECKOUT_TYPES_AS_BRAND)) {
