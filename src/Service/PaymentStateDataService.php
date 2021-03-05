@@ -45,8 +45,6 @@ class PaymentStateDataService
      */
     protected $logger;
 
-    const CHECKOUT_TYPES_AS_BRAND = ['bcmc'];
-
     /**
      * PaymentStateDataService constructor.
      * @param EntityRepositoryInterface $paymentStateDataRepository
@@ -109,38 +107,6 @@ class PaymentStateDataService
         )->first();
 
         return $stateDataRow;
-    }
-
-    /**
-     * @param string $contextToken
-     * @return string|null
-     */
-    public function getPaymentMethodType(string $contextToken): ?string
-    {
-        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
-        if (empty($stateData)) {
-            return null;
-        }
-
-        $stateDataArray = json_decode($stateData->getStateData(), true);
-        if (empty($stateDataArray['paymentMethod']['type'])) {
-            return null;
-        }
-
-        //storedPaymentMethods are type=scheme. If storedPaymentMethodId is present we return storedPaymentMethods
-        if (!empty($stateDataArray['paymentMethod']['storedPaymentMethodId'])) {
-            return OneClickPaymentMethodHandler::getPaymentMethodCode();
-        }
-
-        $type = $stateDataArray['paymentMethod']['type'];
-        // Workaround for checkout components with type: 'scheme' but the component type is stored as 'brand'
-        if ($type == 'scheme'
-            && isset($stateDataArray['paymentMethod']['brand'])
-            && in_array($stateDataArray['paymentMethod']['brand'], self::CHECKOUT_TYPES_AS_BRAND)) {
-            return $stateDataArray['paymentMethod']['brand'];
-        }
-
-        return $type;
     }
 
     /**
