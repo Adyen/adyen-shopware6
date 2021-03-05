@@ -229,11 +229,12 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function updateTo160(UpdateContext $updateContext): void
     {
-        //Version 1.6.0 introduces applepay, paywithgoogle and dotpay
+        //Version 1.6.0 introduces applepay, paywithgoogle, dotpay and bancontact
         foreach ([
                      new \Adyen\Shopware\PaymentMethods\ApplePayPaymentMethod,
                      new \Adyen\Shopware\PaymentMethods\GooglePayPaymentMethod,
-                     new \Adyen\Shopware\PaymentMethods\DotpayPaymentMethod
+                     new \Adyen\Shopware\PaymentMethods\DotpayPaymentMethod,
+                     new \Adyen\Shopware\PaymentMethods\BancontactCardPaymentMethod
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,
