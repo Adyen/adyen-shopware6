@@ -35,7 +35,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             const confirmPaymentModal = $('#confirmPaymentModal');
             // Do validation if the payment method has all the required data submitted by the customer
             // 1. case: State data is not stored
-            if (!adyenCheckoutOptions.statedataPaymentMethod) {
+            if (!adyenCheckoutOptions.stateDataIsStored) {
                 if (adyenConfiguration.updatablePaymentMethods.includes(
                     selectedAdyenPaymentMethod)) {
                     // Show popup to customer to fill in the missing payment details

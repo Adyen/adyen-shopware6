@@ -247,7 +247,7 @@ class PaymentSubscriber implements EventSubscriberInterface
 
         $page->setPaymentMethods($filteredPaymentMethods);
 
-        $stateDataPaymentMethod = $this->paymentStateDataService->getPaymentMethodType(
+        $stateDataIsStored = (bool) $this->paymentStateDataService->getPaymentStateDataFromContextToken(
             $salesChannelContext->getToken()
         );
 
@@ -306,7 +306,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'environment' => $this->configurationService->getEnvironment($salesChannelId),
                     'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                     'orderId' => $orderId,
-                    'stateDataPaymentMethod' => $stateDataPaymentMethod,
+                    'stateDataIsStored' => $stateDataIsStored,
                     'pluginId' => $adyenPluginId,
                     'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                     'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),

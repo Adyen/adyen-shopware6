@@ -182,14 +182,17 @@ export default class CheckoutPlugin extends Plugin {
 
     hideStateData(method) {
         let element = $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers[method]}]`);
-        if (method === adyenCheckoutOptions.statedataPaymentMethod) {
-            //The state data stored matches this method, show update details button
-            element.find('[data-adyen-payment-container]').hide();
-            element.find('[data-adyen-update-payment-details]').show();
-        } else if (method === 'oneclick' && adyenCheckoutOptions.statedataPaymentMethod === 'storedPaymentMethods') {
-            //The state data stored matches storedPaymentMethods, show update details button for oneclick
-            $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-payment-container]').hide();
-            $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-update-payment-details]').show();
+        let selectedPaymentMethod = this.getSelectedPaymentMethodKey();
+        if (method === selectedPaymentMethod) {
+            if (method == 'oneclick') {
+                //The state data stored matches storedPaymentMethods, show update details button for oneclick
+                $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-payment-container]').hide();
+                $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers["oneclick"]}]`).find('[data-adyen-update-payment-details]').show();
+            } else {
+                //The state data stored matches this method, show update details button
+                element.find('[data-adyen-payment-container]').hide();
+                element.find('[data-adyen-update-payment-details]').show();
+            }
         } else {
             //The state data stored does not match this method, show the form
             element.find('[data-adyen-payment-container]').show();
@@ -267,6 +270,12 @@ export default class CheckoutPlugin extends Plugin {
 
     getSelectedPaymentMethodHandlerIdentifyer() {
         return $('[name=paymentMethodId]:checked').siblings('.adyen-payment-method-container-div').data('adyen-payment-method');
+    }
+
+    getSelectedPaymentMethodKey() {
+        let handler = adyenCheckoutOptions.selectedPaymentMethodHandler;
+        let map = adyenConfiguration.paymentMethodTypeHandlers;
+        return Object.keys(map).find(key => map[key] === handler);
     }
 
     getSelectedStoredPaymentMethodID() {

@@ -110,6 +110,7 @@ class PaymentStateDataService
     }
 
     /**
+     * @deprecated will be removed in v2.0
      * @param string $contextToken
      * @return string|null
      */
