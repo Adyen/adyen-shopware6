@@ -45,8 +45,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\Struct\ArrayEntity;
-use Shopware\Core\Framework\Validation\DataValidationDefinition;
-use Shopware\Core\Framework\Validation\DataValidator;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
@@ -55,7 +53,6 @@ use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Validator\Constraints\NotBlank;
 
 class PaymentSubscriber implements EventSubscriberInterface
 {
@@ -128,11 +125,6 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $currency;
 
     /**
-     * @var DataValidator
-     */
-    private $validator;
-
-    /**
      * @var LoggerInterface $logger
      */
     private $logger;
@@ -157,7 +149,6 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @param ContainerInterface $container
      * @param CartPersisterInterface $cartPersister
      * @param CartCalculator $cartCalculator
-     * @param DataValidator $validator
      * @param Currency $currency
      * @param LoggerInterface $logger
      */
@@ -174,7 +165,6 @@ class PaymentSubscriber implements EventSubscriberInterface
         ContainerInterface $container,
         CartPersisterInterface $cartPersister,
         CartCalculator $cartCalculator,
-        DataValidator $validator,
         Currency $currency,
         LoggerInterface $logger
     ) {
@@ -191,7 +181,6 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
         $this->currency = $currency;
-        $this->validator = $validator;
         $this->logger = $logger;
         $this->adyenPluginId = $this->pluginIdProvider->getPluginIdByBaseClass(
             \Adyen\Shopware\AdyenPaymentShopware6::class,
@@ -223,15 +212,6 @@ class PaymentSubscriber implements EventSubscriberInterface
 
         // Save state data, only if Adyen payment method is selected
         if ($event->getRequestDataBag()->get('adyenStateData')) {
-            if (!$event->getRequestDataBag()->has('paymentMethodId')) {
-                // Validate that payment method has previously been saved.
-                $definition = new DataValidationDefinition('context_switch');
-                $definition->add(
-                    'paymentMethod',
-                    new NotBlank(['message' => 'A payment method must be selected before saving payment state data.'])
-                );
-                $this->validator->validate($event->getSalesChannelContext()->getVars(), $definition);
-            }
             // Use payment method selected in the same request if available, otherwise get payment method from context
             $paymentMethodId = $event->getRequestDataBag()->get('paymentMethodId')
                 ?? $event->getSalesChannelContext()->getPaymentMethod()->getId();
@@ -241,9 +221,12 @@ class PaymentSubscriber implements EventSubscriberInterface
                     ->addFilter(new EqualsFilter('id', $paymentMethodId)),
                 $event->getContext()
             )->first();
-
             if ($paymentMethod->getPluginId() === $this->adyenPluginId) {
                 $this->saveStateData($event, $paymentMethod);
+            } else {
+                $this->logger->error('Please select an Adyen payment method to save payment state data.');
+                $this->session->getFlashBag()
+                    ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
             }
         }
     }
