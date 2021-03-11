@@ -224,7 +224,7 @@ class PaymentSubscriber implements EventSubscriberInterface
             if ($paymentMethod->getPluginId() === $this->adyenPluginId) {
                 $this->saveStateData($event, $paymentMethod);
             } else {
-                $this->logger->error('Please select an Adyen payment method to save payment state data.');
+                $this->logger->error('No Adyen payment method selected, skipping state data save.');
                 $this->session->getFlashBag()
                     ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
             }
