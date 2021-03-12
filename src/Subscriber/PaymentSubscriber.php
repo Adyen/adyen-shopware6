@@ -422,7 +422,7 @@ class PaymentSubscriber implements EventSubscriberInterface
         $stateDataIsStoredPM = !empty($stateDataArray["paymentMethod"]["storedPaymentMethodId"]);
 
         //Only store the state data if it matches the selected PM
-        if ($stateDataIsStoredPM == $selectedPaymentMethodIsStoredPM) {
+        if ($stateDataIsStoredPM === $selectedPaymentMethodIsStoredPM) {
             try {
                 $this->paymentStateDataService->insertPaymentStateData(
                     $event->getSalesChannelContext()->getToken(),
