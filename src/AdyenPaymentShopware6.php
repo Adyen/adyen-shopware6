@@ -85,31 +85,7 @@ class AdyenPaymentShopware6 extends Plugin
             return;
         }
 
-        //Search for config keys that contain the bundle's name
-        /** @var EntityRepositoryInterface $systemConfigRepository */
-        $systemConfigRepository = $this->container->get('system_config.repository');
-        $criteria = (new Criteria())
-            ->addFilter(
-                new ContainsFilter('configurationKey', ConfigurationService::BUNDLE_NAME . '.config')
-            );
-        $idSearchResult = $systemConfigRepository->searchIds($criteria, Context::createDefaultContext());
-
-        //Formatting IDs array and deleting config keys
-        $ids = \array_map(static function ($id) {
-            return ['id' => $id];
-        }, $idSearchResult->getIds());
-        $systemConfigRepository->delete($ids, Context::createDefaultContext());
-
-        //Dropping database tables
-        $tables = [
-            NotificationEntityDefinition::ENTITY_NAME,
-            PaymentStateDataEntityDefinition::ENTITY_NAME,
-            PaymentResponseEntityDefinition::ENTITY_NAME
-        ];
-        $connection = $this->container->get(Connection::class);
-        foreach ($tables as $table) {
-            $connection->executeUpdate(\sprintf('DROP TABLE IF EXISTS `%s`', $table));
-        }
+        $this->removePluginData();
     }
 
     public function update(UpdateContext $updateContext): void
@@ -210,6 +186,37 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $context);
+    }
+
+    private function removePluginData()
+    {
+        //Search for config keys that contain the bundle's name
+        /** @var EntityRepositoryInterface $systemConfigRepository */
+        $systemConfigRepository = $this->container->get('system_config.repository');
+        $criteria = (new Criteria())
+            ->addFilter(
+                new ContainsFilter('configurationKey', ConfigurationService::BUNDLE_NAME . '.config')
+            );
+        $idSearchResult = $systemConfigRepository->searchIds($criteria, Context::createDefaultContext());
+
+        //Formatting IDs array and deleting config keys
+        $ids = \array_map(static function ($id) {
+            return ['id' => $id];
+        }, $idSearchResult->getIds());
+        $systemConfigRepository->delete($ids, Context::createDefaultContext());
+
+        //Dropping database tables
+        $tables = [
+            NotificationEntityDefinition::ENTITY_NAME,
+            PaymentStateDataEntityDefinition::ENTITY_NAME,
+            PaymentResponseEntityDefinition::ENTITY_NAME
+        ];
+        $connection = $this->container->get(Connection::class);
+        foreach ($tables as $table) {
+            $connection->executeUpdate(\sprintf('DROP TABLE IF EXISTS `%s`', $table));
+        }
+
+        $this->removeMigrations();
     }
 
     private function updateTo120(UpdateContext $updateContext): void
