@@ -43,7 +43,7 @@ class OrderTransactionExtension extends EntityExtension
     {
         $collection->add(
             new OneToManyAssociationField(
-                'paymentResponses',
+                'adyenPaymentResponses',
                 PaymentResponseEntityDefinition::class,
                 'order_transaction_id'
             )
