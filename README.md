@@ -30,6 +30,10 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
 ### Supported payment methods
  - Credit and debit cards (non 3D secure, 3D secure 1, 3D secure 2 native)
  - Stored card payment methods (One click payment methods)
+ - Apple Pay
+ - Bancontact
+ - Dotpay
+ - Google Pay
  - GiroPay
  - iDeal
  - Klarna Pay Later

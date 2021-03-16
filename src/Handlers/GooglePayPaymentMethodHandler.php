@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  *                       ######
  *                       ######
@@ -15,31 +16,22 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\PaymentMethods;
+namespace Adyen\Shopware\Handlers;
 
-class PaymentMethods
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class GooglePayPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
-    const PAYMENT_METHODS = [
-        CardsPaymentMethod::class,
-        IdealPaymentMethod::class,
-        KlarnaAccountPaymentMethod::class,
-        KlarnaPayNowPaymentMethod::class,
-        KlarnaPayLaterPaymentMethod::class,
-        SepaPaymentMethod::class,
-        SofortPaymentMethod::class,
-        PaypalPaymentMethod::class,
-        OneClickPaymentMethod::class,
-        GiroPayPaymentMethod::class,
-        ApplePayPaymentMethod::class,
-        GooglePayPaymentMethod::class,
-        DotpayPaymentMethod::class,
-        BancontactCardPaymentMethod::class,
-    ];
+
+    public static function getPaymentMethodCode()
+    {
+        return 'paywithgoogle';
+    }
 }

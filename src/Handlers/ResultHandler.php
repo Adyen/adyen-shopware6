@@ -139,6 +139,15 @@ class ResultHandler
                 $details[self::PAYLOAD] = $payload;
             }
 
+            if (empty($details)) {
+                $error = 'Payment details are missing.';
+                $this->logger->error(
+                    $error,
+                    ['orderId' => $transaction->getOrder()->getId()]
+                );
+                throw new PaymentFailedException($error);
+            }
+
             // Validate the return
             $result = $this->paymentDetailsService->doPaymentDetails(
                 $details,

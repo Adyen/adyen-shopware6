@@ -198,7 +198,7 @@ class PaymentResponseHandler
             return;
         }
 
-        // Get already stored transaction custom fileds
+        // Get already stored transaction custom fields
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
 
         // Store action, additionalData and originalPspReference in the transaction
@@ -217,7 +217,7 @@ class PaymentResponseHandler
         }
 
         // Only store additional data for the transaction if this is the first additional data
-        $additionalData = $this->paymentResponseHandlerResult->getAction();
+        $additionalData = $this->paymentResponseHandlerResult->getAdditionalData();
         if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA]) && !empty($additionalData)) {
             $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
         }

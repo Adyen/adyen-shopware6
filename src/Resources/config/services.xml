@@ -80,6 +80,9 @@
         <service id="Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_payment_response"/>
         </service>
+        <service id="Adyen\Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
         <service id="Adyen\Shopware\Service\NotificationService">
             <argument type="service" id="adyen_notification.repository"/>
         </service>
@@ -146,6 +149,22 @@
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Adyen\Shopware\Handlers\GiroPayPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\DotpayPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\BancontactCardPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
@@ -239,6 +258,9 @@
             <argument type="service" id="payment_method.repository"/>
             <argument type="service" id="Symfony\Component\HttpFoundation\Session\SessionInterface"/>
             <argument type="service" id="Psr\Container\ContainerInterface"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>
+            <argument type="service" id="Adyen\Util\Currency"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
         </service>

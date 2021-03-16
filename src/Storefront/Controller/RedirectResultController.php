@@ -58,7 +58,7 @@ class RedirectResultController extends StorefrontController
      * @RouteScope(scopes={"storefront"})
      * @Route(
      *     "/adyen/redirect-result",
-     *     name="adyen_redirect_result",
+     *     name="payment.adyen.redirect_result",
      *     defaults={"csrf_protected": false},
      *     methods={"GET", "POST"}
      * )

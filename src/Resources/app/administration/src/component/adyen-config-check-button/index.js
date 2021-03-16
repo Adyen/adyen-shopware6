@@ -26,7 +26,6 @@ import template from './adyen-config-check-button.html.twig';
 Component.register('adyen-config-check-button', {
     template,
 
-    props: ['label'],
     inject: ['adyenConfigCheck'],
 
     mixins: [
@@ -42,8 +41,15 @@ Component.register('adyen-config-check-button', {
 
     computed: {
         pluginConfig() {
-            let selectedSalesChannelId = this.$parent.$parent.$parent.currentSalesChannelId;
-            let config = this.$parent.$parent.$parent.actualConfigData;
+            // Plugin config moved up by one level in Shopware >= v6.3.4.1
+            // i.e. from this.$parent.$parent.$parent to this.$parent.$parent.$parent.$parent
+            // @fixme This is a hack to support all versions
+            let systemConfigComponent = this.$parent;
+            while (!systemConfigComponent.hasOwnProperty('actualConfigData')) {
+                systemConfigComponent = systemConfigComponent.$parent
+            }
+            let selectedSalesChannelId = systemConfigComponent.currentSalesChannelId;
+            let config = systemConfigComponent.actualConfigData;
             // Properties NOT set in the sales channel config will be inherited from default config.
             return Object.assign({}, config.null, config[selectedSalesChannelId]);
         }

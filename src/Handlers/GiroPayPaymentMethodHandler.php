@@ -27,11 +27,8 @@ namespace Adyen\Shopware\Handlers;
 
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 
-// phpcs:ignore Generic.Files.LineLength.TooLong
 class GiroPayPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
-
-    protected static $isOpenInvoice = false;
 
     public static function getPaymentMethodCode()
     {

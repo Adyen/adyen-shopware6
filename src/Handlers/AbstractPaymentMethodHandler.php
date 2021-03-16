@@ -167,8 +167,7 @@ abstract class AbstractPaymentMethodHandler
     protected $productRepository;
 
     /**
-     * CardsPaymentMethodHandler constructor.
-     *
+     * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
      * @param CheckoutService $checkoutService
      * @param Browser $browserBuilder
@@ -185,8 +184,9 @@ abstract class AbstractPaymentMethodHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
      * @param CsrfTokenManagerInterface $csrfTokenManager
-     * @param LoggerInterface $logger
      * @param EntityRepositoryInterface $currencyRepository
+     * @param EntityRepositoryInterface $productRepository
+     * @param LoggerInterface $logger
      */
     public function __construct(
         ConfigurationService $configurationService,
@@ -245,8 +245,10 @@ abstract class AbstractPaymentMethodHandler
     ): RedirectResponse {
         $transactionId = $transaction->getOrderTransaction()->getId();
         $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
+        $stateData = $dataBag->get('stateData', null);
+
         try {
-            $request = $this->preparePaymentsRequest($salesChannelContext, $transaction);
+            $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $stateData);
         } catch (Exception $exception) {
             $message = sprintf(
                 "There was an error with the payment method. Order number: %s Missing data: %s",
@@ -332,17 +334,21 @@ abstract class AbstractPaymentMethodHandler
      */
     public function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
-        AsyncPaymentTransactionStruct $transaction
+        AsyncPaymentTransactionStruct $transaction,
+        ?string $stateData = null
     ) {
-        //Get state.data using the context token
-        $stateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
-            $salesChannelContext->getToken()
-        );
+        $request = [];
 
         if ($stateData) {
-            $request = json_decode($stateData->getStateData(), true);
+            $request = json_decode($stateData, true);
         } else {
-            $request = [];
+            // Get state.data using the context token
+            $stateDataEntity = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
+                $salesChannelContext->getToken()
+            );
+            if ($stateDataEntity) {
+                $request = json_decode($stateDataEntity->getStateData(), true);
+            }
         }
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -561,7 +567,8 @@ abstract class AbstractPaymentMethodHandler
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
                     $this->currency->sanitize(
-                        $price->getUnitPrice() - $lineTax,
+                        $price->getUnitPrice() -
+                        ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
                         $this->getCurrency(
                             $transaction->getOrder()->getCurrencyId(),
                             $salesChannelContext->getContext()
@@ -595,9 +602,9 @@ abstract class AbstractPaymentMethodHandler
 
         $request['channel'] = 'web';
 
-        //Remove the used state.data
-        if ($stateData) {
-            $this->paymentStateDataService->deletePaymentStateData($stateData);
+        // Remove the used state.data
+        if (isset($stateDataEntity)) {
+            $this->paymentStateDataService->deletePaymentStateData($stateDataEntity);
         }
 
         return $request;
@@ -623,7 +630,7 @@ abstract class AbstractPaymentMethodHandler
 
         // Generate the custom Adyen endpoint to receive the redirect from the issuer page
         $adyenReturnUrl = $this->router->generate(
-            'adyen_redirect_result',
+            'payment.adyen.redirect_result',
             [
                 RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
                     'payment.finalize.transaction'

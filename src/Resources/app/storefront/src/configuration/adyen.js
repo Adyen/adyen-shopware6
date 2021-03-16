@@ -21,7 +21,8 @@
  */
 
 export default {
-    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick'],
+    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc'],
+    componentsWithPayButton: ['applepay', 'paywithgoogle', 'paypal'],
     paymentMethodTypeHandlers: {
         'scheme': 'handler_adyen_cardspaymentmethodhandler',
         'ideal': 'handler_adyen_idealpaymentmethodhandler',
@@ -32,6 +33,10 @@ export default {
         'sofort': 'handler_adyen_sofortpaymentmethodhandler',
         'paypal': 'handler_adyen_paypalpaymentmethodhandler',
         'oneclick': 'handler_adyen_oneclickpaymentmethodhandler',
-        'giropay': 'handler_adyen_giropaypaymentmethodhandler'
+        'giropay': 'handler_adyen_giropaypaymentmethodhandler',
+        'applepay': 'handler_adyen_applepaypaymentmethodhandler',
+        'paywithgoogle': 'handler_adyen_googlepaypaymentmethodhandler',
+        'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
+        'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
     }
 }

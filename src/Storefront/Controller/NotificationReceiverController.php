@@ -52,7 +52,11 @@ class NotificationReceiverController extends StorefrontController
 
     /**
      * @RouteScope(scopes={"storefront"})
-     * @Route("/adyen/notification", name="adyen_notification", defaults={"csrf_protected": false}, methods={"POST"})
+     * @Route(
+     *     "/adyen/notification",
+     *     name="payment.adyen.notification",
+     *     defaults={"csrf_protected": false}, methods={"POST"}
+     * )
      *
      * @param Request $request
      * @return JsonResponse
