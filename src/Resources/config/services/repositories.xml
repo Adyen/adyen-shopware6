@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~                       ######
+  ~                       ######
+  ~ ############    ####( ######  #####. ######  ############   ############
+  ~ #############  #####( ######  #####. ######  #############  #############
+  ~        ######  #####( ######  #####. ######  #####  ######  #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####          #####  ######
+  ~ #############  #############  #############  #############  #####  ######
+  ~  ############   ############  #############   ############  #####  ######
+  ~                                      ######
+  ~                               #############
+  ~                               ############
+  ~
+  ~ Adyen plugin for Shopware 6
+  ~
+  ~ Copyright (c) 2021 Adyen B.V.
+  ~ This file is open source and available under the MIT license.
+  ~ See the LICENSE file for more info.
+  ~
+  -->
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Adyen\Shopware\Service\Repository\SalesChannelRepository" autowire="true">
+            <argument type="service" id="sales_channel_domain.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
+        </service>
+        <service id="Adyen\Shopware\Service\Repository\OrderRepository" autowire="true">
+            <argument type="service" id="order.repository"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
+    </services>
+</container>
