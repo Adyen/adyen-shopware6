@@ -11,11 +11,52 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new StoreApiClient();
+        const { locale, originKey, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
+        const ADYEN_CHECKOUT_CONFIG = {
+            locale,
+            originKey,
+            clientKey,
+            environment,
+            showPayButton: false,
+            hasHolderName: true,
+            paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
+            onAdditionalDetails: this.handleOnAdditionalDetails.bind(this)
+        };
+
+        this.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
         this.confirmOrderForm = DomAccess.querySelector(document,
             '#confirmOrderForm');
         this.confirmOrderForm.addEventListener('submit',
             this.validateAndConfirmOrder.bind(this));
         this.initializeCustomPayButton();
+    }
+
+    handleOnAdditionalDetails (state) {
+        this._client.post(
+            `${adyenCheckoutOptions.paymentDetailsUrl}`,
+            JSON.stringify({orderId: this.orderId, stateData: state.data}),
+            function (paymentAction) {
+                if (this._client._request.status !== 200) {
+                    location.href = this.errorUrl.toString();
+                    return;
+                }
+                const paymentActionResponse = JSON.parse(paymentAction);
+
+                if (paymentActionResponse.isFinal) {
+                    location.href = this.returnUrl;
+                }
+
+                try {
+                    this.adyenCheckout
+                        .createFromAction(paymentActionResponse.action)
+                        .mount('[data-adyen-payment-action-container]');
+                    $('[data-adyen-payment-action-modal]').modal({show: true});
+                } catch (e) {
+                    debugger;
+                    console.log(e);
+                }
+            }.bind(this)
+        );
     }
 
     validateAndConfirmOrder(event) {
@@ -88,9 +129,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             // TODO error handling
             return;
         }
-        // orderId and returnUrl are stored on window to be consumed by CheckoutPlugin.handleOnAdditionalDetails
-        // in the case of a 3ds payment, @todo refactor
-        window.orderId = order.id;
+
+        this.orderId = order.id;
         this.finishUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentFinishUrl);
         this.finishUrl.searchParams.set('orderId', order.id);
@@ -98,7 +138,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', order.id);
         let params = {
-            'orderId': window.orderId,
+            'orderId': this.orderId,
             'finishUrl': this.finishUrl.toString(),
             'errorUrl': this.errorUrl.toString(),
         };
@@ -110,7 +150,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this._client.post(
             adyenCheckoutOptions.paymentHandleUrl,
             JSON.stringify(params),
-            this.afterPayOrder.bind(this, window.orderId),
+            this.afterPayOrder.bind(this, this.orderId),
         );
     }
 
@@ -129,7 +169,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     afterPayOrder(orderId, response) {
         try {
             response = JSON.parse(response);
-            window.returnUrl = response.redirectUrl;
+            this.returnUrl = response.redirectUrl;
         } catch (e) {
             console.log(e);
             return;
@@ -137,8 +177,8 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         // If payment call returns the errorUrl, then no need to proceed further.
         // Redirect to error page.
-        if (window.returnUrl == this.errorUrl.toString()) {
-            location.href = window.returnUrl;
+        if (this.returnUrl === this.errorUrl.toString()) {
+            location.href = this.returnUrl;
         }
 
         try {
@@ -156,10 +196,10 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             const paymentActionResponse = JSON.parse(paymentAction);
             if (paymentActionResponse.isFinal) {
-                location.href = window.returnUrl;
+                location.href = this.returnUrl;
             }
             if (!!paymentActionResponse.action) {
-                window.adyenCheckout
+                this.adyenCheckout
                     .createFromAction(paymentActionResponse.action)
                     .mount('[data-adyen-payment-action-container]');
             }
@@ -175,15 +215,9 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        const ADYEN_CHECKOUT_CONFIG = Object.assign(
-            {},
-            adyenCheckoutConfiguration,
-            {paymentMethodsResponse: JSON.parse(adyenCheckoutConfiguration.paymentMethodsResponse)}
-        );
-        let adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
         // get selected payment method object
-        let selectedPaymentMethod = adyenCheckout.paymentMethodsResponse.paymentMethods
-            .filter(item => item.type == selectedAdyenPaymentMethod);
+        let selectedPaymentMethod = this.adyenCheckout.paymentMethodsResponse.paymentMethods
+            .filter(item => item.type === selectedAdyenPaymentMethod);
 
         if (selectedPaymentMethod.length < 1) {
             return;
@@ -228,7 +262,7 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         let paymentMethodInstance;
 
-        paymentMethodInstance = adyenCheckout.create(
+        paymentMethodInstance = this.adyenCheckout.create(
             selectedPaymentMethodObject.type,
             PAY_BUTTON_CONFIG
         );

@@ -42,7 +42,6 @@ export default class CheckoutPlugin extends Plugin {
                 `${adyenCheckoutOptions.paymentDetailsUrl}`,
                 JSON.stringify({orderId: window.orderId, stateData: state.data}),
                 function (paymentAction) {
-                    // TODO: clean-up
                     const paymentActionResponse = JSON.parse(paymentAction);
 
                     if (paymentActionResponse.isFinal) {
@@ -50,14 +49,14 @@ export default class CheckoutPlugin extends Plugin {
                     }
 
                     try {
-                        window.adyenCheckout
+                        this.adyenCheckout
                             .createFromAction(paymentActionResponse.action)
                             .mount('[data-adyen-payment-action-container]');
                         $('[data-adyen-payment-action-modal]').modal({show: true});
                     } catch (e) {
                         console.log(e);
                     }
-                }
+                }.bind(this)
             );
         }
 
@@ -73,7 +72,7 @@ export default class CheckoutPlugin extends Plugin {
             onAdditionalDetails: handleOnAdditionalDetails.bind(this)
         };
 
-        window.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
+        this.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
 
         this.placeOrderAllowed = false;
         this.data = '';
@@ -81,8 +80,8 @@ export default class CheckoutPlugin extends Plugin {
         this.formValidator = {};
 
         // use this object to iterate through the paymentMethods response
-        const paymentMethods = window.adyenCheckout.paymentMethodsResponse.paymentMethods;
-        const storedPaymentMethods = window.adyenCheckout.paymentMethodsResponse.storedPaymentMethods;
+        const paymentMethods = this.adyenCheckout.paymentMethodsResponse.paymentMethods;
+        const storedPaymentMethods = this.adyenCheckout.paymentMethodsResponse.storedPaymentMethods;
 
         // Iterate through the payment methods list we got from the adyen checkout component
         paymentMethods.forEach(this.renderPaymentMethod.bind(this));
@@ -137,7 +136,7 @@ export default class CheckoutPlugin extends Plugin {
         }
 
         try {
-            const paymentMethodInstance = window.adyenCheckout.create(paymentMethod.type, configuration);
+            const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
             paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
             this.formValidator[adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
         } catch (err) {
@@ -166,7 +165,7 @@ export default class CheckoutPlugin extends Plugin {
         });
 
         try {
-            const paymentMethodInstance = window.adyenCheckout
+            const paymentMethodInstance = this.adyenCheckout
                 .create(paymentMethod.type, configuration);
             paymentMethodInstance.mount(
                 paymentMethodContainer.find(`[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`).get(0)
@@ -240,7 +239,7 @@ export default class CheckoutPlugin extends Plugin {
         }
     }
 
-    onPaymentMethodChange (state) {
+    onPaymentMethodChange (state, component) {
         if (state.isValid) {
             this.data = state.data;
             $('#adyenStateData').val(JSON.stringify(this.data));
@@ -249,10 +248,11 @@ export default class CheckoutPlugin extends Plugin {
         } else {
             this.placeOrderAllowed = false;
             this.resetFields();
+            // todo show error
         }
     }
 
-    onStoredPaymentMethodChange (state) {
+    onStoredPaymentMethodChange (state, component) {
         if (!state || !state.data || !state.data.paymentMethod) {
             return;
         }
