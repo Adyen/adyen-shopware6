@@ -16,6 +16,9 @@ class Migration1609373668AdyenMediaFolder extends MigrationStep
 
     public function update(Connection $connection): void
     {
+        if ($this->adyenMediaFolderExists($connection)) {
+            return;
+        }
         $connection->transactional(function (Connection $connection) {
             $defaultFolderId = Uuid::randomBytes();
             $configurationId = Uuid::randomBytes();
@@ -62,5 +65,11 @@ class Migration1609373668AdyenMediaFolder extends MigrationStep
 
     public function updateDestructive(Connection $connection): void
     {
+    }
+
+    private function adyenMediaFolderExists(Connection $connection): bool
+    {
+        $query = $connection->executeQuery("SELECT `id` FROM `media_default_folder` WHERE `entity`='adyen'");
+        return $query->rowCount() > 0;
     }
 }

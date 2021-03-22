@@ -85,31 +85,7 @@ class AdyenPaymentShopware6 extends Plugin
             return;
         }
 
-        //Search for config keys that contain the bundle's name
-        /** @var EntityRepositoryInterface $systemConfigRepository */
-        $systemConfigRepository = $this->container->get('system_config.repository');
-        $criteria = (new Criteria())
-            ->addFilter(
-                new ContainsFilter('configurationKey', ConfigurationService::BUNDLE_NAME . '.config')
-            );
-        $idSearchResult = $systemConfigRepository->searchIds($criteria, Context::createDefaultContext());
-
-        //Formatting IDs array and deleting config keys
-        $ids = \array_map(static function ($id) {
-            return ['id' => $id];
-        }, $idSearchResult->getIds());
-        $systemConfigRepository->delete($ids, Context::createDefaultContext());
-
-        //Dropping database tables
-        $tables = [
-            NotificationEntityDefinition::ENTITY_NAME,
-            PaymentStateDataEntityDefinition::ENTITY_NAME,
-            PaymentResponseEntityDefinition::ENTITY_NAME
-        ];
-        $connection = $this->container->get(Connection::class);
-        foreach ($tables as $table) {
-            $connection->executeUpdate(\sprintf('DROP TABLE IF EXISTS `%s`', $table));
-        }
+        $this->removePluginData();
     }
 
     public function update(UpdateContext $updateContext): void
@@ -131,16 +107,17 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
     {
-        $paymentMethodExists = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
-
-        // Payment method exists already, no need to continue here
-        if ($paymentMethodExists) {
-            return;
-        }
+        $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
 
         /** @var PluginIdProvider $pluginIdProvider */
         $pluginIdProvider = $this->container->get(PluginIdProvider::class);
         $pluginId = $pluginIdProvider->getPluginIdByBaseClass(get_class($this), $context);
+
+        // Payment method exists already, set the pluginId
+        if ($paymentMethodId) {
+            $this->setPluginId($paymentMethodId, $pluginId, $context);
+            return;
+        }
 
         $paymentData = [
             'handlerIdentifier' => $paymentMethod->getPaymentHandler(),
@@ -153,6 +130,18 @@ class AdyenPaymentShopware6 extends Plugin
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
         $paymentRepository->create([$paymentData], $context);
+    }
+
+    private function setPluginId(string $paymentMethodId, string $pluginId, Context $context): void
+    {
+        /** @var EntityRepositoryInterface $paymentRepository */
+        $paymentRepository = $this->container->get('payment_method.repository');
+        $paymentMethodData = [
+            'id' => $paymentMethodId,
+            'pluginId' => $pluginId,
+        ];
+
+        $paymentRepository->update([$paymentMethodData], $context);
     }
 
     private function getPaymentMethodId(string $paymentMethodHandler): ?string
@@ -197,6 +186,37 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $context);
+    }
+
+    private function removePluginData()
+    {
+        //Search for config keys that contain the bundle's name
+        /** @var EntityRepositoryInterface $systemConfigRepository */
+        $systemConfigRepository = $this->container->get('system_config.repository');
+        $criteria = (new Criteria())
+            ->addFilter(
+                new ContainsFilter('configurationKey', ConfigurationService::BUNDLE_NAME . '.config')
+            );
+        $idSearchResult = $systemConfigRepository->searchIds($criteria, Context::createDefaultContext());
+
+        //Formatting IDs array and deleting config keys
+        $ids = \array_map(static function ($id) {
+            return ['id' => $id];
+        }, $idSearchResult->getIds());
+        $systemConfigRepository->delete($ids, Context::createDefaultContext());
+
+        //Dropping database tables
+        $tables = [
+            NotificationEntityDefinition::ENTITY_NAME,
+            PaymentStateDataEntityDefinition::ENTITY_NAME,
+            PaymentResponseEntityDefinition::ENTITY_NAME
+        ];
+        $connection = $this->container->get(Connection::class);
+        foreach ($tables as $table) {
+            $connection->executeUpdate(\sprintf('DROP TABLE IF EXISTS `%s`', $table));
+        }
+
+        $this->removeMigrations();
     }
 
     private function updateTo120(UpdateContext $updateContext): void
