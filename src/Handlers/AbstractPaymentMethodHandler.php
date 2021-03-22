@@ -33,7 +33,6 @@ use Adyen\Service\Builder\Payment;
 use Adyen\Service\Builder\OpenInvoice;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
-use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -48,6 +47,7 @@ use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
+use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -237,6 +237,7 @@ abstract class AbstractPaymentMethodHandler
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @return RedirectResponse
+     * @throws PaymentProcessException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
@@ -249,7 +250,10 @@ abstract class AbstractPaymentMethodHandler
 
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $stateData);
-        } catch (Exception $exception) {
+        } catch (AsyncPaymentProcessException $exception) {
+            $this->logger->error($exception->getMessage());
+            throw $exception;
+        } catch (\Exception $exception) {
             $message = sprintf(
                 "There was an error with the payment method. Order number: %s Missing data: %s",
                 $transaction->getOrder()->getOrderNumber(),
@@ -267,9 +271,7 @@ abstract class AbstractPaymentMethodHandler
                 $transaction->getOrder()->getOrderNumber(),
                 $exception->getMessage()
             );
-
             $this->logger->error($message);
-
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
@@ -291,13 +293,15 @@ abstract class AbstractPaymentMethodHandler
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction->getReturnUrl()));
+        return new RedirectResponse($this->getAdyenReturnUrl($transaction));
     }
 
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     * @throws AsyncPaymentFinalizeException
+     * @throws CustomerCanceledAsyncPaymentException
      */
     public function finalize(
         AsyncPaymentTransactionStruct $transaction,
@@ -330,13 +334,14 @@ abstract class AbstractPaymentMethodHandler
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param AsyncPaymentTransactionStruct $transaction
+     * @param string|null $stateData
      * @return array
      */
     public function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
         ?string $stateData = null
-    ) {
+    ): array {
         $request = [];
 
         if ($stateData) {
@@ -527,7 +532,7 @@ abstract class AbstractPaymentMethodHandler
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $this->getAdyenReturnUrl($transaction->getReturnUrl()),
+            $this->getAdyenReturnUrl($transaction),
             $request
         );
 
@@ -614,18 +619,21 @@ abstract class AbstractPaymentMethodHandler
      * Creates the Adyen Redirect Result URL with the same query as the original return URL
      * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
      *
-     * @param $returnUrl
+     * @param AsyncPaymentTransactionStruct $transaction
      * @return string
-     * @throws PaymentException
+     * @throws AsyncPaymentProcessException
      */
-    protected function getAdyenReturnUrl($returnUrl)
+    protected function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction): string
     {
         // Parse the original return URL to retrieve the query parameters
-        $returnUrlQuery = parse_url($returnUrl, PHP_URL_QUERY);
+        $returnUrlQuery = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
 
         // In case the URL is malformed it cannot be parsed
         if (false === $returnUrlQuery) {
-            throw new PaymentException('Return URL is malformed');
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
+                'Return URL is malformed'
+            );
         }
 
         // Generate the custom Adyen endpoint to receive the redirect from the issuer page
