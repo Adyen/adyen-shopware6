@@ -26,6 +26,7 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandlerResult;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
@@ -71,8 +72,8 @@ class PaymentDetailsService
      * @param LoggerInterface $logger
      * @param CheckoutService $checkoutService
      * @param ConfigurationService $configurationService
-     * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentResponseService $paymentResponseService
+     * @param PaymentResponseHandler $paymentResponseHandler
      */
     public function __construct(
         SalesChannelRepository $salesChannelRepository,
@@ -94,6 +95,7 @@ class PaymentDetailsService
      * @param array $details
      * @param $orderTransaction
      * @return PaymentResponseHandlerResult
+     * @throws PaymentFailedException
      */
     public function doPaymentDetails(
         array $details,
@@ -108,43 +110,47 @@ class PaymentDetailsService
      * @param array $details
      * @param PaymentResponseEntity|null $paymentResponse
      * @return PaymentResponseHandlerResult
+     * @throws PaymentFailedException
      */
     public function doPaymentDetailsWithPaymentResponse(
         array $details,
         PaymentResponseEntity $paymentResponse
     ): PaymentResponseHandlerResult {
-// Check if the payment response is not empty and contains the paymentData
+        // Check if the payment response is not empty and contains the paymentData
         if (empty($paymentResponse)) {
+            $errorMessage = 'paymentResponse is empty.';
             $this->logger->error(
-                'paymentResponse is empty.',
+                $errorMessage,
                 ['payment details array' => $details]
             );
-            //TODO return error
+            throw new PaymentFailedException($errorMessage);
         }
 
         $orderTransaction = $paymentResponse->getOrderTransaction();
         $paymentResponseArray = json_decode($paymentResponse->getResponse(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorMessage = 'Payment response is corrupt.';
             $this->logger->error(
-                'Payment response is corrupt.',
+                $errorMessage,
                 [
                     'paymentResponseArray' => $paymentResponseArray,
                     'orderTransaction' => $orderTransaction
                 ]
             );
-            //TODO throw exception
+            throw new PaymentFailedException($errorMessage);
         }
 
         if (empty($paymentResponseArray['paymentData'])) {
+            $errorMessage = 'paymentData is missing from the paymentResponse.';
             $this->logger->error(
-                'paymentData is missing from the paymentResponse.',
+                $errorMessage,
                 [
                     'paymentResponseArray' => $paymentResponseArray,
                     'orderTransaction' => $orderTransaction
                 ]
             );
-            //TODO return error
+            throw new PaymentFailedException($errorMessage);
         }
 
         // Construct paymentDetails request object
@@ -158,8 +164,8 @@ class PaymentDetailsService
             $response = $this->checkoutService->paymentsDetails($request);
             return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
         } catch (AdyenException $exception) {
-            // TODO error handling
             $this->logger->error($exception->getMessage());
+            throw new PaymentFailedException($exception->getMessage());
         }
     }
 }

@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\Client;
+use Adyen\Environment;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -125,7 +126,9 @@ class ClientService extends Client
             return $client;
         } catch (\Exception $e) {
             $this->genericLogger->error($e->getMessage());
-            // TODO: check if $environment is test and, if so, exit with error message
+            if ($this->configurationService->getEnvironment($salesChannelId) === Environment::TEST) {
+                throw $e;
+            }
         }
     }
 
