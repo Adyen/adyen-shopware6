@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Controller;
 
 use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
@@ -164,10 +165,18 @@ class StoreApiController extends AbstractStoreController
 
         $details = $stateData['details'];
 
-        $result = $this->paymentDetailsService->doPaymentDetails(
-            $details,
-            $paymentResponse->getOrderTransaction()
-        );
+        try {
+            $result = $this->paymentDetailsService->doPaymentDetails(
+                $details,
+                $paymentResponse->getOrderTransaction()
+            );
+        } catch (PaymentFailedException $exception) {
+            $this->logger->error(
+                'Error occurred finalizing payment',
+                ['orderId' => $orderId, 'paymentDetails' => $details]
+            );
+            return new JsonResponse([], 500);
+        }
 
         return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
     }
@@ -195,7 +204,7 @@ class StoreApiController extends AbstractStoreController
             return new JsonResponse(
                 $this->paymentStatusService->getWithOrderId($orderId)
             );
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
             return new JsonResponse(["isFinal" => true]);
         }
