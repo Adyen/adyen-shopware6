@@ -239,7 +239,7 @@ export default class CheckoutPlugin extends Plugin {
         }
     }
 
-    onPaymentMethodChange (state, component) {
+    onPaymentMethodChange (state) {
         if (state.isValid) {
             this.data = state.data;
             $('#adyenStateData').val(JSON.stringify(this.data));
@@ -248,11 +248,10 @@ export default class CheckoutPlugin extends Plugin {
         } else {
             this.placeOrderAllowed = false;
             this.resetFields();
-            // todo show error
         }
     }
 
-    onStoredPaymentMethodChange (state, component) {
+    onStoredPaymentMethodChange (state) {
         if (!state || !state.data || !state.data.paymentMethod) {
             return;
         }
