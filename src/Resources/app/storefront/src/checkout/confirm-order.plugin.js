@@ -125,8 +125,8 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             order = JSON.parse(response);
         } catch (error) {
-            // Response is not a valid JSON
-            // TODO error handling
+            ElementLoadingIndicatorUtil.remove(document.body);
+            console.log('Error: invalid response from Shopware API', response);
             return;
         }
 
@@ -162,7 +162,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                     JSON.stringify({id: adyenCheckoutOptions.orderId}));
             }
         } catch (e) {
-            console.log(e);
+            ElementLoadingIndicatorUtil.remove(document.body);
+            console.log('Error: invalid response from Shopware API', response);
+            return;
         }
     }
 
@@ -171,7 +173,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             response = JSON.parse(response);
             this.returnUrl = response.redirectUrl;
         } catch (e) {
-            console.log(e);
+            ElementLoadingIndicatorUtil.remove(document.body);
+            console.log('Error: invalid response from Shopware API', response);
             return;
         }
 
@@ -256,7 +259,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                 }
             }.bind(this),
             onError: function (error) {
+                alert(error.statusMessage);
                 console.log('Error: ', error);
+                ElementLoadingIndicatorUtil.remove(document.body);
             }
         });
 
