@@ -259,9 +259,15 @@ export default class ConfirmOrderPlugin extends Plugin {
                 }
             }.bind(this),
             onError: function (error) {
-                alert(error.statusMessage);
-                console.log('Error: ', error);
                 ElementLoadingIndicatorUtil.remove(document.body);
+                console.log(error);
+                if (error.statusCode !== 'CANCELED') {
+                    if ('statusMessage' in error) {
+                        alert(error.statusMessage);
+                    } else {
+                        alert(error.statusCode);
+                    }
+                }
             }
         });
 
