@@ -45,13 +45,19 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\Struct\ArrayEntity;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
+use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Routing\RouterInterface;
 
 class PaymentSubscriber implements EventSubscriberInterface
@@ -135,6 +141,16 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $adyenPluginId;
 
     /**
+     * @var ContextSwitchRoute
+     */
+    private $contextSwitchRoute;
+
+    /**
+     * @var SalesChannelContextFactory
+     */
+    private $salesChannelContextFactory;
+
+    /**
      * PaymentSubscriber constructor.
      *
      * @param PaymentStateDataService $paymentStateDataService
@@ -149,6 +165,8 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @param ContainerInterface $container
      * @param CartPersisterInterface $cartPersister
      * @param CartCalculator $cartCalculator
+     * @param ContextSwitchRoute $contextSwitchRoute
+     * @param SalesChannelContextFactory $salesChannelContextFactory
      * @param Currency $currency
      * @param LoggerInterface $logger
      */
@@ -165,6 +183,8 @@ class PaymentSubscriber implements EventSubscriberInterface
         ContainerInterface $container,
         CartPersisterInterface $cartPersister,
         CartCalculator $cartCalculator,
+        ContextSwitchRoute $contextSwitchRoute,
+        SalesChannelContextFactory $salesChannelContextFactory,
         Currency $currency,
         LoggerInterface $logger
     ) {
@@ -180,6 +200,8 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->container = $container;
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
+        $this->contextSwitchRoute = $contextSwitchRoute;
+        $this->salesChannelContextFactory = $salesChannelContextFactory;
         $this->currency = $currency;
         $this->logger = $logger;
         $this->adyenPluginId = $this->pluginIdProvider->getPluginIdByBaseClass(
@@ -196,7 +218,8 @@ class PaymentSubscriber implements EventSubscriberInterface
         return [
             SalesChannelContextSwitchEvent::class => 'onContextTokenUpdate',
             CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
-            AccountEditOrderPageLoadedEvent::class => 'onCheckoutConfirmLoaded'
+            AccountEditOrderPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
+            RequestEvent::class => 'onKernelRequest',
         ];
     }
 
@@ -335,6 +358,37 @@ class PaymentSubscriber implements EventSubscriberInterface
                 ]
             )
         );
+    }
+
+    public function onKernelRequest(RequestEvent $event)
+    {
+        $request = $event->getRequest();
+        if (
+            ($request->attributes->get('_route') === 'frontend.account.edit-order.change-payment-method')
+            && $request->request->has('adyenStateData')
+        ) {
+            $this->contextSwitchRoute->switchContext(
+                new RequestDataBag(
+                    [
+                        SalesChannelContextService::PAYMENT_METHOD_ID => $request->get('paymentMethodId'),
+                        'adyenStateData' => $request->request->get('adyenStateData'),
+                        'adyenOrigin' => $request->request->get('adyenOrigin')
+                    ]
+                ),
+                $this->salesChannelContextFactory->create(
+                    $this->session->get('sw-context-token'),
+                    $request->attributes->get('sw-sales-channel-id')
+                )
+            );
+            $event->setResponse(
+                new RedirectResponse(
+                    $this->router->generate(
+                        'frontend.account.edit-order.page',
+                        ['orderId' => $request->attributes->get('orderId')]
+                    )
+                )
+            );
+        }
     }
 
     /**

@@ -6,8 +6,8 @@
 
     <imports>
         <import resource="logger/logger-services.xml"/>
-
-        <import resource="services/payment-handlers/"/>
+        <import resource="services/utils.xml"/>
+        <import resource="services/payment-handlers/payment-handlers.xml"/>
 
         <import resource="services/checkout-api.xml"/>
         <import resource="services/controllers.xml"/>
@@ -58,6 +58,8 @@
             <argument type="service" id="Psr\Container\ContainerInterface"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
             <argument type="service" id="Adyen\Util\Currency"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
