@@ -323,7 +323,7 @@ abstract class AbstractPaymentMethodHandler
      * @param string $address
      * @return array
      */
-    public function splitStreetAddressHouseNumber(string $address): array
+    private function splitStreetAddressHouseNumber(string $address): array
     {
         return [
             'street' => $address,
@@ -337,7 +337,7 @@ abstract class AbstractPaymentMethodHandler
      * @param string|null $stateData
      * @return array
      */
-    public function preparePaymentsRequest(
+    private function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
         ?string $stateData = null
@@ -623,7 +623,7 @@ abstract class AbstractPaymentMethodHandler
      * @return string
      * @throws AsyncPaymentProcessException
      */
-    protected function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction): string
     {
         // Parse the original return URL to retrieve the query parameters
         $returnUrlQuery = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);

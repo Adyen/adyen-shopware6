@@ -52,7 +52,6 @@ export default class ConfirmOrderPlugin extends Plugin {
                         .mount('[data-adyen-payment-action-container]');
                     $('[data-adyen-payment-action-modal]').modal({show: true});
                 } catch (e) {
-                    debugger;
                     console.log(e);
                 }
             }.bind(this)
