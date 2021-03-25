@@ -363,10 +363,8 @@ class PaymentSubscriber implements EventSubscriberInterface
     public function onKernelRequest(RequestEvent $event)
     {
         $request = $event->getRequest();
-        if (
-            ($request->attributes->get('_route') === 'frontend.account.edit-order.change-payment-method')
-            && $request->request->has('adyenStateData')
-        ) {
+        if (($request->attributes->get('_route') === 'frontend.account.edit-order.change-payment-method')
+            && $request->request->has('adyenStateData')) {
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
                     [
