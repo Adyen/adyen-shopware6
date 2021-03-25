@@ -143,8 +143,9 @@ class StoreApiController extends AbstractStoreController
         $orderId = $request->request->get('orderId');
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
         if (!$paymentResponse) {
-            $this->logger->error('Could not find a transaction', ['orderId' => $orderId]);
-            return new JsonResponse([], 404);
+            $message = 'Could not find a transaction';
+            $this->logger->error($message, ['orderId' => $orderId]);
+            return new JsonResponse($message, 404);
         }
 
         // Get state data object if sent
@@ -156,11 +157,12 @@ class StoreApiController extends AbstractStoreController
         }
 
         if (empty($stateData['details'])) {
+            $message = 'Details missing in $stateData';
             $this->logger->error(
-                'Details missing in $stateData',
+                $message,
                 ['stateData' => $stateData]
             );
-            return new JsonResponse([], 400);
+            return new JsonResponse($message, 400);
         }
 
         $details = $stateData['details'];
@@ -171,11 +173,12 @@ class StoreApiController extends AbstractStoreController
                 $paymentResponse->getOrderTransaction()
             );
         } catch (PaymentFailedException $exception) {
+            $message = 'Error occurred finalizing payment';
             $this->logger->error(
-                'Error occurred finalizing payment',
+                $message,
                 ['orderId' => $orderId, 'paymentDetails' => $details]
             );
-            return new JsonResponse([], 500);
+            return new JsonResponse($message, 500);
         }
 
         return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
@@ -197,7 +200,7 @@ class StoreApiController extends AbstractStoreController
     {
         $orderId = $request->get('orderId');
         if (empty($orderId)) {
-            return new JsonResponse('Order ID not provided');
+            return new JsonResponse('Order ID not provided', 400);
         }
 
         try {
