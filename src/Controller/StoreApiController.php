@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Controller;
 
 use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
@@ -142,8 +143,9 @@ class StoreApiController extends AbstractStoreController
         $orderId = $request->request->get('orderId');
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
         if (!$paymentResponse) {
-            $this->logger->error('Could not find a transaction', ['orderId' => $orderId]);
-            return new JsonResponse([], 404);
+            $message = 'Could not find a transaction';
+            $this->logger->error($message, ['orderId' => $orderId]);
+            return new JsonResponse($message, 404);
         }
 
         // Get state data object if sent
@@ -155,19 +157,29 @@ class StoreApiController extends AbstractStoreController
         }
 
         if (empty($stateData['details'])) {
+            $message = 'Details missing in $stateData';
             $this->logger->error(
-                'Details missing in $stateData',
+                $message,
                 ['stateData' => $stateData]
             );
-            return new JsonResponse([], 400);
+            return new JsonResponse($message, 400);
         }
 
         $details = $stateData['details'];
 
-        $result = $this->paymentDetailsService->doPaymentDetails(
-            $details,
-            $paymentResponse->getOrderTransaction()
-        );
+        try {
+            $result = $this->paymentDetailsService->doPaymentDetails(
+                $details,
+                $paymentResponse->getOrderTransaction()
+            );
+        } catch (PaymentFailedException $exception) {
+            $message = 'Error occurred finalizing payment';
+            $this->logger->error(
+                $message,
+                ['orderId' => $orderId, 'paymentDetails' => $details]
+            );
+            return new JsonResponse($message, 500);
+        }
 
         return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
     }
@@ -188,14 +200,14 @@ class StoreApiController extends AbstractStoreController
     {
         $orderId = $request->get('orderId');
         if (empty($orderId)) {
-            return new JsonResponse('Order ID not provided');
+            return new JsonResponse('Order ID not provided', 400);
         }
 
         try {
             return new JsonResponse(
                 $this->paymentStatusService->getWithOrderId($orderId)
             );
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
             return new JsonResponse(["isFinal" => true]);
         }

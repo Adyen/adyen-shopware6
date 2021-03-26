@@ -3,6 +3,7 @@
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
+use Adyen\Shopware\Exception\PaymentFailedException;
 
 class PaymentResponseHandlerResult
 {
@@ -13,6 +14,7 @@ class PaymentResponseHandlerResult
 
     /**
      * @param PaymentResponseEntity $paymentResponse
+     * @throws PaymentFailedException
      */
     public function createFromPaymentResponse($paymentResponse)
     {
@@ -29,7 +31,7 @@ class PaymentResponseHandlerResult
         $response = json_decode($response, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            //TODO error handling
+            throw new PaymentFailedException('Invalid payment response data');
         }
 
         // Set pspReference if exists

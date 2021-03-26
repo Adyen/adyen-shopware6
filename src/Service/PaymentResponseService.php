@@ -100,10 +100,6 @@ class PaymentResponseService
         array $paymentResponse,
         OrderTransactionEntity $orderTransaction
     ): void {
-        if (empty($paymentResponse)) {
-            //TODO log error
-        }
-
         $storedPaymentResponse = $this->getWithOrderTransaction($orderTransaction);
         if ($storedPaymentResponse) {
             $fields['id'] = $storedPaymentResponse->getId();
