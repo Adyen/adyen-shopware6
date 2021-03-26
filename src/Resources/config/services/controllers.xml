@@ -44,10 +44,6 @@
         <service id="Adyen\Shopware\Storefront\Controller\RedirectResultController" autowire="true">
             <tag name="controller.service_arguments"/>
         </service>
-        <service id="Adyen\Shopware\Storefront\Controller\AdyenAccountOrderController">
-            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
-            <tag name="controller.service_arguments"/>
-        </service>
         <service id="Adyen\Shopware\Controller\ApiTestController">
             <argument type="service"
                       key="$logger"
