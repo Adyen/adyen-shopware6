@@ -549,15 +549,14 @@ abstract class AbstractPaymentMethodHandler
                 //Getting line price
                 $price = $orderLine->getPrice();
 
-                //Getting order line information differently if it's a promotion or product
+                // Skip promotion line items.
                 if (empty($orderLine->getProductId()) && $orderLine->getType() === self::PROMOTION) {
-                    $productName = $orderLine->getDescription();
-                    $productNumber = $orderLine->getPayload()['promotionId'];
-                } else {
-                    $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
-                    $productName = $product->getName();
-                    $productNumber = $product->getProductNumber();
+                    continue;
                 }
+
+                $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
+                $productName = $product->getName();
+                $productNumber = $product->getProductNumber();
 
                 //Getting line tax amount and rate
                 $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
@@ -568,23 +567,21 @@ abstract class AbstractPaymentMethodHandler
                     $taxRate = 0;
                 }
 
+                $currency = $this->getCurrency(
+                    $transaction->getOrder()->getCurrencyId(),
+                    $salesChannelContext->getContext()
+                );
                 //Building open invoice line
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
                     $this->currency->sanitize(
                         $price->getUnitPrice() -
                         ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
-                        $this->getCurrency(
-                            $transaction->getOrder()->getCurrencyId(),
-                            $salesChannelContext->getContext()
-                        )
+                        $currency
                     ),
                     $this->currency->sanitize(
                         $lineTax,
-                        $this->getCurrency(
-                            $transaction->getOrder()->getCurrencyId(),
-                            $salesChannelContext->getContext()
-                        )
+                        $currency
                     ),
                     $taxRate * 100,
                     $orderLine->getQuantity(),
