@@ -248,7 +248,7 @@ class StoreApiController extends AbstractStoreController
     /**
      * @RouteScope(scopes={"store-api"})
      * @OA\Post(
-     *      path="/order/payment",
+     *      path="/adyen/set-payment",
      *      summary="set payment for an order",
      *      operationId="orderSetPayment",
      *      tags={"Store API", "Account"},
