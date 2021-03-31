@@ -142,7 +142,7 @@ class PaymentMethodsService
             $cart = $this->cartService->getCart($context->getToken(), $context);
             $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
         } else {
-            $order = $this->orderRepository->getOrder($orderId, $context->getContext());
+            $order = $this->orderRepository->getOrder($orderId, $context->getContext(), ['currency']);
             $currency = $order->getCurrency()->getIsoCode();
             $amount = $this->currency->sanitize($order->getPrice()->getTotalPrice(), $currency);
         }

@@ -110,7 +110,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         let callback = null;
         if (!!orderId) { //Only used if the order is being edited
             formData.set('orderId', orderId);
-            url = adyenCheckoutOptions.editPaymentUrl;
+            url = adyenCheckoutOptions.updatePaymentUrl;
             callback = this.afterSetPayment.bind(this, extraParams);
         } else {
             url = adyenCheckoutOptions.checkoutOrderUrl;

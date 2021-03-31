@@ -38,20 +38,23 @@ class OrderRepository
     /**
      * @param string $orderId
      * @param Context $context
+     * @param array $associations
      * @return OrderEntity|null
      */
-    public function getOrder(string $orderId, Context $context) : ?OrderEntity
+    public function getOrder(string $orderId, Context $context, array $associations = []) : ?OrderEntity
     {
         $order = null;
 
         try {
             $criteria = new Criteria();
             $criteria->addFilter(new EqualsFilter('id', $orderId));
-            $criteria->addAssociation('currency');
+            foreach ($associations as $association) {
+                $criteria->addAssociation($association);
+            }
 
             /** @var OrderEntity $order */
             $order = $this->orderRepository->search($criteria, $context)->first();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error($e->getMessage(), [$e]);
         }
 
@@ -66,5 +69,11 @@ class OrderRepository
             ->addAssociation('transactions'),
             $context
         )->first();
+    }
+
+    public function update(string $orderId, array $data, Context $context)
+    {
+        $data['id'] = $orderId;
+        $this->orderRepository->update([$data], $context);
     }
 }
