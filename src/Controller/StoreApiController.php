@@ -255,8 +255,8 @@ class StoreApiController extends AbstractStoreController
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
-     *              @OA\Property(property="paymentMethodId", description="The id of new paymentMethod", type="string"),
-     *              @OA\Property(property="orderId", description="The id of the order", type="string")
+     *              @OA\Property(property="paymentMethodId", description="The ID of the new paymentMethod", type="string"),
+     *              @OA\Property(property="orderId", description="The ID of the order", type="string")
      *          )
      *      ),
      *      @OA\Response(
