@@ -331,8 +331,8 @@ class PaymentSubscriber implements EventSubscriberInterface
                             'paymentFailed' => true,
                         ]
                     ),
-                    'editPaymentUrl' => $this->router->generate(
-                        'store-api.order.set-payment',
+                    'updatePaymentUrl' => $this->router->generate(
+                        'store-api.action.adyen.set-payment',
                         ['version' => 2]
                     ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),

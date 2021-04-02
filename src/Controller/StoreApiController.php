@@ -31,12 +31,23 @@ use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
+use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
+use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
+use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Store\Api\AbstractStoreController;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -71,6 +82,18 @@ class StoreApiController extends AbstractStoreController
      */
     private $paymentResponseService;
     /**
+     * @var OrderRepository
+     */
+    private $orderRepository;
+    /**
+     * @var OrderService
+     */
+    private $orderService;
+    /**
+     * @var StateMachineRegistry
+     */
+    private $stateMachineRegistry;
+    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -85,6 +108,9 @@ class StoreApiController extends AbstractStoreController
      * @param PaymentStatusService $paymentStatusService
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param PaymentResponseService $paymentResponseService
+     * @param OrderRepository $orderRepository
+     * @param OrderService $orderService
+     * @param StateMachineRegistry $stateMachineRegistry
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -95,6 +121,9 @@ class StoreApiController extends AbstractStoreController
         PaymentStatusService $paymentStatusService,
         PaymentResponseHandler $paymentResponseHandler,
         PaymentResponseService $paymentResponseService,
+        OrderRepository $orderRepository,
+        OrderService $orderService,
+        StateMachineRegistry $stateMachineRegistry,
         LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
@@ -104,6 +133,9 @@ class StoreApiController extends AbstractStoreController
         $this->paymentStatusService = $paymentStatusService;
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->paymentResponseService = $paymentResponseService;
+        $this->orderRepository = $orderRepository;
+        $this->orderService = $orderService;
+        $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
     }
 
@@ -211,5 +243,93 @@ class StoreApiController extends AbstractStoreController
             $this->logger->error($exception->getMessage());
             return new JsonResponse(["isFinal" => true]);
         }
+    }
+
+    /**
+     * @RouteScope(scopes={"store-api"})
+     * @OA\Post(
+     *      path="/adyen/set-payment",
+     *      summary="set payment for an order",
+     *      operationId="orderSetPayment",
+     *      tags={"Store API", "Account"},
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              @OA\Property(
+     *                  property="paymentMethodId",
+     *                  description="The ID of the new paymentMethod",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(property="orderId", description="The ID of the order", type="string")
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response="200",
+     *          description="Successfully set a payment",
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
+     *     )
+     * )
+     * @Route(
+     *     "/store-api/v{version}/adyen/set-payment",
+     *     name="store-api.action.adyen.set-payment",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $context
+     * @return SetPaymentOrderRouteResponse
+     */
+    public function updatePaymentMethod(Request $request, SalesChannelContext $context): SetPaymentOrderRouteResponse
+    {
+        $this->setPaymentMethod($request->get('paymentMethodId'), $request->get('orderId'), $context);
+        return new SetPaymentOrderRouteResponse();
+    }
+
+    private function setPaymentMethod(
+        string $paymentMethodId,
+        string $orderId,
+        SalesChannelContext $salesChannelContext
+    ): void {
+        $context = $salesChannelContext->getContext();
+        $initialState = $this->stateMachineRegistry->getInitialState(OrderTransactionStates::STATE_MACHINE, $context);
+
+        /** @var OrderEntity $order */
+        $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
+
+        $context->scope(
+            Context::SYSTEM_SCOPE,
+            function () use ($order, $initialState, $orderId, $paymentMethodId, $context): void {
+                if ($order->getTransactions() !== null && $order->getTransactions()->count() >= 1) {
+                    foreach ($order->getTransactions() as $transaction) {
+                        if ($transaction->getStateMachineState()->getTechnicalName()
+                            !== OrderTransactionStates::STATE_CANCELLED) {
+                            $this->orderService->orderTransactionStateTransition(
+                                $transaction->getId(),
+                                'cancel',
+                                new ParameterBag(),
+                                $context
+                            );
+                        }
+                    }
+                }
+                $transactionAmount = new CalculatedPrice(
+                    $order->getPrice()->getTotalPrice(),
+                    $order->getPrice()->getTotalPrice(),
+                    $order->getPrice()->getCalculatedTaxes(),
+                    $order->getPrice()->getTaxRules()
+                );
+
+                $this->orderRepository->update($orderId, [
+                    'transactions' => [
+                        [
+                            'id' => Uuid::randomHex(),
+                            'paymentMethodId' => $paymentMethodId,
+                            'stateId' => $initialState->getId(),
+                            'amount' => $transactionAmount,
+                        ],
+                    ],
+                ], $context);
+            }
+        );
     }
 }
