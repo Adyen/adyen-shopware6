@@ -243,6 +243,7 @@ class PaymentResponseHandler
 
         switch ($resultCode) {
             case self::AUTHORISED:
+            case self::PENDING:
                 // Tag order as paid
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
                 break;

@@ -39,20 +39,8 @@ export default class ConfirmOrderPlugin extends Plugin {
                     location.href = this.errorUrl.toString();
                     return;
                 }
-                const paymentActionResponse = JSON.parse(paymentAction);
 
-                if (paymentActionResponse.isFinal) {
-                    location.href = this.returnUrl;
-                }
-
-                try {
-                    this.adyenCheckout
-                        .createFromAction(paymentActionResponse.action)
-                        .mount('[data-adyen-payment-action-container]');
-                    $('[data-adyen-payment-action-modal]').modal({show: true});
-                } catch (e) {
-                    console.log(e);
-                }
+                this.handlePaymentAction(paymentAction);
             }.bind(this)
         );
     }

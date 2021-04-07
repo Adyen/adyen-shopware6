@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\Shopware\Exception\PaymentCancelledException;
+use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -95,8 +96,7 @@ class ResultHandler
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
-     * @throws PaymentCancelledException
-     * @throws PaymentFailedException
+     * @throws PaymentException
      */
     public function processResult(
         AsyncPaymentTransactionStruct $transaction,
@@ -137,11 +137,16 @@ class ResultHandler
             );
         }
 
-        // Process the result and handle the transaction
-        $this->paymentResponseHandler->handleShopwareAPIs(
-            $transaction,
-            $salesChannelContext,
-            $result
-        );
+        try {
+            // Process the result and handle the transaction
+            $this->paymentResponseHandler->handleShopwareAPIs(
+                $transaction,
+                $salesChannelContext,
+                $result
+            );
+        } catch (PaymentException $exception) {
+            $this->logger->error($exception->getMessage(), ['orderId' => $transaction->getOrder()->getId()]);
+            throw $exception;
+        }
     }
 }
