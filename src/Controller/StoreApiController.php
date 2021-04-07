@@ -200,7 +200,7 @@ class StoreApiController extends AbstractStoreController
         $details = $stateData['details'];
 
         try {
-            $result = $this->paymentDetailsService->doPaymentDetails(
+            $result = $this->paymentDetailsService->getPaymentDetails(
                 $details,
                 $paymentResponse->getOrderTransaction()
             );

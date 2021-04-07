@@ -103,43 +103,22 @@ class ResultHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ) {
-        // Retrieve paymentResponse and if it is
-        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction(
-            $transaction->getOrderTransaction()
-        );
+        // Retrieve paymentResponse and if it exists
+        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($transaction->getOrderTransaction());
 
-        $result = $this->paymentResponseHandlerResult->createFromPaymentResponse(
-            $paymentResponse
-        );
+        if (!$paymentResponse) {
+            throw new PaymentFailedException('Payment response not found.');
+        }
+
+        $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
 
         if ('RedirectShopper' === $result->getResultCode()) {
-            // Validate 3DS1 parameters
-            // Get MD and PaRes to be validated
-            $md = $request->request->get('MD');
-            $paRes = $request->request->get('PaRes');
-            $redirectResult = $request->query->get(self::REDIRECT_RESULT);
-            $payload = $request->query->get(self::PAYLOAD);
+            $redirectResult = $request->query->get(
+                self::REDIRECT_RESULT,
+                $request->request->get(self::REDIRECT_RESULT)
+            );
 
-            $details = [];
-
-            // Construct the details object for the paymentDetails request
-            if (!empty($md)) {
-                $details[self::MD] = $md;
-            }
-
-            if (!empty($paRes)) {
-                $details[self::PA_RES] = $paRes;
-            }
-
-            if (!empty($redirectResult)) {
-                $details[self::REDIRECT_RESULT] = $redirectResult;
-            }
-
-            if (!empty($payload)) {
-                $details[self::PAYLOAD] = $payload;
-            }
-
-            if (empty($details)) {
+            if (empty($redirectResult)) {
                 $error = 'Payment details are missing.';
                 $this->logger->error(
                     $error,
@@ -147,9 +126,12 @@ class ResultHandler
                 );
                 throw new PaymentFailedException($error);
             }
+            $details = [];
+
+            $details[self::REDIRECT_RESULT] = $redirectResult;
 
             // Validate the return
-            $result = $this->paymentDetailsService->doPaymentDetails(
+            $result = $this->paymentDetailsService->getPaymentDetails(
                 $details,
                 $transaction->getOrderTransaction()
             );
