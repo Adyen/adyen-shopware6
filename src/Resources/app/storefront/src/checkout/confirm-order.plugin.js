@@ -203,6 +203,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                 this.adyenCheckout
                     .createFromAction(paymentActionResponse.action)
                     .mount('[data-adyen-payment-action-container]');
+                if (paymentActionResponse.action.type === 'threeDS2') {
+                    $('[data-adyen-payment-action-modal]').modal({show: true});
+                }
             }
         } catch (e) {
             console.log(e);
