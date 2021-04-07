@@ -27,7 +27,6 @@ namespace Adyen\Shopware\Subscriber;
 use Adyen\AdyenException;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Service\ConfigurationService;
-use Adyen\Shopware\Service\OriginKeyService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
@@ -74,11 +73,6 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @var RouterInterface
      */
     private $router;
-
-    /**
-     * @var OriginKeyService
-     */
-    private $originKeyService;
 
     /**
      * @var SalesChannelRepository
@@ -155,7 +149,6 @@ class PaymentSubscriber implements EventSubscriberInterface
      *
      * @param PaymentStateDataService $paymentStateDataService
      * @param RouterInterface $router
-     * @param OriginKeyService $originKeyService
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
@@ -173,7 +166,6 @@ class PaymentSubscriber implements EventSubscriberInterface
     public function __construct(
         PaymentStateDataService $paymentStateDataService,
         RouterInterface $router,
-        OriginKeyService $originKeyService,
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
@@ -190,7 +182,6 @@ class PaymentSubscriber implements EventSubscriberInterface
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
         $this->router = $router;
-        $this->originKeyService = $originKeyService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
@@ -336,12 +327,6 @@ class PaymentSubscriber implements EventSubscriberInterface
                         ['version' => 2]
                     ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
-                    'originKey' => empty($this->configurationService->getClientKey($salesChannelId)) ?
-                        $this->originKeyService->getOriginKeyForOrigin(
-                            $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext),
-                            $salesChannelId
-                        )->getOriginKey() :
-                        false,
                     'clientKey' => $this->configurationService->getClientKey($salesChannelId),
                     'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
                         ->getLanguage()->getLocale()->getCode(),

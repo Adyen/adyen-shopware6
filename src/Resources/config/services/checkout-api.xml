@@ -43,9 +43,6 @@
         <service id="Adyen\Shopware\Service\PaymentStatusService" autowire="true">
             <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
         </service>
-        <service id="Adyen\Shopware\Service\OriginKeyService" autowire="true">
-            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
-        </service>
         <service id="Adyen\Shopware\Service\CheckoutUtilityService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>

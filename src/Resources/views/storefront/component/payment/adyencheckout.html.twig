@@ -2,7 +2,6 @@
 {% if adyenFrontendData and adyenFrontendData.locale and (adyenFrontendData.originKey or adyenFrontendData.clientKey) and adyenFrontendData.environment and adyenFrontendData.paymentMethodsResponse %}
     <div id="adyen-checkout-configuration"
          data-locale="{{ adyenFrontendData.locale }}"
-         data-origin-key="{{ adyenFrontendData.originKey }}"
          data-client-key="{{ adyenFrontendData.clientKey }}"
          data-environment="{{ adyenFrontendData.environment }}"
          data-payment-methods-response="{{ adyenFrontendData.paymentMethodsResponse }}"
