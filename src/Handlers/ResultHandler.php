@@ -96,7 +96,8 @@ class ResultHandler
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
-     * @throws PaymentException
+     * @throws PaymentFailedException
+     * @throws PaymentCancelledException
      */
     public function processResult(
         AsyncPaymentTransactionStruct $transaction,
@@ -137,16 +138,11 @@ class ResultHandler
             );
         }
 
-        try {
-            // Process the result and handle the transaction
-            $this->paymentResponseHandler->handleShopwareAPIs(
-                $transaction,
-                $salesChannelContext,
-                $result
-            );
-        } catch (PaymentException $exception) {
-            $this->logger->error($exception->getMessage(), ['orderId' => $transaction->getOrder()->getId()]);
-            throw $exception;
-        }
+        // Process the result and handle the transaction
+        $this->paymentResponseHandler->handleShopwareAPIs(
+            $transaction,
+            $salesChannelContext,
+            $result
+        );
     }
 }
