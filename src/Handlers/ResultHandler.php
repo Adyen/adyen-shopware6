@@ -127,9 +127,9 @@ class ResultHandler
                 );
                 throw new PaymentFailedException($error);
             }
-            $details = [];
-
-            $details[self::REDIRECT_RESULT] = $redirectResult;
+            $details = [
+                self::REDIRECT_RESULT => $redirectResult
+            ];
 
             // Validate the return
             $result = $this->paymentDetailsService->getPaymentDetails(
