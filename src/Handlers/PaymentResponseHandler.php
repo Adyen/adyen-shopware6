@@ -250,7 +250,7 @@ class PaymentResponseHandler
             case self::REFUSED:
                 // Fail the order
                 $message = 'The payment was refused';
-                $this->logger->error($message, ['orderId' => $transaction->getOrder()->getId()]);
+                $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
                 throw new PaymentFailedException(
                     $message
                 );
@@ -258,7 +258,7 @@ class PaymentResponseHandler
             case self::CANCELLED:
                 // Cancel the order
                 $message = 'The payment was cancelled';
-                $this->logger->error($message, ['orderId' => $transaction->getOrder()->getId()]);
+                $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
                 throw new PaymentCancelledException(
                     $message
                 );
