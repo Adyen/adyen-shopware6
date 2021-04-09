@@ -243,19 +243,24 @@ class PaymentResponseHandler
 
         switch ($resultCode) {
             case self::AUTHORISED:
+            case self::PENDING:
                 // Tag order as paid
                 $this->transactionStateHandler->paid($orderTransactionId, $context);
                 break;
             case self::REFUSED:
-                // Cancel the order
+                // Fail the order
+                $message = 'The payment was refused';
+                $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
                 throw new PaymentFailedException(
-                    'The payment was refused'
+                    $message
                 );
                 break;
             case self::CANCELLED:
                 // Cancel the order
+                $message = 'The payment was cancelled';
+                $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
                 throw new PaymentCancelledException(
-                    'The payment was cancelled'
+                    $message
                 );
                 break;
             case self::REDIRECT_SHOPPER:
@@ -272,8 +277,10 @@ class PaymentResponseHandler
             case self::ERROR:
             default:
                 // Cancel the order
+                $message = 'The payment had an error or an unhandled result code';
+                $this->logger->error($message, ['orderId' => $transaction->getOrder()->getId()]);
                 throw new PaymentFailedException(
-                    'The payment had an error or an unhandled result code'
+                    $message
                 );
         }
     }

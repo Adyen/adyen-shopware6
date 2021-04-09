@@ -11,10 +11,9 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new StoreApiClient();
-        const { locale, originKey, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
+        const { locale, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
-            originKey,
             clientKey,
             environment,
             showPayButton: false,
@@ -40,20 +39,8 @@ export default class ConfirmOrderPlugin extends Plugin {
                     location.href = this.errorUrl.toString();
                     return;
                 }
-                const paymentActionResponse = JSON.parse(paymentAction);
 
-                if (paymentActionResponse.isFinal) {
-                    location.href = this.returnUrl;
-                }
-
-                try {
-                    this.adyenCheckout
-                        .createFromAction(paymentActionResponse.action)
-                        .mount('[data-adyen-payment-action-container]');
-                    $('[data-adyen-payment-action-modal]').modal({show: true});
-                } catch (e) {
-                    console.log(e);
-                }
+                this.handlePaymentAction(paymentAction);
             }.bind(this)
         );
     }
@@ -204,6 +191,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                 this.adyenCheckout
                     .createFromAction(paymentActionResponse.action)
                     .mount('[data-adyen-payment-action-container]');
+                if (paymentActionResponse.action.type === 'threeDS2') {
+                    $('[data-adyen-payment-action-modal]').modal({show: true});
+                }
             }
         } catch (e) {
             console.log(e);
