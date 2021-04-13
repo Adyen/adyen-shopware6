@@ -39,7 +39,7 @@ export default {
             extra: {
                 buttonSizeMode: 'fill',
             },
-            onClick(resolve, reject, self) {
+            onClick: function (resolve, reject, self) {
                 if (!self.confirmOrderForm.checkValidity()) {
                     reject();
                     return false;
@@ -48,7 +48,7 @@ export default {
                     return true;
                 }
             },
-            onError(error, component) {
+            onError: function(error, component, self) {
                 if (error.statusCode !== 'CANCELED') {
                     if ('statusMessage' in error) {
                         alert(error.statusMessage);
@@ -59,14 +59,29 @@ export default {
             }
         },
         'paypal': {
-            extra: {
-                countryCode: 'NL',
-            },
+            extra: {},
             onClick: function (source, event, self) {
                 return self.confirmOrderForm.checkValidity();
             },
-            onError(error, component) {
+            onError: function(error, component, self) {
                 component.setStatus('ready');
+                window.location.href = self.errorUrl.toString();
+            },
+            onCancel: function (data, component, self) {
+                component.setStatus('ready');
+                window.location.href = self.errorUrl.toString();
+            },
+            responseHandler: function (plugin, response) {
+                try {
+                    response = JSON.parse(response);
+                    if (response.isFinal) {
+                        location.href = plugin.returnUrl;
+                    }
+                    // Load Paypal popup window with component.handleAction
+                    this.handleAction(response.action);
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
     },

@@ -28,20 +28,20 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.confirmOrderForm.addEventListener('submit',
             this.validateAndConfirmOrder.bind(this));
         this.initializeCustomPayButton();
-        this.actionHandler = this.handlePaymentAction;
+        this.responseHandler = this.handlePaymentAction;
     }
 
     handleOnAdditionalDetails (state) {
         this._client.post(
             `${adyenCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({orderId: this.orderId, stateData: state.data}),
-            function (paymentAction) {
+            function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     location.href = this.errorUrl.toString();
                     return;
                 }
 
-                this.actionHandler(paymentAction);
+                this.responseHandler(paymentResponse);
             }.bind(this)
         );
     }
@@ -175,24 +175,24 @@ export default class ConfirmOrderPlugin extends Plugin {
             this._client.post(
                 `${adyenCheckoutOptions.paymentStatusUrl}`,
                 JSON.stringify({'orderId': orderId}),
-                this.actionHandler.bind(this),
+                this.responseHandler.bind(this),
             );
         } catch (e) {
             console.log(e);
         }
     }
 
-    handlePaymentAction(paymentAction) {
+    handlePaymentAction(response) {
         try {
-            const paymentActionResponse = JSON.parse(paymentAction);
-            if (paymentActionResponse.isFinal) {
+            const paymentResponse = JSON.parse(response);
+            if (paymentResponse.isFinal) {
                 location.href = this.returnUrl;
             }
-            if (!!paymentActionResponse.action) {
+            if (!!paymentResponse.action) {
                 this.adyenCheckout
-                    .createFromAction(paymentActionResponse.action)
+                    .createFromAction(paymentResponse.action)
                     .mount('[data-adyen-payment-action-container]');
-                if (paymentActionResponse.action.type === 'threeDS2') {
+                if (paymentResponse.action.type === 'threeDS2') {
                     $('[data-adyen-payment-action-modal]').modal({show: true});
                 }
             }
@@ -242,17 +242,10 @@ export default class ConfirmOrderPlugin extends Plugin {
                         stateData: JSON.stringify(state.data)
                     };
                     let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
-                    this.actionHandler = (response) => {
-                        try {
-                            response = JSON.parse(response);
-                            if (response.isFinal) {
-                                location.href = this.returnUrl;
-                            }
-                            component.handleAction(response.action);
-                        } catch (e) {
-                            console.error(e);
-                        }
+                    if ('responseHandler' in componentConfig) {
+                        this.responseHandler = componentConfig.responseHandler.bind(component, this);
                     }
+
                     this.confirmOrder(formData, extraParams);
                 } else {
                     component.showValidation();
@@ -261,13 +254,12 @@ export default class ConfirmOrderPlugin extends Plugin {
             }.bind(this),
             onCancel: (data, component) => {
                 ElementLoadingIndicatorUtil.remove(document.body);
-                console.log(data);
-                component.setStatus('ready');
+                componentConfig.onCancel(data, component, this);
             },
             onError: (error, component) => {
                 ElementLoadingIndicatorUtil.remove(document.body);
+                componentConfig.onError(error, component, this);
                 console.log(error);
-                componentConfig.onError(error, component);
             }
         });
 
