@@ -108,7 +108,7 @@ export default class CheckoutPlugin extends Plugin {
         //  if the container doesn't exist don't try to render the component
         const paymentMethodContainer = $('[data-adyen-payment-method="' + adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
 
-        if (adyenConfiguration.componentsWithPayButton.includes(paymentMethod.type)) {
+        if (paymentMethod.type in adyenConfiguration.componentsWithPayButton) {
             // For payment methods with a direct pay button, the button is rendered on the confirm page
             return;
         }

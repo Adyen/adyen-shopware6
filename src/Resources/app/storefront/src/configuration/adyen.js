@@ -22,7 +22,54 @@
 
 export default {
     updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc'],
-    componentsWithPayButton: ['applepay', 'paywithgoogle', 'paypal'],
+    componentsWithPayButton: {
+        'applepay': {
+            extra: {},
+            onClick(resolve, reject, self) {
+                if (!self.confirmOrderForm.checkValidity()) {
+                    reject();
+                    return false;
+                } else {
+                    resolve();
+                    return true;
+                }
+            }
+        },
+        'paywithgoogle': {
+            extra: {
+                buttonSizeMode: 'fill',
+            },
+            onClick(resolve, reject, self) {
+                if (!self.confirmOrderForm.checkValidity()) {
+                    reject();
+                    return false;
+                } else {
+                    resolve();
+                    return true;
+                }
+            },
+            onError(error, component) {
+                if (error.statusCode !== 'CANCELED') {
+                    if ('statusMessage' in error) {
+                        alert(error.statusMessage);
+                    } else {
+                        alert(error.statusCode);
+                    }
+                }
+            }
+        },
+        'paypal': {
+            extra: {
+                countryCode: 'NL',
+            },
+            onClick: function (source, event, self) {
+                return self.confirmOrderForm.checkValidity();
+            },
+            onError(error, component) {
+                component.setStatus('ready');
+            }
+        }
+    },
     paymentMethodTypeHandlers: {
         'scheme': 'handler_adyen_cardspaymentmethodhandler',
         'ideal': 'handler_adyen_idealpaymentmethodhandler',
