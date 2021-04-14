@@ -65,20 +65,19 @@ class PaymentDetailsService
     }
 
     /**
-     * @param array $details
+     * @param array $requestData
      * @param OrderTransactionEntity $orderTransaction
      * @return PaymentResponseHandlerResult
      * @throws PaymentFailedException
      */
     public function getPaymentDetails(
-        array $details,
+        array $requestData,
         OrderTransactionEntity $orderTransaction
     ): PaymentResponseHandlerResult {
-        $request = ['details' => $details];
 
         try {
             $this->checkoutService->startClient($orderTransaction->getOrder()->getSalesChannelId());
-            $response = $this->checkoutService->paymentsDetails($request);
+            $response = $this->checkoutService->paymentsDetails($requestData);
             return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());

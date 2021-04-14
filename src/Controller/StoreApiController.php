@@ -197,18 +197,16 @@ class StoreApiController extends AbstractStoreController
             return new JsonResponse($message, 400);
         }
 
-        $details = $stateData['details'];
-
         try {
             $result = $this->paymentDetailsService->getPaymentDetails(
-                $details,
+                $stateData,
                 $paymentResponse->getOrderTransaction()
             );
         } catch (PaymentFailedException $exception) {
             $message = 'Error occurred finalizing payment';
             $this->logger->error(
                 $message,
-                ['orderId' => $orderId, 'paymentDetails' => $details]
+                ['orderId' => $orderId, 'paymentDetails' => $stateData]
             );
             return new JsonResponse($message, 500);
         }

@@ -22,7 +22,69 @@
 
 export default {
     updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc'],
-    componentsWithPayButton: ['applepay', 'paywithgoogle', 'paypal'],
+    componentsWithPayButton: {
+        'applepay': {
+            extra: {},
+            onClick(resolve, reject, self) {
+                if (!self.confirmOrderForm.checkValidity()) {
+                    reject();
+                    return false;
+                } else {
+                    resolve();
+                    return true;
+                }
+            }
+        },
+        'paywithgoogle': {
+            extra: {
+                buttonSizeMode: 'fill',
+            },
+            onClick: function (resolve, reject, self) {
+                if (!self.confirmOrderForm.checkValidity()) {
+                    reject();
+                    return false;
+                } else {
+                    resolve();
+                    return true;
+                }
+            },
+            onError: function(error, component, self) {
+                if (error.statusCode !== 'CANCELED') {
+                    if ('statusMessage' in error) {
+                        alert(error.statusMessage);
+                    } else {
+                        alert(error.statusCode);
+                    }
+                }
+            }
+        },
+        'paypal': {
+            extra: {},
+            onClick: function (source, event, self) {
+                return self.confirmOrderForm.checkValidity();
+            },
+            onError: function(error, component, self) {
+                component.setStatus('ready');
+                window.location.href = self.errorUrl.toString();
+            },
+            onCancel: function (data, component, self) {
+                component.setStatus('ready');
+                window.location.href = self.errorUrl.toString();
+            },
+            responseHandler: function (plugin, response) {
+                try {
+                    response = JSON.parse(response);
+                    if (response.isFinal) {
+                        location.href = plugin.returnUrl;
+                    }
+                    // Load Paypal popup window with component.handleAction
+                    this.handleAction(response.action);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+    },
     paymentMethodTypeHandlers: {
         'scheme': 'handler_adyen_cardspaymentmethodhandler',
         'ideal': 'handler_adyen_idealpaymentmethodhandler',
