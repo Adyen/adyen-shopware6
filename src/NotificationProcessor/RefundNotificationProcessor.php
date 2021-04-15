@@ -67,7 +67,8 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
         $this->logger->info('Processed ' . NotificationEventCodes::REFUND . ' notification.', $logContext);
     }
 
-    private function doRefund(OrderTransactionEntity $orderTransaction, Context $context, bool $partial=false) {
+    private function doRefund(OrderTransactionEntity $orderTransaction, Context $context, bool $partial = false)
+    {
         try {
             if ($partial) {
                 $this->getTransactionStateHandler()->refundPartially($orderTransaction->getId(), $context);
