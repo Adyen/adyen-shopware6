@@ -34,6 +34,7 @@ class NotificationProcessorFactory
     private static $adyenEventCodeProcessors = [
         NotificationEventCodes::AUTHORISATION => AuthorisationNotificationProcessor::class,
         NotificationEventCodes::OFFER_CLOSED => OfferClosedNotificationProcessor::class,
+        NotificationEventCodes::REFUND => RefundNotificationProcessor::class,
     ];
 
     public static function create(
@@ -41,7 +42,7 @@ class NotificationProcessorFactory
         OrderEntity $order,
         OrderTransactionStateHandler $transactionStateHandler,
         LoggerInterface $logger
-    ): NotificationProcessorInterface {
+    ): NotificationProcessor {
         /** @var NotificationProcessor $notificationProcessor */
         $notificationProcessor = array_key_exists($notification->getEventCode(), self::$adyenEventCodeProcessors)
             ? new self::$adyenEventCodeProcessors[$notification->getEventCode()]

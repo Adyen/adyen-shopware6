@@ -28,4 +28,5 @@ final class NotificationEventCodes
 {
     public const AUTHORISATION = 'AUTHORISATION';
     public const OFFER_CLOSED = 'OFFER_CLOSED';
+    public const REFUND = 'REFUND';
 }

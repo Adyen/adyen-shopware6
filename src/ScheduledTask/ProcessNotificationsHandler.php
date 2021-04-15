@@ -101,9 +101,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             $this->markAsProcessing($notification->getId());
 
-            $order = $this->orderRepository->getWithOrderNumber(
+            $order = $this->orderRepository->getOrderByOrderNumber(
                 $notification->getMerchantReference(),
-                $context
+                $context,
+                ['transactions', 'currency']
             );
 
             if (!$order) {
