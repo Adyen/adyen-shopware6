@@ -49,6 +49,12 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
                 $orderTransaction->getAmount()->getTotalPrice(),
                 $this->getOrder()->getCurrency()->getIsoCode()
             );
+
+            if ($refundedAmount > $transactionAmount) {
+                $this->logger->warning('The refunded amount is greater than the transaction amount.', $logContext);
+                return;
+            }
+
             $partial = $refundedAmount < $transactionAmount;
             $newState = $partial
                 ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
