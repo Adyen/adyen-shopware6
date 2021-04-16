@@ -30,19 +30,9 @@ use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\OrderEntity;
 
-abstract class NotificationProcessor
+abstract class NotificationProcessor implements NotificationProcessorInterface
 {
     use LoggerAwareTrait;
-
-    /**
-     * @var Currency
-     */
-    protected $currencyUtil;
-
-    public function __construct()
-    {
-        $this->currencyUtil = new Currency();
-    }
 
     /**
      * @var OrderEntity
@@ -56,6 +46,18 @@ abstract class NotificationProcessor
      * @var OrderTransactionStateHandler
      */
     protected $transactionStateHandler;
+
+    /**
+     * @var Currency
+     */
+    protected $currencyUtil;
+
+    public function __construct()
+    {
+        $this->currencyUtil = new Currency();
+    }
+
+    abstract public function process(): void;
 
     /**
      * @return OrderEntity
