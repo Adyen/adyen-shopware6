@@ -55,8 +55,7 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
                 return;
             }
 
-            $partial = $refundedAmount < $transactionAmount;
-            $newState = $partial
+            $newState = $refundedAmount < $transactionAmount
                 ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
                 : OrderTransactionStates::STATE_REFUNDED;
             // Transactions in refunded state cannot be transitioned to any other state,
@@ -66,25 +65,30 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
                 return;
             }
 
-            $this->doRefund($orderTransaction, $context, $partial);
+            $this->doRefund($orderTransaction, $context, $newState);
             $logContext['newState'] = $newState;
         }
 
         $this->logger->info('Processed ' . NotificationEventCodes::REFUND . ' notification.', $logContext);
     }
 
-    private function doRefund(OrderTransactionEntity $orderTransaction, Context $context, bool $partial = false)
+    private function doRefund(OrderTransactionEntity $orderTransaction, Context $context, string $newState)
     {
         try {
-            if ($partial) {
+            if ($newState === OrderTransactionStates::STATE_PARTIALLY_REFUNDED) {
                 $this->getTransactionStateHandler()->refundPartially($orderTransaction->getId(), $context);
             } else {
                 $this->getTransactionStateHandler()->refund($orderTransaction->getId(), $context);
             }
         } catch (IllegalTransitionException $exception) {
             // set to paid, and then try again
+            $this->logger->info(
+                'Transaction ' . $orderTransaction->getId() . ' is '
+                . $orderTransaction->getStateMachineState()->getTechnicalName() . ' and could not be set to '
+                . $newState . ', setting to paid and then retrying.'
+            );
             $this->getTransactionStateHandler()->paid($orderTransaction->getId(), $context);
-            $this->doRefund($orderTransaction, $context, $partial);
+            $this->doRefund($orderTransaction, $context, $newState);
         }
     }
 }
