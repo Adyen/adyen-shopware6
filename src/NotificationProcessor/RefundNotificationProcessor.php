@@ -51,8 +51,7 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
             );
 
             if ($refundedAmount > $transactionAmount) {
-                $this->logger->warning('The refunded amount is greater than the transaction amount.', $logContext);
-                return;
+                throw new \Exception('The refunded amount is greater than the transaction amount.');
             }
 
             $newState = $refundedAmount < $transactionAmount

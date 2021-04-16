@@ -102,7 +102,7 @@ class NotificationEntity extends Entity
     protected $scheduledProcessingTime;
 
     /**
-     * @var int
+     * @var int|null
      */
     protected $errorCount;
 
@@ -336,9 +336,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return int
+     * @return int|null
      */
-    public function getErrorCount(): int
+    public function getErrorCount(): ?int
     {
         return $this->errorCount;
     }
