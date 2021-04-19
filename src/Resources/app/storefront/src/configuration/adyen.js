@@ -83,7 +83,11 @@ export default {
                     console.error(e);
                 }
             }
-        }
+        },
+        'amazonpay': {
+            extra: {},
+
+        },
     },
     paymentMethodTypeHandlers: {
         'scheme': 'handler_adyen_cardspaymentmethodhandler',
@@ -100,5 +104,6 @@ export default {
         'paywithgoogle': 'handler_adyen_googlepaypaymentmethodhandler',
         'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
+        'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
     }
 }

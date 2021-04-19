@@ -149,8 +149,6 @@ class AdyenPaymentShopware6 extends Plugin
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
-        // Fetch ID for update
-
         $paymentCriteria = (new Criteria())->addFilter(new EqualsFilter(
             'handlerIdentifier',
             $paymentMethodHandler
@@ -266,6 +264,11 @@ class AdyenPaymentShopware6 extends Plugin
                 $method
             );
         }
+    }
+
+    private function updateTo200(UpdateContext $updateContext): void
+    {
+        // todo add amazon pay to the next release version
     }
 }
 
