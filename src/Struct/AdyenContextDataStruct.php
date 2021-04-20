@@ -26,7 +26,7 @@ namespace Adyen\Shopware\Struct;
 
 use Shopware\Core\Framework\Struct\Struct;
 
-class ContextAdyenDataStruct extends Struct
+class AdyenContextDataStruct extends Struct
 {
     /**
      * @var string|null

@@ -26,7 +26,7 @@ namespace Adyen\Shopware\Subscriber;
 
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
-use Adyen\Shopware\Struct\ContextAdyenDataStruct;
+use Adyen\Shopware\Struct\AdyenContextDataStruct;
 use Shopware\Core\Framework\Routing\Event\SalesChannelContextResolvedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -62,7 +62,7 @@ class ContextResolvedSubscriber implements EventSubscriberInterface
         $context = $event->getSalesChannelContext();
         $salesChannelId = $context->getSalesChannelId();
 
-        $extension = new ContextAdyenDataStruct();
+        $extension = new AdyenContextDataStruct();
         $context->addExtension('adyenData', $extension);
 
         $extension->setClientKey($this->configurationService->getClientKey($salesChannelId) ?: null);
