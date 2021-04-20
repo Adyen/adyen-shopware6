@@ -30,7 +30,10 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentMethodsFilterService
 {
-    private PaymentMethodsService $paymentMethodsService;
+    /**
+     * @var PaymentMethodsService
+     */
+    private $paymentMethodsService;
 
     public function __construct(PaymentMethodsService $paymentMethodsService)
     {
