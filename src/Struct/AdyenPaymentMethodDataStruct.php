@@ -29,11 +29,6 @@ use Shopware\Core\Framework\Struct\Struct;
 class AdyenPaymentMethodDataStruct extends Struct
 {
     /**
-     * @var bool
-     */
-    protected $isAdyen = false;
-
-    /**
      * @var string|null
      */
     protected $type = null;
@@ -42,16 +37,6 @@ class AdyenPaymentMethodDataStruct extends Struct
      * @var array|null
      */
     protected $paymentMethodsResponse = null;
-
-    public function isAdyen(): bool
-    {
-        return $this->isAdyen;
-    }
-
-    public function setIsAdyen(bool $isAdyen): void
-    {
-        $this->isAdyen = $isAdyen;
-    }
 
     public function getType(): ?string
     {

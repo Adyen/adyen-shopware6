@@ -119,21 +119,21 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
     {
         $methods = $response->getPaymentMethods();
         foreach ($methods as $method) {
-            $extension = new AdyenPaymentMethodDataStruct();
-            $method->addExtension('adyenData', $extension);
-
             if ($method->getPluginId() !== $this->adyenPluginProvider->getAdyenPluginId()) {
                 continue;
             }
 
             $type = $this->getPaymentMethodType($method);
 
-            $extension->setIsAdyen(true);
+            $extension = new AdyenPaymentMethodDataStruct();
+            
             $extension->setType($type);
 
             if (!empty($type)) {
                 $extension->setPaymentMethodsResponse($this->getPaymentMethodsResponseForType($context, $type));
             }
+
+            $method->addExtension('adyenData', $extension);
         }
     }
 
