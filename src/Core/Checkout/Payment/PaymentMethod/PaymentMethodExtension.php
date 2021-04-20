@@ -36,12 +36,17 @@ class PaymentMethodExtension extends EntityExtension
 {
     public function extendFields(FieldCollection $collection): void
     {
-        $collection->add(
-            (new ObjectField(
-                'adyen_data',
-                'adyenData'
-            ))->addFlags(new Runtime(), new Computed(), new ApiAware())
+        $field = new ObjectField(
+            'adyen_data',
+            'adyenData'
         );
+
+        $field->addFlags(new Runtime(), new Computed());
+        if (class_exists(ApiAware::class)) {
+            $field->addFlags(new ApiAware());
+        }
+
+        $collection->add($field);
     }
 
     public function getDefinitionClass(): string
