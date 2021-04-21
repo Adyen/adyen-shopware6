@@ -34,6 +34,7 @@ class NotificationProcessorFactory
     private static $adyenEventCodeProcessors = [
         NotificationEventCodes::AUTHORISATION => AuthorisationNotificationProcessor::class,
         NotificationEventCodes::OFFER_CLOSED => OfferClosedNotificationProcessor::class,
+        NotificationEventCodes::REFUND => RefundNotificationProcessor::class,
     ];
 
     public static function create(

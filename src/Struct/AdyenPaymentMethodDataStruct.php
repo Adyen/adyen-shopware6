@@ -22,11 +22,39 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\NotificationProcessor;
+namespace Adyen\Shopware\Struct;
 
-final class NotificationEventCodes
+use Shopware\Core\Framework\Struct\Struct;
+
+class AdyenPaymentMethodDataStruct extends Struct
 {
-    public const AUTHORISATION = 'AUTHORISATION';
-    public const OFFER_CLOSED = 'OFFER_CLOSED';
-    public const REFUND = 'REFUND';
+    /**
+     * @var string|null
+     */
+    protected $type = null;
+
+    /**
+     * @var array|null
+     */
+    protected $paymentMethodsResponse = null;
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(?string $type): void
+    {
+        $this->type = $type;
+    }
+
+    public function getPaymentMethodsResponse(): ?array
+    {
+        return $this->paymentMethodsResponse;
+    }
+
+    public function setPaymentMethodsResponse(?array $paymentMethodsResponse): void
+    {
+        $this->paymentMethodsResponse = $paymentMethodsResponse;
+    }
 }
