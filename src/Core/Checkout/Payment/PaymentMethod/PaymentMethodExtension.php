@@ -13,48 +13,44 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
  * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
+ * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Core\Checkout\Order\Aggregate\OrderTransaction;
+namespace Adyen\Shopware\Core\Checkout\Payment\PaymentMethod;
 
-use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
-use Shopware\Core\Framework\Api\Context\SalesChannelApiSource;
+use Shopware\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ReadProtected;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Computed;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Runtime;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\ObjectField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
-class OrderTransactionExtension extends EntityExtension
+class PaymentMethodExtension extends EntityExtension
 {
-    /**
-     * @inheritDoc
-     */
-    public function getDefinitionClass(): string
-    {
-        return OrderTransactionDefinition::class;
-    }
-
     public function extendFields(FieldCollection $collection): void
     {
-        $field = new OneToManyAssociationField(
-            'adyenPaymentResponses',
-            PaymentResponseEntityDefinition::class,
-            'order_transaction_id'
+        $field = new ObjectField(
+            'adyen_data',
+            'adyenData'
         );
 
-        // Ensure the data is not available via the Store API in older Shopware versions.
-        if (!class_exists(ApiAware::class) && class_exists(ReadProtected::class)) {
-            $field->addFlags(new ReadProtected(SalesChannelApiSource::class));
+        $field->addFlags(new Runtime(), new Computed());
+        if (class_exists(ApiAware::class)) {
+            $field->addFlags(new ApiAware());
         }
 
         $collection->add($field);
+    }
+
+    public function getDefinitionClass(): string
+    {
+        return PaymentMethodDefinition::class;
     }
 }

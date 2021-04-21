@@ -26,7 +26,9 @@ namespace Adyen\Shopware\Subscriber;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
+use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\PaymentMethodsFilterService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
@@ -38,11 +40,9 @@ use Shopware\Core\Checkout\Cart\CartPersisterInterface;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
@@ -70,6 +70,11 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $paymentStateDataService;
 
     /**
+     * @var PaymentMethodsFilterService
+     */
+    private $paymentMethodsFilterService;
+
+    /**
      * @var RouterInterface
      */
     private $router;
@@ -88,11 +93,6 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @var PaymentMethodsService
      */
     private $paymentMethodsService;
-
-    /**
-     * @var PluginIdProvider $pluginIdProvider
-     */
-    private $pluginIdProvider;
 
     /**
      * @var EntityRepositoryInterface $paymentMethodRepository
@@ -130,9 +130,9 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $logger;
 
     /**
-     * @var string
+     * @var AdyenPluginProvider
      */
-    private $adyenPluginId;
+    private $adyenPluginProvider;
 
     /**
      * @var ContextSwitchRoute
@@ -147,12 +147,13 @@ class PaymentSubscriber implements EventSubscriberInterface
     /**
      * PaymentSubscriber constructor.
      *
+     * @param AdyenPluginProvider $adyenPluginProvider
+     * @param PaymentMethodsFilterService $paymentMethodsFilterService
      * @param PaymentStateDataService $paymentStateDataService
      * @param RouterInterface $router
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
-     * @param PluginIdProvider $pluginIdProvider
      * @param EntityRepositoryInterface $paymentMethodRepository
      * @param SessionInterface $session
      * @param ContainerInterface $container
@@ -164,12 +165,13 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @param LoggerInterface $logger
      */
     public function __construct(
+        AdyenPluginProvider $adyenPluginProvider,
+        PaymentMethodsFilterService $paymentMethodsFilterService,
         PaymentStateDataService $paymentStateDataService,
         RouterInterface $router,
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
-        PluginIdProvider $pluginIdProvider,
         EntityRepositoryInterface $paymentMethodRepository,
         SessionInterface $session,
         ContainerInterface $container,
@@ -181,11 +183,11 @@ class PaymentSubscriber implements EventSubscriberInterface
         LoggerInterface $logger
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
+        $this->paymentMethodsFilterService = $paymentMethodsFilterService;
         $this->router = $router;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->pluginIdProvider = $pluginIdProvider;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->session = $session;
         $this->container = $container;
@@ -195,10 +197,7 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->salesChannelContextFactory = $salesChannelContextFactory;
         $this->currency = $currency;
         $this->logger = $logger;
-        $this->adyenPluginId = $this->pluginIdProvider->getPluginIdByBaseClass(
-            \Adyen\Shopware\AdyenPaymentShopware6::class,
-            Context::createDefaultContext()
-        );
+        $this->adyenPluginProvider = $adyenPluginProvider;
     }
 
     /**
@@ -235,7 +234,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                     ->addFilter(new EqualsFilter('id', $paymentMethodId)),
                 $event->getContext()
             )->first();
-            if ($paymentMethod->getPluginId() === $this->adyenPluginId) {
+            if ($paymentMethod->getPluginId() === $this->adyenPluginProvider->getAdyenPluginId()) {
                 $this->saveStateData($event, $paymentMethod);
             } else {
                 $this->logger->error('No Adyen payment method selected, skipping state data save.');
@@ -274,15 +273,15 @@ class PaymentSubscriber implements EventSubscriberInterface
             }
         }
 
-        $filteredPaymentMethods = $this->filterShopwarePaymentMethods(
+        $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),
             $salesChannelContext,
-            $this->adyenPluginId
+            $this->adyenPluginProvider->getAdyenPluginId()
         );
 
         $page->setPaymentMethods($filteredPaymentMethods);
 
-        $stateDataIsStored = (bool) $this->paymentStateDataService->getPaymentStateDataFromContextToken(
+        $stateDataIsStored = (bool)$this->paymentStateDataService->getPaymentStateDataFromContextToken(
             $salesChannelContext->getToken()
         );
 
@@ -335,11 +334,11 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'environment' => $this->configurationService->getEnvironment($salesChannelId),
                     'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                     'orderId' => $orderId,
-                    'pluginId' => $this->adyenPluginId,
+                    'pluginId' => $this->adyenPluginProvider->getAdyenPluginId(),
                     'stateDataIsStored' => $stateDataIsStored,
                     'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                     'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
-                    'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId()
+                    'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
                 ]
             )
         );
@@ -355,7 +354,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                     [
                         SalesChannelContextService::PAYMENT_METHOD_ID => $request->get('paymentMethodId'),
                         'adyenStateData' => $request->request->get('adyenStateData'),
-                        'adyenOrigin' => $request->request->get('adyenOrigin')
+                        'adyenOrigin' => $request->request->get('adyenOrigin'),
                     ]
                 ),
                 $this->salesChannelContextFactory->create(
@@ -374,59 +373,6 @@ class PaymentSubscriber implements EventSubscriberInterface
         }
     }
 
-    /**
-     * Removes Adyen payment methods from the Shopware list if not present in Adyen's /paymentMethods response
-     *
-     * @param PaymentMethodCollection $originalPaymentMethods
-     * @param SalesChannelContext $salesChannelContext
-     * @return PaymentMethodCollection
-     */
-    private function filterShopwarePaymentMethods(
-        PaymentMethodCollection $originalPaymentMethods,
-        SalesChannelContext $salesChannelContext,
-        string $adyenPluginId
-    ): PaymentMethodCollection {
-        // Get Adyen /paymentMethods response
-        $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
-
-        // If the /paymentMethods response returns empty, remove all Adyen payment methods from the list and return
-        if (empty($adyenPaymentMethods['paymentMethods'])) {
-            return $originalPaymentMethods->filter(function (PaymentMethodEntity $item) use ($adyenPluginId) {
-                return $item->getPluginId() !== $adyenPluginId;
-            });
-        }
-
-        foreach ($originalPaymentMethods as $paymentMethodEntity) {
-            //If this is an Adyen PM installed it will only be enabled if it's present in the /paymentMethods response
-            /** @var PaymentMethodEntity $paymentMethodEntity */
-            if ($paymentMethodEntity->getPluginId() === $adyenPluginId) {
-                $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
-                $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
-
-                if ($pmCode == OneClickPaymentMethodHandler::getPaymentMethodCode()) {
-                    // For OneClick, remove it if /paymentMethod response has no stored payment methods
-                    if (empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
-                        $originalPaymentMethods->remove($paymentMethodEntity->getId());
-                    }
-                } else {
-                    // For all other PMs, search in /paymentMethods response for payment method with matching `type`
-                    $paymentMethodFoundInResponse = array_filter(
-                        $adyenPaymentMethods['paymentMethods'],
-                        function ($value) use ($pmCode) {
-                            return $value['type'] == $pmCode;
-                        }
-                    );
-
-                    // Remove the PM if it isn't in the paymentMethods response
-                    if (empty($paymentMethodFoundInResponse)) {
-                        $originalPaymentMethods->remove($paymentMethodEntity->getId());
-                    }
-                }
-            }
-        }
-        return $originalPaymentMethods;
-    }
-
     private function trans(string $snippet, array $parameters = []): string
     {
         return $this->container
@@ -436,6 +382,7 @@ class PaymentSubscriber implements EventSubscriberInterface
 
     /**
      * Persists the Adyen payment state data on payment method confirmation/update
+     *
      * @param SalesChannelContextSwitchEvent $event
      */
     private function saveStateData(SalesChannelContextSwitchEvent $event, PaymentMethodEntity $selectedPaymentMethod)
@@ -450,6 +397,7 @@ class PaymentSubscriber implements EventSubscriberInterface
             $this->logger->error('Payment state data is an invalid JSON: ' . json_last_error_msg());
             $this->session->getFlashBag()
                 ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+
             return;
         }
 
@@ -469,6 +417,7 @@ class PaymentSubscriber implements EventSubscriberInterface
             } catch (AdyenException $exception) {
                 $this->session->getFlashBag()
                     ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+
                 return;
             }
         } else {
