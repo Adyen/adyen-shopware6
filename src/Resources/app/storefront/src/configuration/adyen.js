@@ -85,8 +85,36 @@ export default {
             }
         },
         'amazonpay': {
-            extra: {},
-
+            extra: {
+                productType: 'PayOnly',
+                checkoutMode: 'ProcessOrder',
+                returnUrl: function () {
+                    const ref = new URL(location.href);
+                    ref.searchParams.set('pending', '1');
+                    return ref.toString();
+                }()
+            },
+            prePay: true,
+            sessionKey: 'amazonCheckoutSessionId',
+            onClick: function (source, event, self) {
+                return self.confirmOrderForm.checkValidity();
+            },
+            onError: (error) => {
+                console.log(error);
+                if (error.resultCode) {
+                } else {
+                    // Fatal error
+                }
+            },
+            responseHandler: function (response) {
+                if (response.action) {
+                    // Handle additional action (3DS / redirect / other)
+                    component.handleAction(response.action);
+                } else {
+                    // The merchant's function to show the final result or redirect to a final status page
+                    //handleFinalResult(response);
+                }
+            }
         },
     },
     paymentMethodTypeHandlers: {
