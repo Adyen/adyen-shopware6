@@ -225,7 +225,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        if (componentConfig.prePay) {
+        if (!!componentConfig.prePayRedirect) {
             this.renderPrePaymentButton(componentConfig, selectedPaymentMethodObject);
             return;
         }
@@ -295,6 +295,12 @@ export default class ConfirmOrderPlugin extends Plugin {
             amount: {
                 value: adyenCheckoutOptions.amount,
                 currency: adyenCheckoutOptions.currency,
+            },
+            onClick: (resolve, reject) => {
+                if (!componentConfig.onClick(resolve, reject, this)) {
+                    return false;
+                }
+                ElementLoadingIndicatorUtil.create(document.body);
             }
         });
         let paymentMethodInstance = this.adyenCheckout.create(
