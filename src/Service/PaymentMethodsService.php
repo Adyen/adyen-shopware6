@@ -34,9 +34,9 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 class PaymentMethodsService
 {
     /**
-     * @var CheckoutService
+     * @var ClientService
      */
-    private $checkoutService;
+    private $clientService;
 
     /**
      * @var ConfigurationService
@@ -72,7 +72,7 @@ class PaymentMethodsService
      * PaymentMethodsService constructor.
      *
      * @param LoggerInterface $logger
-     * @param CheckoutService $checkoutService
+     * @param ClientService $clientService
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param CartService $cartService
@@ -81,14 +81,14 @@ class PaymentMethodsService
      */
     public function __construct(
         LoggerInterface $logger,
-        CheckoutService $checkoutService,
+        ClientService $clientService,
         ConfigurationService $configurationService,
         Currency $currency,
         CartService $cartService,
         SalesChannelRepository $salesChannelRepository,
         OrderRepository $orderRepository
     ) {
-        $this->checkoutService = $checkoutService;
+        $this->clientService = $clientService;
         $this->configurationService = $configurationService;
         $this->currency = $currency;
         $this->cartService = $cartService;
@@ -108,8 +108,10 @@ class PaymentMethodsService
         try {
             $requestData = $this->buildPaymentMethodsRequestData($context, $orderId);
             if (!empty($requestData)) {
-                $this->checkoutService->startClient($context->getSalesChannel()->getId());
-                $responseData = $this->checkoutService->paymentMethods($requestData);
+                $checkoutService = new CheckoutService(
+                    $this->clientService->getClient($context->getSalesChannel()->getId())
+                );
+                $responseData = $checkoutService->paymentMethods($requestData);
             }
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());

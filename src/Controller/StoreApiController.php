@@ -32,7 +32,6 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
-use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
@@ -57,10 +56,6 @@ class StoreApiController extends AbstractStoreController
      * @var PaymentMethodsService
      */
     private $paymentMethodsService;
-    /**
-     * @var SalesChannelRepository
-     */
-    private $salesChannelRepository;
     /**
      * @var PaymentDetailsService
      */
@@ -102,7 +97,6 @@ class StoreApiController extends AbstractStoreController
      * StoreApiController constructor.
      *
      * @param PaymentMethodsService $paymentMethodsService
-     * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentDetailsService $paymentDetailsService
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStatusService $paymentStatusService
@@ -115,7 +109,6 @@ class StoreApiController extends AbstractStoreController
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
-        SalesChannelRepository $salesChannelRepository,
         PaymentDetailsService $paymentDetailsService,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStatusService $paymentStatusService,
@@ -127,7 +120,6 @@ class StoreApiController extends AbstractStoreController
         LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentDetailsService = $paymentDetailsService;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStatusService = $paymentStatusService;

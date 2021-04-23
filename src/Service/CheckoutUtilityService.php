@@ -28,7 +28,7 @@ use Adyen\AdyenException;
 use Adyen\Service\CheckoutUtility;
 use Psr\Log\LoggerInterface;
 
-class CheckoutUtilityService extends CheckoutUtility
+class CheckoutUtilityService
 {
     /**
      * @var ClientService
@@ -52,7 +52,7 @@ class CheckoutUtilityService extends CheckoutUtility
     {
         try {
             $client = $this->client->getClient($salesChannelId);
-            return new parent($client);
+            return new CheckoutUtility($client);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
         }

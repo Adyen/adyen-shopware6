@@ -23,9 +23,8 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\AdyenException;
+use Adyen\Client;
 use Adyen\Service\Checkout;
-use Psr\Log\LoggerInterface;
 
 class CheckoutService extends Checkout
 {
@@ -34,25 +33,10 @@ class CheckoutService extends Checkout
      */
     private $client;
 
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
     public function __construct(
-        ClientService $client,
-        LoggerInterface $logger
+        Client $client
     ) {
         $this->client = $client;
-        $this->logger = $logger;
-    }
-
-    public function startClient($salesChannelId)
-    {
-        try {
-            parent::__construct($this->client->getClient($salesChannelId));
-        } catch (AdyenException $e) {
-            $this->logger->error($e->getMessage());
-        }
+        parent::__construct($this->client);
     }
 }

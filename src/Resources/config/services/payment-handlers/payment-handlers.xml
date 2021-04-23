@@ -28,7 +28,7 @@
     <services>
         <service id="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler" abstract="true">
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\CheckoutService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Service\Builder\Browser"/>
             <argument type="service" id="Adyen\Service\Builder\Address"/>
             <argument type="service" id="Adyen\Service\Builder\Payment"/>

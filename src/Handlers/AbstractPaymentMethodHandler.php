@@ -35,6 +35,7 @@ use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
+use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
@@ -72,9 +73,9 @@ abstract class AbstractPaymentMethodHandler
     protected static $isOpenInvoice = false;
 
     /**
-     * @var CheckoutService
+     * @var ClientService
      */
-    protected $checkoutService;
+    protected $clientService;
 
     /**
      * @var Browser
@@ -169,7 +170,7 @@ abstract class AbstractPaymentMethodHandler
     /**
      * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
-     * @param CheckoutService $checkoutService
+     * @param ClientService $clientService
      * @param Browser $browserBuilder
      * @param Address $addressBuilder
      * @param Payment $paymentBuilder
@@ -190,7 +191,7 @@ abstract class AbstractPaymentMethodHandler
      */
     public function __construct(
         ConfigurationService $configurationService,
-        CheckoutService $checkoutService,
+        ClientService $clientService,
         Browser $browserBuilder,
         Address $addressBuilder,
         Payment $paymentBuilder,
@@ -209,7 +210,7 @@ abstract class AbstractPaymentMethodHandler
         EntityRepositoryInterface $productRepository,
         LoggerInterface $logger
     ) {
-        $this->checkoutService = $checkoutService;
+        $this->clientService = $clientService;
         $this->browserBuilder = $browserBuilder;
         $this->addressBuilder = $addressBuilder;
         $this->openInvoiceBuilder = $openInvoiceBuilder;
@@ -237,7 +238,7 @@ abstract class AbstractPaymentMethodHandler
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @return RedirectResponse
-     * @throws PaymentProcessException
+     * @throws PaymentProcessException|AdyenException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
@@ -245,7 +246,9 @@ abstract class AbstractPaymentMethodHandler
         SalesChannelContext $salesChannelContext
     ): RedirectResponse {
         $transactionId = $transaction->getOrderTransaction()->getId();
-        $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
+        $checkoutService = new CheckoutService(
+            $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
+        );
         $stateData = $dataBag->get('stateData', null);
 
         try {
@@ -264,7 +267,7 @@ abstract class AbstractPaymentMethodHandler
         }
 
         try {
-            $response = $this->checkoutService->payments($request);
+            $response = $checkoutService->payments($request);
         } catch (AdyenException $exception) {
             $message = sprintf(
                 "There was an error with the /payments request. Order number %s: %s",
@@ -309,7 +312,6 @@ abstract class AbstractPaymentMethodHandler
         SalesChannelContext $salesChannelContext
     ): void {
         $transactionId = $transaction->getOrderTransaction()->getId();
-        $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentCancelledException $exception) {
