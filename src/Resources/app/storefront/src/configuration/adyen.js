@@ -88,11 +88,7 @@ export default {
             extra: {
                 productType: 'PayOnly',
                 checkoutMode: 'ProcessOrder',
-                returnUrl: function () {
-                    const ref = new URL(location.href);
-                    ref.searchParams.set('pending', '1');
-                    return ref.toString();
-                }()
+                returnUrl: location.href
             },
             prePayRedirect: true,
             sessionKey: 'amazonCheckoutSessionId',
@@ -105,8 +101,9 @@ export default {
                     return true;
                 }
             },
-            onError: (error) => {
+            onError: (error, component) => {
                 console.log(error);
+                component.setStatus('ready');
             }
         },
     },

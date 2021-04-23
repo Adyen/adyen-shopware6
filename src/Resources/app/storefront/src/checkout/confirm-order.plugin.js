@@ -301,6 +301,11 @@ export default class ConfirmOrderPlugin extends Plugin {
                     return false;
                 }
                 ElementLoadingIndicatorUtil.create(document.body);
+            },
+            onError: (error, component) => {
+                ElementLoadingIndicatorUtil.remove(document.body);
+                componentConfig.onError(error, component, this);
+                console.log(error);
             }
         });
         let paymentMethodInstance = this.adyenCheckout.create(
@@ -313,7 +318,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     completePendingPayment(paymentMethodType, config) {
         const url = new URL(location.href);
         // Check for pending payment session
-        if (url.searchParams.has('pending')) {
+        if (url.searchParams.has(config.sessionKey)) {
             ElementLoadingIndicatorUtil.create(document.body);
             const paymentMethodInstance = this.adyenCheckout.create(paymentMethodType, {
                 [config.sessionKey]: url.searchParams.get(config.sessionKey),

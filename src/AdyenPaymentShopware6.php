@@ -28,8 +28,7 @@ namespace Adyen\Shopware;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
-use Adyen\Shopware\PaymentMethods\PaymentMethods;
-use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
+use Adyen\Shopware\PaymentMethods;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Context;
@@ -50,14 +49,14 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function install(InstallContext $installContext): void
     {
-        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+        foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->addPaymentMethod(new $paymentMethod(), $installContext->getContext());
         }
     }
 
     public function activate(ActivateContext $activateContext): void
     {
-        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+        foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(true, $activateContext->getContext(), new $paymentMethod());
         }
         parent::activate($activateContext);
@@ -65,7 +64,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function deactivate(DeactivateContext $deactivateContext): void
     {
-        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+        foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(false, $deactivateContext->getContext(), new $paymentMethod());
         }
         parent::deactivate($deactivateContext);
@@ -76,7 +75,7 @@ class AdyenPaymentShopware6 extends Plugin
         parent::uninstall($uninstallContext);
 
         //Deactivating payment methods
-        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+        foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(false, $uninstallContext->getContext(), new $paymentMethod());
         }
 
@@ -103,9 +102,13 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '1.6.0', '<')) {
             $this->updateTo160($updateContext);
         }
+
+        if (\version_compare($currentVersion, '2.0.0', '<')) {
+            $this->updateTo200($updateContext);
+        }
     }
 
-    private function addPaymentMethod(PaymentMethodInterface $paymentMethod, Context $context): void
+    private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
     {
         $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
 
@@ -166,7 +169,7 @@ class AdyenPaymentShopware6 extends Plugin
     private function setPaymentMethodIsActive(
         bool $active,
         Context $context,
-        PaymentMethodInterface $paymentMethod
+        PaymentMethods\PaymentMethodInterface $paymentMethod
     ): void {
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
@@ -221,13 +224,13 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 1.2.0 introduces storedPaymentMethod
         $this->addPaymentMethod(
-            new \Adyen\Shopware\PaymentMethods\OneClickPaymentMethod,
+            new PaymentMethods\OneClickPaymentMethod,
             $updateContext->getContext()
         );
         $this->setPaymentMethodIsActive(
             true,
             $updateContext->getContext(),
-            new \Adyen\Shopware\PaymentMethods\OneClickPaymentMethod
+            new PaymentMethods\OneClickPaymentMethod
         );
     }
 
@@ -235,13 +238,13 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 1.4.0 introduces giropay
         $this->addPaymentMethod(
-            new \Adyen\Shopware\PaymentMethods\GiroPayPaymentMethod,
+            new PaymentMethods\GiroPayPaymentMethod,
             $updateContext->getContext()
         );
         $this->setPaymentMethodIsActive(
             true,
             $updateContext->getContext(),
-            new \Adyen\Shopware\PaymentMethods\GiroPayPaymentMethod
+            new PaymentMethods\GiroPayPaymentMethod
         );
     }
 
@@ -249,10 +252,10 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 1.6.0 introduces applepay, paywithgoogle, dotpay and bancontact
         foreach ([
-                     new \Adyen\Shopware\PaymentMethods\ApplePayPaymentMethod,
-                     new \Adyen\Shopware\PaymentMethods\GooglePayPaymentMethod,
-                     new \Adyen\Shopware\PaymentMethods\DotpayPaymentMethod,
-                     new \Adyen\Shopware\PaymentMethods\BancontactCardPaymentMethod
+                     new PaymentMethods\ApplePayPaymentMethod,
+                     new PaymentMethods\GooglePayPaymentMethod,
+                     new PaymentMethods\DotpayPaymentMethod,
+                     new PaymentMethods\BancontactCardPaymentMethod
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,
@@ -268,7 +271,16 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function updateTo200(UpdateContext $updateContext): void
     {
-        // todo add amazon pay to the next release version
+        //Version 2.0.0 introduces amazonpay
+        $this->addPaymentMethod(
+            new PaymentMethods\AmazonPayPaymentMethod,
+            $updateContext->getContext()
+        );
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            new PaymentMethods\AmazonPayPaymentMethod
+        );
     }
 }
 
