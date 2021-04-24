@@ -41,7 +41,6 @@ use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
-use Shopware\Core\Framework\Store\Api\AbstractStoreController;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
@@ -50,7 +49,12 @@ use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-class StoreApiController extends AbstractStoreController
+/**
+ * Class StoreApiController
+ * @package Adyen\Shopware\Controller
+ * @RouteScope(scopes={"store-api"})
+ */
+class StoreApiController
 {
     /**
      * @var PaymentMethodsService
@@ -132,7 +136,6 @@ class StoreApiController extends AbstractStoreController
     }
 
     /**
-     * @RouteScope(scopes={"store-api"})
      * @Route(
      *     "/store-api/v{version}/adyen/payment-methods",
      *     name="store-api.action.adyen.payment-methods",
@@ -148,7 +151,6 @@ class StoreApiController extends AbstractStoreController
     }
 
     /**
-     * @RouteScope(scopes={"store-api"})
      * @Route(
      *     "/store-api/v{version}/adyen/payment-details",
      *     name="store-api.action.adyen.payment-details",
@@ -207,7 +209,6 @@ class StoreApiController extends AbstractStoreController
     }
 
     /**
-     * @RouteScope(scopes={"store-api"})
      * @Route(
      *     "/store-api/v{version}/adyen/payment-status",
      *     name="store-api.action.adyen.payment-status",
@@ -236,7 +237,6 @@ class StoreApiController extends AbstractStoreController
     }
 
     /**
-     * @RouteScope(scopes={"store-api"})
      * @OA\Post(
      *      path="/adyen/set-payment",
      *      summary="set payment for an order",
