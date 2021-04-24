@@ -76,10 +76,10 @@ class PaymentDetailsService
     ): PaymentResponseHandlerResult {
 
         try {
-            $checkout = new CheckoutService(
+            $checkoutService = new CheckoutService(
                 $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
             );
-            $response = $checkout->paymentsDetails($requestData);
+            $response = $checkoutService->paymentsDetails($requestData);
             return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
