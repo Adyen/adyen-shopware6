@@ -83,7 +83,29 @@ export default {
                     console.error(e);
                 }
             }
-        }
+        },
+        'amazonpay': {
+            extra: {
+                productType: 'PayOnly',
+                checkoutMode: 'ProcessOrder',
+                returnUrl: location.href
+            },
+            prePayRedirect: true,
+            sessionKey: 'amazonCheckoutSessionId',
+            onClick: function (resolve, reject, self) {
+                if (!self.confirmOrderForm.checkValidity()) {
+                    reject();
+                    return false;
+                } else {
+                    resolve();
+                    return true;
+                }
+            },
+            onError: (error, component) => {
+                console.log(error);
+                component.setStatus('ready');
+            }
+        },
     },
     paymentMethodTypeHandlers: {
         'scheme': 'handler_adyen_cardspaymentmethodhandler',
@@ -100,5 +122,6 @@ export default {
         'paywithgoogle': 'handler_adyen_googlepaypaymentmethodhandler',
         'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
+        'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
     }
 }

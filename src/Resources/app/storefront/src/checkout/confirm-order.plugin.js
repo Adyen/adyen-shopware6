@@ -16,12 +16,11 @@ export default class ConfirmOrderPlugin extends Plugin {
             locale,
             clientKey,
             environment,
-            showPayButton: false,
+            showPayButton: true,
             hasHolderName: true,
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
             onAdditionalDetails: this.handleOnAdditionalDetails.bind(this)
         };
-
         this.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
         this.confirmOrderForm = DomAccess.querySelector(document,
             '#confirmOrderForm');
@@ -210,6 +209,8 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         const componentConfig = adyenConfiguration.componentsWithPayButton[selectedAdyenPaymentMethod];
 
+        this.completePendingPayment(selectedAdyenPaymentMethod, componentConfig);
+
         // get selected payment method object
         let selectedPaymentMethod = this.adyenCheckout.paymentMethodsResponse.paymentMethods
             .filter(item => item.type === selectedAdyenPaymentMethod);
@@ -224,8 +225,12 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
+        if (!!componentConfig.prePayRedirect) {
+            this.renderPrePaymentButton(componentConfig, selectedPaymentMethodObject);
+            return;
+        }
+
         const PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, {
-            showPayButton: true,
             amount: {
                 value: adyenCheckoutOptions.amount,
                 currency: adyenCheckoutOptions.currency,
@@ -242,6 +247,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                         stateData: JSON.stringify(state.data)
                     };
                     let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
+                    // Set a custom response action handler if available.
                     if ('responseHandler' in componentConfig) {
                         this.responseHandler = componentConfig.responseHandler.bind(component, this);
                     }
@@ -263,9 +269,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             }
         });
 
-        let paymentMethodInstance;
-
-        paymentMethodInstance = this.adyenCheckout.create(
+        const paymentMethodInstance = this.adyenCheckout.create(
             selectedPaymentMethodObject.type,
             PAY_BUTTON_CONFIG
         );
@@ -280,9 +284,57 @@ export default class ConfirmOrderPlugin extends Plugin {
             } else {
                 this.mountPaymentButton(paymentMethodInstance);
             }
-
         } catch (e) {
             console.log(e);
+        }
+    }
+
+    renderPrePaymentButton(componentConfig, selectedPaymentMethodObject) {
+        const PRE_PAY_BUTTON = Object.assign(componentConfig.extra, selectedPaymentMethodObject, {
+            configuration: selectedPaymentMethodObject.configuration,
+            amount: {
+                value: adyenCheckoutOptions.amount,
+                currency: adyenCheckoutOptions.currency,
+            },
+            onClick: (resolve, reject) => {
+                if (!componentConfig.onClick(resolve, reject, this)) {
+                    return false;
+                }
+                ElementLoadingIndicatorUtil.create(document.body);
+            },
+            onError: (error, component) => {
+                ElementLoadingIndicatorUtil.remove(document.body);
+                componentConfig.onError(error, component, this);
+                console.log(error);
+            }
+        });
+        let paymentMethodInstance = this.adyenCheckout.create(
+            selectedPaymentMethodObject.type,
+            PRE_PAY_BUTTON
+        );
+        this.mountPaymentButton(paymentMethodInstance);
+    }
+
+    completePendingPayment(paymentMethodType, config) {
+        const url = new URL(location.href);
+        // Check for pending payment session
+        if (url.searchParams.has(config.sessionKey)) {
+            ElementLoadingIndicatorUtil.create(document.body);
+            const paymentMethodInstance = this.adyenCheckout.create(paymentMethodType, {
+                [config.sessionKey]: url.searchParams.get(config.sessionKey),
+                showOrderButton: false,
+                onSubmit: function (state, component) {
+                    if (state.isValid) {
+                        let extraParams = {
+                            stateData: JSON.stringify(state.data)
+                        };
+                        let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
+                        this.confirmOrder(formData, extraParams);
+                    }
+                }.bind(this),
+            });
+            this.mountPaymentButton(paymentMethodInstance);
+            paymentMethodInstance.submit();
         }
     }
 
