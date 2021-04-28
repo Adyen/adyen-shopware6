@@ -35,7 +35,7 @@ use Shopware\Core\Framework\Plugin\PluginEntity;
 use Shopware\Core\Framework\Store\Services\StoreService;
 use Psr\Cache\CacheItemPoolInterface;
 
-class ClientService extends Client
+class ClientService
 {
     const MERCHANT_APPLICATION_NAME = 'adyen-shopware6';
     const EXTERNAL_PLATFORM_NAME = 'Shopware';
@@ -55,11 +55,6 @@ class ClientService extends Client
      * @var LoggerInterface
      */
     private $apiLogger;
-
-    /**
-     * @var ContainerParametersService
-     */
-    private $containerParametersService;
 
     /**
      * @var StoreService
@@ -83,7 +78,6 @@ class ClientService extends Client
      * @param LoggerInterface $genericLogger
      * @param LoggerInterface $apiLogger
      * @param ConfigurationService $configurationService
-     * @param ContainerParametersService $containerParametersService
      * @param StoreService $storeService
      * @param CacheItemPoolInterface $cache
      */
@@ -92,7 +86,6 @@ class ClientService extends Client
         LoggerInterface $genericLogger,
         LoggerInterface $apiLogger,
         ConfigurationService $configurationService,
-        ContainerParametersService $containerParametersService,
         StoreService $storeService,
         CacheItemPoolInterface $cache
     ) {
@@ -100,7 +93,6 @@ class ClientService extends Client
         $this->configurationService = $configurationService;
         $this->genericLogger = $genericLogger;
         $this->apiLogger = $apiLogger;
-        $this->containerParametersService = $containerParametersService;
         $this->storeService = $storeService;
         $this->cache = $cache;
     }

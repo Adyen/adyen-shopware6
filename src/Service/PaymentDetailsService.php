@@ -33,9 +33,9 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEnti
 class PaymentDetailsService
 {
     /**
-     * @var CheckoutService
+     * @var ClientService
      */
-    private $checkoutService;
+    private $clientService;
 
     /**
      * @var LoggerInterface
@@ -51,16 +51,16 @@ class PaymentDetailsService
      * PaymentDetailsService constructor.
      *
      * @param LoggerInterface $logger
-     * @param CheckoutService $checkoutService
+     * @param ClientService $clientService
      * @param PaymentResponseHandler $paymentResponseHandler
      */
     public function __construct(
         LoggerInterface $logger,
-        CheckoutService $checkoutService,
+        ClientService $clientService,
         PaymentResponseHandler $paymentResponseHandler
     ) {
         $this->logger = $logger;
-        $this->checkoutService = $checkoutService;
+        $this->clientService = $clientService;
         $this->paymentResponseHandler = $paymentResponseHandler;
     }
 
@@ -76,8 +76,10 @@ class PaymentDetailsService
     ): PaymentResponseHandlerResult {
 
         try {
-            $this->checkoutService->startClient($orderTransaction->getOrder()->getSalesChannelId());
-            $response = $this->checkoutService->paymentsDetails($requestData);
+            $checkoutService = new CheckoutService(
+                $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
+            );
+            $response = $checkoutService->paymentsDetails($requestData);
             return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());

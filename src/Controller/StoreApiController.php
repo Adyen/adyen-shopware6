@@ -32,7 +32,6 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
-use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
@@ -42,7 +41,6 @@ use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
-use Shopware\Core\Framework\Store\Api\AbstractStoreController;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
@@ -51,16 +49,17 @@ use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-class StoreApiController extends AbstractStoreController
+/**
+ * Class StoreApiController
+ * @package Adyen\Shopware\Controller
+ * @RouteScope(scopes={"store-api"})
+ */
+class StoreApiController
 {
     /**
      * @var PaymentMethodsService
      */
     private $paymentMethodsService;
-    /**
-     * @var SalesChannelRepository
-     */
-    private $salesChannelRepository;
     /**
      * @var PaymentDetailsService
      */
@@ -102,7 +101,6 @@ class StoreApiController extends AbstractStoreController
      * StoreApiController constructor.
      *
      * @param PaymentMethodsService $paymentMethodsService
-     * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentDetailsService $paymentDetailsService
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStatusService $paymentStatusService
@@ -115,7 +113,6 @@ class StoreApiController extends AbstractStoreController
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
-        SalesChannelRepository $salesChannelRepository,
         PaymentDetailsService $paymentDetailsService,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStatusService $paymentStatusService,
@@ -127,7 +124,6 @@ class StoreApiController extends AbstractStoreController
         LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentDetailsService = $paymentDetailsService;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStatusService = $paymentStatusService;
@@ -140,7 +136,6 @@ class StoreApiController extends AbstractStoreController
     }
 
     /**
-     * @RouteScope(scopes={"store-api"})
      * @Route(
      *     "/store-api/v{version}/adyen/payment-methods",
      *     name="store-api.action.adyen.payment-methods",
@@ -156,7 +151,6 @@ class StoreApiController extends AbstractStoreController
     }
 
     /**
-     * @RouteScope(scopes={"store-api"})
      * @Route(
      *     "/store-api/v{version}/adyen/payment-details",
      *     name="store-api.action.adyen.payment-details",
@@ -215,7 +209,6 @@ class StoreApiController extends AbstractStoreController
     }
 
     /**
-     * @RouteScope(scopes={"store-api"})
      * @Route(
      *     "/store-api/v{version}/adyen/payment-status",
      *     name="store-api.action.adyen.payment-status",
@@ -244,7 +237,6 @@ class StoreApiController extends AbstractStoreController
     }
 
     /**
-     * @RouteScope(scopes={"store-api"})
      * @OA\Post(
      *      path="/adyen/set-payment",
      *      summary="set payment for an order",
