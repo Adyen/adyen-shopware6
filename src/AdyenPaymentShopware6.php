@@ -271,16 +271,21 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function updateTo200(UpdateContext $updateContext): void
     {
-        //Version 2.0.0 introduces amazonpay
-        $this->addPaymentMethod(
-            new PaymentMethods\AmazonPayPaymentMethod,
-            $updateContext->getContext()
-        );
-        $this->setPaymentMethodIsActive(
-            true,
-            $updateContext->getContext(),
-            new PaymentMethods\AmazonPayPaymentMethod
-        );
+        //Version 2.0.0 introduces amazonpay, blik
+        foreach ([
+                     new PaymentMethods\AmazonPayPaymentMethod,
+                     new PaymentMethods\BlikPaymentMethod,
+                 ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
     }
 }
 

@@ -21,7 +21,7 @@
  */
 
 export default {
-    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc'],
+    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'blik'],
     componentsWithPayButton: {
         'applepay': {
             extra: {},
@@ -123,5 +123,6 @@ export default {
         'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
         'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
+        'blik': 'handler_adyen_blikpaymentmethodhandler',
     }
 }
