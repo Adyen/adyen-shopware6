@@ -51,10 +51,13 @@ class PaymentMethodsFilterService
     public function filterShopwarePaymentMethods(
         PaymentMethodCollection $originalPaymentMethods,
         SalesChannelContext $salesChannelContext,
-        string $adyenPluginId
+        string $adyenPluginId,
+        array $adyenPaymentMethods = []
     ): PaymentMethodCollection {
-        // Get Adyen /paymentMethods response
-        $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+        if (empty($adyenPaymentMethods)) {
+            // Get Adyen /paymentMethods response
+            $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+        }
 
         // If the /paymentMethods response returns empty, remove all Adyen payment methods from the list and return
         if (empty($adyenPaymentMethods['paymentMethods'])) {
