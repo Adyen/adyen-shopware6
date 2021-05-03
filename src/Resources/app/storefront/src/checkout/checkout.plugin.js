@@ -113,12 +113,6 @@ export default class CheckoutPlugin extends Plugin {
             return;
         }
 
-        // container doesn't exist, something went wrong on the template side
-        // If payment method doesn't have details, just skip it
-        if (!paymentMethodContainer || !paymentMethod.details) {
-            return;
-        }
-
         //Hide other payment method's contents when selecting an option
         $('[name=paymentMethodId]').on("change", function () {
             $('.adyen-payment-method-container-div').hide();
