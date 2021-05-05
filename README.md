@@ -33,6 +33,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Amazon Pay
  - Apple Pay
  - Bancontact
+ - Blik
  - Dotpay
  - Google Pay
  - GiroPay

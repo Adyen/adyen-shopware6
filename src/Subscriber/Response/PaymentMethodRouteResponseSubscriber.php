@@ -126,7 +126,7 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
             $type = $this->getPaymentMethodType($method);
 
             $extension = new AdyenPaymentMethodDataStruct();
-            
+
             $extension->setType($type);
 
             if (!empty($type)) {
