@@ -12,7 +12,7 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
  * Copyright (c) 2020 Adyen B.V.
  * This file is open source and available under the MIT license.
