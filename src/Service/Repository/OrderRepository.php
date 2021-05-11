@@ -38,33 +38,45 @@ class OrderRepository
     /**
      * @param string $orderId
      * @param Context $context
+     * @param array $associations
      * @return OrderEntity|null
      */
-    public function getOrder(string $orderId, Context $context) : ?OrderEntity
+    public function getOrder(string $orderId, Context $context, array $associations = []) : ?OrderEntity
     {
         $order = null;
 
         try {
             $criteria = new Criteria();
             $criteria->addFilter(new EqualsFilter('id', $orderId));
-            $criteria->addAssociation('currency');
 
             /** @var OrderEntity $order */
-            $order = $this->orderRepository->search($criteria, $context)->first();
-        } catch (Exception $e) {
+            $order = $this->getOrderByCriteria($criteria, $context, $associations);
+        } catch (\Exception $e) {
             $this->logger->error($e->getMessage(), [$e]);
         }
 
         return $order;
     }
 
-    public function getWithOrderNumber(string $orderNumber, Context $context): ?OrderEntity
+    public function getOrderByCriteria(Criteria $criteria, Context $context, array $associations = []): ?OrderEntity
     {
-        return $this->orderRepository->search(
-            (new Criteria())
-            ->addFilter(new EqualsFilter('orderNumber', $orderNumber))
-            ->addAssociation('transactions'),
-            $context
-        )->first();
+        foreach ($associations as $association) {
+            $criteria->addAssociation($association);
+        }
+        return $this->orderRepository->search($criteria, $context)->first();
+    }
+
+    public function getOrderByOrderNumber(string $orderNumber, Context $context, array $associations = []): ?OrderEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('orderNumber', $orderNumber));
+
+        return $this->getOrderByCriteria($criteria, $context, $associations);
+    }
+
+    public function update(string $orderId, array $data, Context $context)
+    {
+        $data['id'] = $orderId;
+        $this->orderRepository->update([$data], $context);
     }
 }

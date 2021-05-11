@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~                       ######
+  ~                       ######
+  ~ ############    ####( ######  #####. ######  ############   ############
+  ~ #############  #####( ######  #####. ######  #############  #############
+  ~        ######  #####( ######  #####. ######  #####  ######  #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####          #####  ######
+  ~ #############  #############  #############  #############  #####  ######
+  ~  ############   ############  #############   ############  #####  ######
+  ~                                      ######
+  ~                               #############
+  ~                               ############
+  ~
+  ~ Adyen plugin for Shopware 6
+  ~
+  ~ Copyright (c) 2021 Adyen B.V.
+  ~ This file is open source and available under the MIT license.
+  ~ See the LICENSE file for more info.
+  ~
+  -->
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Adyen\Shopware\Controller\StoreApiController" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController" autowire="true">
+            <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Adyen\Shopware\Storefront\Controller\RedirectResultController" autowire="true">
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Adyen\Shopware\Controller\ApiTestController">
+            <argument type="service"
+                      key="$logger"
+                      id="monolog.logger.adyen_api"
+            />
+            <tag name="controller.service_arguments"/>
+        </service>
+    </services>
+</container>

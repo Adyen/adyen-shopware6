@@ -10,7 +10,7 @@ We strongly encourage you to join us in contributing to this repository so every
 Read our [**contribution guidelines**](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md) to find out how.
 
 ## Requirements
-This plugin supports Shopware 6. For Shopware 5 support please see our Shopware 5 repository.
+This plugin supports Shopware ~6.3.1 (Support for version 6.4 will be added in an upcoming major release) For Shopware 5 support please see our Shopware 5 repository.
 
 ## Documentation
 Please find the relevant documentation for
@@ -30,8 +30,10 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
 ### Supported payment methods
  - Credit and debit cards (non 3D secure, 3D secure 1, 3D secure 2 native)
  - Stored card payment methods (One click payment methods)
+ - Amazon Pay
  - Apple Pay
  - Bancontact
+ - Blik
  - Dotpay
  - Google Pay
  - GiroPay
@@ -39,7 +41,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Klarna Pay Later
  - Klarna Pay Over Time
  - Klarna Pay Now
- - PayPal (redirect)
+ - PayPal
  - SEPA Direct Debit
  - Sofort
 

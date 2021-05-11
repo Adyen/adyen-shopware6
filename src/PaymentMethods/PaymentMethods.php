@@ -41,5 +41,7 @@ class PaymentMethods
         GooglePayPaymentMethod::class,
         DotpayPaymentMethod::class,
         BancontactCardPaymentMethod::class,
+        AmazonPayPaymentMethod::class,
+        BlikPaymentMethod::class,
     ];
 }

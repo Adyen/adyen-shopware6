@@ -101,9 +101,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             $this->markAsProcessing($notification->getId());
 
-            $order = $this->orderRepository->getWithOrderNumber(
+            $order = $this->orderRepository->getOrderByOrderNumber(
                 $notification->getMerchantReference(),
-                $context
+                $context,
+                ['transactions', 'currency']
             );
 
             if (!$order) {
@@ -137,9 +138,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             } catch (\Exception $exception) {
                 $this->logger->error($exception->getMessage());
                 // set notification error and increment error count
-                $errorMessage = $exception->getTraceAsString();
-                $errorCount = $notification->getErrorCount();
-                $this->notificationService->saveError($notification->getId(), $errorMessage, ++$errorCount);
+                $errorCount = (int) $notification->getErrorCount();
+                $this->notificationService->saveError($notification->getId(), $exception->getMessage(), ++$errorCount);
                 $this->logger->error('Notification processing failed.', $logContext);
 
                 if ($errorCount < self::MAX_ERROR_COUNT) {

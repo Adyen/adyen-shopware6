@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~                       ######
+  ~                       ######
+  ~ ############    ####( ######  #####. ######  ############   ############
+  ~ #############  #####( ######  #####. ######  #############  #############
+  ~        ######  #####( ######  #####. ######  #####  ######  #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####          #####  ######
+  ~ #############  #############  #############  #############  #####  ######
+  ~  ############   ############  #############   ############  #####  ######
+  ~                                      ######
+  ~                               #############
+  ~                               ############
+  ~
+  ~ Adyen plugin for Shopware 6
+  ~
+  ~ Copyright (c) 2021 Adyen B.V.
+  ~ This file is open source and available under the MIT license.
+  ~ See the LICENSE file for more info.
+  ~
+  -->
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Adyen\Service\Builder\Address"/>
+        <service id="Adyen\Service\Builder\Browser"/>
+        <service id="Adyen\Service\Builder\Customer"/>
+        <service id="Adyen\Service\Builder\OpenInvoice"/>
+        <service id="Adyen\Service\Builder\Payment"/>
+        <service id="Adyen\Util\Currency" autowire="true"/>
+        <service id="Adyen\Util\HmacSignature" autowire="true"/>
+    </services>
+</container>

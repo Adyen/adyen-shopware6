@@ -1,4 +1,5 @@
-<?php
+<?php declare(strict_types=1);
+
 /**
  *                       ######
  *                       ######
@@ -15,46 +16,22 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Service;
+namespace Adyen\Shopware\Handlers;
 
-use Adyen\AdyenException;
-use Adyen\Service\CheckoutUtility;
-use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 
-class CheckoutUtilityService extends CheckoutUtility
+class AmazonPayPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
-    /**
-     * @var ClientService
-     */
-    private $client;
 
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    public function __construct(
-        ClientService $client,
-        LoggerInterface $logger
-    ) {
-        $this->client = $client;
-        $this->logger = $logger;
-    }
-
-    public function getClientBySalesChannelId($salesChannelId)
+    public static function getPaymentMethodCode()
     {
-        try {
-            $client = $this->client->getClient($salesChannelId);
-            return new parent($client);
-        } catch (AdyenException $e) {
-            $this->logger->error($e->getMessage());
-        }
+        return 'amazonpay';
     }
 }

@@ -12,7 +12,7 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
  * Copyright (c) 2020 Adyen B.V.
  * This file is open source and available under the MIT license.
@@ -42,7 +42,6 @@ export default class CheckoutPlugin extends Plugin {
                 `${adyenCheckoutOptions.paymentDetailsUrl}`,
                 JSON.stringify({orderId: window.orderId, stateData: state.data}),
                 function (paymentAction) {
-                    // TODO: clean-up
                     const paymentActionResponse = JSON.parse(paymentAction);
 
                     if (paymentActionResponse.isFinal) {
@@ -50,21 +49,20 @@ export default class CheckoutPlugin extends Plugin {
                     }
 
                     try {
-                        window.adyenCheckout
+                        this.adyenCheckout
                             .createFromAction(paymentActionResponse.action)
                             .mount('[data-adyen-payment-action-container]');
                         $('[data-adyen-payment-action-modal]').modal({show: true});
                     } catch (e) {
                         console.log(e);
                     }
-                }
+                }.bind(this)
             );
         }
 
-        const { locale, originKey, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
+        const { locale, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
-            originKey,
             clientKey,
             environment,
             showPayButton: false,
@@ -73,19 +71,25 @@ export default class CheckoutPlugin extends Plugin {
             onAdditionalDetails: handleOnAdditionalDetails.bind(this)
         };
 
-        window.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
+        this.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
 
         this.placeOrderAllowed = false;
         this.data = '';
         this.storedPaymentMethodData = {};
         this.formValidator = {};
+        this.currentPaymentMethodInstance = {};
 
-        // use this object to iterate through the paymentMethods response
-        const paymentMethods = window.adyenCheckout.paymentMethodsResponse.paymentMethods;
-        const storedPaymentMethods = window.adyenCheckout.paymentMethodsResponse.storedPaymentMethods;
+        // Render any preselected Adyen payment method
+        if (adyenCheckoutOptions.selectedPaymentMethodPluginId ===
+            adyenCheckoutOptions.adyenPluginId) {
+            const paymentMethodContainer = $(`[data-adyen-payment-method="${adyenCheckoutOptions.selectedPaymentMethodHandler}"]`);
+            this.renderPaymentMethod(paymentMethodContainer);
+        }
+        // Render payment method components when they are selected.
+        $('[name=paymentMethodId]').on("change", this.onPaymentMethodChange.bind(this));
 
-        // Iterate through the payment methods list we got from the adyen checkout component
-        paymentMethods.forEach(this.renderPaymentMethod.bind(this));
+        // Iterate through and render the stored payment methods
+        const storedPaymentMethods = this.adyenCheckout.paymentMethodsResponse.storedPaymentMethods;
         this.formValidator[adyenConfiguration.paymentMethodTypeHandlers.oneclick] = {};
         storedPaymentMethods.forEach(this.renderStoredPaymentMethod.bind(this));
 
@@ -106,30 +110,42 @@ export default class CheckoutPlugin extends Plugin {
         /* eslint-enable no-unused-vars */
     }
 
-    renderPaymentMethod (paymentMethod) {
-        //  if the container doesn't exist don't try to render the component
-        const paymentMethodContainer = $('[data-adyen-payment-method="' + adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type] + '"]');
+    onPaymentMethodChange(event) {
+        // Unmount any previously selected paymentMethod instance
+        if(!$.isEmptyObject(this.currentPaymentMethodInstance)) {
+            this.currentPaymentMethodInstance.unmount();
+            this.currentPaymentMethodInstance = {};
+        }
+        $('.adyen-payment-method-container-div').hide();
+        let paymentMethodContainer = $(`[data-adyen-payment-method-id="${$(event.target).val()}"]`);
 
-        if (adyenConfiguration.componentsWithPayButton.includes(paymentMethod.type)) {
+        this.renderPaymentMethod(paymentMethodContainer);
+
+        paymentMethodContainer.show();
+    }
+
+    renderPaymentMethod(paymentMethodContainer) {
+        let handler = paymentMethodContainer.data('adyenPaymentMethod');
+        let type = Object.keys(adyenConfiguration.paymentMethodTypeHandlers)
+            .find(key => adyenConfiguration.paymentMethodTypeHandlers[key] === handler);
+
+        // Get the payment method object from paymentMethodsResponse
+        let filtered = $.grep(this.adyenCheckout.paymentMethodsResponse.paymentMethods, function(paymentMethod) {
+            return paymentMethod.type === type;
+        });
+        if (filtered.length === 0) {
+            return;
+        }
+        let paymentMethod = filtered[0];
+
+        if (paymentMethod.type in adyenConfiguration.componentsWithPayButton) {
             // For payment methods with a direct pay button, the button is rendered on the confirm page
             return;
         }
 
-        // container doesn't exist, something went wrong on the template side
-        // If payment method doesn't have details, just skip it
-        if (!paymentMethodContainer || !paymentMethod.details) {
-            return;
-        }
-
-        //Hide other payment method's contents when selecting an option
-        $('[name=paymentMethodId]').on("change", function () {
-            $('.adyen-payment-method-container-div').hide();
-            $(`[data-adyen-payment-method-id="${$(this).val()}"]`).show();
-        });
-
-        /*Use the storedPaymentMethod object and the custom onChange function as the configuration object together*/
+        // Mount payment method instance
         const configuration = Object.assign(paymentMethod, {
-            onChange: this.onPaymentMethodChange.bind(this)
+            onChange: this.onPaymentComponentChange.bind(this)
         });
 
         if (paymentMethod.type === 'scheme') {
@@ -137,9 +153,9 @@ export default class CheckoutPlugin extends Plugin {
         }
 
         try {
-            const paymentMethodInstance = window.adyenCheckout.create(paymentMethod.type, configuration);
-            paymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
-            this.formValidator[adyenConfiguration.paymentMethodTypeHandlers[paymentMethod.type]] = new FormValidatorWithComponent(paymentMethodInstance);
+            this.currentPaymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
+            this.currentPaymentMethodInstance.mount(paymentMethodContainer.find('[data-adyen-payment-container]').get(0));
+            this.formValidator[handler] = new FormValidatorWithComponent(this.currentPaymentMethodInstance);
         } catch (err) {
             console.log(paymentMethod.type, err);
         }
@@ -166,7 +182,7 @@ export default class CheckoutPlugin extends Plugin {
         });
 
         try {
-            const paymentMethodInstance = window.adyenCheckout
+            const paymentMethodInstance = this.adyenCheckout
                 .create(paymentMethod.type, configuration);
             paymentMethodInstance.mount(
                 paymentMethodContainer.find(`[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`).get(0)
@@ -240,7 +256,7 @@ export default class CheckoutPlugin extends Plugin {
         }
     }
 
-    onPaymentMethodChange (state) {
+    onPaymentComponentChange (state) {
         if (state.isValid) {
             this.data = state.data;
             $('#adyenStateData').val(JSON.stringify(this.data));

@@ -33,9 +33,9 @@ use Adyen\Service\Builder\Payment;
 use Adyen\Service\Builder\OpenInvoice;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
-use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
+use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
@@ -48,6 +48,7 @@ use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
+use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -72,9 +73,9 @@ abstract class AbstractPaymentMethodHandler
     protected static $isOpenInvoice = false;
 
     /**
-     * @var CheckoutService
+     * @var ClientService
      */
-    protected $checkoutService;
+    protected $clientService;
 
     /**
      * @var Browser
@@ -169,7 +170,7 @@ abstract class AbstractPaymentMethodHandler
     /**
      * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
-     * @param CheckoutService $checkoutService
+     * @param ClientService $clientService
      * @param Browser $browserBuilder
      * @param Address $addressBuilder
      * @param Payment $paymentBuilder
@@ -190,7 +191,7 @@ abstract class AbstractPaymentMethodHandler
      */
     public function __construct(
         ConfigurationService $configurationService,
-        CheckoutService $checkoutService,
+        ClientService $clientService,
         Browser $browserBuilder,
         Address $addressBuilder,
         Payment $paymentBuilder,
@@ -209,7 +210,7 @@ abstract class AbstractPaymentMethodHandler
         EntityRepositoryInterface $productRepository,
         LoggerInterface $logger
     ) {
-        $this->checkoutService = $checkoutService;
+        $this->clientService = $clientService;
         $this->browserBuilder = $browserBuilder;
         $this->addressBuilder = $addressBuilder;
         $this->openInvoiceBuilder = $openInvoiceBuilder;
@@ -237,6 +238,7 @@ abstract class AbstractPaymentMethodHandler
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @return RedirectResponse
+     * @throws PaymentProcessException|AdyenException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
@@ -244,12 +246,17 @@ abstract class AbstractPaymentMethodHandler
         SalesChannelContext $salesChannelContext
     ): RedirectResponse {
         $transactionId = $transaction->getOrderTransaction()->getId();
-        $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
+        $checkoutService = new CheckoutService(
+            $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
+        );
         $stateData = $dataBag->get('stateData', null);
 
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $stateData);
-        } catch (Exception $exception) {
+        } catch (AsyncPaymentProcessException $exception) {
+            $this->logger->error($exception->getMessage());
+            throw $exception;
+        } catch (\Exception $exception) {
             $message = sprintf(
                 "There was an error with the payment method. Order number: %s Missing data: %s",
                 $transaction->getOrder()->getOrderNumber(),
@@ -260,16 +267,14 @@ abstract class AbstractPaymentMethodHandler
         }
 
         try {
-            $response = $this->checkoutService->payments($request);
+            $response = $checkoutService->payments($request);
         } catch (AdyenException $exception) {
             $message = sprintf(
                 "There was an error with the /payments request. Order number %s: %s",
                 $transaction->getOrder()->getOrderNumber(),
                 $exception->getMessage()
             );
-
             $this->logger->error($message);
-
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
@@ -291,13 +296,15 @@ abstract class AbstractPaymentMethodHandler
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction->getReturnUrl()));
+        return new RedirectResponse($this->getAdyenReturnUrl($transaction));
     }
 
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     * @throws AsyncPaymentFinalizeException
+     * @throws CustomerCanceledAsyncPaymentException
      */
     public function finalize(
         AsyncPaymentTransactionStruct $transaction,
@@ -305,7 +312,6 @@ abstract class AbstractPaymentMethodHandler
         SalesChannelContext $salesChannelContext
     ): void {
         $transactionId = $transaction->getOrderTransaction()->getId();
-        $this->checkoutService->startClient($salesChannelContext->getSalesChannel()->getId());
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentCancelledException $exception) {
@@ -319,7 +325,7 @@ abstract class AbstractPaymentMethodHandler
      * @param string $address
      * @return array
      */
-    public function splitStreetAddressHouseNumber(string $address): array
+    private function splitStreetAddressHouseNumber(string $address): array
     {
         return [
             'street' => $address,
@@ -330,13 +336,14 @@ abstract class AbstractPaymentMethodHandler
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param AsyncPaymentTransactionStruct $transaction
+     * @param string|null $stateData
      * @return array
      */
-    public function preparePaymentsRequest(
+    private function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
         ?string $stateData = null
-    ) {
+    ): array {
         $request = [];
 
         if ($stateData) {
@@ -458,7 +465,7 @@ abstract class AbstractPaymentMethodHandler
 
         if (empty($request['paymentMethod']['personalDetails']['dateOfBirth'])) {
             if ($salesChannelContext->getCustomer()->getBirthday()) {
-                $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('dd-mm-yyyy');
+                $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('d-m-Y');
             } else {
                 $shopperDob = '';
             }
@@ -527,7 +534,7 @@ abstract class AbstractPaymentMethodHandler
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $this->getAdyenReturnUrl($transaction->getReturnUrl()),
+            $this->getAdyenReturnUrl($transaction),
             $request
         );
 
@@ -544,15 +551,14 @@ abstract class AbstractPaymentMethodHandler
                 //Getting line price
                 $price = $orderLine->getPrice();
 
-                //Getting order line information differently if it's a promotion or product
+                // Skip promotion line items.
                 if (empty($orderLine->getProductId()) && $orderLine->getType() === self::PROMOTION) {
-                    $productName = $orderLine->getDescription();
-                    $productNumber = $orderLine->getPayload()['promotionId'];
-                } else {
-                    $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
-                    $productName = $product->getName();
-                    $productNumber = $product->getProductNumber();
+                    continue;
                 }
+
+                $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
+                $productName = $product->getName();
+                $productNumber = $product->getProductNumber();
 
                 //Getting line tax amount and rate
                 $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
@@ -563,23 +569,21 @@ abstract class AbstractPaymentMethodHandler
                     $taxRate = 0;
                 }
 
+                $currency = $this->getCurrency(
+                    $transaction->getOrder()->getCurrencyId(),
+                    $salesChannelContext->getContext()
+                );
                 //Building open invoice line
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
                     $this->currency->sanitize(
                         $price->getUnitPrice() -
                         ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
-                        $this->getCurrency(
-                            $transaction->getOrder()->getCurrencyId(),
-                            $salesChannelContext->getContext()
-                        )
+                        $currency
                     ),
                     $this->currency->sanitize(
                         $lineTax,
-                        $this->getCurrency(
-                            $transaction->getOrder()->getCurrencyId(),
-                            $salesChannelContext->getContext()
-                        )
+                        $currency
                     ),
                     $taxRate * 100,
                     $orderLine->getQuantity(),
@@ -614,18 +618,21 @@ abstract class AbstractPaymentMethodHandler
      * Creates the Adyen Redirect Result URL with the same query as the original return URL
      * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
      *
-     * @param $returnUrl
+     * @param AsyncPaymentTransactionStruct $transaction
      * @return string
-     * @throws PaymentException
+     * @throws AsyncPaymentProcessException
      */
-    protected function getAdyenReturnUrl($returnUrl)
+    private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction): string
     {
         // Parse the original return URL to retrieve the query parameters
-        $returnUrlQuery = parse_url($returnUrl, PHP_URL_QUERY);
+        $returnUrlQuery = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
 
         // In case the URL is malformed it cannot be parsed
         if (false === $returnUrlQuery) {
-            throw new PaymentException('Return URL is malformed');
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
+                'Return URL is malformed'
+            );
         }
 
         // Generate the custom Adyen endpoint to receive the redirect from the issuer page
