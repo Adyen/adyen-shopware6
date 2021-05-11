@@ -51,9 +51,9 @@ export default {
             onError: function(error, component, self) {
                 if (error.statusCode !== 'CANCELED') {
                     if ('statusMessage' in error) {
-                        alert(error.statusMessage);
+                        console.log(error.statusMessage);
                     } else {
-                        alert(error.statusCode);
+                        console.log(error.statusCode);
                     }
                 }
             }
