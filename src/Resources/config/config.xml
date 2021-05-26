@@ -8,8 +8,10 @@
             <name>merchantAccount</name>
             <label>Merchant account</label>
             <helpText>
-                In your Adyen Customer Area you have a company account and under that a merchant account.
-                Fill in the merchant account name. See https://docs.adyen.com/plugins/shopware-6#set-up-shopware
+                Enter your merchant account identifier.
+                This can be found in your Adyen Customer Area, at the top of the screen you will see [YourCompanyAccount] &gt; [YourMerchantAccount].
+                Please note that the merchant account is different from the company account; a company account can have one or more merchant accounts.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-shopware
             </helpText>
         </input-field>
         <input-field type="password">
@@ -73,7 +75,7 @@
             <label>Username for standard notifications</label>
             <helpText>
                 This is the username for basic authentication of your live endpoints.
-                Fill in your from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
+                Fill in from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
                 See https://docs.adyen.com/plugins/shopware-6#set-up-notifications.
                 For testing the plugin without notifications, this field can be empty.
             </helpText>
@@ -83,7 +85,7 @@
             <label>Password for standard notifications</label>
             <helpText>
                 This is the password for basic authentication of your live endpoints.
-                Fill in your from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
+                Fill in from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
                 See https://docs.adyen.com/plugins/shopware-6#set-up-notifications.
                 For testing the plugin without notifications, this field can be empty.
             </helpText>
@@ -93,7 +95,7 @@
             <label>HMAC Key for test</label>
             <helpText>
                 This is used to authenticate your endpoints.
-                If you want to test the webhook notifications then get your test Hmac key from your test Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
+                If you want to test the webhook notifications then get your test HMAC Key from your test Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
                 See https://docs.adyen.com/plugins/shopware-6#set-up-notifications.
                 For testing the plugin without notifications, this field can be empty.
             </helpText>
@@ -103,7 +105,7 @@
             <label>HMAC Key for live</label>
             <helpText>
                 This is used to authenticate your endpoints.
-                Fill in your live Hmac key from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
+                Fill in your live HMAC Key from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
                 See https://docs.adyen.com/plugins/shopware-6#set-up-notifications.
                 For testing the plugin without notifications, this field can be empty.
             </helpText>
