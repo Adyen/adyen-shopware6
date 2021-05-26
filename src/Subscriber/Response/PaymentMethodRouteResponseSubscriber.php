@@ -143,17 +143,13 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         if (empty($paymentMethodsResponse['paymentMethods'])) {
             return null;
         }
-        $paymentMethodsResponse['paymentMethods'] = array_values(array_filter(
-            $paymentMethodsResponse['paymentMethods'],
-            function ($value) use ($type) {
-                return ($value['type'] ?? null) == $type;
+        foreach ($paymentMethodsResponse['paymentMethods'] as $paymentMethodConfig) {
+            if (($paymentMethodConfig['type'] ?? null) == $type) {
+                return $paymentMethodConfig;
             }
-        ));
-        if (empty($paymentMethodsResponse['paymentMethods'])) {
-            return null;
         }
 
-        return $paymentMethodsResponse['paymentMethods'][0];
+        return null;
     }
 
     private function getPaymentMethodType(PaymentMethodEntity $method): ?string
