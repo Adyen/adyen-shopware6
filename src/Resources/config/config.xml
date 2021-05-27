@@ -7,21 +7,39 @@
         <input-field type="text">
             <name>merchantAccount</name>
             <label>Merchant account</label>
+            <helpText>
+                Enter your merchant account identifier.
+                This can be found in your Adyen Customer Area, at the top of the screen you will see [YourCompanyAccount] &gt; [YourMerchantAccount].
+                Please note that the merchant account is different from the company account; a company account can have one or more merchant accounts.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-shopware
+            </helpText>
         </input-field>
         <input-field type="password">
             <name>apiKeyTest</name>
             <label>API Key for test</label>
+            <helpText>
+                Enter your test API Key. This can be found in your test Customer Area &gt; Account &gt; API Credentials.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-api-key
+                For a live environment, this field can be empty.
+            </helpText>
         </input-field>
         <input-field type="password">
             <name>apiKeyLive</name>
             <label>API Key for live</label>
+            <helpText>
+                Enter your live API Key. This can be found in your live Customer Area &gt; Account &gt; API Credentials.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-api-key.
+                For a test environment, this field can be empty.
+            </helpText>
         </input-field>
         <input-field type="password">
             <name>clientKeyTest</name>
             <label>Client Key for test</label>
             <helpText>
                 We use your client key to authenticate requests from your payment environment.
+                This can be found in your test Customer Area &gt; Account &gt; API Credentials.
                 See https://docs.adyen.com/plugins/shopware-6#generate-a-client-key for more information.
+                For a live environment, this field can be empty.
             </helpText>
         </input-field>
         <input-field type="password">
@@ -29,7 +47,9 @@
             <label>Client Key for live</label>
             <helpText>
                 We use your client key to authenticate requests from your payment environment.
+                This can be found in your live Customer Area &gt; Account &gt; API Credentials.
                 See https://docs.adyen.com/plugins/shopware-6#generate-a-client-key for more information.
+                For a test environment, this field can be empty.
             </helpText>
         </input-field>
         <input-field type="bool">
@@ -39,25 +59,56 @@
         <input-field type="text">
             <name>liveEndpointUrlPrefix</name>
             <label>Live endpoint URL prefix</label>
-        </input-field>
-        <input-field type="text">
-            <name>notificationUsername</name>
-            <label>Username for standard notifications</label>
-        </input-field>
-        <input-field type="password">
-            <name>notificationPassword</name>
-            <label>Password for standard notifications</label>
-        </input-field>
-        <input-field type="password">
-            <name>hmacTest</name>
-            <label>HMAC Key for test</label>
-        </input-field>
-        <input-field type="password">
-            <name>hmacLive</name>
-            <label>HMAC Key for live</label>
+            <helpText>
+                The URL prefix [random]-[company name] from your Adyen live Customer Area &gt; Account &gt; API URLs.
+                For a test environment, this field can be empty.
+            </helpText>
         </input-field>
         <component name="adyen-config-check-button">
             <name>configTest</name>
         </component>
+    </card>
+    <card>
+        <title>Notification Credentials</title>
+        <input-field type="text">
+            <name>notificationUsername</name>
+            <label>Username for standard notifications</label>
+            <helpText>
+                This is the username for basic authentication of your live endpoints.
+                Fill in from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-notifications.
+                For testing the plugin without notifications, this field can be empty.
+            </helpText>
+        </input-field>
+        <input-field type="password">
+            <name>notificationPassword</name>
+            <label>Password for standard notifications</label>
+            <helpText>
+                This is the password for basic authentication of your live endpoints.
+                Fill in from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-notifications.
+                For testing the plugin without notifications, this field can be empty.
+            </helpText>
+        </input-field>
+        <input-field type="password">
+            <name>hmacTest</name>
+            <label>HMAC Key for test</label>
+            <helpText>
+                This is used to authenticate your endpoints.
+                If you want to test the webhook notifications then get your test HMAC Key from your test Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-notifications.
+                For testing the plugin without notifications, this field can be empty.
+            </helpText>
+        </input-field>
+        <input-field type="password">
+            <name>hmacLive</name>
+            <label>HMAC Key for live</label>
+            <helpText>
+                This is used to authenticate your endpoints.
+                Fill in your live HMAC Key from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-notifications.
+                For testing the plugin without notifications, this field can be empty.
+            </helpText>
+        </input-field>
     </card>
 </config>
