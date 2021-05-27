@@ -36,7 +36,7 @@ class AdyenPaymentMethodDataStruct extends Struct
     /**
      * @var array|null
      */
-    protected $paymentMethodsResponse = null;
+    protected $paymentMethodConfig = null;
 
     public function getType(): ?string
     {
@@ -48,13 +48,13 @@ class AdyenPaymentMethodDataStruct extends Struct
         $this->type = $type;
     }
 
-    public function getPaymentMethodsResponse(): ?array
+    public function getPaymentMethodConfig(): ?array
     {
-        return $this->paymentMethodsResponse;
+        return $this->paymentMethodConfig;
     }
 
-    public function setPaymentMethodsResponse(?array $paymentMethodsResponse): void
+    public function setPaymentMethodConfig(?array $paymentMethodConfig): void
     {
-        $this->paymentMethodsResponse = $paymentMethodsResponse;
+        $this->paymentMethodConfig = $paymentMethodConfig;
     }
 }

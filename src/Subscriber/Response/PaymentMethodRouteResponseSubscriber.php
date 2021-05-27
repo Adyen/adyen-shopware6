@@ -130,28 +130,26 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
             $extension->setType($type);
 
             if (!empty($type)) {
-                $extension->setPaymentMethodsResponse($this->getPaymentMethodsResponseForType($context, $type));
+                $extension->setPaymentMethodConfig($this->getPaymentMethodConfigByType($context, $type));
             }
 
             $method->addExtension('adyenData', $extension);
         }
     }
 
-    private function getPaymentMethodsResponseForType(SalesChannelContext $context, string $type)
+    private function getPaymentMethodConfigByType(SalesChannelContext $context, string $type)
     {
         $paymentMethodsResponse = $this->getPaymentMethodsResponse($context);
         if (empty($paymentMethodsResponse['paymentMethods'])) {
-            return $paymentMethodsResponse;
+            return null;
+        }
+        foreach ($paymentMethodsResponse['paymentMethods'] as $paymentMethodConfig) {
+            if (($paymentMethodConfig['type'] ?? null) == $type) {
+                return $paymentMethodConfig;
+            }
         }
 
-        $paymentMethodsResponse['paymentMethods'] = array_filter(
-            $paymentMethodsResponse['paymentMethods'],
-            function ($value) use ($type) {
-                return ($value['type'] ?? null) == $type;
-            }
-        );
-
-        return $paymentMethodsResponse;
+        return null;
     }
 
     private function getPaymentMethodType(PaymentMethodEntity $method): ?string
