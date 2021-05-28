@@ -294,20 +294,16 @@ class PaymentSubscriber implements EventSubscriberInterface
             new ArrayEntity(
                 [
                     'paymentStatusUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-status',
-                        ['version' => 2]
+                        'store-api.action.adyen.payment-status'
                     ),
                     'checkoutOrderUrl' => $this->router->generate(
-                        'store-api.checkout.cart.order',
-                        ['version' => 2]
+                        'store-api.checkout.cart.order'
                     ),
                     'paymentHandleUrl' => $this->router->generate(
-                        'store-api.payment.handle',
-                        ['version' => 2]
+                        'store-api.payment.handle'
                     ),
                     'paymentDetailsUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-details',
-                        ['version' => 2]
+                        'store-api.action.adyen.payment-details'
                     ),
                     'paymentFinishUrl' => $this->router->generate(
                         'frontend.checkout.finish.page',
@@ -322,8 +318,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                         ]
                     ),
                     'updatePaymentUrl' => $this->router->generate(
-                        'store-api.action.adyen.set-payment',
-                        ['version' => 2]
+                        'store-api.action.adyen.set-payment'
                     ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                     'clientKey' => $this->configurationService->getClientKey($salesChannelId),
