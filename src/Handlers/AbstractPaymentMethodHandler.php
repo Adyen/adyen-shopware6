@@ -557,7 +557,7 @@ abstract class AbstractPaymentMethodHandler
                 }
 
                 $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
-                $productName = $product->getName();
+                $productName = $product->getTranslation('name');
                 $productNumber = $product->getProductNumber();
 
                 //Getting line tax amount and rate
