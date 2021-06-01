@@ -43,6 +43,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Klarna Pay Now
  - PayPal
  - SEPA Direct Debit
+ - Twint
  - Sofort
 
 ## API Library

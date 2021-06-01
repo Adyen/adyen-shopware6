@@ -123,6 +123,7 @@ export default {
         'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
         'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
+        'twint': 'handler_adyen_twintpaymentmethodhandler',
         'blik': 'handler_adyen_blikpaymentmethodhandler',
     }
 }
