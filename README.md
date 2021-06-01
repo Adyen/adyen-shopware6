@@ -44,7 +44,8 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - PayPal
  - SEPA Direct Debit
  - Twint
- - Electronic Payment Service (EPS)  
+ - Electronic Payment Service (EPS) 
+ - Swish  
  - Sofort
 
 ## API Library

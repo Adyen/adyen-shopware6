@@ -125,6 +125,7 @@ export default {
         'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
         'twint': 'handler_adyen_twintpaymentmethodhandler',
         'eps': 'handler_adyen_epspaymentmethodhandler',
+        'swish': 'handler_adyen_swishpaymentmethodhandler',
         'blik': 'handler_adyen_blikpaymentmethodhandler',
     }
 }
