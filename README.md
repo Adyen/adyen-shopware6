@@ -46,6 +46,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Twint
  - Electronic Payment Service (EPS) 
  - Swish  
+ - Alipay , Alipay HK 
  - Sofort
 
 ## API Library

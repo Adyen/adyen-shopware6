@@ -126,6 +126,8 @@ export default {
         'twint': 'handler_adyen_twintpaymentmethodhandler',
         'eps': 'handler_adyen_epspaymentmethodhandler',
         'swish': 'handler_adyen_swishpaymentmethodhandler',
+        'alipay': 'handler_adyen_alipaypaymentmethodhandler',
+        'alipay_hk': 'handler_adyen_alipayhkpaymentmethodhandler',
         'blik': 'handler_adyen_blikpaymentmethodhandler',
     }
 }
