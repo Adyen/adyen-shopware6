@@ -1,5 +1,4 @@
 // Import all necessary Storefront plugins and scss files
-import CheckoutPlugin from './checkout/checkout.plugin';
 import ConfirmOrderPlugin from './checkout/confirm-order.plugin';
 
 // Register them via the existing PluginManager

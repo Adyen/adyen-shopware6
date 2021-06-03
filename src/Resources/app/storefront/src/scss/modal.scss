@@ -24,7 +24,7 @@
   height: calc(100% - 3.5rem);
 
   .modal-content {
-    height: 100%;
+    min-height: 5em;
   }
 }
 
