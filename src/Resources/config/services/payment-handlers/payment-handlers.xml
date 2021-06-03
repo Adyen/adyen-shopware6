@@ -132,5 +132,25 @@
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
+        <service id="Adyen\Shopware\Handlers\Facilypay3xPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\Facilypay4xPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\Facilypay6xPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\Facilypay10xPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\Facilypay12xPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
     </services>
 </container>
