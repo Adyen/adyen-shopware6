@@ -32,8 +32,9 @@ import adyenConfiguration from '../configuration/adyen';
 export default class CheckoutPlugin extends Plugin {
 
     init() {
-        const confirmPaymentForm = DomAccess.querySelector(document, '#confirmPaymentForm');
-        confirmPaymentForm.addEventListener('submit', this.onConfirmPaymentMethod.bind(this));
+        debugger;
+        const changePaymentForm = DomAccess.querySelector(document, '#changePaymentForm');
+        changePaymentForm.addEventListener('submit', this.onConfirmPaymentMethod.bind(this));
 
         this.client = new StoreApiClient();
 
@@ -78,6 +79,7 @@ export default class CheckoutPlugin extends Plugin {
         this.storedPaymentMethodData = {};
         this.formValidator = {};
         this.currentPaymentMethodInstance = {};
+        this.selectedAdyenHandler = null;
 
         // Render any preselected Adyen payment method
         if (adyenCheckoutOptions.selectedPaymentMethodPluginId ===
@@ -134,13 +136,13 @@ export default class CheckoutPlugin extends Plugin {
             return paymentMethod.type === type;
         });
         if (filtered.length === 0) {
-            return;
+            return false;
         }
         let paymentMethod = filtered[0];
 
         if (paymentMethod.type in adyenConfiguration.componentsWithPayButton) {
             // For payment methods with a direct pay button, the button is rendered on the confirm page
-            return;
+            return false;
         }
 
         // Mount payment method instance
@@ -158,7 +160,10 @@ export default class CheckoutPlugin extends Plugin {
             this.formValidator[handler] = new FormValidatorWithComponent(this.currentPaymentMethodInstance);
         } catch (err) {
             console.log(paymentMethod.type, err);
+            return false;
         }
+
+        return true;
     }
 
     renderStoredPaymentMethod(paymentMethod) {
@@ -198,7 +203,7 @@ export default class CheckoutPlugin extends Plugin {
 
     hideStateData(method) {
         let element = $(`[data-adyen-payment-method=${adyenConfiguration.paymentMethodTypeHandlers[method]}]`);
-        let selectedPaymentMethod = this.getSelectedPaymentMethodKey();
+        let selectedPaymentMethod = this.getPaymentMethodKeyByHandler(adyenCheckoutOptions.selectedPaymentMethodHandler);
         if (method === selectedPaymentMethod) {
             if (method == 'oneclick') {
                 //The state data stored matches storedPaymentMethods, show update details button for oneclick
@@ -224,6 +229,7 @@ export default class CheckoutPlugin extends Plugin {
     }
 
     onConfirmPaymentMethod (event) {
+        debugger;
         let selectedPaymentMethod = this.getSelectedPaymentMethodHandlerIdentifyer();
         if (!(selectedPaymentMethod in this.formValidator)) {
             return true;
@@ -288,8 +294,7 @@ export default class CheckoutPlugin extends Plugin {
         return $('[name=paymentMethodId]:checked').siblings('.adyen-payment-method-container-div').data('adyen-payment-method');
     }
 
-    getSelectedPaymentMethodKey() {
-        let handler = adyenCheckoutOptions.selectedPaymentMethodHandler;
+    getPaymentMethodKeyByHandler(handler) {
         let map = adyenConfiguration.paymentMethodTypeHandlers;
         return Object.keys(map).find(key => map[key] === handler);
     }
