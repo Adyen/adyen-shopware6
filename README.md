@@ -49,6 +49,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Alipay , Alipay HK 
  - Sofort
  - Oney (3x, 4x, 6x, 10x, 12x)
+ - Trustly
 
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.

@@ -53,5 +53,6 @@ class PaymentMethods
         Facilypay6xPaymentMethod::class,
         Facilypay10xPaymentMethod::class,
         Facilypay12xPaymentMethod::class,
+        TrustlyPaymentMethod::class,
     ];
 }

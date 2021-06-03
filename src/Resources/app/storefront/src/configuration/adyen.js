@@ -134,5 +134,6 @@ export default {
         'facilypay_6x': 'handler_adyen_facilypay6xpaymentmethodhandler',
         'facilypay_10x': 'handler_adyen_facilypay10xpaymentmethodhandler',
         'facilypay_12x': 'handler_adyen_facilypay12xpaymentmethodhandler',
+        'trustly': 'handler_adyen_trustlypaymentmethodhandler',
     }
 }
