@@ -89,6 +89,8 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         event.preventDefault();
 
+        ElementLoadingIndicatorUtil.create(document.body);
+
         // get selected payment method
         let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
 
@@ -97,8 +99,6 @@ export default class ConfirmOrderPlugin extends Plugin {
             this.renderPaymentComponent(selectedAdyenPaymentMethod);
             return;
         }
-
-        ElementLoadingIndicatorUtil.create(document.body);
 
         const formData = FormSerializeUtil.serialize(form);
 
@@ -123,7 +123,6 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.mountPaymentComponent(paymentMethod, '[data-adyen-payment-container]', false);
 
         $('[data-adyen-payment-component-modal]').modal({show: true});
-        // @todo remove loading from 'Submit' button if modal is closed by clicking outside
     }
 
     renderStoredPaymentMethodComponents() {
@@ -134,7 +133,18 @@ export default class ConfirmOrderPlugin extends Plugin {
             let selector = `[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`;
             this.mountPaymentComponent(paymentMethod, selector, true);
         });
+
+        this.showSelectedStoredPaymentMethod();
+        $('[name=adyenStoredPaymentMethodId]').change(this.showSelectedStoredPaymentMethod);
+
         $('[data-adyen-payment-component-modal]').modal({show: true});
+    }
+
+    showSelectedStoredPaymentMethod() {
+        // Only show the component for the selected stored payment method
+        $('.stored-payment-component').hide();
+        let selected = $('[name=adyenStoredPaymentMethodId]:checked').val();
+        $(`[data-adyen-stored-payment-method-id="${selected}"]`).show();
     }
 
     confirmOrder(formData, extraParams= {}) {

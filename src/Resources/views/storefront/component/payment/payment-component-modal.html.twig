@@ -15,7 +15,6 @@
                     <div data-adyen-payment-container>
                         {% if(adyenFrontendData.storedPaymentMethods|length > 0) and oneclick and 'oneclick' in adyenFrontendData.selectedPaymentMethodHandler %}
                             {% for storedPaymentMethod in adyenFrontendData.storedPaymentMethods %}
-                                {% if loop.first == true  %}<hr>{% endif%}
                                 <div class="container">
                                     <div class="col">
                                         <label>
@@ -28,7 +27,7 @@
                                             {{ "%s ending in %s" |format(storedPaymentMethod.name, storedPaymentMethod.lastFour) }}
                                         </label>
                                     </div>
-                                    <div class="col" data-adyen-stored-payment-method-id="{{ storedPaymentMethod.id }}"></div>
+                                    <div class="col stored-payment-component" data-adyen-stored-payment-method-id="{{ storedPaymentMethod.id }}"></div>
                                 </div>
                                 {% if loop.last == false  %}<hr>{% endif%}
                             {% endfor %}
