@@ -32,6 +32,8 @@ class PaymentMethods
         KlarnaAccountPaymentMethod::class,
         KlarnaPayNowPaymentMethod::class,
         KlarnaPayLaterPaymentMethod::class,
+        RatepayPaymentMethod::class,
+        RatepayDirectdebitPaymentMethod::class,
         SepaPaymentMethod::class,
         SofortPaymentMethod::class,
         PaypalPaymentMethod::class,

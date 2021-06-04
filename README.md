@@ -41,6 +41,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Klarna Pay Later
  - Klarna Pay Over Time
  - Klarna Pay Now
+ - RatePay, RatePay Direct Debit  
  - PayPal
  - SEPA Direct Debit
  - Twint

@@ -21,7 +21,7 @@
  */
 
 export default {
-    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'blik', 'eps', 'facilypay_3x', 'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default'],
+    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'blik', 'eps', 'facilypay_3x', 'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay', 'ratepay_directdebit'],
     componentsWithPayButton: {
         'applepay': {
             extra: {},
@@ -113,6 +113,8 @@ export default {
         'klarna': 'handler_adyen_klarnapaylaterpaymentmethodhandler',
         'klarna_account': 'handler_adyen_klarnaaccountpaymentmethodhandler',
         'klarna_paynow': 'handler_adyen_klarnapaynowpaymentmethodhandler',
+        'ratepay': 'handler_adyen_ratepaypaymentmethodhandler',
+        'ratepay_directdebit': 'handler_adyen_ratepaydirectdebitpaymentmethodhandler',
         'sepadirectdebit': 'handler_adyen_sepapaymentmethodhandler',
         'sofort': 'handler_adyen_sofortpaymentmethodhandler',
         'paypal': 'handler_adyen_paypalpaymentmethodhandler',
