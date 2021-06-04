@@ -139,5 +139,6 @@ export default {
         'facilypay_12x': 'handler_adyen_facilypay12xpaymentmethodhandler',
         'afterpay_default': 'handler_adyen_afterpaydefaultpaymentmethodhandler',
         'trustly': 'handler_adyen_trustlypaymentmethodhandler',
+        'paysafecard': 'handler_adyen_paysafecardpaymentmethodhandler',
     }
 }

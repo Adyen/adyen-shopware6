@@ -58,5 +58,6 @@ class PaymentMethods
         Facilypay12xPaymentMethod::class,
         AfterpayDefaultPaymentMethod::class,
         TrustlyPaymentMethod::class,
+        PaysafecardPaymentMethod::class,
     ];
 }

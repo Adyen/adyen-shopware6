@@ -53,6 +53,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Oney (3x, 4x, 6x, 10x, 12x)
  - AfterPay invoice
  - Trustly
+ - PaySafeCard
 
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
