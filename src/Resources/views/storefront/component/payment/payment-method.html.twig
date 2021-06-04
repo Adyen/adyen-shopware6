@@ -44,38 +44,6 @@
                                 </div>
                             {% endblock %}
                         </label>
-                        {#{% if "adyen" in payment.formattedHandlerIdentifier %}
-                            <div class="adyen-payment-method-container-div"
-                                 data-adyen-payment-method-id="{{ payment.id }}"
-                                 data-adyen-payment-method="{{ payment.formattedHandlerIdentifier }}"
-                            >
-                                <div data-adyen-update-payment-details class="adyen-update-payment-details">
-                                    <button type="button" class="btn btn-primary" onclick="window.showPaymentMethodDetails()">{{ "adyen.updateDetails"|trans }}</button>
-                                </div>
-                                <div data-adyen-payment-container>
-                                    {% if "oneclick" in payment.formattedHandlerIdentifier %}
-                                        {% for storedPaymentMethod in adyenFrontendData.storedPaymentMethods %}
-                                            {% if loop.first == true  %}<hr>{% endif%}
-                                            <div class="row">
-                                                <div class="col-sm-12">
-                                                    <label>
-                                                        <input type="radio"
-                                                               name="adyenStoredPaymentMethodId"
-                                                               value="{{ storedPaymentMethod.id }}"
-                                                               class="form-check-input"
-                                                               {% if loop.first == true  %}checked="checked"{% endif%}
-                                                        >
-                                                        {{ "%s ending in %s" |format(storedPaymentMethod.name, storedPaymentMethod.lastFour) }}
-                                                    </label>
-                                                </div>
-                                                <div class="col-sm-12" data-adyen-stored-payment-method-id="{{ storedPaymentMethod.id }}"></div>
-                                            </div>
-                                            {% if loop.last == false  %}<hr>{% endif%}
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endif %}#}
                     {% endblock %}
                 </div>
             {% endblock %}

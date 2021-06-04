@@ -312,7 +312,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                     this.confirmOrder(formData, extraParams);
                 } else {
                     component.showValidation();
-                    console.log('Payment failed: ', state);
+                    if (this.adyenCheckout.options.environment === 'test') {
+                        console.log('Payment failed: ', state);
+                    }
                 }
             }.bind(this),
             onCancel: (data, component) => {
@@ -422,7 +424,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                     this.confirmOrder(formData, extraParams);
                 } else {
                     component.showValidation();
-                    console.log('Payment failed: ', state);
+                    if (this.adyenCheckout.options.environment === 'test') {
+                        console.log('Payment failed: ', state);
+                    }
                 }
             }.bind(this)
         });
