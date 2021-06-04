@@ -48,6 +48,7 @@ class PaymentMethods
         AlipayPaymentMethod::class,
         AlipayHkPaymentMethod::class,
         BlikPaymentMethod::class,
+        ClearpayPaymentMethod::class,
         Facilypay3xPaymentMethod::class,
         Facilypay4xPaymentMethod::class,
         Facilypay6xPaymentMethod::class,

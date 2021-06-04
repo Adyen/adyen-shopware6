@@ -129,6 +129,7 @@ export default {
         'alipay': 'handler_adyen_alipaypaymentmethodhandler',
         'alipay_hk': 'handler_adyen_alipayhkpaymentmethodhandler',
         'blik': 'handler_adyen_blikpaymentmethodhandler',
+        'clearpay': 'handler_adyen_clearpaypaymentmethodhandler',
         'facilypay_3x': 'handler_adyen_facilypay3xpaymentmethodhandler',
         'facilypay_4x': 'handler_adyen_facilypay4xpaymentmethodhandler',
         'facilypay_6x': 'handler_adyen_facilypay6xpaymentmethodhandler',
