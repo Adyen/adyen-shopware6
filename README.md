@@ -50,6 +50,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Sofort
  - Clearpay
  - Oney (3x, 4x, 6x, 10x, 12x)
+ - AfterPay invoice
  - Trustly
 
 ## API Library

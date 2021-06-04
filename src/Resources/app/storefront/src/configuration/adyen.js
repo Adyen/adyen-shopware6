@@ -21,7 +21,7 @@
  */
 
 export default {
-    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'blik', 'eps', 'facilypay_3x', 'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x'],
+    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'blik', 'eps', 'facilypay_3x', 'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default'],
     componentsWithPayButton: {
         'applepay': {
             extra: {},
@@ -135,6 +135,7 @@ export default {
         'facilypay_6x': 'handler_adyen_facilypay6xpaymentmethodhandler',
         'facilypay_10x': 'handler_adyen_facilypay10xpaymentmethodhandler',
         'facilypay_12x': 'handler_adyen_facilypay12xpaymentmethodhandler',
+        'afterpay_default': 'handler_adyen_afterpaydefaultpaymentmethodhandler',
         'trustly': 'handler_adyen_trustlypaymentmethodhandler',
     }
 }
