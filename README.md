@@ -41,9 +41,19 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Klarna Pay Later
  - Klarna Pay Over Time
  - Klarna Pay Now
+ - RatePay, RatePay Direct Debit  
  - PayPal
  - SEPA Direct Debit
+ - Twint
+ - Electronic Payment Service (EPS) 
+ - Swish  
+ - Alipay , Alipay HK 
  - Sofort
+ - Clearpay
+ - Oney (3x, 4x, 6x, 10x, 12x)
+ - AfterPay invoice
+ - Trustly
+ - PaySafeCard
 
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
