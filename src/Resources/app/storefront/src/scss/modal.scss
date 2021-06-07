@@ -20,15 +20,15 @@
  *
  */
 
-#adyen-payment-action-modal .modal-dialog {
+.adyen-payment-modal .modal-dialog {
   height: calc(100% - 3.5rem);
 
   .modal-content {
-    height: 100%;
+    min-height: 5em;
   }
 }
 
-.adyen-payment-action-container.loader {
+.adyen-payment-container.loader {
   display: none;
   left: 50%;
   margin-left: -1rem;
