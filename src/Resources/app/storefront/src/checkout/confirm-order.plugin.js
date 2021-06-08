@@ -33,7 +33,6 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new StoreApiClient();
-        this.stateData = null;
         const { locale, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
@@ -97,6 +96,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (adyenConfiguration.updatablePaymentMethods.includes(selectedAdyenPaymentMethod) && !this.stateData) {
             // render component to collect payment data
             this.renderPaymentComponent(selectedAdyenPaymentMethod);
+            $('[data-adyen-payment-component-modal]').modal({show: true});
             return;
         }
 
@@ -121,8 +121,6 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         // Mount payment method instance
         this.mountPaymentComponent(paymentMethod, '[data-adyen-payment-container]', false);
-
-        $('[data-adyen-payment-component-modal]').modal({show: true});
     }
 
     renderStoredPaymentMethodComponents() {
@@ -136,8 +134,6 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         this.showSelectedStoredPaymentMethod();
         $('[name=adyenStoredPaymentMethodId]').change(this.showSelectedStoredPaymentMethod);
-
-        $('[data-adyen-payment-component-modal]').modal({show: true});
     }
 
     showSelectedStoredPaymentMethod() {
