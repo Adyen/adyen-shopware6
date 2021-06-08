@@ -106,6 +106,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '2.0.0', '<')) {
             $this->updateTo200($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.0.0', '<')) {
+            $this->updateTo300($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -252,11 +256,11 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 1.6.0 introduces applepay, paywithgoogle, dotpay and bancontact
         foreach ([
-                     new PaymentMethods\ApplePayPaymentMethod,
-                     new PaymentMethods\GooglePayPaymentMethod,
-                     new PaymentMethods\DotpayPaymentMethod,
-                     new PaymentMethods\BancontactCardPaymentMethod
-                 ] as $method) {
+            new PaymentMethods\ApplePayPaymentMethod,
+            new PaymentMethods\GooglePayPaymentMethod,
+            new PaymentMethods\DotpayPaymentMethod,
+            new PaymentMethods\BancontactCardPaymentMethod
+        ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -273,9 +277,42 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 2.0.0 introduces amazonpay, blik
         foreach ([
-                     new PaymentMethods\AmazonPayPaymentMethod,
-                     new PaymentMethods\BlikPaymentMethod,
-                 ] as $method) {
+            new PaymentMethods\AmazonPayPaymentMethod,
+            new PaymentMethods\BlikPaymentMethod,
+        ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
+    }
+
+    private function updateTo300(UpdateContext $updateContext): void
+    {
+        //Version 3.0.0 introduces the following payment methods
+        foreach ([
+            new PaymentMethods\AfterpayDefaultPaymentMethod,
+            new PaymentMethods\AlipayPaymentMethod,
+            new PaymentMethods\AlipayHkPaymentMethod,
+            new PaymentMethods\ClearpayPaymentMethod,
+            new PaymentMethods\EpsPaymentMethod,
+            new PaymentMethods\Facilypay3xPaymentMethod,
+            new PaymentMethods\Facilypay4xPaymentMethod,
+            new PaymentMethods\Facilypay6xPaymentMethod,
+            new PaymentMethods\Facilypay10xPaymentMethod,
+            new PaymentMethods\Facilypay12xPaymentMethod,
+            new PaymentMethods\PaysafecardPaymentMethod,
+            new PaymentMethods\RatepayPaymentMethod,
+            new PaymentMethods\RatepayDirectdebitPaymentMethod,
+            new PaymentMethods\SwishPaymentMethod,
+            new PaymentMethods\TrustlyPaymentMethod,
+            new PaymentMethods\TwintPaymentMethod,
+        ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()

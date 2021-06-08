@@ -8,26 +8,30 @@
         <div class="modal-content">
             <div class="modal-header">
                 {% set payment = page.paymentMethods|filter(payment => adyenFrontendData.selectedPaymentMethodHandler == payment.formattedHandlerIdentifier)|first %}
-                <div class="payment-method-description">
-                    <strong>{{ payment.translated.name }}</strong>
-                    {% if payment.translated.description %}
-                        {% set paymentDescription = payment.translated.description|raw %}
-                        <p title="{{ payment.translated.description|raw }}">{{ paymentDescription }}</p>
+                {% block component_payment_method_description %}
+                    <div class="payment-method-description">
+                        <strong>{{ payment.translated.name }}</strong>
+                        {% if payment.translated.description %}
+                            {% set paymentDescription = payment.translated.description|raw %}
+                            <p title="{{ payment.translated.description|raw }}">{{ paymentDescription }}</p>
+                        {% endif %}
+                    </div>
+                {% endblock %}
+                {% block component_payment_method_image %}
+                    {% if payment.media %}
+                        {% sw_thumbnails 'payment-method-image-thumbnails' with {
+                            media: payment.media,
+                            sizes: {
+                                'default': '100px'
+                            },
+                            attributes: {
+                                'class': 'payment-method-image',
+                                'alt': (payment.media.translated.alt ?: payment.translated.name),
+                                'title': (payment.media.translated.title ?: payment.translated.name)
+                            }
+                        } %}
                     {% endif %}
-                </div>
-                {% if payment.media %}
-                    {% sw_thumbnails 'payment-method-image-thumbnails' with {
-                        media: payment.media,
-                        sizes: {
-                            'default': '100px'
-                        },
-                        attributes: {
-                            'class': 'payment-method-image',
-                            'alt': (payment.media.translated.alt ?: payment.translated.name),
-                            'title': (payment.media.translated.title ?: payment.translated.name)
-                        }
-                    } %}
-                {% endif %}
+                {% endblock %}
             </div>
             <div class="modal-body">
                 <div data-adyen-payment-component>
