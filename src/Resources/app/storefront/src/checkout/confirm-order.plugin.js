@@ -96,7 +96,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (adyenConfiguration.updatablePaymentMethods.includes(selectedAdyenPaymentMethod) && !this.stateData) {
             // render component to collect payment data
             this.renderPaymentComponent(selectedAdyenPaymentMethod);
-            $('[data-adyen-payment-component-modal]').modal({show: true});
+            $('[data-adyen-payment-component-modal]').modal({show: true}).on('hidden.bs.modal', function (e) {
+                window.location.reload();
+            });
             return;
         }
 
