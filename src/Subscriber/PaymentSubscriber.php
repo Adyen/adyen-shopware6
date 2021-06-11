@@ -45,7 +45,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
@@ -140,7 +140,7 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $contextSwitchRoute;
 
     /**
-     * @var SalesChannelContextFactory
+     * @var AbstractSalesChannelContextFactory
      */
     private $salesChannelContextFactory;
 
@@ -160,7 +160,7 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @param CartPersisterInterface $cartPersister
      * @param CartCalculator $cartCalculator
      * @param ContextSwitchRoute $contextSwitchRoute
-     * @param SalesChannelContextFactory $salesChannelContextFactory
+     * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
      * @param Currency $currency
      * @param LoggerInterface $logger
      */
@@ -178,7 +178,7 @@ class PaymentSubscriber implements EventSubscriberInterface
         CartPersisterInterface $cartPersister,
         CartCalculator $cartCalculator,
         ContextSwitchRoute $contextSwitchRoute,
-        SalesChannelContextFactory $salesChannelContextFactory,
+        AbstractSalesChannelContextFactory $salesChannelContextFactory,
         Currency $currency,
         LoggerInterface $logger
     ) {
@@ -294,20 +294,16 @@ class PaymentSubscriber implements EventSubscriberInterface
             new ArrayEntity(
                 [
                     'paymentStatusUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-status',
-                        ['version' => 2]
+                        'store-api.action.adyen.payment-status'
                     ),
                     'checkoutOrderUrl' => $this->router->generate(
-                        'store-api.checkout.cart.order',
-                        ['version' => 2]
+                        'store-api.checkout.cart.order'
                     ),
                     'paymentHandleUrl' => $this->router->generate(
-                        'store-api.payment.handle',
-                        ['version' => 2]
+                        'store-api.payment.handle'
                     ),
                     'paymentDetailsUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-details',
-                        ['version' => 2]
+                        'store-api.action.adyen.payment-details'
                     ),
                     'paymentFinishUrl' => $this->router->generate(
                         'frontend.checkout.finish.page',
@@ -322,8 +318,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                         ]
                     ),
                     'updatePaymentUrl' => $this->router->generate(
-                        'store-api.action.adyen.set-payment',
-                        ['version' => 2]
+                        'store-api.action.adyen.set-payment'
                     ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                     'clientKey' => $this->configurationService->getClientKey($salesChannelId),

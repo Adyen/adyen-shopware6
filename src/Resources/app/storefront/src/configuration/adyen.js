@@ -21,7 +21,7 @@
  */
 
 export default {
-    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'blik'],
+    updatablePaymentMethods: ['scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'blik', 'eps', 'facilypay_3x', 'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay', 'ratepay_directdebit'],
     componentsWithPayButton: {
         'applepay': {
             extra: {},
@@ -113,6 +113,8 @@ export default {
         'klarna': 'handler_adyen_klarnapaylaterpaymentmethodhandler',
         'klarna_account': 'handler_adyen_klarnaaccountpaymentmethodhandler',
         'klarna_paynow': 'handler_adyen_klarnapaynowpaymentmethodhandler',
+        'ratepay': 'handler_adyen_ratepaypaymentmethodhandler',
+        'ratepay_directdebit': 'handler_adyen_ratepaydirectdebitpaymentmethodhandler',
         'sepadirectdebit': 'handler_adyen_sepapaymentmethodhandler',
         'sofort': 'handler_adyen_sofortpaymentmethodhandler',
         'paypal': 'handler_adyen_paypalpaymentmethodhandler',
@@ -123,6 +125,20 @@ export default {
         'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
         'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
+        'twint': 'handler_adyen_twintpaymentmethodhandler',
+        'eps': 'handler_adyen_epspaymentmethodhandler',
+        'swish': 'handler_adyen_swishpaymentmethodhandler',
+        'alipay': 'handler_adyen_alipaypaymentmethodhandler',
+        'alipay_hk': 'handler_adyen_alipayhkpaymentmethodhandler',
         'blik': 'handler_adyen_blikpaymentmethodhandler',
+        'clearpay': 'handler_adyen_clearpaypaymentmethodhandler',
+        'facilypay_3x': 'handler_adyen_facilypay3xpaymentmethodhandler',
+        'facilypay_4x': 'handler_adyen_facilypay4xpaymentmethodhandler',
+        'facilypay_6x': 'handler_adyen_facilypay6xpaymentmethodhandler',
+        'facilypay_10x': 'handler_adyen_facilypay10xpaymentmethodhandler',
+        'facilypay_12x': 'handler_adyen_facilypay12xpaymentmethodhandler',
+        'afterpay_default': 'handler_adyen_afterpaydefaultpaymentmethodhandler',
+        'trustly': 'handler_adyen_trustlypaymentmethodhandler',
+        'paysafecard': 'handler_adyen_paysafecardpaymentmethodhandler',
     }
 }

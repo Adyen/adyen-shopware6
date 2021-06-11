@@ -1,4 +1,6 @@
-/*
+<?php declare(strict_types=1);
+
+/**
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -12,25 +14,25 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
+ * Author: Adyen <shopware@adyen.com>
  */
 
-export default class FormValidatorWithComponent {
-    constructor(component) {
-        this.component = component;
-    }
+namespace Adyen\Shopware\Handlers;
 
-    validateForm() {
-        if (!this.component.isValid) {
-            this.component.showValidation();
-            return false;
-        }
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 
-        return true;
+class RatepayPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+{
+    protected static $isOpenInvoice = true;
+    
+    public static function getPaymentMethodCode()
+    {
+        return 'ratepay';
     }
 }

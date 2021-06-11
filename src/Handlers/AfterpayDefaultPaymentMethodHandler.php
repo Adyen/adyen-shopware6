@@ -1,4 +1,7 @@
-/*!
+<?php
+declare(strict_types=1);
+
+/**
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -12,32 +15,27 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
+ * Author: Adyen <shopware@adyen.com>
  */
 
-.adyen-payment-modal .modal-dialog {
-  height: calc(100% - 3.5rem);
+namespace Adyen\Shopware\Handlers;
 
-  .modal-content {
-    height: 80%;
-  }
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class AfterpayDefaultPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
+{
+
+    protected static $isOpenInvoice = true;
+
+    public static function getPaymentMethodCode()
+    {
+        return 'afterpay_default';
+    }
 }
-
-.adyen-payment-container.loader {
-  display: none;
-  left: 50%;
-  margin-left: -1rem;
-  margin-top: -1rem;
-  position: absolute;
-  top: 50%;
-
-  &:only-child {
-    display: block;
-  }
-}
-

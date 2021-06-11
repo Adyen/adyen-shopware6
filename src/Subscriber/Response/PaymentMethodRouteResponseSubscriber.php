@@ -28,8 +28,10 @@ use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\PaymentMethodsFilterService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Struct\AdyenPaymentMethodDataStruct;
+use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRouteResponse;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -105,13 +107,25 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
             return;
         }
 
-        $methods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
-            $event->getResponse()->getPaymentMethods(),
+        /** @var EntitySearchResult $result */
+        $result = $event->getResponse()->getObject();
+        /** @var PaymentMethodCollection $paymentMethods */
+        $paymentMethods = $result->getEntities();
+        $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
+            $paymentMethods,
             $context,
             $this->adyenPluginProvider->getAdyenPluginId()
         );
 
-        $response = new PaymentMethodRouteResponse($methods);
+        $result = new EntitySearchResult(
+            'payment_method',
+            count($filteredPaymentMethods),
+            $filteredPaymentMethods,
+            $result->getAggregations(),
+            $result->getCriteria(),
+            $result->getContext()
+        );
+        $response = new PaymentMethodRouteResponse($result);
         $event->setResponse($response);
     }
 

@@ -47,9 +47,10 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.confirmOrderForm = DomAccess.querySelector(document,
             '#confirmOrderForm');
         this.confirmOrderForm.addEventListener('submit',
-            this.validateAndConfirmOrder.bind(this));
-        this.initializeCustomPayButton();
+            this.onConfirmOrderSubmit.bind(this));
+        this.paymentComponent = $(`[data-adyen-payment-component]`);
         this.responseHandler = this.handlePaymentAction;
+        this.initializeCustomPayButton();
     }
 
     handleOnAdditionalDetails (state) {
@@ -67,50 +68,81 @@ export default class ConfirmOrderPlugin extends Plugin {
         );
     }
 
-    validateAndConfirmOrder(event) {
+    onConfirmOrderSubmit(event) {
         // Non adyen payment method selected
         if (adyenCheckoutOptions.selectedPaymentMethodPluginId !==
             adyenCheckoutOptions.adyenPluginId) {
             return true;
         }
 
-        if (!!adyenCheckoutOptions && !!adyenCheckoutOptions.paymentStatusUrl &&
-            adyenCheckoutOptions.checkoutOrderUrl && adyenCheckoutOptions.paymentHandleUrl) {
-            event.preventDefault();
-
-            // get selected payment method
-            let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
-
-            const confirmPaymentModal = $('#confirmPaymentModal');
-            // Do validation if the payment method has all the required data submitted by the customer
-            // 1. case: State data is not stored
-            if (!adyenCheckoutOptions.stateDataIsStored) {
-                if (adyenConfiguration.updatablePaymentMethods.includes(
-                    selectedAdyenPaymentMethod)) {
-                    // Show popup to customer to fill in the missing payment details
-                    confirmPaymentModal.modal('show');
-                    return;
-                }
-            } else {
-                // 2. case: StateData is stored
-                if (!adyenConfiguration.updatablePaymentMethods.includes(
-                    selectedAdyenPaymentMethod)) {
-                    // State data should not be stored for any payment method which does not require it but if it happens show popup to the customer to save the payment method again
-                    confirmPaymentModal.modal('show');
-                    return;
-                }
-            }
-
-            const form = event.target;
-            if (!form.checkValidity()) {
-                return;
-            }
-            ElementLoadingIndicatorUtil.create(document.body);
-
-            const formData = FormSerializeUtil.serialize(form);
-
-            this.confirmOrder(formData);
+        if (!adyenCheckoutOptions || !adyenCheckoutOptions.paymentStatusUrl ||
+            !adyenCheckoutOptions.checkoutOrderUrl || !adyenCheckoutOptions.paymentHandleUrl) {
+            console.error('Adyen payment configuration missing.');
+            return;
         }
+
+        const form = event.target;
+        if (!form.checkValidity()) {
+            return;
+        }
+
+        event.preventDefault();
+
+        ElementLoadingIndicatorUtil.create(document.body);
+
+        // get selected payment method
+        let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
+
+        if (adyenConfiguration.updatablePaymentMethods.includes(selectedAdyenPaymentMethod) && !this.stateData) {
+            // render component to collect payment data
+            this.renderPaymentComponent(selectedAdyenPaymentMethod);
+            $('[data-adyen-payment-component-modal]').modal({show: true}).on('hidden.bs.modal', function (e) {
+                window.location.reload();
+            });
+            return;
+        }
+
+        const formData = FormSerializeUtil.serialize(form);
+
+        this.confirmOrder(formData);
+    }
+
+    renderPaymentComponent(type) {
+        if (type === 'oneclick') {
+            this.renderStoredPaymentMethodComponents()
+            return;
+        }
+        // Get the payment method object from paymentMethodsResponse
+        let filtered = $.grep(this.adyenCheckout.paymentMethodsResponse.paymentMethods, function(paymentMethod) {
+            return paymentMethod.type === type;
+        });
+        if (filtered.length === 0) {
+            return;
+        }
+        let paymentMethod = filtered[0];
+
+        // Mount payment method instance
+        this.mountPaymentComponent(paymentMethod, '[data-adyen-payment-container]', false);
+    }
+
+    renderStoredPaymentMethodComponents() {
+        // Iterate through and render the stored payment methods
+        const storedPaymentMethods = this.adyenCheckout.paymentMethodsResponse.storedPaymentMethods;
+        // Mount payment method instance
+        storedPaymentMethods.forEach((paymentMethod) => {
+            let selector = `[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`;
+            this.mountPaymentComponent(paymentMethod, selector, true);
+        });
+
+        this.showSelectedStoredPaymentMethod();
+        $('[name=adyenStoredPaymentMethodId]').change(this.showSelectedStoredPaymentMethod);
+    }
+
+    showSelectedStoredPaymentMethod() {
+        // Only show the component for the selected stored payment method
+        $('.stored-payment-component').hide();
+        let selected = $('[name=adyenStoredPaymentMethodId]:checked').val();
+        $(`[data-adyen-stored-payment-method-id="${selected}"]`).show();
     }
 
     confirmOrder(formData, extraParams= {}) {
@@ -204,6 +236,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     handlePaymentAction(response) {
+        $('[data-adyen-payment-component-modal]').modal().hide();
         try {
             const paymentResponse = JSON.parse(response);
             if (paymentResponse.isFinal) {
@@ -213,7 +246,8 @@ export default class ConfirmOrderPlugin extends Plugin {
                 this.adyenCheckout
                     .createFromAction(paymentResponse.action)
                     .mount('[data-adyen-payment-action-container]');
-                if (paymentResponse.action.type === 'threeDS2') {
+                const modalActionTypes = ['threeDS2', 'qrCode']
+                if (modalActionTypes.includes(paymentResponse.action.type)) {
                     $('[data-adyen-payment-action-modal]').modal({show: true});
                 }
             }
@@ -277,7 +311,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                     this.confirmOrder(formData, extraParams);
                 } else {
                     component.showValidation();
-                    console.log('Payment failed: ', state);
+                    if (this.adyenCheckout.options.environment === 'test') {
+                        console.log('Payment failed: ', state);
+                    }
                 }
             }.bind(this),
             onCancel: (data, component) => {
@@ -299,12 +335,12 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             if ('isAvailable' in paymentMethodInstance) {
                 paymentMethodInstance.isAvailable().then(function () {
-                    this.mountPaymentButton(paymentMethodInstance);
+                    this.mountCustomPayButton(paymentMethodInstance);
                 }.bind(this)).catch(e => {
                     console.log(selectedPaymentMethodObject.type + ' is not available', e);
                 });
             } else {
-                this.mountPaymentButton(paymentMethodInstance);
+                this.mountCustomPayButton(paymentMethodInstance);
             }
         } catch (e) {
             console.log(e);
@@ -334,7 +370,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             selectedPaymentMethodObject.type,
             PRE_PAY_BUTTON
         );
-        this.mountPaymentButton(paymentMethodInstance);
+        this.mountCustomPayButton(paymentMethodInstance);
     }
 
     completePendingPayment(paymentMethodType, config) {
@@ -355,7 +391,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                     }
                 }.bind(this),
             });
-            this.mountPaymentButton(paymentMethodInstance);
+            this.mountCustomPayButton(paymentMethodInstance);
             paymentMethodInstance.submit();
         }
     }
@@ -367,10 +403,42 @@ export default class ConfirmOrderPlugin extends Plugin {
                     adyenCheckoutOptions.selectedPaymentMethodHandler);
     }
 
-    mountPaymentButton(paymentMethodInstance) {
+    mountCustomPayButton(paymentMethodInstance) {
         let confirmButtonContainer = $('<div id="adyen-confirm-button" data-adyen-confirm-button></div>');
         $('#confirmOrderForm').append(confirmButtonContainer);
         paymentMethodInstance.mount(confirmButtonContainer.get(0));
         $('#confirmOrderForm button[type=submit]').remove();
+    }
+
+    mountPaymentComponent(paymentMethod, selector, isOneClick = false) {
+        const configuration = Object.assign(paymentMethod, {
+            onSubmit: function(state, component) {
+                this.paymentComponent.find('.loader').show();
+                this.paymentComponent.find('[data-adyen-payment-container]').hide();
+                if (state.isValid) {
+                    let extraParams = {
+                        stateData: JSON.stringify(state.data)
+                    };
+                    let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
+                    this.confirmOrder(formData, extraParams);
+                } else {
+                    component.showValidation();
+                    if (this.adyenCheckout.options.environment === 'test') {
+                        console.log('Payment failed: ', state);
+                    }
+                }
+            }.bind(this)
+        });
+        if (!isOneClick && paymentMethod.type === 'scheme') {
+            configuration.enableStoreDetails = true;
+        }
+        try {
+            const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
+            paymentMethodInstance.mount(this.paymentComponent.find(selector).get(0));
+            this.paymentComponent.find('.loader').hide();
+        } catch (err) {
+            console.error(paymentMethod.type, err);
+            return false;
+        }
     }
 }
