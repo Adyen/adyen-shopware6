@@ -137,7 +137,7 @@ class StoreApiController
 
     /**
      * @Route(
-     *     "/store-api/v{version}/adyen/payment-methods",
+     *     "/store-api/adyen/payment-methods",
      *     name="store-api.action.adyen.payment-methods",
      *     methods={"GET"}
      * )
@@ -152,7 +152,7 @@ class StoreApiController
 
     /**
      * @Route(
-     *     "/store-api/v{version}/adyen/payment-details",
+     *     "/store-api/adyen/payment-details",
      *     name="store-api.action.adyen.payment-details",
      *     methods={"POST"}
      * )
@@ -210,7 +210,7 @@ class StoreApiController
 
     /**
      * @Route(
-     *     "/store-api/v{version}/adyen/payment-status",
+     *     "/store-api/adyen/payment-status",
      *     name="store-api.action.adyen.payment-status",
      *     methods={"POST"}
      * )
@@ -260,7 +260,7 @@ class StoreApiController
      *     )
      * )
      * @Route(
-     *     "/store-api/v{version}/adyen/set-payment",
+     *     "/store-api/adyen/set-payment",
      *     name="store-api.action.adyen.set-payment",
      *     methods={"POST"}
      * )

@@ -23,6 +23,8 @@
 
 namespace Adyen\Shopware\Controller;
 
+use Adyen\Client;
+use Adyen\Service\Checkout;
 use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
@@ -49,7 +51,7 @@ class ApiTestController
     }
 
     /**
-     * @Route(path="/api/v{version}/_action/adyen/verify")
+     * @Route(path="/api/_action/adyen/verify")
      *
      * @param RequestDataBag $dataBag
      * @return JsonResponse
@@ -57,13 +59,13 @@ class ApiTestController
     public function check(RequestDataBag $dataBag): JsonResponse
     {
         try {
-            $client = new \Adyen\Client();
+            $client = new Client();
             $client->setXApiKey($dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.apiKeyTest'));
             $client->setEnvironment(
                 $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.environment') ? 'live' : 'test',
                 $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.liveEndpointUrlPrefix')
             );
-            $service = new \Adyen\Service\Checkout($client);
+            $service = new Checkout($client);
 
             $params = array(
                 'merchantAccount' => $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.merchantAccount'),
