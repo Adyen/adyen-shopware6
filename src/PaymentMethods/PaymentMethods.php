@@ -59,5 +59,6 @@ class PaymentMethods
         AfterpayDefaultPaymentMethod::class,
         TrustlyPaymentMethod::class,
         PaysafecardPaymentMethod::class,
+        GivexGiftCardPaymentMethod::class,
     ];
 }
