@@ -145,5 +145,10 @@ export default {
         'trustly': 'handler_adyen_trustlypaymentmethodhandler',
         'paysafecard': 'handler_adyen_paysafecardpaymentmethodhandler',
         'givex': 'handler_adyen_givexgiftcardpaymentmethodhandler',
+        'webshopgiftcard': 'handler_adyen_webshopgiftcardpaymentmethodhandler',
+        'kadowereld': 'handler_adyen_kadowereldgiftcardpaymentmethodhandler',
+        'tcstestgiftcard': 'handler_adyen_tcstestgiftcardpaymentmethodhandler',
+        'albelligiftcard': 'handler_adyen_albelligiftcardpaymentmethodhandler',
+        'bijcadeaucard': 'handler_adyen_bijenkorfgiftcardpaymentmethodhandler',
     }
 }

@@ -334,6 +334,11 @@ class AdyenPaymentShopware6 extends Plugin
         //Version 3.1.0 introduces gift cards
         foreach ([
                      new PaymentMethods\GivexGiftCardPaymentMethod,
+                     new PaymentMethods\WebshopGiftCardPaymentMethod,
+                     new PaymentMethods\KadowereldGiftCardPaymentMethod,
+                     new PaymentMethods\TCSTestGiftCardPaymentMethod,
+                     new PaymentMethods\AlbelliGiftCardPaymentMethod,
+                     new PaymentMethods\BijenkorfGiftCardPaymentMethod,
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,

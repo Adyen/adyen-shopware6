@@ -60,5 +60,10 @@ class PaymentMethods
         TrustlyPaymentMethod::class,
         PaysafecardPaymentMethod::class,
         GivexGiftCardPaymentMethod::class,
+        WebshopGiftCardPaymentMethod::class,
+        KadowereldGiftCardPaymentMethod::class,
+        TCSTestGiftCardPaymentMethod::class,
+        AlbelliGiftCardPaymentMethod::class,
+        BijenkorfGiftCardPaymentMethod::class,
     ];
 }
