@@ -333,7 +333,7 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 3.1.0 introduces gift cards
         foreach ([
-                     new PaymentMethods\GiroPayPaymentMethod,
+                     new PaymentMethods\GivexGiftCardPaymentMethod,
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,

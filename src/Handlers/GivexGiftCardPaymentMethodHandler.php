@@ -27,10 +27,18 @@ namespace Adyen\Shopware\Handlers;
 
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 
-class GivexGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+class GivexGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
 {
+    public static $isGiftCard = true;
+
     public static function getPaymentMethodCode()
     {
         return 'giftcard';
+    }
+
+    public static function getBrand(): string
+    {
+        return 'givex';
     }
 }

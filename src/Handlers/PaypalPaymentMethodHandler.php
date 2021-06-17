@@ -30,9 +30,6 @@ use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandle
 // phpcs:ignore Generic.Files.LineLength.TooLong
 class PaypalPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
-
-    protected static $isOpenInvoice = false;
-
     public static function getPaymentMethodCode()
     {
         return 'paypal';
