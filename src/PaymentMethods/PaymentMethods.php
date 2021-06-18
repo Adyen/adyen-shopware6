@@ -65,5 +65,7 @@ class PaymentMethods
         TCSTestGiftCardPaymentMethod::class,
         AlbelliGiftCardPaymentMethod::class,
         BijenkorfGiftCardPaymentMethod::class,
+        VVVGiftCardPaymentMethod::class,
+        SavvyGiftCardPaymentMethod::class,
     ];
 }

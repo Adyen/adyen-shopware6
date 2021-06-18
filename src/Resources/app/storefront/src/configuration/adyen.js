@@ -150,5 +150,7 @@ export default {
         'tcstestgiftcard': 'handler_adyen_tcstestgiftcardpaymentmethodhandler',
         'albelligiftcard': 'handler_adyen_albelligiftcardpaymentmethodhandler',
         'bijcadeaucard': 'handler_adyen_bijenkorfgiftcardpaymentmethodhandler',
+        'vvvgiftcard': 'handler_adyen_vvvgiftcardpaymentmethodhandler',
+        'genericgiftcard': 'handler_adyen_savvygiftcardpaymentmethodhandler',
     }
 }

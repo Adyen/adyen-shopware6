@@ -426,7 +426,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     mountPaymentComponent(paymentMethod, selector, isOneClick = false) {
         const configuration = Object.assign({}, paymentMethod, {
             onSubmit: function(state, component) {
-                debugger;
                 this.paymentComponent.find('.loader').show();
                 this.paymentComponent.find('[data-adyen-payment-container]').hide();
                 if (state.isValid) {
