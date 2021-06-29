@@ -45,7 +45,7 @@ class GivexGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Givex gift card';
+        return 'Givex Giftcard';
     }
 
     /**

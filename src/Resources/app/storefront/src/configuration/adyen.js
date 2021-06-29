@@ -152,5 +152,9 @@ export default {
         'bijcadeaucard': 'handler_adyen_bijenkorfgiftcardpaymentmethodhandler',
         'vvvgiftcard': 'handler_adyen_vvvgiftcardpaymentmethodhandler',
         'genericgiftcard': 'handler_adyen_savvygiftcardpaymentmethodhandler',
+        'gallgall': 'handler_adyen_gallgallgiftcardpaymentmethodhandler',
+        'hmlingerie': 'handler_adyen_hunkemollerlingeriegiftcardpaymentmethodhandler',
+        'beautycadeaukaart': 'handler_adyen_beautygiftcardpaymentmethodhandler',
+        'svs': 'handler_adyen_svsgiftcardpaymentmethodhandler',
     }
 }

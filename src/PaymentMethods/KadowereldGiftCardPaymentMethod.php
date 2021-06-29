@@ -45,7 +45,7 @@ class KadowereldGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Kado Wereld gift card';
+        return 'Kado Wereld Giftcard';
     }
 
     /**

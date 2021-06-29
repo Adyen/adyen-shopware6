@@ -67,5 +67,9 @@ class PaymentMethods
         BijenkorfGiftCardPaymentMethod::class,
         VVVGiftCardPaymentMethod::class,
         SavvyGiftCardPaymentMethod::class,
+        GallGallGiftCardPaymentMethod::class,
+        HunkemollerLingerieGiftCardPaymentMethod::class,
+        BeautyGiftCardPaymentMethod::class,
+        SVSGiftCardPaymentMethod::class,
     ];
 }

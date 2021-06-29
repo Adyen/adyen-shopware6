@@ -341,6 +341,10 @@ class AdyenPaymentShopware6 extends Plugin
                      new PaymentMethods\BijenkorfGiftCardPaymentMethod,
                      new PaymentMethods\VVVGiftCardPaymentMethod,
                      new PaymentMethods\SavvyGiftCardPaymentMethod,
+                     new PaymentMethods\GallGallGiftCardPaymentMethod,
+                     new PaymentMethods\HunkemollerLingerieGiftCardPaymentMethod,
+                     new PaymentMethods\BeautyGiftCardPaymentMethod,
+                     new PaymentMethods\SVSGiftCardPaymentMethod,
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,
