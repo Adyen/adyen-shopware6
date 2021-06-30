@@ -10,7 +10,11 @@ We strongly encourage you to join us in contributing to this repository so every
 Read our [**contribution guidelines**](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md) to find out how.
 
 ## Requirements
-This plugin supports Shopware ~6.3.1 (Support for version 6.4 will be added in an upcoming major release) For Shopware 5 support please see our Shopware 5 repository.
+This plugin supports Shopware >= 6.3.1.1
+
+Please note that versions >= 3.0.0 of this plugin only support Shopware versions >= 6.4. If you are on a lower Shopware version please use version 2.
+
+For Shopware 5 support please see our Shopware 5 repository.
 
 ## Documentation
 Please find the relevant documentation for
