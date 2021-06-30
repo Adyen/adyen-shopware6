@@ -7,7 +7,7 @@
     <imports>
         <import resource="logger/logger-services.xml"/>
         <import resource="services/utils.xml"/>
-        <import resource="services/payment-handlers/payment-handlers.xml"/>
+        <import resource="services/payment-handlers.xml"/>
         <import resource="services/checkout-api.xml"/>
         <import resource="services/controllers.xml"/>
         <import resource="services/notification-processing.xml"/>

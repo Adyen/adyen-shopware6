@@ -93,7 +93,10 @@ export default class ConfirmOrderPlugin extends Plugin {
         // get selected payment method
         let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
 
-        if (adyenConfiguration.updatablePaymentMethods.includes(selectedAdyenPaymentMethod) && !this.stateData) {
+        const giftCardSelected = adyenCheckoutOptions.selectedPaymentMethodHandler.includes('giftcard');
+        const updatableSelected = adyenConfiguration.updatablePaymentMethods.includes(selectedAdyenPaymentMethod);
+
+        if (giftCardSelected || (updatableSelected && !this.stateData)) {
             // render component to collect payment data
             this.renderPaymentComponent(selectedAdyenPaymentMethod);
             $('[data-adyen-payment-component-modal]').modal({show: true}).on('hidden.bs.modal', function (e) {
@@ -109,17 +112,27 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     renderPaymentComponent(type) {
         if (type === 'oneclick') {
-            this.renderStoredPaymentMethodComponents()
+            this.renderStoredPaymentMethodComponents();
             return;
         }
+
+        let identifier = 'type';
+        // Filter payment method configs by brand in the case of giftcards
+        if (adyenCheckoutOptions.selectedPaymentMethodHandler.includes('giftcard')) {
+            identifier = 'brand';
+        }
+
         // Get the payment method object from paymentMethodsResponse
-        let filtered = $.grep(this.adyenCheckout.paymentMethodsResponse.paymentMethods, function(paymentMethod) {
-            return paymentMethod.type === type;
+        let paymentMethodConfigs = $.grep(this.adyenCheckout.paymentMethodsResponse.paymentMethods, function(paymentMethod) {
+            return paymentMethod[identifier] === type;
         });
-        if (filtered.length === 0) {
+        if (paymentMethodConfigs.length === 0) {
+            if (this.adyenCheckout.options.environment === 'test') {
+                console.error('Payment method configuration not found. ', state);
+            }
             return;
         }
-        let paymentMethod = filtered[0];
+        let paymentMethod = paymentMethodConfigs[0];
 
         // Mount payment method instance
         this.mountPaymentComponent(paymentMethod, '[data-adyen-payment-container]', false);
@@ -411,7 +424,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     mountPaymentComponent(paymentMethod, selector, isOneClick = false) {
-        const configuration = Object.assign(paymentMethod, {
+        const configuration = Object.assign({}, paymentMethod, {
             onSubmit: function(state, component) {
                 this.paymentComponent.find('.loader').show();
                 this.paymentComponent.find('[data-adyen-payment-container]').hide();
@@ -431,6 +444,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
         if (!isOneClick && paymentMethod.type === 'scheme') {
             configuration.enableStoreDetails = true;
+        }
+        if (paymentMethod.type === 'giftcard') {
+            configuration.type = configuration.brand;
         }
         try {
             const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);

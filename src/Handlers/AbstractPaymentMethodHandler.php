@@ -71,6 +71,7 @@ abstract class AbstractPaymentMethodHandler
     const PROMOTION = 'promotion';
 
     protected static $isOpenInvoice = false;
+    public static $isGiftCard = false;
 
     /**
      * @var ClientService
@@ -233,6 +234,11 @@ abstract class AbstractPaymentMethodHandler
 
     abstract public static function getPaymentMethodCode();
 
+    public static function getBrand(): ?string
+    {
+        return null;
+    }
+
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
@@ -249,7 +255,7 @@ abstract class AbstractPaymentMethodHandler
         $checkoutService = new CheckoutService(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );
-        $stateData = $dataBag->get('stateData', null);
+        $stateData = $dataBag->get('stateData');
 
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $stateData);
