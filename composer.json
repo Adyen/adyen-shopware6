@@ -13,6 +13,7 @@
         "shopware/core": "^6.4.0.0",
         "shopware/storefront": "^6.4.0.0",
         "adyen/php-api-library": "^10",
+        "adyen/php-webhook-module": "^0.1",
         "monolog/monolog": "^2",
         "ext-json": "*"
     },
