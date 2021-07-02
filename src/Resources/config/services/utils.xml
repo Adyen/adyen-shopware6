@@ -26,6 +26,9 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <service id="Adyen\Webhook\Notification"/>
+        <service id="Adyen\Webhook\PaymentStates"/>
+        <service id="Adyen\Webhook\Processor\ProcessorFactory"/>
         <service id="Adyen\Service\Builder\Address"/>
         <service id="Adyen\Service\Builder\Browser"/>
         <service id="Adyen\Service\Builder\Customer"/>
