@@ -27,6 +27,8 @@
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <service id="Adyen\Webhook\Notification"/>
+        <service id="Adyen\Webhook\Receiver\HmacSignature" autowire="true"/>
+        <service id="Adyen\Webhook\Receiver\NotificationReceiver" autowire="true"/>
         <service id="Adyen\Webhook\PaymentStates"/>
         <service id="Adyen\Webhook\Processor\ProcessorFactory"/>
         <service id="Adyen\Service\Builder\Address"/>
@@ -35,6 +37,5 @@
         <service id="Adyen\Service\Builder\OpenInvoice"/>
         <service id="Adyen\Service\Builder\Payment"/>
         <service id="Adyen\Util\Currency" autowire="true"/>
-        <service id="Adyen\Util\HmacSignature" autowire="true"/>
     </services>
 </container>
