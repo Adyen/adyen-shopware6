@@ -36,6 +36,7 @@ use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -79,6 +80,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderTransactionStates::STATE_FAILED => PaymentStates::STATE_FAILED,
         OrderTransactionStates::STATE_IN_PROGRESS => PaymentStates::STATE_IN_PROGRESS,
         OrderTransactionStates::STATE_REFUNDED => PaymentStates::STATE_REFUNDED,
+        OrderTransactionStates::STATE_PARTIALLY_REFUNDED => PaymentStates::STATE_PARTIALLY_REFUNDED,
     ];
 
     public function __construct(
@@ -151,20 +153,22 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $processor->process();
             $state = $processor->getTransitionState();
 
-            try {
-                $this->transitionToState($notification, $orderTransaction, $state, $context);
-            } catch (\Exception $exception) {
-                $this->logger->error($exception->getMessage());
-                // set notification error and increment error count
-                $errorCount = (int) $notification->getErrorCount();
-                $this->notificationService->saveError($notification->getId(), $exception->getMessage(), ++$errorCount);
-                $this->logger->error('Notification processing failed.', $logContext);
+            if ($state !== $currentTransactionState) {
+                try {
+                    $this->transitionToState($notification, $order, $state, $context);
+                } catch (\Exception $exception) {
+                    $logContext['errorMessage'] = $exception->getMessage();
+                    // set notification error and increment error count
+                    $errorCount = (int) $notification->getErrorCount();
+                    $this->notificationService->saveError($notification->getId(), $exception->getMessage(), ++$errorCount);
+                    $this->logger->error('Notification processing failed.', $logContext);
 
-                if ($errorCount < self::MAX_ERROR_COUNT) {
-                    $this->requeueNotification($notification->getId());
+                    if ($errorCount < self::MAX_ERROR_COUNT) {
+                        $this->requeueNotification($notification->getId());
+                    }
+
+                    continue;
                 }
-
-                continue;
             }
 
             $this->markAsDone($notification->getId());
@@ -173,8 +177,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->logger->info('Processed ' . $notifications->count() . ' notifications.');
     }
 
-    private function transitionToState(NotificationEntity $notification, OrderTransactionEntity $orderTransaction, string $state, Context $context)
+    private function transitionToState(NotificationEntity $notification, OrderEntity $order, string $state, Context $context)
     {
+        $orderTransaction = $order->getTransactions()->first();
         switch ($state) {
             case PaymentStates::STATE_PAID:
                 $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
@@ -188,10 +193,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             case PaymentStates::STATE_REFUNDED:
                 // Determine whether refund was full or partial.
                 $refundedAmount = (int) $notification->getAmountValue();
-                $transactionAmount = (new Currency())->sanitize(
-                    $orderTransaction->getAmount()->getTotalPrice(),
-                    $orderTransaction->getOrder()->getCurrency()->getIsoCode()
-                );
+
+                $currencyUtil = new Currency();
+                $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
+                $isoCode = $order->getCurrency()->getIsoCode();
+                $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
 
                 if ($refundedAmount > $transactionAmount) {
                     throw new \Exception('The refunded amount is greater than the transaction amount.');
