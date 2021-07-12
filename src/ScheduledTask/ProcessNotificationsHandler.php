@@ -29,6 +29,7 @@ use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Util\Currency;
+use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Notification;
 use Adyen\Webhook\PaymentStates;
 use Adyen\Webhook\Processor\ProcessorFactory;
@@ -75,7 +76,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     private const MAX_ERROR_COUNT = 3;
     private $webhookModuleStateMapping = [
-        OrderTransactionStates::STATE_OPEN => PaymentStates::STATE_OPEN,
         OrderTransactionStates::STATE_PAID => PaymentStates::STATE_PAID,
         OrderTransactionStates::STATE_FAILED => PaymentStates::STATE_FAILED,
         OrderTransactionStates::STATE_IN_PROGRESS => PaymentStates::STATE_IN_PROGRESS,
@@ -139,19 +139,28 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $this->markAsDone($notification->getId());
                 continue;
             }
+            $currentTransactionState = $this->webhookModuleStateMapping[
+                $orderTransaction->getStateMachineState()->getTechnicalName()
+            ] ?? '';
+            try {
+                $notificationItem = Notification::createItem([
+                    'eventCode' => $notification->getEventCode(),
+                    'success' => $notification->isSuccess()
+                ]);
 
-            $notificationItem = Notification::createItem([
-                'eventCode' => $notification->getEventCode(),
-                'success' => $notification->isSuccess()
-            ]);
+                $processor = ProcessorFactory::create(
+                    $notificationItem,
+                    $currentTransactionState,
+                    $this->logger
+                );
+            } catch (InvalidDataException $exception) {
+                $logContext['notification'] = get_object_vars($notification);
+                $this->logger->error('Unable to process notification: Invalid notification data', $logContext);
+                $this->markAsDone($notification->getId());
+                continue;
+            }
 
-            $processor = ProcessorFactory::create(
-                $notificationItem,
-                $this->webhookModuleStateMapping[$orderTransaction->getStateMachineState()->getTechnicalName()],
-                $this->logger
-            );
-            $processor->process();
-            $state = $processor->getTransitionState();
+            $state = $processor->process();
 
             if ($state !== $currentTransactionState) {
                 try {
