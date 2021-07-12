@@ -340,7 +340,6 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'city' => $shippingAddress->getCity(),
                     'postCode' => $shippingAddress->getZipcode(),
                     'countryCode' => $shippingAddress->getCountry()->getIso(),
-                    //TODO: Check what to do if phone number is null
                     'phoneNumber' => $shippingAddress->getPhoneNumber(),
                 ]
             )

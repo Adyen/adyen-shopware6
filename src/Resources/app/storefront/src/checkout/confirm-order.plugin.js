@@ -362,7 +362,7 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     renderPrePaymentButton(componentConfig, selectedPaymentMethodObject) {
         if (selectedPaymentMethodObject.type === 'amazonpay') {
-            componentConfig.extra.addressDetails = this.getAddressDetails();
+            componentConfig.extra = this.setAddressDetails(componentConfig.extra);
         }
         const PRE_PAY_BUTTON = Object.assign(componentConfig.extra, selectedPaymentMethodObject, {
             configuration: selectedPaymentMethodObject.configuration,
@@ -462,18 +462,25 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     /**
-     * Get the address details passed in confirm-payment.html.twig
+     * Set the address details based on the passed data in confirm-payment twig file
+     * If no phone number is linked to customer, do not set addressDetails and update Product Type
      *
-     * @returns {{phoneNumber: *, city, countryCode, postalCode: *, name, addressLine1: string[]}}
+     * @param extra
      */
-    getAddressDetails() {
-        return {
-            name: adyenCheckoutOptions.name,
-            addressLine1: adyenCheckoutOptions.addressLine,
-            city: adyenCheckoutOptions.city,
-            postalCode: adyenCheckoutOptions.postCode,
-            countryCode: adyenCheckoutOptions.countryCode,
-            phoneNumber: adyenCheckoutOptions.phoneNumber
-        };
+    setAddressDetails(extra) {
+        if (adyenCheckoutOptions.phoneNumber !== '') {
+            extra.addressDetails = {
+                name: adyenCheckoutOptions.name,
+                addressLine1: adyenCheckoutOptions.addressLine,
+                city: adyenCheckoutOptions.city,
+                postalCode: adyenCheckoutOptions.postCode,
+                countryCode: adyenCheckoutOptions.countryCode,
+                phoneNumber: adyenCheckoutOptions.phoneNumber
+            };
+        } else {
+            extra.productType = 'PayOnly';
+        }
+
+        return extra;
     }
 }
