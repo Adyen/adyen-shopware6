@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c87b77f499048674518ae3f1400b8385",
+    "content-hash": "0bb8a44e3db316d11b50a618f5d5377d",
     "packages": [
         {
             "name": "adyen/php-api-library",
@@ -56,6 +56,52 @@
                 "source": "https://github.com/Adyen/adyen-php-api-library/tree/10.1.0"
             },
             "time": "2021-04-30T14:03:59+00:00"
+        },
+        {
+            "name": "adyen/php-webhook-module",
+            "version": "0.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Adyen/php-webhook-module.git",
+                "reference": "b061bb5dc8dcf302772ffc1d4b79466984aca6c2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Adyen/php-webhook-module/zipball/b061bb5dc8dcf302772ffc1d4b79466984aca6c2",
+                "reference": "b061bb5dc8dcf302772ffc1d4b79466984aca6c2",
+                "shasum": ""
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5.0"
+            },
+            "suggest": {
+                "monolog/monolog": "~2.2.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Adyen\\Webhook\\": "src"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Adyen\\Webhook\\Test\\": "tests"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Adyen"
+                }
+            ],
+            "description": "Processes notification for Adyen Payment Plugins",
+            "support": {
+                "source": "https://github.com/Adyen/php-webhook-module/tree/0.1.1",
+                "issues": "https://github.com/Adyen/php-webhook-module/issues"
+            },
+            "time": "2021-06-30T14:31:17+00:00"
         },
         {
             "name": "aws/aws-sdk-php",
