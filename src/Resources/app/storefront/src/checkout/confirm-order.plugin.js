@@ -361,6 +361,9 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     renderPrePaymentButton(componentConfig, selectedPaymentMethodObject) {
+        if (selectedPaymentMethodObject.type === 'amazonpay') {
+            componentConfig.extra.addressDetails = this.getAddressDetails();
+        }
         const PRE_PAY_BUTTON = Object.assign(componentConfig.extra, selectedPaymentMethodObject, {
             configuration: selectedPaymentMethodObject.configuration,
             amount: {
@@ -456,5 +459,21 @@ export default class ConfirmOrderPlugin extends Plugin {
             console.error(paymentMethod.type, err);
             return false;
         }
+    }
+
+    /**
+     * Get the address details passed in confirm-payment.html.twig
+     *
+     * @returns {{phoneNumber: *, city, countryCode, postalCode: *, name, addressLine1: string[]}}
+     */
+    getAddressDetails() {
+        return {
+            name: adyenCheckoutOptions.name,
+            addressLine1: adyenCheckoutOptions.addressLine,
+            city: adyenCheckoutOptions.city,
+            postalCode: adyenCheckoutOptions.postCode,
+            countryCode: adyenCheckoutOptions.countryCode,
+            phoneNumber: adyenCheckoutOptions.phoneNumber
+        };
     }
 }

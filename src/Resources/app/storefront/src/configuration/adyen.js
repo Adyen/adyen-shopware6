@@ -90,7 +90,7 @@ export default {
         },
         'amazonpay': {
             extra: {
-                productType: 'PayOnly',
+                productType: 'PayAndShip',
                 checkoutMode: 'ProcessOrder',
                 returnUrl: location.href
             },
