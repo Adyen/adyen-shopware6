@@ -31,6 +31,7 @@ use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
+use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
@@ -98,6 +99,11 @@ class StoreApiController
     private $logger;
 
     /**
+     * @var RefundService
+     */
+    private $refundService;
+
+    /**
      * StoreApiController constructor.
      *
      * @param PaymentMethodsService $paymentMethodsService
@@ -110,6 +116,7 @@ class StoreApiController
      * @param OrderService $orderService
      * @param StateMachineRegistry $stateMachineRegistry
      * @param LoggerInterface $logger
+     * @param RefundService $refundService
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -121,7 +128,8 @@ class StoreApiController
         OrderRepository $orderRepository,
         OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        RefundService $refundService
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -133,6 +141,7 @@ class StoreApiController
         $this->orderService = $orderService;
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
+        $this->refundService = $refundService;
     }
 
     /**
@@ -321,5 +330,38 @@ class StoreApiController
                 ], $context);
             }
         );
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/refund",
+     *     name="store-api.action.adyen.refund",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
+     * @return JsonResponse
+     */
+    public function postRefund(Request $request, SalesChannelContext $salesChannelContext): JsonResponse
+    {
+        $orderId = $request->request->get('orderId');
+        if (empty($orderId)) {
+            return new JsonResponse('Order ID not provided', 400);
+        }
+        /** @var OrderEntity $order */
+        $order = $this->orderRepository->getOrder($orderId, $salesChannelContext->getContext(), ['transactions']);
+
+        if (is_null($order)) {
+            return new JsonResponse(sprintf('Unable to find order %s', $orderId), 400);
+        }
+
+        try {
+            $this->refundService->refund($order, $salesChannelContext);
+        } catch (\Exception $e) {
+            return new JsonResponse('An error has occured', 500);
+        }
+
+        return new JsonResponse('Refund successful');
     }
 }
