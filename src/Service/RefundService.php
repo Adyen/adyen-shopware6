@@ -86,11 +86,11 @@ class RefundService
      * @return bool
      * @throws AdyenException
      */
-    public function refund(OrderEntity $order, SalesChannelContext $context): bool
+    public function refund(OrderEntity $order, SalesChannelContext $context): array
     {
         $orderTransaction = $order->getTransactions()->first();
         if (is_null($orderTransaction) ||
-            !array_key_exists(PaymentResponseHandler::PSP_REFERENCE, $orderTransaction->getCustomFields())
+            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
         ) {
             $message = sprintf('Order with id %s has no linked transactions OR has no linked psp reference', $order->getId());
             $this->logger->error($message);
@@ -107,20 +107,20 @@ class RefundService
             throw new AdyenException($message);
         }
 
-        $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::PSP_REFERENCE];
+        $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE];
 
         $params = [
             'originalReference' => $pspReference,
             'modificationAmount' => array(
                 'value' => $order->getAmountTotal(),
-                'currency' => $order->getCurrency()
+                'currency' => $order->getCurrency()->getIsoCode()
             ),
             'merchantAccount' => $merchantAccount
         ];
 
         try {
             $modificationService = new Modification(
-                $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
+                $this->clientService->getClient($order->getSalesChannelId())
             );
             return $modificationService->refund($params);
         } catch (AdyenException $e) {

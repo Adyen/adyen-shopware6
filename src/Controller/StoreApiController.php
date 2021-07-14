@@ -345,23 +345,27 @@ class StoreApiController
      */
     public function postRefund(Request $request, SalesChannelContext $salesChannelContext): JsonResponse
     {
-        $orderId = $request->request->get('orderId');
-        if (empty($orderId)) {
-            return new JsonResponse('Order ID not provided', 400);
+        $orderNumber = $request->request->get('orderNumber');
+        if (empty($orderNumber)) {
+            return new JsonResponse('Order Number not provided', 400);
         }
         /** @var OrderEntity $order */
-        $order = $this->orderRepository->getOrder($orderId, $salesChannelContext->getContext(), ['transactions']);
+        $order = $this->orderRepository->getOrderByOrderNumber(
+            $orderNumber,
+            $salesChannelContext->getContext(),
+            ['transactions', 'currency']
+        );
 
         if (is_null($order)) {
-            return new JsonResponse(sprintf('Unable to find order %s', $orderId), 400);
+            return new JsonResponse(sprintf('Unable to find order %s', $orderNumber), 400);
         }
 
         try {
-            $this->refundService->refund($order, $salesChannelContext);
+            $result = $this->refundService->refund($order, $salesChannelContext);
         } catch (\Exception $e) {
             return new JsonResponse('An error has occured', 500);
         }
 
-        return new JsonResponse('Refund successful');
+        return new JsonResponse($result);
     }
 }
