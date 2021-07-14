@@ -1,0 +1,9 @@
+{% block sw_order_detail_base_custom_fields %}
+    {% parent %}
+    <sw-card :hero="false" :isLoading="false" :large="false">
+        <sw-button :disabled="false" variant="primary" :square="false" :block="false" :isLoading="false">
+            Refund
+        </sw-button>
+        <template v-slot:title>Refunds</template>
+    </sw-card>
+{% endblock %}
