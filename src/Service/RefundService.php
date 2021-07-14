@@ -83,7 +83,7 @@ class RefundService
      *
      * @param OrderEntity $order
      * @param SalesChannelContext $context
-     * @return bool
+     * @return array
      * @throws AdyenException
      */
     public function refund(OrderEntity $order, SalesChannelContext $context): array
@@ -111,10 +111,10 @@ class RefundService
 
         $params = [
             'originalReference' => $pspReference,
-            'modificationAmount' => array(
+            'modificationAmount' => [
                 'value' => $order->getAmountTotal(),
                 'currency' => $order->getCurrency()->getIsoCode()
-            ),
+            ],
             'merchantAccount' => $merchantAccount
         ];
 
