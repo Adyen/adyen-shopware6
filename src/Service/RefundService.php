@@ -39,11 +39,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 class RefundService
 {
     /**
-     * @var Modification $modificationService
-     */
-    private $modificationService;
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -59,23 +54,28 @@ class RefundService
     private $configurationService;
 
     /**
+     * @var ClientService
+     */
+    private $clientService;
+
+    /**
      * RefundService constructor.
      *
      * @param LoggerInterface $logger
-     * @param Modification $modificationService
      * @param EntityRepositoryInterface $repository
      * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
      */
     public function __construct(
         LoggerInterface $logger,
-        Modification $modificationService,
         EntityRepositoryInterface $repository,
-        ConfigurationService $configurationService
+        ConfigurationService $configurationService,
+        ClientService $clientService
     ) {
         $this->logger = $logger;
-        $this->modificationService = $modificationService;
         $this->responseRepository = $repository;
         $this->configurationService = $configurationService;
+        $this->clientService = $clientService;
     }
 
     /**
@@ -119,7 +119,10 @@ class RefundService
         ];
 
         try {
-            return $this->modificationService->refund($params);
+            $modificationService = new Modification(
+                $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
+            );
+            return $modificationService->refund($params);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
             throw $e;
