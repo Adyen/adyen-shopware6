@@ -55,9 +55,10 @@
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\RefundService" autowire="true">
-            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <argument type="service" id="monolog.logger.adyen_generic"/>
             <argument type="service" id="adyen_payment_response.repository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
         </service>
     </services>
 </container>
