@@ -24,7 +24,9 @@
 
 namespace Adyen\Shopware\Controller;
 
+use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\PaymentDetailsService;
@@ -362,6 +364,18 @@ class StoreApiController
 
         try {
             $result = $this->refundService->refund($order, $salesChannelContext);
+            if (!array_key_exists('pspReference', $result)) {
+                $message = sprintf('Invalid response for refund on order %s', $order->getId());
+                $this->logger->error($message);
+                throw new AdyenException($message);
+            }
+
+            $this->refundService->insertAdyenRefund(
+                $order,
+                $result['pspReference'],
+                RefundEntity::SOURCE_SHOPWARE,
+                RefundEntity::STATUS_PENDING_NOTI,
+            );
         } catch (\Exception $e) {
             return new JsonResponse('An error has occured', 500);
         }
