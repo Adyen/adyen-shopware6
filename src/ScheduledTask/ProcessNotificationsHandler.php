@@ -138,7 +138,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $notification,
                 $order,
                 $this->transactionStateHandler,
-                $this->logger
+                $this->logger,
+                $this->refundService
             );
 
             try {
