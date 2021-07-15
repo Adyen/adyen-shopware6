@@ -25,15 +25,19 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Service\Modification;
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
+use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Util\Currency;
+use PetstoreIO\Order;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -166,12 +170,36 @@ class RefundService
             ->first();
     }
 
+    public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification)
+    {
+        $criteria = new Criteria();
+        // Filtering with pspReference since in the future, multiple refunds are possible
+        $criteria->addFilter(new AndFilter([
+            new EqualsFilter('orderId', $order->getId()),
+            new EqualsFilter('pspReference', $notification->getPspreference())
+        ]));
+
+        try {
+            /** @var RefundEntity $adyenRefund */
+            $adyenRefund = $this->adyenRefundRepository->search($criteria, Context::createDefaultContext())->first();
+        } catch (\Exception $exception) {
+            var_dump($exception->getMessage());exit();
+        }
+        if (is_null($adyenRefund)) {
+            $this->insertAdyenRefund(
+                $order,
+                $notification->getPspreference(),
+                RefundEntity::SOURCE_ADYEN,
+                $notification->isSuccess() ? RefundEntity::STATUS_SUCCESS : RefundEntity::STATUS_FAILED
+            );
+        }
+    }
+
     /**
      * @param OrderEntity $order
      * @param string $pspReference
      * @param string $source
      * @param string $status
-     * @param float $amount
      */
     public function insertAdyenRefund(
         OrderEntity $order,
