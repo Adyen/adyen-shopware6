@@ -41,24 +41,31 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
     public function process(): void
     {
         $context = Context::createDefaultContext();
-        $orderTransaction = $this->getOrder()->getTransactions()->first();
+        $order = $this->getOrder();
+        $notification = $this->getNotification();
+        $orderTransaction = $order->getTransactions()->first();
         $state = $orderTransaction->getStateMachineState()->getTechnicalName();
         $logContext = [
-            'orderId' => $this->getOrder()->getId(),
-            'orderNumber' => $this->getOrder()->getOrderNumber(),
+            'orderId' => $order->getId(),
+            'orderNumber' => $order->getOrderNumber(),
             'eventCode' => NotificationEventCodes::REFUND,
             'originalState' => $state
         ];
 
-        if ($this->getNotification()->isSuccess()) {
-            $refundedAmount = (int) $this->getNotification()->getAmountValue();
+        if ($notification->isSuccess()) {
+            $refundedAmount = (int) $notification->getAmountValue();
             $transactionAmount = $this->currencyUtil->sanitize(
                 $orderTransaction->getAmount()->getTotalPrice(),
-                $this->getOrder()->getCurrency()->getIsoCode()
+                $order->getCurrency()->getIsoCode()
             );
 
             if ($refundedAmount > $transactionAmount) {
-                throw new \Exception('The refunded amount is greater than the transaction amount.');
+                throw new \Exception(sprintf(
+                    'The refunded amount %s is greater than the transaction amount. %s',
+                        $refundedAmount,
+                        $transactionAmount
+                    )
+                );
             }
 
             $newState = $refundedAmount < $transactionAmount
@@ -70,6 +77,8 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
                 $this->logger->info("Transaction is already in the {$newState} state.", $logContext);
                 return;
             }
+
+            $this->refundService->handleRefundNotification($order, $notification);
 
             $this->doRefund($orderTransaction, $context, $newState);
             $logContext['newState'] = $newState;

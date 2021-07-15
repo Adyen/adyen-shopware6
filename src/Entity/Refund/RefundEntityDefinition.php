@@ -68,7 +68,6 @@ class RefundEntityDefinition extends EntityDefinition
             new StringField('psp_reference', 'pspReference'),
             (new IntField('amount', 'amount'))->addFlags(new Required()),
             (new StringField('source', 'source'))->addFlags(new Required()),
-            new StringField('success', 'success'),
             (new StringField('status', 'status'))->addFlags(new Required()),
             new ManyToOneAssociationField(
                 'order',
