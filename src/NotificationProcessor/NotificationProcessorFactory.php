@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\NotificationProcessor;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Service\RefundService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -41,7 +42,8 @@ class NotificationProcessorFactory
         NotificationEntity $notification,
         OrderEntity $order,
         OrderTransactionStateHandler $transactionStateHandler,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        RefundService $refundService
     ): NotificationProcessorInterface {
         /** @var NotificationProcessor $notificationProcessor */
         $notificationProcessor = array_key_exists($notification->getEventCode(), self::$adyenEventCodeProcessors)
@@ -52,6 +54,10 @@ class NotificationProcessorFactory
         $notificationProcessor->setNotification($notification);
         $notificationProcessor->setTransactionStateHandler($transactionStateHandler);
         $notificationProcessor->setLogger($logger);
+
+        if ($notificationProcessor instanceof RefundServiceAwareInterface) {
+            $notificationProcessor->setRefundService($refundService);
+        }
 
         return $notificationProcessor;
     }

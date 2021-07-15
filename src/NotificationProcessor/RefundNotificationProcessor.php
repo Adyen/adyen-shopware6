@@ -24,13 +24,20 @@
 
 namespace Adyen\Shopware\NotificationProcessor;
 
+use Adyen\Shopware\Service\RefundService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
-class RefundNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
+class RefundNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface, RefundServiceAwareInterface
 {
+    /**
+     * @var RefundService
+     */
+    protected RefundService $refundService;
+
     public function process(): void
     {
         $context = Context::createDefaultContext();
@@ -89,5 +96,21 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
             $this->getTransactionStateHandler()->paid($orderTransaction->getId(), $context);
             $this->doRefund($orderTransaction, $context, $newState);
         }
+    }
+
+    /**
+     * @param RefundService $refundService
+     */
+    public function setRefundService(RefundService $refundService): void
+    {
+        $this->refundService = $refundService;
+    }
+
+    /**
+     * @return RefundService
+     */
+    public function getRefundService(): RefundService
+    {
+        return $this->refundService;
     }
 }

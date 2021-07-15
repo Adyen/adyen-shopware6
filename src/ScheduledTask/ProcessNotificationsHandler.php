@@ -28,6 +28,7 @@ use Adyen\Shopware\AdyenPaymentShopware6;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\NotificationProcessor\NotificationProcessorFactory;
 use Adyen\Shopware\Service\NotificationService;
+use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -68,6 +69,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private $adyenPaymentMethodIds = null;
 
+    /**
+     * @var RefundService
+     */
+    private $refundService;
+
     private const MAX_ERROR_COUNT = 3;
 
     public function __construct(
@@ -76,7 +82,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderRepository $orderRepository,
         OrderTransactionStateHandler $transactionStateHandler,
         EntityRepositoryInterface $paymentMethodRepository,
-        PluginIdProvider $pluginIdProvider
+        PluginIdProvider $pluginIdProvider,
+        RefundService $refundService
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
@@ -84,6 +91,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->transactionStateHandler = $transactionStateHandler;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->pluginIdProvider = $pluginIdProvider;
+        $this->refundService = $refundService;
     }
 
     public static function getHandledMessages(): iterable
