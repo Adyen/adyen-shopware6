@@ -27,6 +27,7 @@ use Adyen\AdyenException;
 use Adyen\Service\Modification;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -59,6 +60,16 @@ class RefundService
     private $clientService;
 
     /**
+     * @var EntityRepositoryInterface
+     */
+    private $adyenRefundRepository;
+
+    /**
+     * @var Currency
+     */
+    private $currency;
+
+    /**
      * RefundService constructor.
      *
      * @param LoggerInterface $logger
@@ -70,12 +81,16 @@ class RefundService
         LoggerInterface $logger,
         EntityRepositoryInterface $repository,
         ConfigurationService $configurationService,
-        ClientService $clientService
+        ClientService $clientService,
+        EntityRepositoryInterface $adyenRefundRepository,
+        Currency $currency
     ) {
         $this->logger = $logger;
         $this->responseRepository = $repository;
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
+        $this->adyenRefundRepository = $adyenRefundRepository;
+        $this->currency = $currency;
     }
 
     /**
@@ -108,12 +123,14 @@ class RefundService
         }
 
         $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE];
+        $currencyIso = $order->getCurrency()->getIsoCode();
+        $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
 
         $params = [
             'originalReference' => $pspReference,
             'modificationAmount' => [
-                'value' => $order->getAmountTotal(),
-                'currency' => $order->getCurrency()->getIsoCode()
+                'value' => $amount,
+                'currency' => $currencyIso
             ],
             'merchantAccount' => $merchantAccount
         ];
@@ -122,6 +139,7 @@ class RefundService
             $modificationService = new Modification(
                 $this->clientService->getClient($order->getSalesChannelId())
             );
+
             return $modificationService->refund($params);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
@@ -146,5 +164,33 @@ class RefundService
                 Context::createDefaultContext()
             )
             ->first();
+    }
+
+    /**
+     * @param OrderEntity $order
+     * @param string $pspReference
+     * @param string $source
+     * @param string $status
+     * @param float $amount
+     */
+    public function insertAdyenRefund(
+        OrderEntity $order,
+        string $pspReference,
+        string $source,
+        string $status
+    ) : void {
+
+        $currencyIso = $order->getCurrency()->getIsoCode();
+        $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
+
+        $this->adyenRefundRepository->create([
+            [
+                'orderId' => $order->getId(),
+                'pspReference' => $pspReference,
+                'source' => $source,
+                'status' => $status,
+                'amount' => $amount
+            ]
+        ], Context::createDefaultContext());
     }
 }
