@@ -5,11 +5,11 @@ namespace Adyen\Shopware\Migration;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Migration\MigrationStep;
 
-class Migration1626331356AdyenRefund extends MigrationStep
+class Migration1626331357AdyenRefund extends MigrationStep
 {
     public function getCreationTimestamp(): int
     {
-        return 1626331356;
+        return 1626331357;
     }
 
     public function update(Connection $connection): void
@@ -22,7 +22,8 @@ class Migration1626331356AdyenRefund extends MigrationStep
                 `source` VARCHAR(255) NOT NULL,
                 `status` VARCHAR(255) NOT NULL,
                 `created_at` DATETIME(3) NOT NULL,
-                `amount` INT NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                `amount` INT(11) NOT NULL,
                 PRIMARY KEY (`id`),
                 CONSTRAINT `fk.adyen_refund.order_id`
                     FOREIGN KEY (order_id) references `order` (id)

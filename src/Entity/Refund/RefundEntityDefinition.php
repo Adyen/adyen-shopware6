@@ -66,10 +66,10 @@ class RefundEntityDefinition extends EntityDefinition
                 OrderDefinition::class
             ))->addFlags(new Required()),
             new StringField('psp_reference', 'pspReference'),
-            (new IntField('amount', 'amount'))->addFlags(new Required())
+            (new IntField('amount', 'amount'))->addFlags(new Required()),
             (new StringField('source', 'source'))->addFlags(new Required()),
-            new BoolField('success', 'success'),
-            new CreatedAtField(),
+            new StringField('success', 'success'),
+            (new StringField('status', 'status'))->addFlags(new Required()),
             new ManyToOneAssociationField(
                 'order',
                 'order_id',

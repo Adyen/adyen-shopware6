@@ -34,7 +34,7 @@ class RefundEntity extends Entity
 
     const STATUS_SUCCESS = 'Success';
     const STATUS_FAILED = 'Failed';
-    const STATUS_PENDING = 'Pending';
+    const STATUS_PENDING_NOTI = 'Pending Notification';
 
     use EntityIdTrait;
 
