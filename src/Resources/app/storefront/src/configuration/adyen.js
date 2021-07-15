@@ -26,6 +26,7 @@ export default {
         'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay',
         'ratepay_directdebit', 'giftcard'
     ],
+    prefillablePaymentMethods: ['facilypay_3x', 'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default'],
     componentsWithPayButton: {
         'applepay': {
             extra: {},
