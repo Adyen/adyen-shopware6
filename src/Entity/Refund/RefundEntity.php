@@ -74,6 +74,18 @@ class RefundEntity extends Entity
     protected int $amount;
 
     /**
+     * @return string[]
+     */
+    public static function getStatuses() : array
+    {
+        return [
+            self::STATUS_SUCCESS,
+            self::STATUS_FAILED,
+            self::STATUS_PENDING_NOTI
+        ];
+    }
+
+    /**
      * @return string
      */
     public function getOrderId(): string

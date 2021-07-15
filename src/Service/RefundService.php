@@ -170,21 +170,27 @@ class RefundService
             ->first();
     }
 
+    /**
+     * Handle refund notification, by either creating a new adyen_refund entry OR
+     * updating the status of an existing adyen_refund which was initiated on shopware
+     *
+     * @param OrderEntity $order
+     * @param NotificationEntity $notification
+     * @throws AdyenException
+     */
     public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification)
     {
         $criteria = new Criteria();
         // Filtering with pspReference since in the future, multiple refunds are possible
+        /** @var RefundEntity $adyenRefund */
         $criteria->addFilter(new AndFilter([
             new EqualsFilter('orderId', $order->getId()),
             new EqualsFilter('pspReference', $notification->getPspreference())
         ]));
 
-        try {
-            /** @var RefundEntity $adyenRefund */
-            $adyenRefund = $this->adyenRefundRepository->search($criteria, Context::createDefaultContext())->first();
-        } catch (\Exception $exception) {
-            var_dump($exception->getMessage());exit();
-        }
+        /** @var RefundEntity $adyenRefund */
+        $adyenRefund = $this->adyenRefundRepository->search($criteria, Context::createDefaultContext())->first();
+
         if (is_null($adyenRefund)) {
             $this->insertAdyenRefund(
                 $order,
@@ -192,6 +198,9 @@ class RefundService
                 RefundEntity::SOURCE_ADYEN,
                 $notification->isSuccess() ? RefundEntity::STATUS_SUCCESS : RefundEntity::STATUS_FAILED
             );
+        } else {
+            $newStatus = $notification->isSuccess() ? RefundEntity::STATUS_SUCCESS : RefundEntity::STATUS_FAILED;
+            $this->updateAdyenRefundStatus($adyenRefund, $newStatus);
         }
     }
 
@@ -218,6 +227,29 @@ class RefundService
                 'source' => $source,
                 'status' => $status,
                 'amount' => $amount
+            ]
+        ], Context::createDefaultContext());
+    }
+
+    /**
+     * Update the status of an already existing adyen_refund entry
+     *
+     * @param RefundEntity $refund
+     * @param $status
+     * @throws AdyenException
+     */
+    public function updateAdyenRefundStatus(RefundEntity $refund, $status)
+    {
+        if (!in_array($status, RefundEntity::getStatuses())) {
+            $message = sprintf('Adyen refund to be updated to invalid status %s', $status);
+            $this->logger->error($message);
+            throw new AdyenException($message);
+        }
+
+        $this->adyenRefundRepository->update([
+            [
+                'id' => $refund->getId(),
+                'status' => $status
             ]
         ], Context::createDefaultContext());
     }
