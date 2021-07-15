@@ -147,9 +147,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $this->markAsDone($notification->getId());
                 continue;
             }
+
             $currentTransactionState = $this->webhookModuleStateMapping[
                 $orderTransaction->getStateMachineState()->getTechnicalName()
             ] ?? '';
+
             try {
                 $notificationItem = Notification::createItem([
                     'eventCode' => $notification->getEventCode(),
