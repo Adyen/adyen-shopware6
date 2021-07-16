@@ -425,6 +425,11 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     mountPaymentComponent(paymentMethod, selector, isOneClick = false) {
         const configuration = Object.assign({}, paymentMethod, {
+            data: {
+                personalDetails: shopperDetails,
+                billingAddress: activeBillingAddress,
+                deliveryAddress: activeShippingAddress
+            },
             onSubmit: function(state, component) {
                 this.paymentComponent.find('.loader').show();
                 this.paymentComponent.find('[data-adyen-payment-container]').hide();
@@ -447,12 +452,6 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
         if (paymentMethod.type === 'giftcard') {
             configuration.type = configuration.brand;
-        }
-        if (adyenConfiguration.prefillablePaymentMethods.includes(paymentMethod.type)) {
-            configuration.data = {};
-            configuration.data.personalDetails = shopperDetails;
-            configuration.data.billingAddress = activeBillingAddress;
-            configuration.data.deliveryAddress = activeShippingAddress;
         }
         try {
             const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
