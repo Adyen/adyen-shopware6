@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\NotificationProcessor;
 
-
 use Adyen\Shopware\Service\RefundService;
 
 interface RefundServiceAwareInterface

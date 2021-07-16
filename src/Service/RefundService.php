@@ -22,7 +22,6 @@
  */
 namespace Adyen\Shopware\Service;
 
-
 use Adyen\AdyenException;
 use Adyen\Service\Modification;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
@@ -30,7 +29,6 @@ use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Util\Currency;
-use PetstoreIO\Order;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -111,7 +109,10 @@ class RefundService
         if (is_null($orderTransaction) ||
             !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
         ) {
-            $message = sprintf('Order with id %s has no linked transactions OR has no linked psp reference', $order->getId());
+            $message = sprintf(
+                'Order with id %s has no linked transactions OR has no linked psp reference',
+                $order->getId()
+            );
             $this->logger->error($message);
             throw new AdyenException($message);
         }
