@@ -253,7 +253,6 @@ class PaymentSubscriber implements EventSubscriberInterface
     {
         $salesChannelContext = $event->getSalesChannelContext();
         $paymentMethod = $salesChannelContext->getPaymentMethod();
-        $shippingAddress = $salesChannelContext->getShippingLocation()->getAddress();
         $page = $event->getPage();
         $orderId = '';
         if (method_exists($page, 'getOrder')) {
@@ -335,12 +334,6 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                     'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
                     'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
-                    'name' => $shippingAddress->getFirstName() . ' ' . $shippingAddress->getLastName(),
-                    'addressLine' => $shippingAddress->getStreet(),
-                    'city' => $shippingAddress->getCity(),
-                    'postCode' => $shippingAddress->getZipcode(),
-                    'countryCode' => $shippingAddress->getCountry()->getIso(),
-                    'phoneNumber' => $shippingAddress->getPhoneNumber(),
                 ]
             )
         );

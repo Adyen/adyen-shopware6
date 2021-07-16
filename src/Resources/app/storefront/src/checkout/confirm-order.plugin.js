@@ -473,14 +473,14 @@ export default class ConfirmOrderPlugin extends Plugin {
      * @param extra
      */
     setAddressDetails(extra) {
-        if (adyenCheckoutOptions.phoneNumber !== '') {
+        if (activeShippingAddress.phoneNumber !== '') {
             extra.addressDetails = {
-                name: adyenCheckoutOptions.name,
-                addressLine1: adyenCheckoutOptions.addressLine,
-                city: adyenCheckoutOptions.city,
-                postalCode: adyenCheckoutOptions.postCode,
-                countryCode: adyenCheckoutOptions.countryCode,
-                phoneNumber: adyenCheckoutOptions.phoneNumber
+                name: shopperDetails.firstName + ' ' + shopperDetails.lastName,
+                addressLine1: activeShippingAddress.street,
+                city: activeShippingAddress.city,
+                postalCode: activeShippingAddress.postalCode,
+                countryCode: activeShippingAddress.country,
+                phoneNumber: activeShippingAddress.phoneNumber
             };
         } else {
             extra.productType = 'PayOnly';
