@@ -31,7 +31,9 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
-class RefundNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface, RefundServiceAwareInterface
+class RefundNotificationProcessor extends NotificationProcessor implements
+    NotificationProcessorInterface,
+    RefundServiceAwareInterface
 {
     /**
      * @var RefundService
@@ -62,10 +64,9 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
             if ($refundedAmount > $transactionAmount) {
                 throw new \Exception(sprintf(
                     'The refunded amount %s is greater than the transaction amount. %s',
-                        $refundedAmount,
-                        $transactionAmount
-                    )
-                );
+                    $refundedAmount,
+                    $transactionAmount
+                ));
             }
 
             $newState = $refundedAmount < $transactionAmount
