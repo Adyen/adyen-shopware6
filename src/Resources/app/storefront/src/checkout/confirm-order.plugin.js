@@ -128,7 +128,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
         if (paymentMethodConfigs.length === 0) {
             if (this.adyenCheckout.options.environment === 'test') {
-                console.error('Payment method configuration not found. ', state);
+                console.error('Payment method configuration not found. ', type);
             }
             return;
         }
@@ -425,6 +425,11 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     mountPaymentComponent(paymentMethod, selector, isOneClick = false) {
         const configuration = Object.assign({}, paymentMethod, {
+            data: {
+                personalDetails: shopperDetails,
+                billingAddress: activeBillingAddress,
+                deliveryAddress: activeShippingAddress
+            },
             onSubmit: function(state, component) {
                 this.paymentComponent.find('.loader').show();
                 this.paymentComponent.find('[data-adyen-payment-container]').hide();
