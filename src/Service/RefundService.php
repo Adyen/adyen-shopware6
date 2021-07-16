@@ -177,9 +177,10 @@ class RefundService
      *
      * @param OrderEntity $order
      * @param NotificationEntity $notification
+     * @param string $status
      * @throws AdyenException
      */
-    public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification)
+    public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification, string $newStatus)
     {
         $criteria = new Criteria();
         // Filtering with pspReference since in the future, multiple refunds are possible
@@ -197,10 +198,9 @@ class RefundService
                 $order,
                 $notification->getPspreference(),
                 RefundEntity::SOURCE_ADYEN,
-                $notification->isSuccess() ? RefundEntity::STATUS_SUCCESS : RefundEntity::STATUS_FAILED
+                $newStatus
             );
         } else {
-            $newStatus = $notification->isSuccess() ? RefundEntity::STATUS_SUCCESS : RefundEntity::STATUS_FAILED;
             $this->updateAdyenRefundStatus($adyenRefund, $newStatus);
         }
     }
