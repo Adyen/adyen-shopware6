@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\NotificationProcessor;
 
+use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Service\RefundService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -79,15 +80,24 @@ class RefundNotificationProcessor extends NotificationProcessor implements
                 return;
             }
 
-            $this->refundService->handleRefundNotification($order, $notification);
+            $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_SUCCESS);
 
             $this->doRefund($orderTransaction, $context, $newState);
             $logContext['newState'] = $newState;
+        } else {
+            $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
         }
 
         $this->logger->info('Processed ' . NotificationEventCodes::REFUND . ' notification.', $logContext);
     }
 
+    /**
+     * Call shopware functionality to change status to refunded
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @param string $newState
+     */
     private function doRefund(OrderTransactionEntity $orderTransaction, Context $context, string $newState)
     {
         try {
