@@ -20,7 +20,7 @@
  *
  */
 
-import './service/adyenConfigCheckService';
+import './service/adyenService';
 import './component/adyen-config-check-button';
 import './component/adyen-refund';
 import './sw-order-detail-base-override/index.js';
