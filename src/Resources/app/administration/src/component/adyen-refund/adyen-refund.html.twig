@@ -1,0 +1,21 @@
+{% block adyen_refund %}
+    <sw-card :hero="false" :isLoading="false" :large="false">
+        <sw-button
+            :disabled="false"
+            variant="primary"
+            :square="false"
+            :block="false"
+            @click="openModal">
+            Refund
+        </sw-button>
+        <template v-slot:title>Refunds</template>
+
+        <sw-modal v-if="showModal"
+                  @modal-close="onCloseModal"
+                    {# TODO: USE tc #}
+                  title="Confirm Refund"
+                  variant="small">
+            Are you sure you want to refund Order <b>{{ order.orderNumber }}</b>?
+        </sw-modal>
+    </sw-card>
+{% endblock %}

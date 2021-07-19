@@ -1,16 +1,4 @@
 {% block sw_order_detail_base_custom_fields %}
     {% parent %}
-    <sw-card :hero="false" :isLoading="false" :large="false">
-        <sw-button-process
-            :disabled="false"
-            variant="primary"
-            :square="false"
-            :block="false"
-            :isLoading="isLoading"
-            :processSuccess="isSaveSuccessful"
-            @click="check">
-            Refund
-        </sw-button-process>
-        <template v-slot:title>Refunds</template>
-    </sw-card>
+    <adyen-refund :order="order"></adyen-refund>
 {% endblock %}

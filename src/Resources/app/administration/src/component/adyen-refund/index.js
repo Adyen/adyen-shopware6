@@ -20,11 +20,33 @@
  *
  */
 
-import './service/adyenConfigCheckService';
-import './component/adyen-config-check-button';
-import './component/adyen-refund';
-import './sw-order-detail-base-override/index.js';
+const { Component } = Shopware;
+import template from './adyen-refund.html.twig';
 
-import localeEnGb from './snippet/en_GB.json';
+Component.register('adyen-refund', {
+    template,
 
-Shopware.Locale.extend('en-GB', localeEnGb);
+    props: {
+        order: {
+            type: Object,
+            required: true
+        },
+    },
+
+    data() {
+        return {
+            showModal: false
+        };
+    },
+
+    methods: {
+        openModal() {
+            console.log(this.order);
+            this.showModal = true;
+        },
+
+        onCloseModal() {
+            this.showModal = false;
+        }
+    }
+})
