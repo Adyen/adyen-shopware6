@@ -41,7 +41,7 @@ class ApiClient extends ApiService {
     }
 }
 
-Application.addServiceProvider('adyenConfigCheck', (container) => {
+Application.addServiceProvider('adyenService', (container) => {
     const initContainer = Application.getContainer('init');
     return new ApiClient(initContainer.httpClient, container.loginService);
 });
