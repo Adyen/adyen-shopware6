@@ -34,6 +34,7 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\RefundService;
+use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
@@ -106,6 +107,11 @@ class StoreApiController
     private $refundService;
 
     /**
+     * @var AdyenRefundRepository
+     */
+    private $adyenRefundRepository;
+
+    /**
      * StoreApiController constructor.
      *
      * @param PaymentMethodsService $paymentMethodsService
@@ -119,6 +125,7 @@ class StoreApiController
      * @param StateMachineRegistry $stateMachineRegistry
      * @param LoggerInterface $logger
      * @param RefundService $refundService
+     * @param AdyenRefundRepository $adyenRefundRepository
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -131,7 +138,8 @@ class StoreApiController
         OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
         LoggerInterface $logger,
-        RefundService $refundService
+        RefundService $refundService,
+        AdyenRefundRepository $adyenRefundRepository
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -144,6 +152,7 @@ class StoreApiController
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
         $this->refundService = $refundService;
+        $this->adyenRefundRepository = $adyenRefundRepository;
     }
 
     /**
@@ -336,7 +345,7 @@ class StoreApiController
 
     /**
      * @Route(
-     *     "/store-api/adyen/refund",
+     *     "/store-api/adyen/refunds",
      *     name="store-api.action.adyen.refund",
      *     methods={"POST"}
      * )
@@ -381,5 +390,24 @@ class StoreApiController
         }
 
         return new JsonResponse($result);
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/orders/{orderNumber}/refunds",
+     *     name="store-api.action.adyen.refund",
+     *     methods={"GET"}
+     * )
+     *
+     * @param SalesChannelContext $salesChannelContext
+     * @param int $orderNumber
+     * @return JsonResponse
+     */
+    public function getRefunds(int $orderNumber, SalesChannelContext $salesChannelContext): JsonResponse
+    {
+        $context = $salesChannelContext->getContext();
+        $refunds = $this->adyenRefundRepository->getRefundsByOrderNumber($orderNumber, $context);
+
+        return new JsonResponse($refunds->getElements());
     }
 }
