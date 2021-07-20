@@ -269,7 +269,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private function doRefund(OrderTransactionEntity $orderTransaction, string $transitionState, Context $context)
     {
         try {
-            if ($transitionState === OrderTransactionStates::STATE_PARTIALLY_REFUNDED) {
+            if (OrderTransactionStates::STATE_PARTIALLY_REFUNDED === $transitionState) {
                 $this->transactionStateHandler->refundPartially($orderTransaction->getId(), $context);
             } else {
                 $this->transactionStateHandler->refund($orderTransaction->getId(), $context);
