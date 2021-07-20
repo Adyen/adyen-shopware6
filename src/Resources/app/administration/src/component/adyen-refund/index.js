@@ -48,7 +48,8 @@ Component.register('adyen-refund', {
             ],
             showModal: false,
             refunds: [],
-            isLoadingTable: true
+            isLoadingTable: true,
+            errorOccurred: false
         };
     },
 
@@ -64,6 +65,10 @@ Component.register('adyen-refund', {
         fetchRefunds() {
             this.adyenService.getRefunds(this.order.orderNumber).then((res) => {
                 this.refunds = res;
+            }).catch(() => {
+                this.errorOccurred = true;
+                this.refunds = [];
+            }).finally(() => {
                 this.isLoadingTable = false;
             });
         }

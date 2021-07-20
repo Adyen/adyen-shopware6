@@ -1,30 +1,36 @@
 {% block adyen_refund %}
     <sw-card :hero="false" :isLoading="isLoadingTable" :large="false" title="Refunds">
-        <div id="modalButtonContainer">
-            <sw-button
-                :disabled="false"
-                :square="false"
-                :block="false"
-                @click="openModal"
-                class="sw-button--small">
-                Create new
-            </sw-button>
+        <div v-if="!errorOccurred">
+            <div id="modalButtonContainer">
+                <sw-button
+                    :disabled="false"
+                    :square="false"
+                    :block="false"
+                    @click="openModal"
+                    class="sw-button--small">
+                    Create new
+                </sw-button>
+            </div>
+
+            <sw-modal v-if="showModal"
+                      @modal-close="onCloseModal"
+                        {# TODO: USE tc #}
+                      title="Create Refund"
+                      variant="small">
+                Are you sure you want to refund Order <b>{{ order.orderNumber }}</b>?
+            </sw-modal>
+
+            <sw-data-grid
+                :dataSource="refunds"
+                :columns="columns"
+                :showSelection="false"
+                :showActions="false"
+                :isLoading="isLoadingTable">
+            </sw-data-grid>
         </div>
-
-        <sw-modal v-if="showModal"
-                  @modal-close="onCloseModal"
-                    {# TODO: USE tc #}
-                  title="Create Refund"
-                  variant="small">
-            Are you sure you want to refund Order <b>{{ order.orderNumber }}</b>?
-        </sw-modal>
-
-        <sw-data-grid
-            :dataSource="refunds"
-            :columns="columns"
-            :showSelection="false"
-            :showActions="false"
-            :isLoading="isLoadingTable">
-        </sw-data-grid>
+        <div v-else>
+            {# TODO: USE tc #}
+            An error has occurred while attempting to get linked refunds.
+        </div>
     </sw-card>
 {% endblock %}

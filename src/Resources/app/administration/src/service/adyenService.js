@@ -41,16 +41,18 @@ class ApiClient extends ApiService {
     }
 
     getRefunds(orderNumber) {
-        console.log('Order number is:', orderNumber);
         const headers = this.getBasicHeaders({});
 
         return this.httpClient
             //TODO: Change route to admin
-            .get(`_action/${this.getApiBasePath()}/orders/` + orderNumber + `/refunds`, {
+            .get(this.getApiBasePath() + '/orders/' + orderNumber + '/refunds', {
                 headers
             })
             .then((response) => {
                 return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred during refunds request: ' + error.message);
+                throw error;
             });
     }
 }
