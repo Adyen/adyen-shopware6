@@ -1,21 +1,30 @@
 {% block adyen_refund %}
-    <sw-card :hero="false" :isLoading="false" :large="false">
-        <sw-button
-            :disabled="false"
-            variant="primary"
-            :square="false"
-            :block="false"
-            @click="openModal">
-            Refund
-        </sw-button>
-        <template v-slot:title>Refunds</template>
+    <sw-card :hero="false" :isLoading="isLoadingTable" :large="false" title="Refunds">
+        <div id="modalButtonContainer">
+            <sw-button
+                :disabled="false"
+                :square="false"
+                :block="false"
+                @click="openModal"
+                class="sw-button--small">
+                Create new
+            </sw-button>
+        </div>
 
         <sw-modal v-if="showModal"
                   @modal-close="onCloseModal"
                     {# TODO: USE tc #}
-                  title="Confirm Refund"
+                  title="Create Refund"
                   variant="small">
             Are you sure you want to refund Order <b>{{ order.orderNumber }}</b>?
         </sw-modal>
+
+        <sw-data-grid
+            :dataSource="refunds"
+            :columns="columns"
+            :showSelection="false"
+            :showActions="false"
+            :isLoading="isLoadingTable">
+        </sw-data-grid>
     </sw-card>
 {% endblock %}

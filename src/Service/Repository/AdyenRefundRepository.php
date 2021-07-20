@@ -62,6 +62,7 @@ class AdyenRefundRepository
     {
         $criteria = new Criteria();
         $criteria->addAssociation('order');
+        $criteria->addAssociation('order.currency');
         $criteria->addFilter(new EqualsFilter('order.orderNumber', $orderNumber));
 
         return $this->repository->search($criteria, Context::createDefaultContext());
