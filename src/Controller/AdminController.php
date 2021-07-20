@@ -31,11 +31,13 @@ use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\Currency\CurrencyFormatter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -49,9 +51,7 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class AdminController
 {
-    /**
-     * @var LoggerInterface
-     */
+    /** @var LoggerInterface */
     private $logger;
 
     /** @var OrderRepository */
@@ -62,6 +62,9 @@ class AdminController
 
     /** @var AdyenRefundRepository */
     private $adyenRefundRepository;
+
+    /** @var CurrencyFormatter */
+    private $currencyFormatter;
 
     /**
      * AdminController constructor.
@@ -75,12 +78,14 @@ class AdminController
         \Psr\Log\LoggerInterface $logger,
         OrderRepository $orderRepository,
         RefundService $refundService,
-        AdyenRefundRepository $adyenRefundRepository
+        AdyenRefundRepository $adyenRefundRepository,
+        CurrencyFormatter $currencyFormatter
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
         $this->refundService = $refundService;
         $this->adyenRefundRepository = $adyenRefundRepository;
+        $this->currencyFormatter = $currencyFormatter;
     }
 
     /**
@@ -118,7 +123,7 @@ class AdminController
 
     /**
      * @Route(
-     *     "/api/_action/adyen/refunds",
+     *     "/api/adyen/refunds",
      *     name="store-api.action.adyen.refund",
      *     methods={"POST"}
      * )
@@ -168,7 +173,7 @@ class AdminController
 
     /**
      * @Route(
-     *     "/api/_action/adyen/orders/{orderNumber}/refunds",
+     *     "/api/adyen/orders/{orderNumber}/refunds",
      *     name="api.action.adyen.refund",
      *     methods={"GET"}
      * )
@@ -180,6 +185,39 @@ class AdminController
     {
         $refunds = $this->adyenRefundRepository->getRefundsByOrderNumber($orderNumber);
 
-        return new JsonResponse($refunds->getElements());
+        return new JsonResponse($this->buildRefundResponseData($refunds->getElements()));
+    }
+
+    /**
+     * Build a response containing the data related to the refunds
+     *
+     * @param array $refunds
+     * @return array
+     */
+    private function buildRefundResponseData(array $refunds)
+    {
+        $context = Context::createDefaultContext();
+        $result = [];
+        /** @var RefundEntity $refund */
+        foreach ($refunds as $refund) {
+            $updatedAt = $refund->getUpdatedAt();
+            $order = $refund->getOrder();
+            $amount = $this->currencyFormatter->formatCurrencyByLanguage(
+                $refund->getAmount() / 100,
+                $order->getCurrency()->getIsoCode(),
+                $order->getLanguageId(),
+                $context
+            );
+            $result[] = [
+                'pspReference' => $refund->getPspReference(),
+                'amount' => $amount,
+                'source' => $refund->getSource(),
+                'status' => $refund->getStatus(),
+                'createdAt' => $refund->getCreatedAt()->format('Y-m-d H:i'),
+                'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format('Y-m-d H:i')
+            ];
+        }
+
+        return $result;
     }
 }
