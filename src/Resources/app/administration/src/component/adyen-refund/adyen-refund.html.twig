@@ -13,11 +13,20 @@
             </div>
 
             <sw-modal v-if="showModal"
-                      @modal-close="onCloseModal"
-                        {# TODO: USE tc #}
-                      title="Create Refund"
-                      variant="small">
+                    @modal-close="onCloseModal"
+                    {# TODO: USE tc #}
+                    title="Create Refund"
+                    variant="small">
                 Are you sure you want to refund Order <b>{{ order.orderNumber }}</b>?
+                <template #modal-footer>
+                    <sw-button @click="onCloseModal" size="small">
+                        {{ $tc('global.default.cancel') }}
+                    </sw-button>
+
+                    <sw-button @click="onRefund" variant="primary" size="small" :isLoading="isLoadingRefund">
+                        {{ $tc('global.default.confirm') }}
+                    </sw-button>
+                </template>
             </sw-modal>
 
             <sw-data-grid
