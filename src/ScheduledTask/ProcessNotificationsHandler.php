@@ -75,6 +75,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private $adyenPaymentMethodIds = null;
 
     private const MAX_ERROR_COUNT = 3;
+    /** @var array Mapping to convert Shopware transaction states to payment states in the webhook module. */
     private $webhookModuleStateMapping = [
         OrderTransactionStates::STATE_PAID => PaymentStates::STATE_PAID,
         OrderTransactionStates::STATE_FAILED => PaymentStates::STATE_FAILED,
