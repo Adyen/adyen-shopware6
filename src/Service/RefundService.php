@@ -99,11 +99,10 @@ class RefundService
      * Process a refund on the Adyen platform
      *
      * @param OrderEntity $order
-     * @param SalesChannelContext $context
      * @return array
      * @throws AdyenException
      */
-    public function refund(OrderEntity $order, SalesChannelContext $context): array
+    public function refund(OrderEntity $order): array
     {
         $orderTransaction = $order->getTransactions()->first();
         if (is_null($orderTransaction) ||
@@ -117,9 +116,9 @@ class RefundService
             throw new AdyenException($message);
         }
 
-        $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
+        // No param since sales channel is not available since we're in admin
+        $merchantAccount = $this->configurationService->getMerchantAccount();
 
-        // TODO: Abstract this check functionality
         if (!$merchantAccount) {
             $message = 'No Merchant Account set. ' .
                 'Go to the Adyen plugin configuration panel and finish the required setup.';

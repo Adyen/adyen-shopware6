@@ -39,6 +39,20 @@ class ApiClient extends ApiService {
                 return ApiService.handleResponse(response);
             });
     }
+
+    getRefunds(orderNumber) {
+        console.log('Order number is:', orderNumber);
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            //TODO: Change route to admin
+            .get(`_action/${this.getApiBasePath()}/orders/` + orderNumber + `/refunds`, {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            });
+    }
 }
 
 Application.addServiceProvider('adyenService', (container) => {
