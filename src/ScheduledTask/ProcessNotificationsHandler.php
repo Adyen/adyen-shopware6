@@ -170,7 +170,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     $logContext['errorMessage'] = $exception->getMessage();
                     // set notification error and increment error count
                     $errorCount = (int) $notification->getErrorCount();
-                    $this->notificationService->saveError($notification->getId(), $exception->getMessage(), ++$errorCount);
+                    $this->notificationService
+                        ->saveError($notification->getId(), $exception->getMessage(), ++$errorCount);
                     $this->logger->error('Notification processing failed.', $logContext);
 
                     if ($errorCount < self::MAX_ERROR_COUNT) {
@@ -187,8 +188,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->logger->info('Processed ' . $notifications->count() . ' notifications.');
     }
 
-    private function transitionToState(NotificationEntity $notification, OrderEntity $order, string $state, Context $context)
-    {
+    private function transitionToState(
+        NotificationEntity $notification,
+        OrderEntity $order,
+        string $state,
+        Context $context
+    ) {
         $orderTransaction = $order->getTransactions()->first();
         switch ($state) {
             case PaymentStates::STATE_PAID:
