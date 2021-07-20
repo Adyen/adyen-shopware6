@@ -122,6 +122,8 @@ class AdminController
     }
 
     /**
+     * Send a refund operation to the Adyen playform
+     *
      * @Route(
      *     "/api/adyen/refunds",
      *     name="store-api.action.adyen.refund",
@@ -135,8 +137,12 @@ class AdminController
     {
         $context = Context::createDefaultContext();
         $orderNumber = $request->request->get('orderNumber');
+        // If payload does not contain orderNumber
         if (empty($orderNumber)) {
-            return new JsonResponse('Order Number not provided', 400);
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Order number was not provided in request'
+            ], 400);
         }
 
         /** @var OrderEntity $order */
@@ -152,9 +158,9 @@ class AdminController
 
         try {
             $result = $this->refundService->refund($order);
+            // If response does not contain pspReference
             if (!array_key_exists('pspReference', $result)) {
                 $message = sprintf('Invalid response for refund on order %s', $order->getId());
-                $this->logger->error($message);
                 throw new AdyenException($message);
             }
 
@@ -165,10 +171,15 @@ class AdminController
                 RefundEntity::STATUS_PENDING_NOTI,
             );
         } catch (\Exception $e) {
-            return new JsonResponse('An error has occured', 500);
+            $this->logger->error($e->getMessage());
+
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'An error has occurred. Please check the logs.'
+            ]);
         }
 
-        return new JsonResponse($result);
+        return new JsonResponse(['success' => true]);
     }
 
     /**

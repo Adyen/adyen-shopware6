@@ -20,7 +20,7 @@
  *
  */
 
-const { Component } = Shopware;
+const { Component, Mixin } = Shopware;
 import template from './adyen-refund.html.twig';
 import './adyen-refund.scss';
 
@@ -28,6 +28,10 @@ Component.register('adyen-refund', {
     template,
 
     inject: ['adyenService'],
+
+    mixins: [
+        Mixin.getByName('notification')
+    ],
 
     props: {
         order: {
@@ -49,7 +53,8 @@ Component.register('adyen-refund', {
             showModal: false,
             refunds: [],
             isLoadingTable: true,
-            errorOccurred: false
+            errorOccurred: false,
+            isLoadingRefund: false,
         };
     },
 
@@ -62,7 +67,37 @@ Component.register('adyen-refund', {
             this.showModal = false;
         },
 
+        onRefund() {
+            this.isLoadingRefund = true;
+            this.adyenService.postRefund(this.order.orderNumber).then((res) => {
+                if (res.success) {
+                    this.fetchRefunds();
+                    // TODO: USE tc
+                    this.createNotificationSuccess({
+                        title: 'Refund submitted',
+                        message: 'A refund has been successfully submitted'
+                    });
+                } else {
+                    // TODO: USE tc
+                    this.createNotificationError({
+                        title: 'An error has occurred',
+                        message: this.$tc(res.message ? res.message : 'An unexpected error occurred during refund submission.')
+                    });
+                }
+            }).catch((error) => {
+                this.createNotificationError({
+                    // TODO: USE tc
+                    title: 'An error has occurred',
+                    message: 'An unexpected error occurred during refund submission.'
+                });
+            }).finally(() => {
+                this.isLoadingRefund = false;
+                this.showModal = false;
+            });
+        },
+
         fetchRefunds() {
+            this.isLoadingTable = true;
             this.adyenService.getRefunds(this.order.orderNumber).then((res) => {
                 this.refunds = res;
             }).catch(() => {

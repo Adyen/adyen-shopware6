@@ -44,7 +44,6 @@ class ApiClient extends ApiService {
         const headers = this.getBasicHeaders({});
 
         return this.httpClient
-            //TODO: Change route to admin
             .get(this.getApiBasePath() + '/orders/' + orderNumber + '/refunds', {
                 headers
             })
@@ -52,6 +51,21 @@ class ApiClient extends ApiService {
                 return ApiService.handleResponse(response);
             }).catch((error) => {
                 console.error('An error occurred during refunds request: ' + error.message);
+                throw error;
+            });
+    }
+
+    postRefund(orderNumber) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .post(this.getApiBasePath() + '/refunds', {orderNumber: orderNumber}, {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred during post refund request: ' + error.message);
                 throw error;
             });
     }
