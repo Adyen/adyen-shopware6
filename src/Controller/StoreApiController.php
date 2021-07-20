@@ -102,16 +102,6 @@ class StoreApiController
     private $logger;
 
     /**
-     * @var RefundService
-     */
-    private $refundService;
-
-    /**
-     * @var AdyenRefundRepository
-     */
-    private $adyenRefundRepository;
-
-    /**
      * StoreApiController constructor.
      *
      * @param PaymentMethodsService $paymentMethodsService
@@ -124,8 +114,6 @@ class StoreApiController
      * @param OrderService $orderService
      * @param StateMachineRegistry $stateMachineRegistry
      * @param LoggerInterface $logger
-     * @param RefundService $refundService
-     * @param AdyenRefundRepository $adyenRefundRepository
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -137,9 +125,7 @@ class StoreApiController
         OrderRepository $orderRepository,
         OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
-        LoggerInterface $logger,
-        RefundService $refundService,
-        AdyenRefundRepository $adyenRefundRepository
+        LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -152,7 +138,6 @@ class StoreApiController
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
         $this->refundService = $refundService;
-        $this->adyenRefundRepository = $adyenRefundRepository;
     }
 
     /**
@@ -341,73 +326,5 @@ class StoreApiController
                 ], $context);
             }
         );
-    }
-
-    /**
-     * @Route(
-     *     "/store-api/adyen/refunds",
-     *     name="store-api.action.adyen.refund",
-     *     methods={"POST"}
-     * )
-     *
-     * @param Request $request
-     * @param SalesChannelContext $salesChannelContext
-     * @return JsonResponse
-     */
-    public function postRefund(Request $request, SalesChannelContext $salesChannelContext): JsonResponse
-    {
-        $orderNumber = $request->request->get('orderNumber');
-        if (empty($orderNumber)) {
-            return new JsonResponse('Order Number not provided', 400);
-        }
-        /** @var OrderEntity $order */
-        $order = $this->orderRepository->getOrderByOrderNumber(
-            $orderNumber,
-            $salesChannelContext->getContext(),
-            ['transactions', 'currency']
-        );
-
-        if (is_null($order)) {
-            return new JsonResponse(sprintf('Unable to find order %s', $orderNumber), 400);
-        }
-
-        try {
-            $result = $this->refundService->refund($order, $salesChannelContext);
-            if (!array_key_exists('pspReference', $result)) {
-                $message = sprintf('Invalid response for refund on order %s', $order->getId());
-                $this->logger->error($message);
-                throw new AdyenException($message);
-            }
-
-            $this->refundService->insertAdyenRefund(
-                $order,
-                $result['pspReference'],
-                RefundEntity::SOURCE_SHOPWARE,
-                RefundEntity::STATUS_PENDING_NOTI,
-            );
-        } catch (\Exception $e) {
-            return new JsonResponse('An error has occured', 500);
-        }
-
-        return new JsonResponse($result);
-    }
-
-    /**
-     * @Route(
-     *     "/store-api/adyen/orders/{orderNumber}/refunds",
-     *     name="store-api.action.adyen.refund",
-     *     methods={"GET"}
-     * )
-     *
-     * @param SalesChannelContext $salesChannelContext
-     * @param int $orderNumber
-     * @return JsonResponse
-     */
-    public function getRefunds(int $orderNumber, SalesChannelContext $salesChannelContext): JsonResponse
-    {
-        $context = $salesChannelContext->getContext();
-        $refunds = $this->adyenRefundRepository->getRefundsByOrderNumber($orderNumber, $context);
-
-        return new JsonResponse($refunds->getElements());
     }
 }

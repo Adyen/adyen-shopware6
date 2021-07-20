@@ -26,6 +26,8 @@ import template from './adyen-refund.html.twig';
 Component.register('adyen-refund', {
     template,
 
+    inject: ['adyenService'],
+
     props: {
         order: {
             type: Object,
@@ -35,18 +37,25 @@ Component.register('adyen-refund', {
 
     data() {
         return {
-            showModal: false
+            showModal: false,
+            refunds: []
         };
     },
 
     methods: {
         openModal() {
-            console.log(this.order);
             this.showModal = true;
+            console.log(this.refunds);
+            this.fetchRefunds();
         },
 
         onCloseModal() {
+            console.log(this.refunds);
             this.showModal = false;
+        },
+
+        fetchRefunds() {
+            this.refunds = this.adyenService.getRefunds(this.order.orderNumber);
         }
     }
 })

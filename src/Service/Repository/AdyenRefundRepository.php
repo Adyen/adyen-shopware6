@@ -56,16 +56,15 @@ class AdyenRefundRepository
      * Get all refunds linked to an order, based on the order number
      *
      * @param int $orderNumber
-     * @param Context $context
      * @return EntitySearchResult
      */
-    public function getRefundsByOrderNumber(int $orderNumber, Context $context): EntitySearchResult
+    public function getRefundsByOrderNumber(int $orderNumber): EntitySearchResult
     {
         $criteria = new Criteria();
         $criteria->addAssociation('order');
         $criteria->addFilter(new EqualsFilter('order.orderNumber', $orderNumber));
 
-        return $this->repository->search($criteria, $context);
+        return $this->repository->search($criteria, Context::createDefaultContext());
     }
 
 }
