@@ -25,20 +25,16 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Service\Modification;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
-use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class RefundService
 {
@@ -46,11 +42,6 @@ class RefundService
      * @var LoggerInterface
      */
     private $logger;
-
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $responseRepository;
 
     /**
      * @var ConfigurationService
@@ -76,20 +67,19 @@ class RefundService
      * RefundService constructor.
      *
      * @param LoggerInterface $logger
-     * @param EntityRepositoryInterface $repository
      * @param ConfigurationService $configurationService
      * @param ClientService $clientService
+     * @param AdyenRefundRepository $adyenRefundRepository
+     * @param Currency $currency
      */
     public function __construct(
         LoggerInterface $logger,
-        EntityRepositoryInterface $repository,
         ConfigurationService $configurationService,
         ClientService $clientService,
         AdyenRefundRepository $adyenRefundRepository,
         Currency $currency
     ) {
         $this->logger = $logger;
-        $this->responseRepository = $repository;
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
         $this->adyenRefundRepository = $adyenRefundRepository;
