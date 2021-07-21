@@ -250,7 +250,9 @@ class RefundService
         $refunds = $this->adyenRefundRepository->getRefundsByOrderNumber($order->getOrderNumber());
         /** @var RefundEntity $refund */
         foreach ($refunds->getElements() as $refund) {
-            $refundedAmount += $refund->getAmount();
+            if ($refund->getStatus() !== RefundEntity::STATUS_FAILED) {
+                $refundedAmount += $refund->getAmount();
+            }
         }
 
         // Pass null to sanitize since 2 decimal places will always be used

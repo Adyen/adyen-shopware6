@@ -3,7 +3,7 @@
         <div v-if="!errorOccurred">
             <div id="modalButtonContainer">
                 <sw-button
-                    :disabled="false"
+                    :disabled="!allowRefund"
                     :square="false"
                     :block="false"
                     @click="openModal"
