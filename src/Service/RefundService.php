@@ -28,6 +28,7 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -62,7 +63,7 @@ class RefundService
     private $clientService;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var AdyenRefundRepository
      */
     private $adyenRefundRepository;
 
@@ -84,7 +85,7 @@ class RefundService
         EntityRepositoryInterface $repository,
         ConfigurationService $configurationService,
         ClientService $clientService,
-        EntityRepositoryInterface $adyenRefundRepository,
+        AdyenRefundRepository $adyenRefundRepository,
         Currency $currency
     ) {
         $this->logger = $logger;
@@ -152,31 +153,12 @@ class RefundService
     }
 
     /**
-     * This function is a copy of the one in PaymentResponseService
-     * TODO: Abstract this into some repository
-     *
-     * @param OrderTransactionEntity $orderTransaction
-     * @return PaymentResponseEntity|null
-     */
-    public function getWithOrderTransaction(OrderTransactionEntity $orderTransaction): ?PaymentResponseEntity
-    {
-        return $this->responseRepository
-            ->search(
-                (new Criteria())
-                    ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
-                    ->addAssociation('orderTransaction.order'),
-                Context::createDefaultContext()
-            )
-            ->first();
-    }
-
-    /**
      * Handle refund notification, by either creating a new adyen_refund entry OR
      * updating the status of an existing adyen_refund which was initiated on shopware
      *
      * @param OrderEntity $order
      * @param NotificationEntity $notification
-     * @param string $status
+     * @param string $newStatus
      * @throws AdyenException
      */
     public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification, string $newStatus)
@@ -190,7 +172,8 @@ class RefundService
         ]));
 
         /** @var RefundEntity $adyenRefund */
-        $adyenRefund = $this->adyenRefundRepository->search($criteria, Context::createDefaultContext())->first();
+        $adyenRefund = $this->adyenRefundRepository->getRepository()
+            ->search($criteria, Context::createDefaultContext())->first();
 
         if (is_null($adyenRefund)) {
             $this->insertAdyenRefund(
@@ -220,7 +203,7 @@ class RefundService
         $currencyIso = $order->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
 
-        $this->adyenRefundRepository->create([
+        $this->adyenRefundRepository->getRepository()->create([
             [
                 'orderId' => $order->getId(),
                 'pspReference' => $pspReference,
@@ -246,11 +229,35 @@ class RefundService
             throw new AdyenException($message);
         }
 
-        $this->adyenRefundRepository->update([
+        $this->adyenRefundRepository->getRepository()->update([
             [
                 'id' => $refund->getId(),
                 'status' => $status
             ]
         ], Context::createDefaultContext());
+    }
+
+    /**
+     * Check if amount is refundable
+     *
+     * @param OrderEntity $order
+     * @param int $amount
+     * @return bool
+     */
+    public function isAmountRefundable(OrderEntity $order, int $amount): bool
+    {
+        $refundedAmount = 0;
+        $refunds = $this->adyenRefundRepository->getRefundsByOrderNumber($order->getOrderNumber());
+        /** @var RefundEntity $refund */
+        foreach ($refunds->getElements() as $refund) {
+            $refundedAmount += $refund->getAmount();
+        }
+
+        // Pass null to sanitize since 2 decimal places will always be used
+        if ($refundedAmount + $amount > $this->currency->sanitize($order->getAmountTotal(), null)) {
+            return false;
+        }
+
+        return true;
     }
 }
