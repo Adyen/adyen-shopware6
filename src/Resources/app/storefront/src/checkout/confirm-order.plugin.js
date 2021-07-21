@@ -128,7 +128,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
         if (paymentMethodConfigs.length === 0) {
             if (this.adyenCheckout.options.environment === 'test') {
-                console.error('Payment method configuration not found. ', state);
+                console.error('Payment method configuration not found. ', type);
             }
             return;
         }
@@ -361,6 +361,9 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     renderPrePaymentButton(componentConfig, selectedPaymentMethodObject) {
+        if (selectedPaymentMethodObject.type === 'amazonpay') {
+            componentConfig.extra = this.setAddressDetails(componentConfig.extra);
+        }
         const PRE_PAY_BUTTON = Object.assign(componentConfig.extra, selectedPaymentMethodObject, {
             configuration: selectedPaymentMethodObject.configuration,
             amount: {
@@ -425,6 +428,11 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     mountPaymentComponent(paymentMethod, selector, isOneClick = false) {
         const configuration = Object.assign({}, paymentMethod, {
+            data: {
+                personalDetails: shopperDetails,
+                billingAddress: activeBillingAddress,
+                deliveryAddress: activeShippingAddress
+            },
             onSubmit: function(state, component) {
                 this.paymentComponent.find('.loader').show();
                 this.paymentComponent.find('[data-adyen-payment-container]').hide();
@@ -456,5 +464,28 @@ export default class ConfirmOrderPlugin extends Plugin {
             console.error(paymentMethod.type, err);
             return false;
         }
+    }
+
+    /**
+     * Set the address details based on the passed data in confirm-payment twig file
+     * If no phone number is linked to customer, do not set addressDetails and update Product Type
+     *
+     * @param extra
+     */
+    setAddressDetails(extra) {
+        if (activeShippingAddress.phoneNumber !== '') {
+            extra.addressDetails = {
+                name: shopperDetails.firstName + ' ' + shopperDetails.lastName,
+                addressLine1: activeShippingAddress.street,
+                city: activeShippingAddress.city,
+                postalCode: activeShippingAddress.postalCode,
+                countryCode: activeShippingAddress.country,
+                phoneNumber: activeShippingAddress.phoneNumber
+            };
+        } else {
+            extra.productType = 'PayOnly';
+        }
+
+        return extra;
     }
 }

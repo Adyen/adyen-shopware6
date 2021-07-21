@@ -24,8 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Environment;
-use Adyen\Service\NotificationReceiver;
+use Adyen\Webhook\Receiver\NotificationReceiver;
 use Adyen\Shopware\Exception\AuthenticationException;
 use Adyen\Shopware\Exception\HMACKeyValidationException;
 use Adyen\Shopware\Exception\ValidationException;

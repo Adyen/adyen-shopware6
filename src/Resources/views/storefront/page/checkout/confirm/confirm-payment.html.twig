@@ -2,6 +2,34 @@
 
 {% block page_checkout_confirm_payment_inner %}
     {{ parent() }}
+    {% set billingAddress = context.customer.activeBillingAddress %}
+    {% set shippingAddress = context.customer.activeShippingAddress %}
+    {% if billingAddress and shippingAddress %}
+        <div id="shopper-details"
+             data-first-name="{{ billingAddress.firstName }}"
+             data-last-name="{{ billingAddress.lastName }}"
+             data-shopper-email="{{ context.customer.email }}"
+        ></div>
+        <div id="active-billing-address"
+            data-street="{{ billingAddress.street }}"
+            data-city="{{ billingAddress.city }}"
+            data-postal-code="{{ billingAddress.zipcode }}"
+            data-country="{{ billingAddress.country.iso }}"
+            data-phone-number="{{ billingAddress.phoneNumber }}"
+        ></div>
+        <div id="active-shipping-address"
+            data-street="{{ shippingAddress.street }}"
+            data-city="{{ shippingAddress.city }}"
+            data-postal-code="{{ shippingAddress.zipcode }}"
+            data-country="{{ shippingAddress.country.iso }}"
+            data-phone-number="{{ shippingAddress.phoneNumber }}"
+        ></div>
+        <script>
+            var shopperDetails = document.querySelector('#shopper-details').dataset;
+            var activeBillingAddress = document.querySelector('#active-billing-address').dataset;
+            var activeShippingAddress = document.querySelector('#active-shipping-address').dataset;
+        </script>
+    {% endif %}
     {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
     {% if adyenFrontendData and adyenFrontendData.paymentStatusUrl %}
         <div id="adyen-checkout-options"
