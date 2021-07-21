@@ -24,8 +24,6 @@
 
 namespace Adyen\Shopware\Service\Repository;
 
-
-use Doctrine\DBAL\Query\QueryBuilder;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -75,5 +73,4 @@ class AdyenRefundRepository
     {
         return $this->repository;
     }
-
 }
