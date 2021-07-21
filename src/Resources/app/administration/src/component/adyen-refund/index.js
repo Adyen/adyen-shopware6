@@ -73,23 +73,20 @@ Component.register('adyen-refund', {
             this.adyenService.postRefund(this.order.orderNumber).then((res) => {
                 if (res.success) {
                     this.fetchRefunds();
-                    // TODO: USE tc
                     this.createNotificationSuccess({
-                        title: 'Refund submitted',
-                        message: 'A refund has been successfully submitted'
+                        title: this.$tc('adyen.refundTitle'),
+                        message: this.$tc('adyen.refundSuccessful')
                     });
                 } else {
-                    // TODO: USE tc
                     this.createNotificationError({
-                        title: 'An error has occurred',
-                        message: this.$tc(res.message ? res.message : 'An unexpected error occurred during refund submission.')
+                        title: this.$tc('adyen.refundTitle'),
+                        message: this.$tc(res.message ? res.message : 'adyen.refundError')
                     });
                 }
-            }).catch((error) => {
+            }).catch(() => {
                 this.createNotificationError({
-                    // TODO: USE tc
-                    title: 'An error has occurred',
-                    message: 'An unexpected error occurred during refund submission.'
+                    title: this.$tc('adyen.refundTitle'),
+                    message: this.$tc('adyen.refundError')
                 });
             }).finally(() => {
                 this.isLoadingRefund = false;

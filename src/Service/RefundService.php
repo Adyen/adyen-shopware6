@@ -106,7 +106,7 @@ class RefundService
     public function refund(OrderEntity $order): array
     {
         $orderTransaction = $order->getTransactions()->first();
-        if (is_null($orderTransaction) ||
+        if (is_null($orderTransaction) || is_null($orderTransaction->getCustomFields()) ||
             !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
         ) {
             $message = sprintf(

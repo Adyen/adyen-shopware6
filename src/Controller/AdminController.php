@@ -144,10 +144,9 @@ class AdminController
         $orderNumber = $request->request->get('orderNumber');
         // If payload does not contain orderNumber
         if (empty($orderNumber)) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Order number was not provided in request'
-            ], 400);
+            $message = 'Order number was not provided in request';
+            $this->logger->error($message);
+            return new JsonResponse($message, 400);
         }
 
         /** @var OrderEntity $order */
@@ -158,17 +157,15 @@ class AdminController
         );
 
         if (is_null($order)) {
-            return new JsonResponse(sprintf('Unable to find order %s', $orderNumber), 400);
+            $message = sprintf('Unable to find order %s', $orderNumber);
+            $this->logger->error($message);
+            return new JsonResponse($message, 400);
         } else {
             $amountInCents = $this->currencyUtil->sanitize($order->getAmountTotal(), null);
             if (!$this->refundService->isAmountRefundable($order, $amountInCents)) {
                 return new JsonResponse([
                     'success' => false,
-                    'message' => sprintf(
-                        'Refund amount %s is not refundable on order %s',
-                        $order->getAmountTotal(),
-                        $order->getOrderNumber()
-                    )
+                    'message' => 'adyen.invalidRefundAmount',
                 ]);
             }
         }
@@ -177,7 +174,7 @@ class AdminController
             $result = $this->refundService->refund($order);
             // If response does not contain pspReference
             if (!array_key_exists('pspReference', $result)) {
-                $message = sprintf('Invalid response for refund on order %s', $order->getId());
+                $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
                 throw new AdyenException($message);
             }
 
@@ -192,7 +189,7 @@ class AdminController
 
             return new JsonResponse([
                 'success' => false,
-                'message' => 'An error has occurred. Please check the logs.'
+                'message' => 'adyen.refundError',
             ]);
         }
 
