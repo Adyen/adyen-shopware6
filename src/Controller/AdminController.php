@@ -236,7 +236,6 @@ class AdminController
                 'pspReference' => $refund->getPspReference(),
                 'amount' => $amount,
                 'rawAmount' => $refund->getAmount(),
-                'source' => $refund->getSource(),
                 'status' => $refund->getStatus(),
                 'createdAt' => $refund->getCreatedAt()->format('Y-m-d H:i'),
                 'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format('Y-m-d H:i')
