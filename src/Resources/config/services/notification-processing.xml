@@ -26,11 +26,10 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Adyen\Service\NotificationReceiver" autowire="true"/>
-        <service id="Adyen\Shopware\Service\NotificationReceiverService" autowire="true">
+        <service id="Adyen\Shopware\Service\NotificationReceiverService">
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\NotificationService"/>
-            <argument type="service" id="Adyen\Service\NotificationReceiver"/>
+            <argument type="service" id="Adyen\Webhook\Receiver\NotificationReceiver"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
             <tag name="controller.service_arguments"/>
         </service>
@@ -51,7 +50,7 @@
             <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="payment_method.repository"/>
-            <argument type="service" id="Shopware\Core\Framework\Plugin\Util\PluginIdProvider"/>
+            <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
