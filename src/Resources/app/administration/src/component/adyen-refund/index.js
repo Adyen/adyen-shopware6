@@ -43,7 +43,7 @@ Component.register('adyen-refund', {
     data() {
         return {
             columns: [
-                { property: 'pspReference', label: 'PSP Reference' },
+                { property: 'pspReference', label: 'Adyen Reference' },
                 { property: 'amount', label: 'Amount' },
                 { property: 'source', label: 'Source' },
                 { property: 'status', label: 'Status' },

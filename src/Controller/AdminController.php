@@ -66,6 +66,9 @@ class AdminController
     /** @var CurrencyFormatter */
     private $currencyFormatter;
 
+    /** @var Currency */
+    private $currencyUtil;
+
     /**
      * AdminController constructor.
      *
@@ -79,13 +82,15 @@ class AdminController
         OrderRepository $orderRepository,
         RefundService $refundService,
         AdyenRefundRepository $adyenRefundRepository,
-        CurrencyFormatter $currencyFormatter
+        CurrencyFormatter $currencyFormatter,
+        Currency $currencyUtil
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
         $this->refundService = $refundService;
         $this->adyenRefundRepository = $adyenRefundRepository;
         $this->currencyFormatter = $currencyFormatter;
+        $this->currencyUtil = $currencyUtil;
     }
 
     /**
@@ -154,6 +159,18 @@ class AdminController
 
         if (is_null($order)) {
             return new JsonResponse(sprintf('Unable to find order %s', $orderNumber), 400);
+        } else {
+            $amountInCents = $this->currencyUtil->sanitize($order->getAmountTotal(), null);
+            if (!$this->refundService->isAmountRefundable($order, $amountInCents)) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => sprintf(
+                        'Refund amount %s is not refundable on order %s',
+                        $order->getAmountTotal(),
+                        $order->getOrderNumber()
+                    )
+                ]);
+            }
         }
 
         try {
