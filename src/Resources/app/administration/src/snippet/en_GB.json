@@ -2,6 +2,13 @@
     "adyen": {
         "configTestTitle": "Configuration test",
         "configTestSuccess": "Configuration is successfully tested",
-        "configTestFail": "There's an issue in your configuration"
+        "configTestFail": "There's an issue in your configuration",
+        "refundTitle": "Refund",
+        "refundSuccessful": "A refund has been successfully submitted.",
+        "invalidRefundAmount": "Refund amount exceeds order total",
+        "refundError": "An error has occurred. Please check the logs.",
+        "refundFetchError": "An error has occurred while attempting to get linked refunds.",
+        "refundConfirm": "Are you sure you want to refund Order",
+        "createRefund": "Create Refund"
     }
 }

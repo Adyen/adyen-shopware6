@@ -8,16 +8,14 @@
                     :block="false"
                     @click="openModal"
                     class="sw-button--small">
-                    Create new
+                    {{ $tc('sw-order.documentCard.labelCreateNew') }}
                 </sw-button>
             </div>
-
             <sw-modal v-if="showModal"
                     @modal-close="onCloseModal"
-                    {# TODO: USE tc #}
-                    title="Create Refund"
+                    :title="$tc('adyen.createRefund')"
                     variant="small">
-                Are you sure you want to refund Order <b>{{ order.orderNumber }}</b>?
+                {{ $tc('adyen.refundConfirm') }} <b>{{ order.orderNumber }}</b>?
                 <template #modal-footer>
                     <sw-button @click="onCloseModal" size="small">
                         {{ $tc('global.default.cancel') }}
@@ -28,7 +26,6 @@
                     </sw-button>
                 </template>
             </sw-modal>
-
             <sw-data-grid
                 :dataSource="refunds"
                 :columns="columns"
@@ -38,8 +35,7 @@
             </sw-data-grid>
         </div>
         <div v-else>
-            {# TODO: USE tc #}
-            An error has occurred while attempting to get linked refunds.
+            {{ $tc('adyen.refundFetchError') }}
         </div>
     </sw-card>
 {% endblock %}
