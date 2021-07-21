@@ -52,6 +52,7 @@ Component.register('adyen-refund', {
             ],
             showModal: false,
             refunds: [],
+            allowRefund: true,
             isLoadingTable: true,
             errorOccurred: false,
             isLoadingRefund: false,
@@ -100,12 +101,24 @@ Component.register('adyen-refund', {
             this.isLoadingTable = true;
             this.adyenService.getRefunds(this.order.orderNumber).then((res) => {
                 this.refunds = res;
+                this.isRefundAllowed();
             }).catch(() => {
                 this.errorOccurred = true;
                 this.refunds = [];
             }).finally(() => {
                 this.isLoadingTable = false;
             });
+        },
+
+        isRefundAllowed() {
+            let refundedAmount = 0;
+            for (const refund of this.refunds) {
+                if (refund.status !== 'Failed') {
+                    refundedAmount += refund.rawAmount;
+                }
+            }
+
+            this.allowRefund = this.order.amountTotal > (refundedAmount / 100);
         }
     },
 

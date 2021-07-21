@@ -239,6 +239,7 @@ class AdminController
             $result[] = [
                 'pspReference' => $refund->getPspReference(),
                 'amount' => $amount,
+                'rawAmount' => $refund->getAmount(),
                 'source' => $refund->getSource(),
                 'status' => $refund->getStatus(),
                 'createdAt' => $refund->getCreatedAt()->format('Y-m-d H:i'),
