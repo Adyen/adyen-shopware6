@@ -22,15 +22,13 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-
-
 namespace Adyen\Shopware\Service\Repository;
 
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\RefundService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
-use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -60,9 +58,21 @@ class OrderTransactionRepository
 
     /**
      * @param string $orderId
+     * @param bool $includeRefundState
      * @return OrderTransactionEntity|null
      */
-    public function getFirstAdyenRefundableOrderTransactionByOrderId(string $orderId): ?OrderTransactionEntity {
+    public function getFirstAdyenRefundableOrderTransactionByOrderId(
+        string $orderId,
+        bool $includeRefundState = false
+    ): ?OrderTransactionEntity {
+
+        // Because of scenarios where the refund has already been processed but then a REFUND_FAILED noti is received
+        // we may occasionally need to search for this status as well.
+        $states = RefundService::REFUNDABLE_STATES;
+        if ($includeRefundState) {
+            $states[] = OrderTransactionStates::STATE_REFUNDED;
+        }
+
         $criteria = new Criteria();
         $criteria->addAssociation('stateMachineState');
         $criteria->addAssociation('order');
@@ -70,7 +80,7 @@ class OrderTransactionRepository
         $criteria->addAssociation('paymentMethod.plugin');
         $criteria->addFilter(new EqualsFilter('order.id', $orderId));
         $criteria->addFilter(
-            new EqualsAnyFilter('stateMachineState.technicalName', RefundService::REFUNDABLE_STATES)
+            new EqualsAnyFilter('stateMachineState.technicalName', $states)
         );
         $criteria->addFilter(
             new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME)
