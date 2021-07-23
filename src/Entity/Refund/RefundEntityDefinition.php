@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Entity\Refund;
 
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
@@ -61,18 +62,18 @@ class RefundEntityDefinition extends EntityDefinition
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
             (new FkField(
-                'order_id',
-                'orderId',
-                OrderDefinition::class
+                'order_transaction_id',
+                'orderTransactionId',
+                OrderTransactionDefinition::class
             ))->addFlags(new Required()),
             new StringField('psp_reference', 'pspReference'),
             (new IntField('amount', 'amount'))->addFlags(new Required()),
             (new StringField('source', 'source'))->addFlags(new Required()),
             (new StringField('status', 'status'))->addFlags(new Required()),
             new ManyToOneAssociationField(
-                'order',
-                'order_id',
-                OrderDefinition::class,
+                'orderTransaction',
+                'order_transaction_id',
+                OrderTransactionDefinition::class,
                 'id',
                 true
             )

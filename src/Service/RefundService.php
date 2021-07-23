@@ -28,8 +28,11 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -38,6 +41,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
 class RefundService
 {
+    const REFUNDABLE_STATES = [
+        OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
+        OrderTransactionStates::STATE_PAID,
+        OrderTransactionStates::STATE_PARTIALLY_PAID,
+        OrderTransactionStates::STATE_CANCELLED
+    ];
+
     /**
      * @var LoggerInterface
      */
@@ -63,6 +73,9 @@ class RefundService
      */
     private $currency;
 
+    /** @var OrderTransactionRepository */
+    private $transactionRepository;
+
     /**
      * RefundService constructor.
      *
@@ -71,19 +84,22 @@ class RefundService
      * @param ClientService $clientService
      * @param AdyenRefundRepository $adyenRefundRepository
      * @param Currency $currency
+     * @param OrderTransactionRepository $orderTransactionRepository
      */
     public function __construct(
         LoggerInterface $logger,
         ConfigurationService $configurationService,
         ClientService $clientService,
         AdyenRefundRepository $adyenRefundRepository,
-        Currency $currency
+        Currency $currency,
+        OrderTransactionRepository $transactionRepository
     ) {
         $this->logger = $logger;
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
         $this->adyenRefundRepository = $adyenRefundRepository;
         $this->currency = $currency;
+        $this->transactionRepository = $transactionRepository;
     }
 
     /**
@@ -95,17 +111,7 @@ class RefundService
      */
     public function refund(OrderEntity $order): array
     {
-        $orderTransaction = $order->getTransactions()->first();
-        if (is_null($orderTransaction) || is_null($orderTransaction->getCustomFields()) ||
-            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
-        ) {
-            $message = sprintf(
-                'Order with id %s has no linked transactions OR has no linked psp reference',
-                $order->getId()
-            );
-            $this->logger->error($message);
-            throw new AdyenException($message);
-        }
+        $orderTransaction = $this->getAdyenOrderTransaction($order);
 
         // No param since sales channel is not available since we're in admin
         $merchantAccount = $this->configurationService->getMerchantAccount();
@@ -153,11 +159,13 @@ class RefundService
      */
     public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification, string $newStatus)
     {
+        $orderTransaction = $this->getAdyenOrderTransaction($order);
+
         $criteria = new Criteria();
         // Filtering with pspReference since in the future, multiple refunds are possible
         /** @var RefundEntity $adyenRefund */
         $criteria->addFilter(new AndFilter([
-            new EqualsFilter('orderId', $order->getId()),
+            new EqualsFilter('orderTransactionId', $orderTransaction->getId()),
             new EqualsFilter('pspReference', $notification->getPspreference())
         ]));
 
@@ -182,6 +190,7 @@ class RefundService
      * @param string $pspReference
      * @param string $source
      * @param string $status
+     * @throws AdyenException
      */
     public function insertAdyenRefund(
         OrderEntity $order,
@@ -189,13 +198,13 @@ class RefundService
         string $source,
         string $status
     ) : void {
-
+        $orderTransaction = $this->getAdyenOrderTransaction($order);
         $currencyIso = $order->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
 
         $this->adyenRefundRepository->getRepository()->create([
             [
-                'orderId' => $order->getId(),
+                'orderTransactionId' => $orderTransaction->getId(),
                 'pspReference' => $pspReference,
                 'source' => $source,
                 'status' => $status,
@@ -237,7 +246,7 @@ class RefundService
     public function isAmountRefundable(OrderEntity $order, int $amount): bool
     {
         $refundedAmount = 0;
-        $refunds = $this->adyenRefundRepository->getRefundsByOrderNumber($order->getOrderNumber());
+        $refunds = $this->adyenRefundRepository->getRefundsByOrderId($order->getId());
         /** @var RefundEntity $refund */
         foreach ($refunds->getElements() as $refund) {
             if ($refund->getStatus() !== RefundEntity::STATUS_FAILED) {
@@ -251,5 +260,32 @@ class RefundService
         }
 
         return true;
+    }
+
+    /**
+     * Check if the passed orderTransaction is not null, and that it has a pspReference value in the customFields
+     *
+     * @param OrderEntity $order
+     * @return OrderTransactionEntity
+     * @throws AdyenException
+     */
+    private function getAdyenOrderTransaction(OrderEntity $order): OrderTransactionEntity
+    {
+        $orderTransaction = $this->transactionRepository->getFirstAdyenRefundableOrderTransactionByOrderId(
+            $order->getId()
+        );
+
+        if (is_null($orderTransaction) || is_null($orderTransaction->getCustomFields()) ||
+            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
+        ) {
+            $message = sprintf(
+                'Order with id %s has no linked transactions OR has no linked psp reference',
+                $order->getId()
+            );
+            $this->logger->error($message);
+            throw new AdyenException($message);
+        }
+
+        return $orderTransaction;
     }
 }

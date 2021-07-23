@@ -23,7 +23,7 @@
 
 namespace Adyen\Shopware\Entity\Refund;
 
-use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
@@ -41,12 +41,12 @@ class RefundEntity extends Entity
     /**
      * @var string
      */
-    protected string $orderId;
+    protected string $orderTransactionId;
 
     /**
-     * @var OrderEntity
+     * @var OrderTransactionEntity
      */
-    protected OrderEntity $order;
+    protected OrderTransactionEntity $orderTransaction;
 
     /**
      * @var string
@@ -88,33 +88,33 @@ class RefundEntity extends Entity
     /**
      * @return string
      */
-    public function getOrderId(): string
+    public function getOrderTransactionId(): string
     {
-        return $this->orderId;
+        return $this->orderTransactionId;
     }
 
     /**
-     * @param string $orderId
+     * @param string $orderTransactionId
      */
-    public function setOrderId(string $orderId): void
+    public function setOrderTransactionId(string $orderTransactionId): void
     {
-        $this->orderId = $orderId;
+        $this->orderTransactionId = $orderTransactionId;
     }
 
     /**
-     * @return OrderEntity
+     * @return OrderTransactionEntity
      */
-    public function getOrder(): OrderEntity
+    public function getOrderTransaction(): OrderTransactionEntity
     {
-        return $this->order;
+        return $this->orderTransaction;
     }
 
     /**
-     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
      */
-    public function setOrder(OrderEntity $order): void
+    public function setOrderTransaction(OrderTransactionEntity $orderTransaction): void
     {
-        $this->order = $order;
+        $this->orderTransaction = $orderTransaction;
     }
 
     /**

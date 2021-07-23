@@ -59,9 +59,10 @@ class AdyenRefundRepository
     public function getRefundsByOrderId(string $orderId): EntitySearchResult
     {
         $criteria = new Criteria();
-        $criteria->addAssociation('order');
-        $criteria->addAssociation('order.currency');
-        $criteria->addFilter(new EqualsFilter('order.id', $orderId));
+        $criteria->addAssociation('orderTransaction');
+        $criteria->addAssociation('orderTransaction.order');
+        $criteria->addAssociation('orderTransaction.order.currency');
+        $criteria->addFilter(new EqualsFilter('orderTransaction.order.id', $orderId));
 
         return $this->repository->search($criteria, Context::createDefaultContext());
     }
