@@ -95,7 +95,7 @@ Component.register('adyen-refund', {
 
         fetchRefunds() {
             this.isLoadingTable = true;
-            this.adyenService.getRefunds(this.order.orderNumber).then((res) => {
+            this.adyenService.getRefunds(this.order.id).then((res) => {
                 this.refunds = res;
                 this.isRefundAllowed();
             }).catch(() => {

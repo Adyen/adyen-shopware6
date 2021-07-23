@@ -197,17 +197,17 @@ class AdminController
 
     /**
      * @Route(
-     *     "/api/adyen/orders/{orderNumber}/refunds",
+     *     "/api/adyen/orders/{orderId}/refunds",
      *     name="api.action.adyen.refund",
      *     methods={"GET"}
      * )
      *
-     * @param int $orderNumber
+     * @param string $orderId
      * @return JsonResponse
      */
-    public function getRefunds(int $orderNumber): JsonResponse
+    public function getRefunds(string $orderId): JsonResponse
     {
-        $refunds = $this->adyenRefundRepository->getRefundsByOrderNumber($orderNumber);
+        $refunds = $this->adyenRefundRepository->getRefundsByOrderId($orderId);
 
         return new JsonResponse($this->buildRefundResponseData($refunds->getElements()));
     }
