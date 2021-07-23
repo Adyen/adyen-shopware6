@@ -222,11 +222,19 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     throw new \Exception('The refunded amount is greater than the transaction amount.');
                 }
 
-                $transitionState = $refundedAmount < $transactionAmount
-                    ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
-                    : OrderTransactionStates::STATE_REFUNDED;
+                // If refund is successful, update adyen_refund AND order_transaction
+                // Else update only adyen_refund
+                if ($notification->isSuccess()) {
+                    $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_SUCCESS);
+                    $transitionState = $refundedAmount < $transactionAmount
+                        ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
+                        : OrderTransactionStates::STATE_REFUNDED;
 
-                $this->doRefund($orderTransaction, $transitionState, $context);
+                    $this->doRefund($orderTransaction, $transitionState, $context);
+                } else {
+                    $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
+                }
+
                 break;
             default:
                 break;

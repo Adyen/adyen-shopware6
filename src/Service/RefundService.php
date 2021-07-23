@@ -111,7 +111,7 @@ class RefundService
      */
     public function refund(OrderEntity $order): array
     {
-        $orderTransaction = $this->getAdyenOrderTransaction($order);
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order);
 
         // No param since sales channel is not available since we're in admin
         $merchantAccount = $this->configurationService->getMerchantAccount();
@@ -159,7 +159,7 @@ class RefundService
      */
     public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification, string $newStatus)
     {
-        $orderTransaction = $this->getAdyenOrderTransaction($order);
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, true);
 
         $criteria = new Criteria();
         // Filtering with pspReference since in the future, multiple refunds are possible
@@ -198,7 +198,7 @@ class RefundService
         string $source,
         string $status
     ) : void {
-        $orderTransaction = $this->getAdyenOrderTransaction($order);
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order);
         $currencyIso = $order->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
 
@@ -266,13 +266,17 @@ class RefundService
      * Check if the passed orderTransaction is not null, and that it has a pspReference value in the customFields
      *
      * @param OrderEntity $order
+     * @param bool $includeRefund
      * @return OrderTransactionEntity
      * @throws AdyenException
      */
-    private function getAdyenOrderTransaction(OrderEntity $order): OrderTransactionEntity
-    {
+    public function getAdyenOrderTransactionForRefund(
+        OrderEntity $order,
+        bool $includeRefund = false
+    ): OrderTransactionEntity {
         $orderTransaction = $this->transactionRepository->getFirstAdyenRefundableOrderTransactionByOrderId(
-            $order->getId()
+            $order->getId(),
+            $includeRefund
         );
 
         if (is_null($orderTransaction) || is_null($orderTransaction->getCustomFields()) ||
