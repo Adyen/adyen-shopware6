@@ -75,6 +75,8 @@ class AdminController
      * @param OrderRepository $orderRepository
      * @param RefundService $refundService
      * @param AdyenRefundRepository $adyenRefundRepository
+     * @param CurrencyFormatter $currencyFormatter
+     * @param Currency $currencyUtil
      */
     public function __construct(
         \Psr\Log\LoggerInterface $logger,
@@ -225,7 +227,7 @@ class AdminController
         /** @var RefundEntity $refund */
         foreach ($refunds as $refund) {
             $updatedAt = $refund->getUpdatedAt();
-            $order = $refund->getOrder();
+            $order = $refund->getOrderTransaction()->getOrder();
             $amount = $this->currencyFormatter->formatCurrencyByLanguage(
                 $refund->getAmount() / 100,
                 $order->getCurrency()->getIsoCode(),
