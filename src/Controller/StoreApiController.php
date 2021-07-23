@@ -26,15 +26,12 @@ namespace Adyen\Shopware\Controller;
 
 use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
-use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
-use Adyen\Shopware\Service\RefundService;
-use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
@@ -137,7 +134,6 @@ class StoreApiController
         $this->orderService = $orderService;
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
-        $this->refundService = $refundService;
     }
 
     /**

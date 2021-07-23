@@ -140,23 +140,23 @@ class AdminController
     public function postRefund(Request $request): JsonResponse
     {
         $context = Context::createDefaultContext();
-        $orderNumber = $request->request->get('orderNumber');
+        $orderId = $request->request->get('orderId');
         // If payload does not contain orderNumber
-        if (empty($orderNumber)) {
-            $message = 'Order number was not provided in request';
+        if (empty($orderId)) {
+            $message = 'Order Id was not provided in request';
             $this->logger->error($message);
             return new JsonResponse($message, 400);
         }
 
         /** @var OrderEntity $order */
-        $order = $this->orderRepository->getOrderByOrderNumber(
-            $orderNumber,
+        $order = $this->orderRepository->getOrder(
+            $orderId,
             $context,
             ['transactions', 'currency']
         );
 
         if (is_null($order)) {
-            $message = sprintf('Unable to find order %s', $orderNumber);
+            $message = sprintf('Unable to find order %s', $orderId);
             $this->logger->error($message);
             return new JsonResponse($message, 400);
         } else {
