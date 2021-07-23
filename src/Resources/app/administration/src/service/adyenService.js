@@ -40,11 +40,11 @@ class ApiClient extends ApiService {
             });
     }
 
-    getRefunds(orderNumber) {
+    getRefunds(orderId) {
         const headers = this.getBasicHeaders({});
 
         return this.httpClient
-            .get(this.getApiBasePath() + '/orders/' + orderNumber + '/refunds', {
+            .get(this.getApiBasePath() + '/orders/' + orderId + '/refunds', {
                 headers
             })
             .then((response) => {
