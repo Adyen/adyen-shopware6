@@ -69,7 +69,7 @@ Component.register('adyen-refund', {
 
         onRefund() {
             this.isLoadingRefund = true;
-            this.adyenService.postRefund(this.order.orderNumber).then((res) => {
+            this.adyenService.postRefund(this.order.id).then((res) => {
                 if (res.success) {
                     this.fetchRefunds();
                     this.createNotificationSuccess({
