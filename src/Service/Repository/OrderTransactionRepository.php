@@ -34,6 +34,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class OrderTransactionRepository
 {
@@ -58,21 +59,9 @@ class OrderTransactionRepository
 
     /**
      * @param string $orderId
-     * @param bool $includeRefundState
      * @return OrderTransactionEntity|null
      */
-    public function getFirstAdyenRefundableOrderTransactionByOrderId(
-        string $orderId,
-        bool $includeRefundState = false
-    ): ?OrderTransactionEntity {
-
-        // Because of scenarios where the refund has already been processed but then a REFUND_FAILED noti is received
-        // we may occasionally need to search for this status as well.
-        $states = RefundService::REFUNDABLE_STATES;
-        if ($includeRefundState) {
-            $states[] = OrderTransactionStates::STATE_REFUNDED;
-        }
-
+    public function getFirstAdyenRefundableOrderTransactionByOrderId(string $orderId): ?OrderTransactionEntity {
         $criteria = new Criteria();
         $criteria->addAssociation('stateMachineState');
         $criteria->addAssociation('order');
@@ -80,11 +69,14 @@ class OrderTransactionRepository
         $criteria->addAssociation('paymentMethod.plugin');
         $criteria->addFilter(new EqualsFilter('order.id', $orderId));
         $criteria->addFilter(
-            new EqualsAnyFilter('stateMachineState.technicalName', $states)
+            new EqualsAnyFilter('stateMachineState.technicalName', RefundService::REFUND_RELEVANT_STATES)
         );
         $criteria->addFilter(
             new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME)
         );
+
+        $criteria->setLimit(1);
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING));
 
         return $this->repository->search($criteria, Context::createDefaultContext())->first();
     }

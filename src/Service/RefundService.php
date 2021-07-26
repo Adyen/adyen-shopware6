@@ -32,20 +32,24 @@ use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
 class RefundService
 {
-    const REFUNDABLE_STATES = [
+    const REFUND_RELEVANT_STATES = [
         OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
         OrderTransactionStates::STATE_PAID,
         OrderTransactionStates::STATE_PARTIALLY_PAID,
-        OrderTransactionStates::STATE_CANCELLED
+        OrderTransactionStates::STATE_CANCELLED,
+        // This is included in very rare cases where an already processed refund, failed
+        OrderTransactionStates::STATE_REFUNDED
     ];
 
     /**
@@ -76,6 +80,9 @@ class RefundService
     /** @var OrderTransactionRepository */
     private $transactionRepository;
 
+    /** @var OrderTransactionStateHandler */
+    private $transactionStateHandler;
+
     /**
      * RefundService constructor.
      *
@@ -84,7 +91,8 @@ class RefundService
      * @param ClientService $clientService
      * @param AdyenRefundRepository $adyenRefundRepository
      * @param Currency $currency
-     * @param OrderTransactionRepository $orderTransactionRepository
+     * @param OrderTransactionRepository $transactionRepository
+     * @param OrderTransactionStateHandler $transactionStateHandler
      */
     public function __construct(
         LoggerInterface $logger,
@@ -92,7 +100,8 @@ class RefundService
         ClientService $clientService,
         AdyenRefundRepository $adyenRefundRepository,
         Currency $currency,
-        OrderTransactionRepository $transactionRepository
+        OrderTransactionRepository $transactionRepository,
+        OrderTransactionStateHandler $transactionStateHandler
     ) {
         $this->logger = $logger;
         $this->configurationService = $configurationService;
@@ -100,6 +109,7 @@ class RefundService
         $this->adyenRefundRepository = $adyenRefundRepository;
         $this->currency = $currency;
         $this->transactionRepository = $transactionRepository;
+        $this->transactionStateHandler = $transactionStateHandler;
     }
 
     /**
@@ -159,7 +169,7 @@ class RefundService
      */
     public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification, string $newStatus)
     {
-        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, true);
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order);
 
         $criteria = new Criteria();
         // Filtering with pspReference since in the future, multiple refunds are possible
@@ -266,17 +276,12 @@ class RefundService
      * Get the first adyen refundable orderTransaction and check that it has a PSP reference
      *
      * @param OrderEntity $order
-     * @param bool $includeRefund
      * @return OrderTransactionEntity
      * @throws AdyenException
      */
-    public function getAdyenOrderTransactionForRefund(
-        OrderEntity $order,
-        bool $includeRefund = false
-    ): OrderTransactionEntity {
+    public function getAdyenOrderTransactionForRefund(OrderEntity $order): OrderTransactionEntity {
         $orderTransaction = $this->transactionRepository->getFirstAdyenRefundableOrderTransactionByOrderId(
             $order->getId(),
-            $includeRefund
         );
 
         if (is_null($orderTransaction) || is_null($orderTransaction->getCustomFields()) ||
@@ -291,5 +296,30 @@ class RefundService
         }
 
         return $orderTransaction;
+    }
+
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     * @param string $transitionState
+     * @param Context $context
+     */
+    public function doRefund(OrderTransactionEntity $orderTransaction, string $transitionState, Context $context)
+    {
+        try {
+            if (OrderTransactionStates::STATE_PARTIALLY_REFUNDED === $transitionState) {
+                $this->transactionStateHandler->refundPartially($orderTransaction->getId(), $context);
+            } else {
+                $this->transactionStateHandler->refund($orderTransaction->getId(), $context);
+            }
+        } catch (IllegalTransitionException $exception) {
+            // set to paid, and then try again
+            $this->logger->info(
+                'Transaction ' . $orderTransaction->getId() . ' is '
+                . $orderTransaction->getStateMachineState()->getTechnicalName() . ' and could not be set to '
+                . $transitionState . ', setting to paid and then retrying.'
+            );
+            $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
+            $this->doRefund($orderTransaction, $transitionState, $context);
+        }
     }
 }
