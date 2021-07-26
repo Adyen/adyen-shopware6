@@ -61,7 +61,8 @@ class OrderTransactionRepository
      * @param string $orderId
      * @return OrderTransactionEntity|null
      */
-    public function getFirstAdyenRefundableOrderTransactionByOrderId(string $orderId): ?OrderTransactionEntity {
+    public function getFirstAdyenRefundableOrderTransactionByOrderId(string $orderId): ?OrderTransactionEntity
+    {
         $criteria = new Criteria();
         $criteria->addAssociation('stateMachineState');
         $criteria->addAssociation('order');

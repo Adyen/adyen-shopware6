@@ -279,7 +279,8 @@ class RefundService
      * @return OrderTransactionEntity
      * @throws AdyenException
      */
-    public function getAdyenOrderTransactionForRefund(OrderEntity $order): OrderTransactionEntity {
+    public function getAdyenOrderTransactionForRefund(OrderEntity $order): OrderTransactionEntity
+    {
         $orderTransaction = $this->transactionRepository->getFirstAdyenRefundableOrderTransactionByOrderId(
             $order->getId(),
         );
