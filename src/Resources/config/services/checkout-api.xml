@@ -60,6 +60,9 @@
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenRefundRepository"/>
             <argument type="service" id="Adyen\Util\Currency"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
+            <argument type="service"
+                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
         </service>
     </services>
 </container>

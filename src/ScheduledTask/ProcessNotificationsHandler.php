@@ -245,7 +245,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
                     : OrderTransactionStates::STATE_REFUNDED;
 
-                $this->doRefund($orderTransaction, $transitionState, $context);
+                $this->refundService->doRefund($orderTransaction, $transitionState, $context);
 
                 break;
             case 'refund_failed':
@@ -292,26 +292,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
         $this->notificationService->changeNotificationState($notificationId, 'done', true);
         $this->logger->debug("Payment notification {$notificationId} marked as done.");
-    }
-
-    private function doRefund(OrderTransactionEntity $orderTransaction, string $transitionState, Context $context)
-    {
-        try {
-            if (OrderTransactionStates::STATE_PARTIALLY_REFUNDED === $transitionState) {
-                $this->transactionStateHandler->refundPartially($orderTransaction->getId(), $context);
-            } else {
-                $this->transactionStateHandler->refund($orderTransaction->getId(), $context);
-            }
-        } catch (IllegalTransitionException $exception) {
-            // set to paid, and then try again
-            $this->logger->info(
-                'Transaction ' . $orderTransaction->getId() . ' is '
-                . $orderTransaction->getStateMachineState()->getTechnicalName() . ' and could not be set to '
-                . $transitionState . ', setting to paid and then retrying.'
-            );
-            $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
-            $this->doRefund($orderTransaction, $transitionState, $context);
-        }
     }
 
     /**
