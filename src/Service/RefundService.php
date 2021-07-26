@@ -263,7 +263,7 @@ class RefundService
     }
 
     /**
-     * Check if the passed orderTransaction is not null, and that it has a pspReference value in the customFields
+     * Get the first adyen refundable orderTransaction and check that it has a PSP reference
      *
      * @param OrderEntity $order
      * @param bool $includeRefund
