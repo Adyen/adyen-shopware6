@@ -62,13 +62,14 @@ class OrderTransactionRepository
      * @param array $states
      * @return OrderTransactionEntity|null
      */
-    public function getFirstAdyenRefundableOrderTransactionByOrderIdAndState(
+    public function getFirstAdyenOrderTransactionByStates(
         string $orderId,
         array $states
     ): ?OrderTransactionEntity {
         $criteria = new Criteria();
         $criteria->addAssociation('stateMachineState');
         $criteria->addAssociation('order');
+        $criteria->addAssociation('order.currency');
         $criteria->addAssociation('paymentMethod');
         $criteria->addAssociation('paymentMethod.plugin');
         $criteria->addFilter(new EqualsFilter('order.id', $orderId));
