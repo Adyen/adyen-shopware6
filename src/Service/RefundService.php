@@ -43,13 +43,10 @@ use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
 class RefundService
 {
-    const REFUND_RELEVANT_STATES = [
+    const REFUNDABLE_STATES = [
         OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
         OrderTransactionStates::STATE_PAID,
         OrderTransactionStates::STATE_PARTIALLY_PAID,
-        OrderTransactionStates::STATE_CANCELLED,
-        // This is included for edge cases where an already processed refund, failed (REFUND_FAILED notification)
-        OrderTransactionStates::STATE_REFUNDED
     ];
 
     /**
@@ -121,7 +118,7 @@ class RefundService
      */
     public function refund(OrderEntity $order): array
     {
-        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order);
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
 
         // No param since sales channel is not available since we're in admin
         $merchantAccount = $this->configurationService->getMerchantAccount();
@@ -169,7 +166,10 @@ class RefundService
      */
     public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification, string $newStatus)
     {
-        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order);
+        $statesToSearch = self::REFUNDABLE_STATES;
+        // This is included for edge cases where an already processed refund, failed (REFUND_FAILED notification)
+        $statesToSearch[] = OrderTransactionStates::STATE_REFUNDED;
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, $statesToSearch);
 
         $criteria = new Criteria();
         // Filtering with pspReference since in the future, multiple refunds are possible
@@ -208,7 +208,7 @@ class RefundService
         string $source,
         string $status
     ) : void {
-        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order);
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
         $currencyIso = $order->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
 
@@ -273,33 +273,6 @@ class RefundService
     }
 
     /**
-     * Get the first adyen refundable orderTransaction and check that it has a PSP reference
-     *
-     * @param OrderEntity $order
-     * @return OrderTransactionEntity
-     * @throws AdyenException
-     */
-    public function getAdyenOrderTransactionForRefund(OrderEntity $order): OrderTransactionEntity
-    {
-        $orderTransaction = $this->transactionRepository->getFirstAdyenRefundableOrderTransactionByOrderId(
-            $order->getId(),
-        );
-
-        if (is_null($orderTransaction) || is_null($orderTransaction->getCustomFields()) ||
-            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
-        ) {
-            $message = sprintf(
-                'Order with id %s has no linked transactions OR has no linked psp reference',
-                $order->getId()
-            );
-            $this->logger->error($message);
-            throw new AdyenException($message);
-        }
-
-        return $orderTransaction;
-    }
-
-    /**
      * @param OrderTransactionEntity $orderTransaction
      * @param string $transitionState
      * @param Context $context
@@ -322,5 +295,34 @@ class RefundService
             $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
             $this->doRefund($orderTransaction, $transitionState, $context);
         }
+    }
+
+    /**
+     * Get the first adyen refundable orderTransaction based on the states and check that it has a PSP reference
+     *
+     * @param OrderEntity $order
+     * @param array $states
+     * @return OrderTransactionEntity
+     * @throws AdyenException
+     */
+    private function getAdyenOrderTransactionForRefund(OrderEntity $order, array $states): OrderTransactionEntity
+    {
+        $orderTransaction = $this->transactionRepository->getFirstAdyenRefundableOrderTransactionByOrderIdAndState(
+            $order->getId(),
+            $states
+        );
+
+        if (is_null($orderTransaction) || is_null($orderTransaction->getCustomFields()) ||
+            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
+        ) {
+            $message = sprintf(
+                'Order with id %s has no linked transactions OR has no linked psp reference',
+                $order->getId()
+            );
+            $this->logger->error($message);
+            throw new AdyenException($message);
+        }
+
+        return $orderTransaction;
     }
 }
