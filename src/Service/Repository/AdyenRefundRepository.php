@@ -51,7 +51,7 @@ class AdyenRefundRepository
     }
 
     /**
-     * Get all refunds linked to an order, based on the order number
+     * Get all refunds linked to an order, based on the order id
      *
      * @param string $orderId
      * @return EntitySearchResult

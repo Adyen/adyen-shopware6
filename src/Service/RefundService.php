@@ -48,7 +48,7 @@ class RefundService
         OrderTransactionStates::STATE_PAID,
         OrderTransactionStates::STATE_PARTIALLY_PAID,
         OrderTransactionStates::STATE_CANCELLED,
-        // This is included in very rare cases where an already processed refund, failed
+        // This is included for edge cases where an already processed refund, failed (REFUND_FAILED notification)
         OrderTransactionStates::STATE_REFUNDED
     ];
 

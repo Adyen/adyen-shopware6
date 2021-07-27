@@ -226,8 +226,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     throw new \Exception('The refunded amount is greater than the transaction amount.');
                 }
 
-                // If refund is successful, update adyen_refund AND order_transaction
-                // Else update only adyen_refund
                 $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_SUCCESS);
                 $transitionState = $refundedAmount < $transactionAmount
                     ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
@@ -298,7 +296,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     ) {
         switch ($state) {
             case PaymentStates::STATE_PAID:
-                // If for a refund noti processor returns PAID, this implies that the refund was not successful since
+                // If for a refund notification processor returns PAID, it means that the refund was not successful.
+                // Hence, set the adyen_refund entity to failed
                 if ($notification->getEventCode() === EventCodes::REFUND) {
                     $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
                 }
