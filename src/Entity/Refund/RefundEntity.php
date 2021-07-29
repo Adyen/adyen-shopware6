@@ -34,7 +34,7 @@ class RefundEntity extends Entity
 
     const STATUS_SUCCESS = 'Success';
     const STATUS_FAILED = 'Failed';
-    const STATUS_PENDING_NOTI = 'Pending Notification';
+    const STATUS_PENDING_WEBHOOK = 'Pending Webhook';
 
     use EntityIdTrait;
 
@@ -81,7 +81,7 @@ class RefundEntity extends Entity
         return [
             self::STATUS_SUCCESS,
             self::STATUS_FAILED,
-            self::STATUS_PENDING_NOTI
+            self::STATUS_PENDING_WEBHOOK
         ];
     }
 
