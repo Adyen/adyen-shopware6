@@ -60,7 +60,7 @@ class ContextResolvedSubscriber implements EventSubscriberInterface
     public function addAdyenData(SalesChannelContextResolvedEvent $event): void
     {
         $context = $event->getSalesChannelContext();
-        $salesChannelId = $context->getSalesChannelId();
+        $salesChannelId = $context->getSalesChannel()->getId();
 
         $extension = new AdyenContextDataStruct();
         $context->addExtension('adyenData', $extension);
