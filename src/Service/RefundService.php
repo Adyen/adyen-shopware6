@@ -174,10 +174,8 @@ class RefundService
         $criteria = new Criteria();
         // Filtering with pspReference since in the future, multiple refunds are possible
         /** @var RefundEntity $adyenRefund */
-        $criteria->addFilter(new AndFilter([
-            new EqualsFilter('orderTransactionId', $orderTransaction->getId()),
-            new EqualsFilter('pspReference', $notification->getPspreference())
-        ]));
+        $criteria->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()));
+        $criteria->addFilter(new EqualsFilter('pspReference', $notification->getPspreference()));
 
         /** @var RefundEntity $adyenRefund */
         $adyenRefund = $this->adyenRefundRepository->getRepository()

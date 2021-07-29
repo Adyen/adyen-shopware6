@@ -41,27 +41,27 @@ class RefundEntity extends Entity
     /**
      * @var string
      */
-    protected string $orderTransactionId;
+    protected $orderTransactionId;
 
     /**
      * @var OrderTransactionEntity
      */
-    protected OrderTransactionEntity $orderTransaction;
+    protected $orderTransaction;
 
     /**
      * @var string
      */
-    protected string $pspReference;
+    protected $pspReference;
 
     /**
      * @var string
      */
-    protected string $source;
+    protected $source;
 
     /**
      * @var string
      */
-    protected string $status;
+    protected $status;
 
     /**
      * @var \DateTimeInterface|null
@@ -71,7 +71,7 @@ class RefundEntity extends Entity
     /**
      * @var int
      */
-    protected int $amount;
+    protected $amount;
 
     /**
      * @return string[]

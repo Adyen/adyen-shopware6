@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\RefundService;

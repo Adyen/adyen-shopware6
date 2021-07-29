@@ -131,7 +131,7 @@ class AdminController
      * Send a refund operation to the Adyen playform
      *
      * @Route(
-     *     "/api/adyen/refunds",
+     *     "/api/v{version}/adyen/refunds",
      *     name="store-api.action.adyen.refund",
      *     methods={"POST"}
      * )
@@ -183,7 +183,7 @@ class AdminController
                 $order,
                 $result['pspReference'],
                 RefundEntity::SOURCE_SHOPWARE,
-                RefundEntity::STATUS_PENDING_NOTI,
+                RefundEntity::STATUS_PENDING_NOTI
             );
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
@@ -199,7 +199,7 @@ class AdminController
 
     /**
      * @Route(
-     *     "/api/adyen/orders/{orderId}/refunds",
+     *     "/api/v{version}/adyen/orders/{orderId}/refunds",
      *     name="api.action.adyen.refund",
      *     methods={"GET"}
      * )
