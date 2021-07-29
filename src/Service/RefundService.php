@@ -321,12 +321,12 @@ class RefundService
             $this->logger->error($message);
             throw new AdyenException($message);
         } elseif (is_null($orderTransaction->getCustomFields()) ||
-            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE,$orderTransaction->getCustomFields())
+            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
         ) {
             $message = sprintf('Order %s has no linked psp reference', $order->getOrderNumber());
             $this->logger->error($message);
             throw new AdyenException($message);
-    }
+        }
 
         return $orderTransaction;
     }
