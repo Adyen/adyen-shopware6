@@ -183,7 +183,7 @@ class AdminController
                 $order,
                 $result['pspReference'],
                 RefundEntity::SOURCE_SHOPWARE,
-                RefundEntity::STATUS_PENDING_NOTI,
+                RefundEntity::STATUS_PENDING_WEBHOOK,
             );
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());

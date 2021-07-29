@@ -44,16 +44,13 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
-use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
 class ProcessNotificationsHandler extends ScheduledTaskHandler
 {
     use LoggerAwareTrait;
 
-    const NOTI_TRANSACTION_STATES = [
+    const WEBHOOK_TRANSACTION_STATES = [
         OrderTransactionStates::STATE_PAID,
         OrderTransactionStates::STATE_PARTIALLY_PAID,
         OrderTransactionStates::STATE_REFUNDED,
@@ -157,7 +154,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
                 $order->getId(),
-                self::NOTI_TRANSACTION_STATES
+                self::WEBHOOK_TRANSACTION_STATES
             );
 
             // Skip if orderTransaction not found (non-Adyen)
