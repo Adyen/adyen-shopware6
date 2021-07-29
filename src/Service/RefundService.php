@@ -310,16 +310,21 @@ class RefundService
             $states
         );
 
-        if (is_null($orderTransaction) || is_null($orderTransaction->getCustomFields()) ||
-            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE, $orderTransaction->getCustomFields())
-        ) {
+        if (is_null($orderTransaction)) {
             $message = sprintf(
-                'Order with id %s has no linked transactions OR has no linked psp reference',
-                $order->getId()
+                'Order %s has no linked transactions with states: %s',
+                $order->getOrderNumber(),
+                implode(', ', $states)
             );
             $this->logger->error($message);
             throw new AdyenException($message);
-        }
+        } elseif (is_null($orderTransaction->getCustomFields()) ||
+            !array_key_exists(PaymentResponseHandler::ORIGINAL_PSP_REFERENCE,$orderTransaction->getCustomFields())
+        ) {
+            $message = sprintf('Order %s has no linked psp reference', $order->getOrderNumber());
+            $this->logger->error($message);
+            throw new AdyenException($message);
+    }
 
         return $orderTransaction;
     }
