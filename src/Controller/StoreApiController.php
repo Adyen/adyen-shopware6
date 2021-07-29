@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Controller;
 
-use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
