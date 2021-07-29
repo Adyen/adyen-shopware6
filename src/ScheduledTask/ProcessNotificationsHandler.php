@@ -196,7 +196,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             try {
                 if ($state !== $currentTransactionState) {
                     $this->transitionToState($notification, $orderTransaction, $state, $context);
-                } elseif (!$notification->isSuccess()) {
+                }
+
+                if (!$notification->isSuccess()) {
                     $this->handleFailedNotification($notification, $order, $state);
                 }
             } catch (\Exception $exception) {
@@ -310,7 +312,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     ) {
         switch ($state) {
             case PaymentStates::STATE_PAID:
-                // If for a refund notification processor returns PAID, it means that the refund was not successful.
+                // If for a refund, notification processor returns PAID, it means that the refund was not successful.
                 // Hence, set the adyen_refund entity to failed
                 if ($notification->getEventCode() === EventCodes::REFUND) {
                     $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
