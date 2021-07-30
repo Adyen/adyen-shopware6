@@ -10,6 +10,13 @@
         "refundFetchError": "An error has occurred while attempting to get linked refunds.",
         "refundConfirm": "Are you sure you want to refund Order",
         "createRefund": "Create Refund",
-        "noRefundsCreated": "No refunds created"
+        "noRefundsCreated": "No refunds created",
+        "columnHeaders": {
+            "pspReference": "Adyen Reference",
+            "amount": "Amount",
+            "status": "Status",
+            "created": "Created",
+            "updated": "Updated"
+        }
     }
 }
