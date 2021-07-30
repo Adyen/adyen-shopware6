@@ -55,6 +55,7 @@ Component.register('adyen-refund', {
             isLoadingTable: true,
             errorOccurred: false,
             isLoadingRefund: false,
+            showWidget: true,
         };
     },
 
@@ -115,10 +116,25 @@ Component.register('adyen-refund', {
             }
 
             this.allowRefund = this.order.amountTotal > (refundedAmount / 100);
+        },
+
+        isAdyenOrder() {
+            const orderTransactions = this.order.transactions;
+            let isAdyen = false;
+            for (let i = 0; i < orderTransactions.length; i++) {
+                if (orderTransactions[i].customFields?.originalPspReference !== undefined) {
+                    isAdyen = true;
+                }
+            }
+
+            this.showWidget = isAdyen;
         }
     },
 
     beforeMount() {
-        this.fetchRefunds();
+        this.isAdyenOrder();
+        if (this.showWidget) {
+            this.fetchRefunds();
+        }
     }
 })
