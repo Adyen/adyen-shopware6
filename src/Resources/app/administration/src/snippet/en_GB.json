@@ -11,12 +11,10 @@
         "refundConfirm": "Create refund for order",
         "createRefund": "Create Refund",
         "noRefundsCreated": "No refunds created",
-        "columnHeaders": {
-            "pspReference": "Adyen Reference",
-            "amount": "Amount",
-            "status": "Status",
-            "created": "Created",
-            "updated": "Updated"
-        }
+        "columnHeadersPspReference": "Adyen Reference",
+        "columnHeadersAmount": "Amount",
+        "columnHeadersStatus": "Status",
+        "columnHeadersCreated": "Created",
+        "columnHeadersUpdated": "Updated"
     }
 }

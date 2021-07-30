@@ -22,7 +22,7 @@
 
 const { Component, Mixin } = Shopware;
 import template from './adyen-refund.html.twig';
-import './adyen-refund.scss';
+import './adyen-refund.css';
 
 Component.register('adyen-refund', {
     template,
@@ -43,11 +43,11 @@ Component.register('adyen-refund', {
     data() {
         return {
             columns: [
-                { property: 'pspReference', label: this.$tc('adyen.columnHeaders.pspReference') },
-                { property: 'amount', label: this.$tc('adyen.columnHeaders.amount') },
-                { property: 'status', label: this.$tc('adyen.columnHeaders.status') },
-                { property: 'createdAt', label: this.$tc('adyen.columnHeaders.created') },
-                { property: 'updatedAt', label: this.$tc('adyen.columnHeaders.updated') }
+                { property: 'pspReference', label: this.$tc('adyen.columnHeadersPspReference') },
+                { property: 'amount', label: this.$tc('adyen.columnHeadersAmount') },
+                { property: 'status', label: this.$tc('adyen.columnHeadersStatus') },
+                { property: 'createdAt', label: this.$tc('adyen.columnHeadersCreated') },
+                { property: 'updatedAt', label: this.$tc('adyen.columnHeadersUpdated') }
             ],
             showModal: false,
             refunds: [],
@@ -122,7 +122,8 @@ Component.register('adyen-refund', {
             const orderTransactions = this.order.transactions;
             let isAdyen = false;
             for (let i = 0; i < orderTransactions.length; i++) {
-                if (orderTransactions[i].customFields?.originalPspReference !== undefined) {
+                if (orderTransactions[i].customFields !== null &&
+                    orderTransactions[i].customFields.originalPspReference !== undefined) {
                     isAdyen = true;
                 }
             }
