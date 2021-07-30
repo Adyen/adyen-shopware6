@@ -132,7 +132,7 @@ class AdminController
      *
      * @Route(
      *     "/api/adyen/refunds",
-     *     name="api.action.adyen.refund",
+     *     name="api.adyen_refund.post",
      *     methods={"POST"}
      * )
      *
@@ -200,7 +200,7 @@ class AdminController
     /**
      * @Route(
      *     "/api/adyen/orders/{orderId}/refunds",
-     *     name="api.action.adyen.refund",
+     *     name="api.adyen_refund.get",
      *     methods={"GET"}
      * )
      *
