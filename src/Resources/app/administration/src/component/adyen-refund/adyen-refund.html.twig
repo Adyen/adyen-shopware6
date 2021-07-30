@@ -1,32 +1,38 @@
 {% block adyen_refund %}
     <sw-card :hero="false" :isLoading="isLoadingTable" :large="false" title="Refunds">
         <div v-if="!errorOccurred">
-            <div id="modalButtonContainer">
-                <sw-button
-                    :disabled="!allowRefund"
-                    :square="false"
-                    :block="false"
-                    @click="openModal"
-                    class="sw-button--small">
-                    {{ $tc('sw-order.documentCard.labelCreateNew') }}
-                </sw-button>
-            </div>
-            <sw-modal v-if="showModal"
-                    @modal-close="onCloseModal"
-                    :title="$tc('adyen.createRefund')"
-                    variant="small">
-                {{ $tc('adyen.refundConfirm') }} <b>{{ order.orderNumber }}</b>?
-                <template #modal-footer>
-                    <sw-button @click="onCloseModal" size="small">
-                        {{ $tc('global.default.cancel') }}
+            <div class="adyen-card-header">
+                <div class="adyen-card-header-first">
+                    <span v-if="!refunds.length">{{ $tc('adyen.noRefundsCreated') }}</span>
+                </div>
+                <div id="modalButtonContainer">
+                    <sw-button
+                        :disabled="!allowRefund"
+                        :square="false"
+                        :block="false"
+                        @click="openModal"
+                        class="sw-button--small">
+                        {{ $tc('sw-order.documentCard.labelCreateNew') }}
                     </sw-button>
+                </div>
+                <sw-modal v-if="showModal"
+                        @modal-close="onCloseModal"
+                        :title="$tc('adyen.createRefund')"
+                        variant="small">
+                    {{ $tc('adyen.refundConfirm') }} <b>{{ order.orderNumber }}</b>?
+                    <template #modal-footer>
+                        <sw-button @click="onCloseModal" size="small">
+                            {{ $tc('global.default.cancel') }}
+                        </sw-button>
 
-                    <sw-button @click="onRefund" variant="primary" size="small" :isLoading="isLoadingRefund">
-                        {{ $tc('global.default.confirm') }}
-                    </sw-button>
-                </template>
-            </sw-modal>
+                        <sw-button @click="onRefund" variant="primary" size="small" :isLoading="isLoadingRefund">
+                            {{ $tc('global.default.confirm') }}
+                        </sw-button>
+                    </template>
+                </sw-modal>
+            </div>
             <sw-data-grid
+                v-if="refunds.length"
                 :dataSource="refunds"
                 :columns="columns"
                 :showSelection="false"
