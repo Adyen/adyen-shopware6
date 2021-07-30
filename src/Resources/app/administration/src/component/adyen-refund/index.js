@@ -43,11 +43,11 @@ Component.register('adyen-refund', {
     data() {
         return {
             columns: [
-                { property: 'pspReference', label: 'Adyen Reference' },
-                { property: 'amount', label: 'Amount' },
-                { property: 'status', label: 'Status' },
-                { property: 'createdAt', label: 'Created' },
-                { property: 'updatedAt', label: 'Updated' }
+                { property: 'pspReference', label: this.$tc('adyen.columnHeaders.pspReference') },
+                { property: 'amount', label: this.$tc('adyen.columnHeaders.amount') },
+                { property: 'status', label: this.$tc('adyen.columnHeaders.status') },
+                { property: 'createdAt', label: this.$tc('adyen.columnHeaders.created') },
+                { property: 'updatedAt', label: this.$tc('adyen.columnHeaders.updated') }
             ],
             showModal: false,
             refunds: [],

@@ -128,11 +128,11 @@ class AdminController
     }
 
     /**
-     * Send a refund operation to the Adyen playform
+     * Send a refund operation to the Adyen platform
      *
      * @Route(
      *     "/api/adyen/refunds",
-     *     name="store-api.action.adyen.refund",
+     *     name="api.action.adyen.refund",
      *     methods={"POST"}
      * )
      *
