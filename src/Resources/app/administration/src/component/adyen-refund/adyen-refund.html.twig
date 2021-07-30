@@ -1,5 +1,5 @@
 {% block adyen_refund %}
-    <sw-card :hero="false" :isLoading="isLoadingTable" :large="false" title="Refunds">
+    <sw-card :hero="false" :isLoading="isLoadingTable" :large="false" title="Refunds" v-if="showWidget">
         <div v-if="!errorOccurred">
             <div class="adyen-card-header">
                 <div class="adyen-card-header-first">
