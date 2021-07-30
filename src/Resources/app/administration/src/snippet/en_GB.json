@@ -8,7 +8,7 @@
         "invalidRefundAmount": "Refund amount exceeds order total",
         "refundError": "An error has occurred. Please check the logs.",
         "refundFetchError": "An error has occurred while attempting to get linked refunds.",
-        "refundConfirm": "Are you sure you want to refund Order",
+        "refundConfirm": "Create refund for order",
         "createRefund": "Create Refund",
         "noRefundsCreated": "No refunds created",
         "columnHeaders": {
