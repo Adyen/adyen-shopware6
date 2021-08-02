@@ -334,6 +334,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                     'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
                     'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
+                    'displaySaveCreditCardOption' => false
                 ]
             )
         );
