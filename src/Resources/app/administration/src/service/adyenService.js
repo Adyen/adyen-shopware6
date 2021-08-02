@@ -69,6 +69,33 @@ class ApiClient extends ApiService {
                 throw error;
             });
     }
+
+    fetchNotifications(orderId) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .get(this.getApiBasePath() + '/orders/' + orderId + '/notifications', {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred: ' + error.message);
+                throw error;
+            });
+    }
+
+    isAdyenOrder(order) {
+        const orderTransactions = order.transactions;
+        let isAdyen = false;
+        for (let i = 0; i < orderTransactions.length; i++) {
+            if (orderTransactions[i].customFields?.originalPspReference !== undefined) {
+                isAdyen = true;
+            }
+        }
+
+        return isAdyen;
+    }
 }
 
 Application.addServiceProvider('adyenService', (container) => {

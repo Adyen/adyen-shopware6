@@ -12,11 +12,15 @@
         "createRefund": "Create Refund",
         "noRefundsCreated": "No refunds created",
         "columnHeaders": {
-            "pspReference": "Adyen Reference",
+            "pspReference": "PSP Reference",
             "amount": "Amount",
             "status": "Status",
+            "event": "Event",
+            "success": "Success",
             "created": "Created",
             "updated": "Updated"
-        }
+        },
+        "notificationsTitle": "Adyen Notifications",
+        "noNotificationsReceived": "No webhook notifications received."
     }
 }

@@ -26,8 +26,10 @@ namespace Adyen\Shopware\Controller;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
@@ -62,6 +64,11 @@ class AdminController
     /** @var AdyenRefundRepository */
     private $adyenRefundRepository;
 
+    /**
+     * @var NotificationService
+     */
+    private NotificationService $notificationService;
+
     /** @var CurrencyFormatter */
     private $currencyFormatter;
 
@@ -75,14 +82,16 @@ class AdminController
      * @param OrderRepository $orderRepository
      * @param RefundService $refundService
      * @param AdyenRefundRepository $adyenRefundRepository
+     * @param NotificationService $notificationService
      * @param CurrencyFormatter $currencyFormatter
      * @param Currency $currencyUtil
      */
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
+        LoggerInterface $logger,
         OrderRepository $orderRepository,
         RefundService $refundService,
         AdyenRefundRepository $adyenRefundRepository,
+        NotificationService $notificationService,
         CurrencyFormatter $currencyFormatter,
         Currency $currencyUtil
     ) {
@@ -90,6 +99,7 @@ class AdminController
         $this->orderRepository = $orderRepository;
         $this->refundService = $refundService;
         $this->adyenRefundRepository = $adyenRefundRepository;
+        $this->notificationService = $notificationService;
         $this->currencyFormatter = $currencyFormatter;
         $this->currencyUtil = $currencyUtil;
     }
@@ -212,6 +222,38 @@ class AdminController
         $refunds = $this->adyenRefundRepository->getRefundsByOrderId($orderId);
 
         return new JsonResponse($this->buildRefundResponseData($refunds->getElements()));
+    }
+
+    /**
+     * Get all the notifications for an order.
+     *
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/notifications",
+     *      methods={"GET"}
+ *     )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function getOrderNotifications(string $orderId): JsonResponse
+    {
+        $order = $this->orderRepository->getOrder($orderId, Context::createDefaultContext());
+        $notifications = $this->notificationService->getAllNotificationsByOrderNumber($order->getOrderNumber());
+
+        $response = [];
+        /** @var NotificationEntity $notification */
+        foreach ($notifications as $notification) {
+            $response[] = [
+                'pspReference' => $notification->getPspreference(),
+                'eventCode' => $notification->getEventCode(),
+                'success' => $notification->isSuccess(),
+                'amount' => $notification->getAmountValue() . ' ' . $notification->getAmountCurrency(),
+                'status' => $notification->isDone() ? 'PROCESSED' : 'PENDING',
+                'createdAt' => $notification->getCreatedAt()->format('Y-m-d H:i (e)'),
+                'updatedAt' => $notification->getUpdatedAt()->format('Y-m-d H:i (e)'),
+            ];
+        }
+
+        return new JsonResponse($response);
     }
 
     /**

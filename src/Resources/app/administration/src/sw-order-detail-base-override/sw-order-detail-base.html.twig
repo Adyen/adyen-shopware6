@@ -1,4 +1,5 @@
 {% block sw_order_detail_base_custom_fields %}
     {% parent %}
     <adyen-refund :order="order"></adyen-refund>
+    <adyen-notifications :order="order"></adyen-notifications>
 {% endblock %}

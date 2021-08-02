@@ -131,6 +131,14 @@ class NotificationService
         );
     }
 
+    public function getAllNotificationsByOrderNumber(string $orderNumber): EntityCollection
+    {
+        return $this->notificationRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('merchantReference', $orderNumber)),
+            Context::createDefaultContext()
+        )->getEntities();
+    }
+
     public function getUnscheduledNotifications(): EntityCollection
     {
         return $this->notificationRepository->search(
