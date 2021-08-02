@@ -239,8 +239,8 @@ class AdminController
                 'amount' => $amount,
                 'rawAmount' => $refund->getAmount(),
                 'status' => $refund->getStatus(),
-                'createdAt' => $refund->getCreatedAt()->format('Y-m-d H:m (e)'),
-                'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format('Y-m-d H:m (e)')
+                'createdAt' => $refund->getCreatedAt()->format('Y-m-d H:i (e)'),
+                'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format('Y-m-d H:i (e)')
             ];
         }
 
