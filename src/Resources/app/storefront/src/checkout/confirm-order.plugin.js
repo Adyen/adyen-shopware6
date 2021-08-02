@@ -450,7 +450,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 }
             }.bind(this)
         });
-        if (!isOneClick && paymentMethod.type === 'scheme' && adyenCheckoutOptions.displaySaveCreditCardOption) {
+        if ((!isOneClick) && paymentMethod.type === 'scheme' && adyenCheckoutOptions.displaySaveCreditCardOption) {
             configuration.enableStoreDetails = true;
         }
         if (paymentMethod.type === 'giftcard') {
