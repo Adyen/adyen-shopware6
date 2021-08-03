@@ -3,6 +3,7 @@
         "configTestTitle": "Configuration test",
         "configTestSuccess": "Configuration is successfully tested",
         "configTestFail": "There's an issue in your configuration",
+        "adyenRefunds": "Adyen Refunds",
         "refundTitle": "Refund",
         "refundSuccessful": "A refund has been successfully submitted.",
         "invalidRefundAmount": "Refund amount exceeds order total",
@@ -12,7 +13,7 @@
         "createRefund": "Create Refund",
         "noRefundsCreated": "No refunds created",
         "columnHeaders": {
-            "pspReference": "Adyen Reference",
+            "pspReference": "PSP Reference",
             "amount": "Amount",
             "status": "Status",
             "created": "Created",
