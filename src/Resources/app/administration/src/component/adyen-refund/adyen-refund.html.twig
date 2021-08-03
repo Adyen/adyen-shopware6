@@ -19,7 +19,7 @@
                         @modal-close="onCloseModal"
                         :title="$tc('adyen.createRefund')"
                         variant="small">
-                    {{ $tc('adyen.refundConfirm') }} <b>{{ order.orderNumber }}</b>?
+                    {{ $tc('adyen.refundConfirm') }}: <b>{{ order.orderNumber }}</b>
                     <template #modal-footer>
                         <sw-button @click="onCloseModal" size="small">
                             {{ $tc('global.default.cancel') }}
