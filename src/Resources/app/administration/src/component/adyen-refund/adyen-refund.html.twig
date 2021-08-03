@@ -1,5 +1,5 @@
 {% block adyen_refund %}
-    <sw-card :hero="false" :isLoading="isLoadingTable" :large="false" title="Refunds" v-if="showWidget">
+    <sw-card :hero="false" :isLoading="isLoadingTable" :large="false" :title="$tc('adyen.adyenRefunds')" v-if="showWidget">
         <div v-if="!errorOccurred">
             <div class="adyen-card-header">
                 <div class="adyen-card-header-first">
@@ -19,7 +19,7 @@
                         @modal-close="onCloseModal"
                         :title="$tc('adyen.createRefund')"
                         variant="small">
-                    {{ $tc('adyen.refundConfirm') }} <b>{{ order.orderNumber }}</b>?
+                    {{ $tc('adyen.refundConfirm') }}: <b>{{ order.orderNumber }}</b>
                     <template #modal-footer>
                         <sw-button @click="onCloseModal" size="small">
                             {{ $tc('global.default.cancel') }}

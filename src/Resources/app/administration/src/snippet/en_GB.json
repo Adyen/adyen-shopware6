@@ -3,6 +3,7 @@
         "configTestTitle": "Configuration test",
         "configTestSuccess": "Configuration is successfully tested",
         "configTestFail": "There's an issue in your configuration",
+        "adyenRefunds": "Adyen Refunds",
         "refundTitle": "Refund",
         "refundSuccessful": "A refund has been successfully submitted.",
         "invalidRefundAmount": "Refund amount exceeds order total",
