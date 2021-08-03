@@ -57,7 +57,7 @@
             <label>Live environment</label>
         </input-field>
         <input-field type="bool">
-            <name>displaySaveCreditCard</name>
+            <name>enableSaveCreditCard</name>
             <label>Display "Save credit card" option</label>
             <helpText>
                 Display option to tokenize card information for one click payments.
