@@ -287,6 +287,12 @@ class PaymentSubscriber implements EventSubscriberInterface
             $salesChannelContext->getToken()
         );
 
+        $displaySaveCreditCardOption = $this->paymentMethodsFilterService->isPaymentMethodInCollection(
+            $page->getPaymentMethods(),
+            OneClickPaymentMethodHandler::getPaymentMethodCode(),
+            $this->adyenPluginProvider->getAdyenPluginId(),
+        );
+
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
 
         $page->addExtension(
@@ -334,7 +340,7 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                     'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
                     'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
-                    'displaySaveCreditCardOption' => $this->configurationService->getEnableSaveCreditCard()
+                    'displaySaveCreditCardOption' => $displaySaveCreditCardOption
                 ]
             )
         );
