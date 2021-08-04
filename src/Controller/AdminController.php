@@ -52,6 +52,10 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class AdminController
 {
+    const ADMIN_DATETIME_FORMAT = 'Y-m-d H:i (e)';
+    const NOTIFICATION_STATUS_PROCESSED = 'PROCESSED';
+    const NOTIFICATION_STATUS_PENDING = 'PENDING';
+
     /** @var LoggerInterface */
     private $logger;
 
@@ -247,9 +251,11 @@ class AdminController
                 'eventCode' => $notification->getEventCode(),
                 'success' => $notification->isSuccess(),
                 'amount' => $notification->getAmountValue() . ' ' . $notification->getAmountCurrency(),
-                'status' => $notification->isDone() ? 'PROCESSED' : 'PENDING',
-                'createdAt' => $notification->getCreatedAt()->format('Y-m-d H:i (e)'),
-                'updatedAt' => $notification->getUpdatedAt()->format('Y-m-d H:i (e)'),
+                'status' => $notification->isDone()
+                    ? self::NOTIFICATION_STATUS_PROCESSED 
+                    : self::NOTIFICATION_STATUS_PENDING,
+                'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
             ];
         }
 
@@ -281,8 +287,8 @@ class AdminController
                 'amount' => $amount,
                 'rawAmount' => $refund->getAmount(),
                 'status' => $refund->getStatus(),
-                'createdAt' => $refund->getCreatedAt()->format('Y-m-d H:i (e)'),
-                'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format('Y-m-d H:i (e)')
+                'createdAt' => $refund->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format(self::ADMIN_DATETIME_FORMAT)
             ];
         }
 
