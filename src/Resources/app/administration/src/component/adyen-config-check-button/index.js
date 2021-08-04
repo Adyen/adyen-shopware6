@@ -14,7 +14,7 @@
  *
  * Adyen plugin for Shopware 6
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
@@ -26,7 +26,7 @@ import template from './adyen-config-check-button.html.twig';
 Component.register('adyen-config-check-button', {
     template,
 
-    inject: ['adyenConfigCheck'],
+    inject: ['adyenService'],
 
     mixins: [
         Mixin.getByName('notification')
@@ -62,7 +62,7 @@ Component.register('adyen-config-check-button', {
 
         check() {
             this.isLoading = true;
-            this.adyenConfigCheck.check(this.pluginConfig).then((res) => {
+            this.adyenService.check(this.pluginConfig).then((res) => {
                 if (res.success) {
                     this.isSaveSuccessful = true;
                     this.createNotificationSuccess({

@@ -27,6 +27,9 @@
         <service id="Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_payment_response"/>
         </service>
+        <service id="Adyen\Shopware\Entity\Refund\RefundEntityDefinition">
+            <tag name="shopware.entity.definition" entity="adyen_refund"/>
+        </service>
         <service id="Adyen\Shopware\Core\Checkout\Payment\PaymentMethod\PaymentMethodExtension">
             <tag name="shopware.entity.extension"/>
         </service>

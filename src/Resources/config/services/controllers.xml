@@ -37,11 +37,8 @@
         <service id="Adyen\Shopware\Storefront\Controller\RedirectResultController" autowire="true">
             <tag name="controller.service_arguments"/>
         </service>
-        <service id="Adyen\Shopware\Controller\ApiTestController">
-            <argument type="service"
-                      key="$logger"
-                      id="monolog.logger.adyen_api"
-            />
+        <service id="Adyen\Shopware\Controller\AdminController" autowire="true">
+            <argument type="service" key="$logger" id="monolog.logger.adyen_api"/>
             <tag name="controller.service_arguments"/>
         </service>
     </services>
