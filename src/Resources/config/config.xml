@@ -56,14 +56,6 @@
             <name>environment</name>
             <label>Live environment</label>
         </input-field>
-        <input-field type="bool">
-            <name>enableSaveCreditCard</name>
-            <label>Display "Save credit card" option</label>
-            <helpText>
-                Display option to tokenize card information for one click payments.
-                The token is saved on the Adyen Platform.
-            </helpText>
-        </input-field>
         <input-field type="text">
             <name>liveEndpointUrlPrefix</name>
             <label>Live endpoint URL prefix</label>
