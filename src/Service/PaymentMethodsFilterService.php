@@ -124,8 +124,7 @@ class PaymentMethodsFilterService
         PaymentMethodCollection $paymentMethods,
         string $paymentMethodCode,
         string $adyenPluginId
-    ): bool
-    {
+    ): bool {
         $filteredPaymentMethod = $paymentMethods->filter(
             function (PaymentMethodEntity $paymentMethod) use ($paymentMethodCode, $adyenPluginId) {
                 return $paymentMethod->getPluginId() === $adyenPluginId &&
