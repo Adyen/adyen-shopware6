@@ -252,7 +252,7 @@ class AdminController
                 'success' => $notification->isSuccess(),
                 'amount' => $notification->getAmountValue() . ' ' . $notification->getAmountCurrency(),
                 'status' => $notification->isDone()
-                    ? self::NOTIFICATION_STATUS_PROCESSED 
+                    ? self::NOTIFICATION_STATUS_PROCESSED
                     : self::NOTIFICATION_STATUS_PENDING,
                 'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
                 'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
