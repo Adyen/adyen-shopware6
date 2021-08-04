@@ -195,13 +195,4 @@ class ConfigurationService
 
         return $this->getClientKeyTest($salesChannelId);
     }
-
-    /**
-     * @param string|null $salesChannelId
-     * @return bool
-     */
-    public function getEnableSaveCreditCard(string $salesChannelId = null): bool
-    {
-        return !!$this->systemConfigService->get(self::BUNDLE_NAME . '.config.enableSaveCreditCard', $salesChannelId);
-    }
 }
