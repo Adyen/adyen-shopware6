@@ -39,9 +39,39 @@ class ApiClient extends ApiService {
                 return ApiService.handleResponse(response);
             });
     }
+
+    getRefunds(orderId) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .get(this.getApiBasePath() + '/orders/' + orderId + '/refunds', {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred during refunds request: ' + error.message);
+                throw error;
+            });
+    }
+
+    postRefund(orderId) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .post(this.getApiBasePath() + '/refunds', {orderId: orderId}, {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred during post refund request: ' + error.message);
+                throw error;
+            });
+    }
 }
 
-Application.addServiceProvider('adyenConfigCheck', (container) => {
+Application.addServiceProvider('adyenService', (container) => {
     const initContainer = Application.getContainer('init');
     return new ApiClient(initContainer.httpClient, container.loginService);
 });

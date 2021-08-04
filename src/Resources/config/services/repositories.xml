@@ -34,5 +34,11 @@
             <argument type="service" id="order.repository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
+        <service id="Adyen\Shopware\Service\Repository\AdyenRefundRepository" autowire="true">
+            <argument type="service" id="adyen_refund.repository"/>
+        </service>
+        <service id="Adyen\Shopware\Service\Repository\OrderTransactionRepository" autowire="true">
+            <argument type="service" id="order_transaction.repository"/>
+        </service>
     </services>
 </container>

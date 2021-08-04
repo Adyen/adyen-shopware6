@@ -1,4 +1,4 @@
-/*
+/**
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -20,11 +20,13 @@
  *
  */
 
-import './service/adyenService';
-import './component/adyen-config-check-button';
-import './component/adyen-refund';
-import './sw-order-detail-base-override/index.js';
+.adyen-card-header {
+    display: flex;
+    height: 30px;
+    margin-bottom: 15px;
+}
 
-import localeEnGb from './snippet/en_GB.json';
-
-Shopware.Locale.extend('en-GB', localeEnGb);
+.adyen-card-header-first {
+    margin-top: auto;
+    width: 100%;
+}

@@ -25,10 +25,14 @@
 namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\NotificationService;
+use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
+use Adyen\Webhook\EventCodes;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Notification;
 use Adyen\Webhook\PaymentStates;
@@ -40,14 +44,20 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
-use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
 class ProcessNotificationsHandler extends ScheduledTaskHandler
 {
     use LoggerAwareTrait;
+
+    const WEBHOOK_TRANSACTION_STATES = [
+        OrderTransactionStates::STATE_PAID,
+        OrderTransactionStates::STATE_PARTIALLY_PAID,
+        OrderTransactionStates::STATE_REFUNDED,
+        OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
+    ];
+
+    private const MAX_ERROR_COUNT = 3;
 
     /**
      * @var NotificationService
@@ -74,7 +84,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private $adyenPaymentMethodIds = null;
 
-    private const MAX_ERROR_COUNT = 3;
+    /** @var RefundService  */
+    private $refundService;
+
+    /** @var OrderTransactionRepository */
+    private $orderTransactionRepository;
+
     /** @var array Mapping to convert Shopware transaction states to payment states in the webhook module. */
     private $webhookModuleStateMapping = [
         OrderTransactionStates::STATE_PAID => PaymentStates::STATE_PAID,
@@ -90,14 +105,18 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderRepository $orderRepository,
         OrderTransactionStateHandler $transactionStateHandler,
         EntityRepositoryInterface $paymentMethodRepository,
-        AdyenPluginProvider $adyenPluginProvider
+        AdyenPluginProvider $adyenPluginProvider,
+        RefundService $refundService,
+        OrderTransactionRepository $orderTransactionRepository
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
         $this->orderRepository = $orderRepository;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->paymentMethodRepository = $paymentMethodRepository;
+        $this->refundService = $refundService;
         $this->adyenPluginProvider = $adyenPluginProvider;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     public static function getHandledMessages(): iterable
@@ -133,16 +152,24 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $logContext['orderId'] = $order->getId();
             $logContext['orderNumber'] = $order->getOrderNumber();
 
-            $orderTransaction = $order->getTransactions()->first();
-            // Skip when the last payment method was non-Adyen.
-            if (!$this->isAdyenPaymentMethod($orderTransaction->getPaymentMethodId(), $context)) {
-                $this->logger->info('Notification ignored: non-Adyen payment method last used, .', $logContext);
+            $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+                $order->getId(),
+                self::WEBHOOK_TRANSACTION_STATES
+            );
+
+            // Skip if orderTransaction not found (non-Adyen)
+            if (is_null($orderTransaction)) {
+                $this->logger->error(
+                    sprintf('Unable to identify Adyen orderTransaction linked to order %s', $order->getOrderNumber())
+                );
                 $this->markAsDone($notification->getId());
                 continue;
             }
+
             $currentTransactionState = $this->webhookModuleStateMapping[
                 $orderTransaction->getStateMachineState()->getTechnicalName()
             ] ?? '';
+
             try {
                 $notificationItem = Notification::createItem([
                     'eventCode' => $notification->getEventCode(),
@@ -163,23 +190,27 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             $state = $processor->process();
 
-            if ($state !== $currentTransactionState) {
-                try {
-                    $this->transitionToState($notification, $order, $state, $context);
-                } catch (\Exception $exception) {
-                    $logContext['errorMessage'] = $exception->getMessage();
-                    // set notification error and increment error count
-                    $errorCount = (int) $notification->getErrorCount();
-                    $this->notificationService
-                        ->saveError($notification->getId(), $exception->getMessage(), ++$errorCount);
-                    $this->logger->error('Notification processing failed.', $logContext);
-
-                    if ($errorCount < self::MAX_ERROR_COUNT) {
-                        $this->requeueNotification($notification->getId());
-                    }
-
-                    continue;
+            try {
+                if ($state !== $currentTransactionState) {
+                    $this->transitionToState($notification, $orderTransaction, $state, $context);
                 }
+
+                if (!$notification->isSuccess()) {
+                    $this->handleFailedNotification($notification, $order, $state);
+                }
+            } catch (\Exception $exception) {
+                $logContext['errorMessage'] = $exception->getMessage();
+                // set notification error and increment error count
+                $errorCount = (int)$notification->getErrorCount();
+                $this->notificationService
+                    ->saveError($notification->getId(), $exception->getMessage(), ++$errorCount);
+                $this->logger->error('Notification processing failed.', $logContext);
+
+                if ($errorCount < self::MAX_ERROR_COUNT) {
+                    $this->requeueNotification($notification->getId());
+                }
+
+                continue;
             }
 
             $this->markAsDone($notification->getId());
@@ -188,13 +219,20 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->logger->info('Processed ' . $notifications->count() . ' notifications.');
     }
 
+    /**
+     * @param NotificationEntity $notification
+     * @param OrderTransactionEntity $orderTransaction
+     * @param string $state
+     * @param Context $context
+     * @throws \Adyen\AdyenException
+     */
     private function transitionToState(
         NotificationEntity $notification,
-        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
         string $state,
         Context $context
     ) {
-        $orderTransaction = $order->getTransactions()->first();
+        $order = $orderTransaction->getOrder();
         switch ($state) {
             case PaymentStates::STATE_PAID:
                 $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
@@ -218,32 +256,21 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     throw new \Exception('The refunded amount is greater than the transaction amount.');
                 }
 
+                $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_SUCCESS);
                 $transitionState = $refundedAmount < $transactionAmount
                     ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
                     : OrderTransactionStates::STATE_REFUNDED;
 
-                $this->doRefund($orderTransaction, $transitionState, $context);
+                $this->refundService->doRefund($orderTransaction, $transitionState, $context);
+
+                break;
+            case PaymentStates::STATE_REFUND_FAILED:
+                $this->logger->info(sprintf('Handling REFUND_FAILED on order: %s', $order->getOrderNumber()));
+                $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
                 break;
             default:
                 break;
         }
-    }
-
-    private function isAdyenPaymentMethod(string $paymentMethodId, Context $context)
-    {
-        if (!is_array($this->adyenPaymentMethodIds)) {
-            $this->adyenPaymentMethodIds = $this->paymentMethodRepository->searchIds(
-                (new Criteria())->addFilter(
-                    new EqualsFilter(
-                        'pluginId',
-                        $this->adyenPluginProvider->getAdyenPluginId()
-                    )
-                ),
-                $context
-            )->getIds();
-        }
-
-        return in_array($paymentMethodId, $this->adyenPaymentMethodIds);
     }
 
     private function markAsProcessing(string $notificationId)
@@ -266,23 +293,33 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->logger->debug("Payment notification {$notificationId} marked as done.");
     }
 
-    private function doRefund(OrderTransactionEntity $orderTransaction, string $transitionState, Context $context)
-    {
-        try {
-            if (OrderTransactionStates::STATE_PARTIALLY_REFUNDED === $transitionState) {
-                $this->transactionStateHandler->refundPartially($orderTransaction->getId(), $context);
-            } else {
-                $this->transactionStateHandler->refund($orderTransaction->getId(), $context);
-            }
-        } catch (IllegalTransitionException $exception) {
-            // set to paid, and then try again
-            $this->logger->info(
-                'Transaction ' . $orderTransaction->getId() . ' is '
-                . $orderTransaction->getStateMachineState()->getTechnicalName() . ' and could not be set to '
-                . $transitionState . ', setting to paid and then retrying.'
-            );
-            $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
-            $this->doRefund($orderTransaction, $transitionState, $context);
+    /**
+     * Handle logic to be executed when a notification has failed in this function
+     *
+     * @param NotificationEntity $notification
+     * @param OrderEntity $order
+     * @param string $state
+     * @return OrderEntity
+     * @throws \Adyen\AdyenException
+     */
+    private function handleFailedNotification(
+        NotificationEntity $notification,
+        OrderEntity $order,
+        string $state
+    ) {
+        switch ($state) {
+            case PaymentStates::STATE_PAID:
+                // If for a refund, notification processor returns PAID, it means that the refund was not successful.
+                // Hence, set the adyen_refund entity to failed
+                if ($notification->getEventCode() === EventCodes::REFUND) {
+                    $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
+                }
+
+                break;
+            default:
+                break;
         }
+
+        return $order;
     }
 }
