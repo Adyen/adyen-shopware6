@@ -53,7 +53,7 @@
         </input-field>
     </card>
     <card>
-        <title>Test settings</title>
+        <title>Test Settings</title>
         <input-field type="password">
             <name>apiKeyTest</name>
             <label>API Key for test</label>
@@ -75,7 +75,7 @@
         </input-field>
     </card>
     <card>
-        <title>Webhook settings</title>
+        <title>Webhook Settings</title>
         <input-field type="text">
             <name>notificationUsername</name>
             <label>Username for standard webhooks</label>
