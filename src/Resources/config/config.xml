@@ -78,7 +78,7 @@
         <title>Webhook settings</title>
         <input-field type="text">
             <name>notificationUsername</name>
-            <label>Username for standard notifications</label>
+            <label>Username for standard webhooks</label>
             <helpText>
                 This is the username for basic authentication of your live endpoints.
                 Fill in from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
@@ -88,7 +88,7 @@
         </input-field>
         <input-field type="password">
             <name>notificationPassword</name>
-            <label>Password for standard notifications</label>
+            <label>Password for standard webhooks</label>
             <helpText>
                 This is the password for basic authentication of your live endpoints.
                 Fill in from your live Adyen Customer Area &gt; Account &gt; Webhooks &gt; Edit or Add.
