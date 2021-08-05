@@ -3,7 +3,7 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
-        <title>Adyen Payment Configuration</title>
+        <title>General Settings</title>
         <input-field type="text">
             <name>merchantAccount</name>
             <label>Merchant account</label>
@@ -14,15 +14,16 @@
                 See https://docs.adyen.com/plugins/shopware-6#set-up-shopware
             </helpText>
         </input-field>
-        <input-field type="password">
-            <name>apiKeyTest</name>
-            <label>API Key for test</label>
-            <helpText>
-                Enter your test API Key. This can be found in your test Customer Area &gt; Account &gt; API Credentials.
-                See https://docs.adyen.com/plugins/shopware-6#set-up-api-key
-                For a live environment, this field can be empty.
-            </helpText>
+        <input-field type="bool">
+            <name>environment</name>
+            <label>Live environment</label>
         </input-field>
+        <component name="adyen-config-check-button">
+            <name>configTest</name>
+        </component>
+    </card>
+    <card>
+        <title>Production Settings</title>
         <input-field type="password">
             <name>apiKeyLive</name>
             <label>API Key for live</label>
@@ -30,16 +31,6 @@
                 Enter your live API Key. This can be found in your live Customer Area &gt; Account &gt; API Credentials.
                 See https://docs.adyen.com/plugins/shopware-6#set-up-api-key.
                 For a test environment, this field can be empty.
-            </helpText>
-        </input-field>
-        <input-field type="password">
-            <name>clientKeyTest</name>
-            <label>Client Key for test</label>
-            <helpText>
-                We use your client key to authenticate requests from your payment environment.
-                This can be found in your test Customer Area &gt; Account &gt; API Credentials.
-                See https://docs.adyen.com/plugins/shopware-6#generate-a-client-key for more information.
-                For a live environment, this field can be empty.
             </helpText>
         </input-field>
         <input-field type="password">
@@ -52,10 +43,6 @@
                 For a test environment, this field can be empty.
             </helpText>
         </input-field>
-        <input-field type="bool">
-            <name>environment</name>
-            <label>Live environment</label>
-        </input-field>
         <input-field type="text">
             <name>liveEndpointUrlPrefix</name>
             <label>Live endpoint URL prefix</label>
@@ -64,12 +51,31 @@
                 For a test environment, this field can be empty.
             </helpText>
         </input-field>
-        <component name="adyen-config-check-button">
-            <name>configTest</name>
-        </component>
     </card>
     <card>
-        <title>Notification Credentials</title>
+        <title>Test settings</title>
+        <input-field type="password">
+            <name>apiKeyTest</name>
+            <label>API Key for test</label>
+            <helpText>
+                Enter your test API Key. This can be found in your test Customer Area &gt; Account &gt; API Credentials.
+                See https://docs.adyen.com/plugins/shopware-6#set-up-api-key
+                For a live environment, this field can be empty.
+            </helpText>
+        </input-field>
+        <input-field type="password">
+            <name>clientKeyTest</name>
+            <label>Client Key for test</label>
+            <helpText>
+                We use your client key to authenticate requests from your payment environment.
+                This can be found in your test Customer Area &gt; Account &gt; API Credentials.
+                See https://docs.adyen.com/plugins/shopware-6#generate-a-client-key for more information.
+                For a live environment, this field can be empty.
+            </helpText>
+        </input-field>
+    </card>
+    <card>
+        <title>Webhook settings</title>
         <input-field type="text">
             <name>notificationUsername</name>
             <label>Username for standard notifications</label>
