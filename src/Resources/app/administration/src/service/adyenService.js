@@ -1,4 +1,4 @@
-/*
+/**
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -14,7 +14,7 @@
  *
  * Adyen plugin for Shopware 6
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
@@ -68,6 +68,33 @@ class ApiClient extends ApiService {
                 console.error('An error occurred during post refund request: ' + error.message);
                 throw error;
             });
+    }
+
+    fetchNotifications(orderId) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .get(this.getApiBasePath() + '/orders/' + orderId + '/notifications', {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred: ' + error.message);
+                throw error;
+            });
+    }
+
+    isAdyenOrder(order) {
+        const orderTransactions = order.transactions;
+        let isAdyen = false;
+        for (let i = 0; i < orderTransactions.length; i++) {
+            if (orderTransactions[i].customFields?.originalPspReference !== undefined) {
+                isAdyen = true;
+            }
+        }
+
+        return isAdyen;
     }
 }
 

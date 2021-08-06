@@ -31,6 +31,9 @@ class NotificationEntity extends Entity
 {
     use EntityIdTrait;
 
+    public const NOTIFICATION_STATUS_PENDING = 'PENDING';
+    public const NOTIFICATION_STATUS_PROCESSED = 'PROCESSED';
+
     /**
      * @var string
      */

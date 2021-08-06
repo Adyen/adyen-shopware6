@@ -26,8 +26,10 @@ namespace Adyen\Shopware\Controller;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
@@ -50,6 +52,8 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class AdminController
 {
+    const ADMIN_DATETIME_FORMAT = 'Y-m-d H:i (e)';
+
     /** @var LoggerInterface */
     private $logger;
 
@@ -61,6 +65,11 @@ class AdminController
 
     /** @var AdyenRefundRepository */
     private $adyenRefundRepository;
+
+    /**
+     * @var NotificationService
+     */
+    private NotificationService $notificationService;
 
     /** @var CurrencyFormatter */
     private $currencyFormatter;
@@ -75,14 +84,16 @@ class AdminController
      * @param OrderRepository $orderRepository
      * @param RefundService $refundService
      * @param AdyenRefundRepository $adyenRefundRepository
+     * @param NotificationService $notificationService
      * @param CurrencyFormatter $currencyFormatter
      * @param Currency $currencyUtil
      */
     public function __construct(
-        \Psr\Log\LoggerInterface $logger,
+        LoggerInterface $logger,
         OrderRepository $orderRepository,
         RefundService $refundService,
         AdyenRefundRepository $adyenRefundRepository,
+        NotificationService $notificationService,
         CurrencyFormatter $currencyFormatter,
         Currency $currencyUtil
     ) {
@@ -90,6 +101,7 @@ class AdminController
         $this->orderRepository = $orderRepository;
         $this->refundService = $refundService;
         $this->adyenRefundRepository = $adyenRefundRepository;
+        $this->notificationService = $notificationService;
         $this->currencyFormatter = $currencyFormatter;
         $this->currencyUtil = $currencyUtil;
     }
@@ -215,6 +227,40 @@ class AdminController
     }
 
     /**
+     * Get all the notifications for an order.
+     *
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/notifications",
+     *      methods={"GET"}
+ *     )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function getOrderNotifications(string $orderId): JsonResponse
+    {
+        $order = $this->orderRepository->getOrder($orderId, Context::createDefaultContext());
+        $notifications = $this->notificationService->getAllNotificationsByOrderNumber($order->getOrderNumber());
+
+        $response = [];
+        /** @var NotificationEntity $notification */
+        foreach ($notifications as $notification) {
+            $response[] = [
+                'pspReference' => $notification->getPspreference(),
+                'eventCode' => $notification->getEventCode(),
+                'success' => $notification->isSuccess(),
+                'amount' => $notification->getAmountValue() . ' ' . $notification->getAmountCurrency(),
+                'status' => $notification->isDone()
+                    ? NotificationEntity::NOTIFICATION_STATUS_PROCESSED
+                    : NotificationEntity::NOTIFICATION_STATUS_PENDING,
+                'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+            ];
+        }
+
+        return new JsonResponse($response);
+    }
+
+    /**
      * Build a response containing the data related to the refunds
      *
      * @param array $refunds
@@ -239,8 +285,8 @@ class AdminController
                 'amount' => $amount,
                 'rawAmount' => $refund->getAmount(),
                 'status' => $refund->getStatus(),
-                'createdAt' => $refund->getCreatedAt()->format('Y-m-d H:i (e)'),
-                'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format('Y-m-d H:i (e)')
+                'createdAt' => $refund->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format(self::ADMIN_DATETIME_FORMAT)
             ];
         }
 

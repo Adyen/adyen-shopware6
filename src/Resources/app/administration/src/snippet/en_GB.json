@@ -16,8 +16,12 @@
             "pspReference": "PSP Reference",
             "amount": "Amount",
             "status": "Status",
+            "event": "Event",
+            "success": "Success",
             "created": "Created",
             "updated": "Updated"
-        }
+        },
+        "notificationsTitle": "Adyen Notifications",
+        "noNotificationsReceived": "No webhook notifications received."
     }
 }
