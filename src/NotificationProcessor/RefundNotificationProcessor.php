@@ -24,34 +24,50 @@
 
 namespace Adyen\Shopware\NotificationProcessor;
 
+use Adyen\Shopware\Entity\Refund\RefundEntity;
+use Adyen\Shopware\Service\RefundService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\System\StateMachine\Exception\IllegalTransitionException;
 
-class RefundNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
+class RefundNotificationProcessor extends NotificationProcessor implements
+    NotificationProcessorInterface,
+    RefundServiceAwareInterface
 {
+    /**
+     * @var RefundService
+     */
+    protected RefundService $refundService;
+
     public function process(): void
     {
         $context = Context::createDefaultContext();
-        $orderTransaction = $this->getOrder()->getTransactions()->first();
+        $order = $this->getOrder();
+        $notification = $this->getNotification();
+        $orderTransaction = $order->getTransactions()->first();
         $state = $orderTransaction->getStateMachineState()->getTechnicalName();
         $logContext = [
-            'orderId' => $this->getOrder()->getId(),
-            'orderNumber' => $this->getOrder()->getOrderNumber(),
+            'orderId' => $order->getId(),
+            'orderNumber' => $order->getOrderNumber(),
             'eventCode' => NotificationEventCodes::REFUND,
             'originalState' => $state
         ];
 
-        if ($this->getNotification()->isSuccess()) {
-            $refundedAmount = (int) $this->getNotification()->getAmountValue();
+        if ($notification->isSuccess()) {
+            $refundedAmount = (int) $notification->getAmountValue();
             $transactionAmount = $this->currencyUtil->sanitize(
                 $orderTransaction->getAmount()->getTotalPrice(),
-                $this->getOrder()->getCurrency()->getIsoCode()
+                $order->getCurrency()->getIsoCode()
             );
 
             if ($refundedAmount > $transactionAmount) {
-                throw new \Exception('The refunded amount is greater than the transaction amount.');
+                throw new \Exception(sprintf(
+                    'The refunded amount %s is greater than the transaction amount. %s',
+                    $refundedAmount,
+                    $transactionAmount
+                ));
             }
 
             $newState = $refundedAmount < $transactionAmount
@@ -64,13 +80,24 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
                 return;
             }
 
+            $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_SUCCESS);
+
             $this->doRefund($orderTransaction, $context, $newState);
             $logContext['newState'] = $newState;
+        } else {
+            $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
         }
 
         $this->logger->info('Processed ' . NotificationEventCodes::REFUND . ' notification.', $logContext);
     }
 
+    /**
+     * Call shopware functionality to change status to refunded
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @param string $newState
+     */
     private function doRefund(OrderTransactionEntity $orderTransaction, Context $context, string $newState)
     {
         try {
@@ -89,5 +116,21 @@ class RefundNotificationProcessor extends NotificationProcessor implements Notif
             $this->getTransactionStateHandler()->paid($orderTransaction->getId(), $context);
             $this->doRefund($orderTransaction, $context, $newState);
         }
+    }
+
+    /**
+     * @param RefundService $refundService
+     */
+    public function setRefundService(RefundService $refundService): void
+    {
+        $this->refundService = $refundService;
+    }
+
+    /**
+     * @return RefundService
+     */
+    public function getRefundService(): RefundService
+    {
+        return $this->refundService;
     }
 }
