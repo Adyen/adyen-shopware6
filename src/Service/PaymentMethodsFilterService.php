@@ -111,4 +111,27 @@ class PaymentMethodsFilterService
 
         return $originalPaymentMethods;
     }
+
+    /**
+     * Check if a payment method is available in the PaymentMethodCollection passed
+     *
+     * @param PaymentMethodCollection $paymentMethods
+     * @param string $paymentMethodCode
+     * @param string $adyenPluginId
+     * @return bool
+     */
+    public function isPaymentMethodInCollection(
+        PaymentMethodCollection $paymentMethods,
+        string $paymentMethodCode,
+        string $adyenPluginId
+    ): bool {
+        $filteredPaymentMethod = $paymentMethods->filter(
+            function (PaymentMethodEntity $paymentMethod) use ($paymentMethodCode, $adyenPluginId) {
+                return $paymentMethod->getPluginId() === $adyenPluginId &&
+                    $paymentMethod->getHandlerIdentifier()::getPaymentMethodCode() === $paymentMethodCode;
+            }
+        )->first();
+
+        return isset($filteredPaymentMethod);
+    }
 }
