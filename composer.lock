@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "36c75a1595013bfc11f6efd69fed0c7b",
+    "content-hash": "404cb225222573fbd2e4100bc03a825d",
     "packages": [
         {
             "name": "adyen/php-api-library",
@@ -59,20 +59,24 @@
         },
         {
             "name": "adyen/php-webhook-module",
-            "version": "0.1.1",
+            "version": "0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Adyen/php-webhook-module.git",
-                "reference": "b061bb5dc8dcf302772ffc1d4b79466984aca6c2"
+                "reference": "0ae76da1d0b356bd7c68dc96d5c69c07fa1ebf6d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Adyen/php-webhook-module/zipball/b061bb5dc8dcf302772ffc1d4b79466984aca6c2",
-                "reference": "b061bb5dc8dcf302772ffc1d4b79466984aca6c2",
+                "url": "https://api.github.com/repos/Adyen/php-webhook-module/zipball/0ae76da1d0b356bd7c68dc96d5c69c07fa1ebf6d",
+                "reference": "0ae76da1d0b356bd7c68dc96d5c69c07fa1ebf6d",
                 "shasum": ""
             },
+            "require": {
+                "adyen/php-api-library": "^10"
+            },
             "require-dev": {
-                "phpunit/phpunit": "^9.5.0"
+                "phpunit/phpunit": "^9.5.0",
+                "squizlabs/php_codesniffer": "^3.5"
             },
             "suggest": {
                 "monolog/monolog": "~2.2.0"
@@ -80,7 +84,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Adyen\\Webhook\\": "src"
+                    "Adyen\\Webhook\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -92,12 +96,12 @@
                     "name": "Adyen"
                 }
             ],
-            "description": "Processes notification for Adyen Payment Plugins",
+            "description": "Webhook module for Adyen Payment Integrations",
             "support": {
                 "issues": "https://github.com/Adyen/php-webhook-module/issues",
-                "source": "https://github.com/Adyen/php-webhook-module/tree/0.1.1"
+                "source": "https://github.com/Adyen/php-webhook-module/tree/0.2.0"
             },
-            "time": "2021-06-30T14:31:17+00:00"
+            "time": "2021-07-19T13:02:12+00:00"
         },
         {
             "name": "aws/aws-sdk-php",
@@ -3313,20 +3317,20 @@
         },
         {
             "name": "paragonie/random_compat",
-            "version": "v9.99.99",
+            "version": "v9.99.100",
             "source": {
                 "type": "git",
                 "url": "https://github.com/paragonie/random_compat.git",
-                "reference": "84b4dfb120c6f9b4ff7b3685f9b8f1aa365a0c95"
+                "reference": "996434e5492cb4c3edcb9168db6fbb1359ef965a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/paragonie/random_compat/zipball/84b4dfb120c6f9b4ff7b3685f9b8f1aa365a0c95",
-                "reference": "84b4dfb120c6f9b4ff7b3685f9b8f1aa365a0c95",
+                "url": "https://api.github.com/repos/paragonie/random_compat/zipball/996434e5492cb4c3edcb9168db6fbb1359ef965a",
+                "reference": "996434e5492cb4c3edcb9168db6fbb1359ef965a",
                 "shasum": ""
             },
             "require": {
-                "php": "^7"
+                "php": ">= 7"
             },
             "require-dev": {
                 "phpunit/phpunit": "4.*|5.*",
@@ -3359,7 +3363,7 @@
                 "issues": "https://github.com/paragonie/random_compat/issues",
                 "source": "https://github.com/paragonie/random_compat"
             },
-            "time": "2018-07-02T15:55:56+00:00"
+            "time": "2020-10-15T08:29:30+00:00"
         },
         {
             "name": "phenx/php-font-lib",
@@ -3945,21 +3949,21 @@
         },
         {
             "name": "ramsey/uuid",
-            "version": "3.9.3",
+            "version": "3.9.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ramsey/uuid.git",
-                "reference": "7e1633a6964b48589b142d60542f9ed31bd37a92"
+                "reference": "be2451bef8147b7352a28fb4cddb08adc497ada3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ramsey/uuid/zipball/7e1633a6964b48589b142d60542f9ed31bd37a92",
-                "reference": "7e1633a6964b48589b142d60542f9ed31bd37a92",
+                "url": "https://api.github.com/repos/ramsey/uuid/zipball/be2451bef8147b7352a28fb4cddb08adc497ada3",
+                "reference": "be2451bef8147b7352a28fb4cddb08adc497ada3",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "paragonie/random_compat": "^1 | ^2 | 9.99.99",
+                "paragonie/random_compat": "^1 | ^2 | ^9.99.99",
                 "php": "^5.4 | ^7 | ^8",
                 "symfony/polyfill-ctype": "^1.8"
             },
@@ -4034,7 +4038,17 @@
                 "source": "https://github.com/ramsey/uuid",
                 "wiki": "https://github.com/ramsey/uuid/wiki"
             },
-            "time": "2020-02-21T04:36:14+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/ramsey",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/ramsey/uuid",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2021-08-06T20:32:15+00:00"
         },
         {
             "name": "rize/uri-template",
