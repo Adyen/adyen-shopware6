@@ -47,14 +47,10 @@ class OrderTransactionRepository
      * OrderTransactionRepository constructor.
      *
      * @param EntityRepositoryInterface $repository
-     * @param LoggerInterface $logger
      */
-    public function __construct(
-        EntityRepositoryInterface $repository,
-        LoggerInterface $logger
-    ) {
+    public function __construct(EntityRepositoryInterface $repository)
+    {
         $this->repository = $repository;
-        $this->logger = $logger;
     }
 
     /**
