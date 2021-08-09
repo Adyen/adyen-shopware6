@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "404cb225222573fbd2e4100bc03a825d",
+    "content-hash": "1141bf8a398fd168dad33aa445468725",
     "packages": [
         {
             "name": "adyen/php-api-library",
@@ -59,16 +59,16 @@
         },
         {
             "name": "adyen/php-webhook-module",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Adyen/php-webhook-module.git",
-                "reference": "0ae76da1d0b356bd7c68dc96d5c69c07fa1ebf6d"
+                "reference": "9998e6a28c49d2b0ec8b418ee1b3ab5c7378fa0a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Adyen/php-webhook-module/zipball/0ae76da1d0b356bd7c68dc96d5c69c07fa1ebf6d",
-                "reference": "0ae76da1d0b356bd7c68dc96d5c69c07fa1ebf6d",
+                "url": "https://api.github.com/repos/Adyen/php-webhook-module/zipball/9998e6a28c49d2b0ec8b418ee1b3ab5c7378fa0a",
+                "reference": "9998e6a28c49d2b0ec8b418ee1b3ab5c7378fa0a",
                 "shasum": ""
             },
             "require": {
@@ -99,9 +99,9 @@
             "description": "Webhook module for Adyen Payment Integrations",
             "support": {
                 "issues": "https://github.com/Adyen/php-webhook-module/issues",
-                "source": "https://github.com/Adyen/php-webhook-module/tree/0.2.0"
+                "source": "https://github.com/Adyen/php-webhook-module/tree/0.3.0"
             },
-            "time": "2021-07-19T13:02:12+00:00"
+            "time": "2021-08-09T13:34:21+00:00"
         },
         {
             "name": "aws/aws-sdk-php",
