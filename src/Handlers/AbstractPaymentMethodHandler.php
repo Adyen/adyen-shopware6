@@ -708,7 +708,10 @@ abstract class AbstractPaymentMethodHandler
 
     private function displaySafeErrorMessages(AdyenException $exception)
     {
-        if ($exception->getErrorType() == 'validation' && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)) {
+        if (
+            $exception->getErrorType() == 'validation'
+            && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)
+        ) {
             $this->session->getFlashBag()->add('warning', $exception->getMessage());
         }
     }
