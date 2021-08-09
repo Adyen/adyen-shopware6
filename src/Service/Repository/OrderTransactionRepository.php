@@ -50,11 +50,9 @@ class OrderTransactionRepository
      * @param LoggerInterface $logger
      */
     public function __construct(
-        EntityRepositoryInterface $repository,
-        LoggerInterface $logger
+        EntityRepositoryInterface $repository
     ) {
         $this->repository = $repository;
-        $this->logger = $logger;
     }
 
     /**
