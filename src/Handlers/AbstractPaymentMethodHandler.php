@@ -70,6 +70,10 @@ abstract class AbstractPaymentMethodHandler
 {
 
     const PROMOTION = 'promotion';
+    /**
+     * Error codes that are safe to display to the shopper.
+     * @see https://docs.adyen.com/development-resources/error-codes
+     */
     const SAFE_ERROR_CODES = ['124'];
 
     protected static $isOpenInvoice = false;
