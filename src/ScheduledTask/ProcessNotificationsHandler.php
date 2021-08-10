@@ -15,7 +15,7 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
@@ -26,7 +26,6 @@ namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
-use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
@@ -76,10 +75,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private $paymentMethodRepository;
     /**
-     * @var AdyenPluginProvider
-     */
-    private $adyenPluginProvider;
-    /**
      * @var array|null
      */
     private $adyenPaymentMethodIds = null;
@@ -106,7 +101,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderRepository $orderRepository,
         OrderTransactionStateHandler $transactionStateHandler,
         EntityRepositoryInterface $paymentMethodRepository,
-        AdyenPluginProvider $adyenPluginProvider,
         RefundService $refundService,
         OrderTransactionRepository $orderTransactionRepository
     ) {
@@ -115,7 +109,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->orderRepository = $orderRepository;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->paymentMethodRepository = $paymentMethodRepository;
-        $this->adyenPluginProvider = $adyenPluginProvider;
         $this->refundService = $refundService;
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
