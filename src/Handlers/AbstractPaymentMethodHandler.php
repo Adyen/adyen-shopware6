@@ -62,6 +62,7 @@ use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
@@ -69,6 +70,11 @@ abstract class AbstractPaymentMethodHandler
 {
 
     const PROMOTION = 'promotion';
+    /**
+     * Error codes that are safe to display to the shopper.
+     * @see https://docs.adyen.com/development-resources/error-codes
+     */
+    const SAFE_ERROR_CODES = ['124'];
 
     protected static $isOpenInvoice = false;
     public static $isGiftCard = false;
@@ -169,6 +175,11 @@ abstract class AbstractPaymentMethodHandler
     protected $productRepository;
 
     /**
+     * @var Session
+     */
+    protected Session $session;
+
+    /**
      * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
      * @param ClientService $clientService
@@ -207,6 +218,7 @@ abstract class AbstractPaymentMethodHandler
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $router,
         CsrfTokenManagerInterface $csrfTokenManager,
+        Session $session,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
         LoggerInterface $logger
@@ -228,6 +240,7 @@ abstract class AbstractPaymentMethodHandler
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->router = $router;
         $this->csrfTokenManager = $csrfTokenManager;
+        $this->session = $session;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
     }
@@ -280,6 +293,7 @@ abstract class AbstractPaymentMethodHandler
                 $transaction->getOrder()->getOrderNumber(),
                 $exception->getMessage()
             );
+            $this->displaySafeErrorMessages($exception);
             $this->logger->error($message);
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
@@ -694,5 +708,13 @@ abstract class AbstractPaymentMethodHandler
         }
 
         return $product;
+    }
+
+    private function displaySafeErrorMessages(AdyenException $exception)
+    {
+        if ('validation' === $exception->getErrorType()
+            && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)) {
+            $this->session->getFlashBag()->add('warning', $exception->getMessage());
+        }
     }
 }
