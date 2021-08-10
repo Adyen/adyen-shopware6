@@ -22,7 +22,7 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHP Code Sniffer
-        run: vendor/bin/phpcs .
+        run: vendor/bin/phpcs . --ignore=.../Resources/public/administration/css/adyen-payment-shopware6.css
 
       - name: Make sure project files are compilable
         run: find -L . -path ./vendor -prune -o -path ./tests -prune -o -name '*.php' -print0 | xargs -0 -n 1 -P 4 php -l

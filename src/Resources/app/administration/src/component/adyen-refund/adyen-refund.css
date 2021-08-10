@@ -1,5 +1,4 @@
-<?php declare(strict_types=1);
-/**
+/*
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -13,26 +12,21 @@
  *                               #############
  *                               ############
  *
- * Adyen Payment Module
+ * Adyen plugin for Shopware 6
  *
  * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
- * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\NotificationProcessor;
+.adyen-card-header {
+    display: flex;
+    height: 30px;
+    margin-bottom: 15px;
+}
 
-class GenericNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
-{
-    public function process(): void
-    {
-        // For other notification event codes that are not listed
-        // in \Adyen\Shopware\NotificationProcessor\NotificationEventCodes
-        // we do nothing.
-        $this->logger->info(
-            'Processed ' . $this->getNotification()->getEventCode() . ' notification. No action taken.'
-        );
-    }
+.adyen-card-header-first {
+    margin-top: auto;
+    width: 100%;
 }
