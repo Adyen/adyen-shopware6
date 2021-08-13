@@ -22,4 +22,4 @@
  * Author: Adyen <magento@adyen.com>
  */
 
-require __DIR__.'/../vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
