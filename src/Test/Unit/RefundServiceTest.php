@@ -50,15 +50,10 @@ class RefundServiceTest extends AdyenTestCase
         $refundRepository = $this->getSimpleMock(AdyenRefundRepository::class);
         $refundRepository->method('getRefundsByOrderId')->willReturn(new EntityCollection([]));
 
-        $refundService = new RefundService(
-            $this->getSimpleMock(Logger::class),
-            $this->getSimpleMock(ConfigurationService::class),
-            $this->getSimpleMock(ClientService::class),
-            $refundRepository,
-            new Currency(),
-            $this->getSimpleMock(OrderTransactionRepository::class),
-            $this->getSimpleMock(OrderTransactionStateHandler::class),
-        );
+        $refundService = $this->createMockedRefundService([
+            AdyenRefundRepository::class => $refundRepository,
+            Currency::class => new Currency()
+        ]);
 
         $this->assertTrue($refundService->isAmountRefundable($order, '5000'));
     }
@@ -70,15 +65,10 @@ class RefundServiceTest extends AdyenTestCase
         $refundRepository = $this->getSimpleMock(AdyenRefundRepository::class);
         $refundRepository->method('getRefundsByOrderId')->willReturn(new EntityCollection([$refund]));
 
-        $refundService = new RefundService(
-            $this->getSimpleMock(Logger::class),
-            $this->getSimpleMock(ConfigurationService::class),
-            $this->getSimpleMock(ClientService::class),
-            $refundRepository,
-            new Currency(),
-            $this->getSimpleMock(OrderTransactionRepository::class),
-            $this->getSimpleMock(OrderTransactionStateHandler::class),
-        );
+        $refundService = $this->createMockedRefundService([
+            AdyenRefundRepository::class => $refundRepository,
+            Currency::class => new Currency()
+        ]);
 
         $this->assertFalse($refundService->isAmountRefundable($order, '1'));
     }
@@ -95,16 +85,68 @@ class RefundServiceTest extends AdyenTestCase
         $refundRepository = $this->getSimpleMock(AdyenRefundRepository::class);
         $refundRepository->method('getRefundsByOrderId')->willReturn(new EntityCollection($refunds));
 
-        $refundService = new RefundService(
-            $this->getSimpleMock(Logger::class),
-            $this->getSimpleMock(ConfigurationService::class),
-            $this->getSimpleMock(ClientService::class),
-            $refundRepository,
-            new Currency(),
-            $this->getSimpleMock(OrderTransactionRepository::class),
-            $this->getSimpleMock(OrderTransactionStateHandler::class),
-        );
+        $refundService = $this->createMockedRefundService([
+            AdyenRefundRepository::class => $refundRepository,
+            Currency::class => new Currency()
+        ]);
 
         $this->assertTrue($refundService->isAmountRefundable($order, '5900'));
+    }
+
+    /**
+     * Use default mocks to create RefundService, except for what is passed in the array
+     * Not using a for loop to ensure better readability
+     *
+     * @param array $parameters
+     * @return RefundService
+     */
+    private function createMockedRefundService(array $classArguments) : RefundService
+    {
+        $logger = $this->getSimpleMock(Logger::class);
+        $configService = $this->getSimpleMock(ConfigurationService::class);
+        $clientService = $this->getSimpleMock(ClientService::class);
+        $refundRepo = $this->getSimpleMock(AdyenRefundRepository::class);
+        $currency = $this->getSimpleMock(Currency::class);
+        $orderTransactionRepo = $this->getSimpleMock(OrderTransactionRepository::class);
+        $orderTransactionStateHandler = $this->getSimpleMock(OrderTransactionStateHandler::class);
+
+
+        if (array_key_exists(Logger::class, $classArguments)) {
+            $logger = $classArguments[Logger::class];
+        }
+
+        if (array_key_exists(ConfigurationService::class, $classArguments)) {
+            $configService = $classArguments[ConfigurationService::class];
+        }
+
+        if (array_key_exists(ClientService::class, $classArguments)) {
+            $clientService = $classArguments[ClientService::class];
+        }
+
+        if (array_key_exists(AdyenRefundRepository::class, $classArguments)) {
+            $refundRepo = $classArguments[AdyenRefundRepository::class];
+        }
+
+        if (array_key_exists(Currency::class, $classArguments)) {
+            $currency = $classArguments[Currency::class];
+        }
+
+        if (array_key_exists(OrderTransactionRepository::class, $classArguments)) {
+            $orderTransactionRepo = $classArguments[OrderTransactionRepository::class];
+        }
+
+        if (array_key_exists(OrderTransactionStateHandler::class, $classArguments)) {
+            $orderTransactionStateHandler = $classArguments[OrderTransactionStateHandler::class];
+        }
+
+        return new RefundService(
+            $logger,
+            $configService,
+            $clientService,
+            $refundRepo,
+            $currency,
+            $orderTransactionRepo,
+            $orderTransactionStateHandler
+        );
     }
 }
