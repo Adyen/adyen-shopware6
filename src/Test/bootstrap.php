@@ -19,7 +19,7 @@
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
- * Author: Adyen <magento@adyen.com>
+ * Author: Adyen <shopware@adyen.com>
  */
 
 require __DIR__.'/../../vendor/autoload.php';
