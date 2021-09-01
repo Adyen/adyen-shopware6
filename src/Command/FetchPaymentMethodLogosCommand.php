@@ -53,5 +53,6 @@ class FetchPaymentMethodLogosCommand extends Command
     {
         $this->handler->run();
         $output->writeln('All available logos have been updated.');
+        return 0;
     }
 }

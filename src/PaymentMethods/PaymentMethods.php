@@ -59,5 +59,17 @@ class PaymentMethods
         AfterpayDefaultPaymentMethod::class,
         TrustlyPaymentMethod::class,
         PaysafecardPaymentMethod::class,
+        GivexGiftCardPaymentMethod::class,
+        WebshopGiftCardPaymentMethod::class,
+        KadowereldGiftCardPaymentMethod::class,
+        TCSTestGiftCardPaymentMethod::class,
+        AlbelliGiftCardPaymentMethod::class,
+        BijenkorfGiftCardPaymentMethod::class,
+        VVVGiftCardPaymentMethod::class,
+        SavvyGiftCardPaymentMethod::class,
+        GallGallGiftCardPaymentMethod::class,
+        HunkemollerLingerieGiftCardPaymentMethod::class,
+        BeautyGiftCardPaymentMethod::class,
+        SVSGiftCardPaymentMethod::class,
     ];
 }

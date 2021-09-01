@@ -1,4 +1,6 @@
-/*
+<?php declare(strict_types=1);
+
+/**
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -12,36 +14,31 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2021 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
+ * Author: Adyen <shopware@adyen.com>
  */
 
-const ApiService = Shopware.Classes.ApiService;
-const { Application } = Shopware;
+namespace Adyen\Shopware\Handlers;
 
-class ApiClient extends ApiService {
-    constructor(httpClient, loginService, apiEndpoint = 'adyen') {
-        super(httpClient, loginService, apiEndpoint);
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class VVVGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
+{
+    public static $isGiftCard = true;
+
+    public static function getPaymentMethodCode()
+    {
+        return 'giftcard';
     }
 
-    check(values) {
-        const headers = this.getBasicHeaders({});
-
-        return this.httpClient
-            .post(`_action/${this.getApiBasePath()}/verify`, values,{
-                headers
-            })
-            .then((response) => {
-                return ApiService.handleResponse(response);
-            });
+    public static function getBrand(): string
+    {
+        return 'vvvgiftcard';
     }
 }
-
-Application.addServiceProvider('adyenConfigCheck', (container) => {
-    const initContainer = Application.getContainer('init');
-    return new ApiClient(initContainer.httpClient, container.loginService);
-});

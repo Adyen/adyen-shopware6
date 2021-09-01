@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  *                       ######
  *                       ######
@@ -22,17 +23,22 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\NotificationProcessor;
+namespace Adyen\Shopware\Handlers;
 
-class GenericNotificationProcessor extends NotificationProcessor implements NotificationProcessorInterface
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class BeautyGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
 {
-    public function process(): void
+    public static $isGiftCard = true;
+
+    public static function getPaymentMethodCode()
     {
-        // For other notification event codes that are not listed
-        // in \Adyen\Shopware\NotificationProcessor\NotificationEventCodes
-        // we do nothing.
-        $this->logger->info(
-            'Processed ' . $this->getNotification()->getEventCode() . ' notification. No action taken.'
-        );
+        return 'giftcard';
+    }
+
+    public static function getBrand(): string
+    {
+        return 'beautycadeaukaart';
     }
 }

@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
@@ -70,14 +71,25 @@ class PaymentMethodsFilterService
 
         foreach ($originalPaymentMethods as $paymentMethodEntity) {
             //If this is an Adyen PM installed it will only be enabled if it's present in the /paymentMethods response
-            /** @var PaymentMethodEntity $paymentMethodEntity */
             if ($paymentMethodEntity->getPluginId() === $adyenPluginId) {
+                /** @var AbstractPaymentMethodHandler $pmHandlerIdentifier */
                 $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
                 $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
 
                 if ($pmCode == OneClickPaymentMethodHandler::getPaymentMethodCode()) {
                     // For OneClick, remove it if /paymentMethod response has no stored payment methods
                     if (empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
+                        $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                    }
+                } elseif ($pmHandlerIdentifier::$isGiftCard) {
+                    $paymentMethodFoundInResponse = array_filter(
+                        $adyenPaymentMethods['paymentMethods'],
+                        function ($value) use ($pmHandlerIdentifier) {
+                            return isset($value['brand']) && $value['brand'] === $pmHandlerIdentifier::getBrand();
+                        }
+                    );
+                    // Remove the PM if it isn't in the paymentMethods response
+                    if (empty($paymentMethodFoundInResponse)) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                 } else {
@@ -98,5 +110,28 @@ class PaymentMethodsFilterService
         }
 
         return $originalPaymentMethods;
+    }
+
+    /**
+     * Check if a payment method is available in the PaymentMethodCollection passed
+     *
+     * @param PaymentMethodCollection $paymentMethods
+     * @param string $paymentMethodCode
+     * @param string $adyenPluginId
+     * @return bool
+     */
+    public function isPaymentMethodInCollection(
+        PaymentMethodCollection $paymentMethods,
+        string $paymentMethodCode,
+        string $adyenPluginId
+    ): bool {
+        $filteredPaymentMethod = $paymentMethods->filter(
+            function (PaymentMethodEntity $paymentMethod) use ($paymentMethodCode, $adyenPluginId) {
+                return $paymentMethod->getPluginId() === $adyenPluginId &&
+                    $paymentMethod->getHandlerIdentifier()::getPaymentMethodCode() === $paymentMethodCode;
+            }
+        )->first();
+
+        return isset($filteredPaymentMethod);
     }
 }

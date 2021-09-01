@@ -22,11 +22,23 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\NotificationProcessor;
+namespace Adyen\Shopware\Entity\Refund;
 
-final class NotificationEventCodes
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
+
+/**
+ * @method void              add(RefundEntity $entity)
+ * @method void              set(string $key, RefundEntity $entity)
+ * @method RefundEntity[]    getIterator()
+ * @method RefundEntity[]    getElements()
+ * @method RefundEntity|null get(string $key)
+ * @method RefundEntity|null first()
+ * @method RefundEntity|null last()
+ */
+class RefundEntityCollection extends EntityCollection
 {
-    public const AUTHORISATION = 'AUTHORISATION';
-    public const OFFER_CLOSED = 'OFFER_CLOSED';
-    public const REFUND = 'REFUND';
+    protected function getExpectedClass(): string
+    {
+        return RefundEntity::class;
+    }
 }

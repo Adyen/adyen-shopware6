@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  *                       ######
  *                       ######
@@ -22,9 +23,22 @@
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\NotificationProcessor;
+namespace Adyen\Shopware\Handlers;
 
-interface NotificationProcessorInterface
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class SavvyGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
 {
-    public function process(): void;
+    public static $isGiftCard = true;
+
+    public static function getPaymentMethodCode()
+    {
+        return 'giftcard';
+    }
+
+    public static function getBrand(): string
+    {
+        return 'genericgiftcard';
+    }
 }

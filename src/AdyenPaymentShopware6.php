@@ -110,6 +110,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.0.0', '<')) {
             $this->updateTo300($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.1.0', '<')) {
+            $this->updateTo310($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -313,6 +317,35 @@ class AdyenPaymentShopware6 extends Plugin
             new PaymentMethods\TrustlyPaymentMethod,
             new PaymentMethods\TwintPaymentMethod,
         ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
+    }
+
+    private function updateTo310(UpdateContext $updateContext): void
+    {
+        //Version 3.1.0 introduces gift cards
+        foreach ([
+                     new PaymentMethods\GivexGiftCardPaymentMethod,
+                     new PaymentMethods\WebshopGiftCardPaymentMethod,
+                     new PaymentMethods\KadowereldGiftCardPaymentMethod,
+                     new PaymentMethods\TCSTestGiftCardPaymentMethod,
+                     new PaymentMethods\AlbelliGiftCardPaymentMethod,
+                     new PaymentMethods\BijenkorfGiftCardPaymentMethod,
+                     new PaymentMethods\VVVGiftCardPaymentMethod,
+                     new PaymentMethods\SavvyGiftCardPaymentMethod,
+                     new PaymentMethods\GallGallGiftCardPaymentMethod,
+                     new PaymentMethods\HunkemollerLingerieGiftCardPaymentMethod,
+                     new PaymentMethods\BeautyGiftCardPaymentMethod,
+                     new PaymentMethods\SVSGiftCardPaymentMethod,
+                 ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()

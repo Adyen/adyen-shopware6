@@ -44,6 +44,7 @@
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="session"/>
             <argument type="service" id="currency.repository"/>
             <argument type="service" id="product.repository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
@@ -173,6 +174,54 @@
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Adyen\Shopware\Handlers\PaysafecardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\GivexGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\WebshopGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\KadowereldGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\TCSTestGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\AlbelliGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\BijenkorfGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\VVVGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\SavvyGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\GallGallGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\HunkemollerLingerieGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\BeautyGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\SVSGiftCardPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
