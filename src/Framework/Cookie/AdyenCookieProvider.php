@@ -31,47 +31,68 @@ class AdyenCookieProvider implements CookieProviderInterface
         ],
         [
             'cookie' => '_uetvid',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => '_uetsid',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
-            'cookie' => '__cfduid',
-            "hidden" => true
+            'cookie' => 'datadome',
+            'snippet_name' => 'cookie',
+            'hidden' => true
+        ],
+        [
+            'cookie' => 'rl_anonymous_id',
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => '_mkto_trk',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
+        ],
+        [
+            'cookie' => 'rl_user_id',
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => '_hjid',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => 'lastUpdatedGdpr',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => 'gdpr',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => '_fbp',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => '_ga',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => '_gid',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ],
         [
             'cookie' => '_gcl_au',
-            "hidden" => true
+            'snippet_name' => 'cookie',
+            'hidden' => true
         ]
     ];
 
