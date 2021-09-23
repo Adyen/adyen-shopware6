@@ -344,7 +344,6 @@ class AdyenPaymentShopware6 extends Plugin
                      new PaymentMethods\AlbelliGiftCardPaymentMethod,
                      new PaymentMethods\BijenkorfGiftCardPaymentMethod,
                      new PaymentMethods\VVVGiftCardPaymentMethod,
-                     //new PaymentMethods\GenericGiftCardPaymentMethod,
                      new PaymentMethods\GallGallGiftCardPaymentMethod,
                      new PaymentMethods\HunkemollerLingerieGiftCardPaymentMethod,
                      new PaymentMethods\BeautyGiftCardPaymentMethod,
@@ -379,6 +378,26 @@ class AdyenPaymentShopware6 extends Plugin
                 $method
             );
         }
+
+        // De-activate Savvy payment method. SetPaymentMethodIsActive() is not used since this requires a method and
+        // in our case, the savvy method no longer exists.
+        /** @var EntityRepositoryInterface $paymentRepository */
+        $paymentRepository = $this->container->get('payment_method.repository');
+        $paymentMethodId = $this->getPaymentMethodId(
+            'Adyen\Shopware\Handlers\SavvyGiftCardPaymentMethodHandler'
+        );
+
+        // If savvy payment method is not found, return
+        if (!$paymentMethodId) {
+            return;
+        }
+
+        $paymentMethodData = [
+            'id' => $paymentMethodId,
+            'active' => false,
+        ];
+
+        $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
     }
 }
 
