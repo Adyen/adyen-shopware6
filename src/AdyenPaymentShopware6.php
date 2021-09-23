@@ -114,6 +114,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.1.0', '<')) {
             $this->updateTo310($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.2.0', '<')) {
+            $this->updateTo320($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -357,6 +361,24 @@ class AdyenPaymentShopware6 extends Plugin
             );
         }
     }
+
+    private function updateTo320(UpdateContext $updateContext): void
+    {
+        foreach ([
+                     new PaymentMethods\FashionChequeGiftCardPaymentMethod(),
+                 ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
+    }
+
 }
 
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
