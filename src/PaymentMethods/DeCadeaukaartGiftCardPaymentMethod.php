@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\FashionChequeGiftCardPaymentMethodHandler;
+use Adyen\Shopware\Handlers\DeCadeaukaartGiftCardPaymentMethodHandler;
 
-class FashionChequeGiftCardPaymentMethod implements PaymentMethodInterface
+class DeCadeaukaartGiftCardPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class FashionChequeGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'FashionCheque';
+        return 'DeCadeaukaart';
     }
 
     /**
@@ -45,7 +45,7 @@ class FashionChequeGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'FashionCheque';
+        return 'DeCadeaukaart';
     }
 
     /**
@@ -55,7 +55,7 @@ class FashionChequeGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return FashionChequeGiftCardPaymentMethodHandler::class;
+        return DeCadeaukaartGiftCardPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class FashionChequeGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_FASHIONCHEQUE_GIFTCARD';
+        return 'ADYEN_DECADEAUKAART_GIFTCARD';
     }
 
     /**
@@ -85,7 +85,7 @@ class FashionChequeGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'fashioncheque.png';
+        return 'decadeaukaart.png';
     }
 
     /**

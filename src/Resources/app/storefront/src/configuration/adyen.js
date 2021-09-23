@@ -156,6 +156,7 @@ export default {
         'hmlingerie': 'handler_adyen_hunkemollerlingeriegiftcardpaymentmethodhandler',
         'beautycadeaukaart': 'handler_adyen_beautygiftcardpaymentmethodhandler',
         'svs': 'handler_adyen_svsgiftcardpaymentmethodhandler',
-        'fashioncheque': 'handler_adyen_fashionchequegiftcardpaymentmethodhandler'
+        'fashioncheque': 'handler_adyen_fashionchequegiftcardpaymentmethodhandler',
+        'decadeaukaart': 'handler_adyen_decadeaukaartgiftcardpaymentmethodhandler'
     }
 }

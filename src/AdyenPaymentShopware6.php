@@ -366,6 +366,7 @@ class AdyenPaymentShopware6 extends Plugin
     {
         foreach ([
                      new PaymentMethods\FashionChequeGiftCardPaymentMethod(),
+                     new PaymentMethods\DeCadeaukaartGiftCardPaymentMethod()
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,

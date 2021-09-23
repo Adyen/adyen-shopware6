@@ -71,6 +71,7 @@ class PaymentMethods
         HunkemollerLingerieGiftCardPaymentMethod::class,
         BeautyGiftCardPaymentMethod::class,
         SVSGiftCardPaymentMethod::class,
-        FashionChequeGiftCardPaymentMethod::class
+        FashionChequeGiftCardPaymentMethod::class,
+        DeCadeaukaartGiftCardPaymentMethod::class
     ];
 }
