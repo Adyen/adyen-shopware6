@@ -344,7 +344,7 @@ class AdyenPaymentShopware6 extends Plugin
                      new PaymentMethods\AlbelliGiftCardPaymentMethod,
                      new PaymentMethods\BijenkorfGiftCardPaymentMethod,
                      new PaymentMethods\VVVGiftCardPaymentMethod,
-                     new PaymentMethods\SavvyGiftCardPaymentMethod,
+                     //new PaymentMethods\GenericGiftCardPaymentMethod,
                      new PaymentMethods\GallGallGiftCardPaymentMethod,
                      new PaymentMethods\HunkemollerLingerieGiftCardPaymentMethod,
                      new PaymentMethods\BeautyGiftCardPaymentMethod,
@@ -366,7 +366,8 @@ class AdyenPaymentShopware6 extends Plugin
     {
         foreach ([
                      new PaymentMethods\FashionChequeGiftCardPaymentMethod(),
-                     new PaymentMethods\DeCadeaukaartGiftCardPaymentMethod()
+                     new PaymentMethods\DeCadeaukaartGiftCardPaymentMethod(),
+                     new PaymentMethods\GenericGiftCardPaymentMethod()
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,

@@ -151,7 +151,7 @@ export default {
         'albelligiftcard': 'handler_adyen_albelligiftcardpaymentmethodhandler',
         'bijcadeaucard': 'handler_adyen_bijenkorfgiftcardpaymentmethodhandler',
         'vvvgiftcard': 'handler_adyen_vvvgiftcardpaymentmethodhandler',
-        'genericgiftcard': 'handler_adyen_savvygiftcardpaymentmethodhandler',
+        'genericgiftcard': 'handler_adyen_genericgiftcardpaymentmethodhandler',
         'gallgall': 'handler_adyen_gallgallgiftcardpaymentmethodhandler',
         'hmlingerie': 'handler_adyen_hunkemollerlingeriegiftcardpaymentmethodhandler',
         'beautycadeaukaart': 'handler_adyen_beautygiftcardpaymentmethodhandler',

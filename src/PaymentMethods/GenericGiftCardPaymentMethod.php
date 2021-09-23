@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\SavvyGiftCardPaymentMethodHandler;
+use Adyen\Shopware\Handlers\GenericGiftCardPaymentMethodHandler;
 
-class SavvyGiftCardPaymentMethod implements PaymentMethodInterface
+class GenericGiftCardPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class SavvyGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Savvy';
+        return 'Generic Giftcard';
     }
 
     /**
@@ -45,7 +45,7 @@ class SavvyGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Savvy Giftcard';
+        return 'Generic Giftcard';
     }
 
     /**
@@ -55,7 +55,7 @@ class SavvyGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return SavvyGiftCardPaymentMethodHandler::class;
+        return GenericGiftCardPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class SavvyGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_SAVVY_GIFTCARD';
+        return 'ADYEN_GENERIC_GIFTCARD';
     }
 
     /**
