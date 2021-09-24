@@ -366,6 +366,14 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * This update will add FashionCheque and DeCadeaukaart
+     * It will also set Savvy to inactive, add it as GenericGiftCard.
+     * It will also remove all links of Savvy payment_method in sales_channel_payment_method and recreate these links
+     * for the new payment method
+     *
+     * @param UpdateContext $updateContext
+     */
     private function updateTo320(UpdateContext $updateContext): void
     {
         foreach ([
@@ -387,6 +395,7 @@ class AdyenPaymentShopware6 extends Plugin
         // Set the Savvy payment method to inactive
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
+        $salesChannelPaymentRepository = $this->container->get('sales_channel_payment_method.repository');
         $savvyPaymentMethodId = $this->getPaymentMethodId(
             'Adyen\Shopware\Handlers\SavvyGiftCardPaymentMethodHandler'
         );
@@ -414,27 +423,28 @@ class AdyenPaymentShopware6 extends Plugin
         );
 
         $salesChannelIds = [];
+        $salesChannels = $savvyPaymentMethod->getSalesChannels();
 
-        /** @var SalesChannelEntity $savvySalesChannel */
-        foreach ($savvyPaymentMethod->getSalesChannels() as $savvySalesChannel) {
-            $salesChannelIds[] = ['id' => $savvySalesChannel->getId()];
+        if (count($salesChannels) > 0) {
+            /** @var SalesChannelEntity $savvySalesChannel */
+            foreach ($savvyPaymentMethod->getSalesChannels() as $savvySalesChannel) {
+                $salesChannelIds[] = ['id' => $savvySalesChannel->getId()];
+                $salesChannelPaymentRepository->delete([
+                    [
+                        'salesChannelId' => $savvySalesChannel->getId(),
+                        'paymentMethodId' => $savvyPaymentMethodId
+                    ]
+                ], $updateContext->getContext());
+            }
+
+            // Add new Generic giftcard links to the sales channel
+            $paymentRepository->update([
+                [
+                    'id' => $genericPaymentMethodId,
+                    'salesChannels' => $salesChannelIds
+                ]
+            ], $updateContext->getContext());
         }
-
-        // Delete existing Savvy links to the sales channels
-        /*$paymentRepository->delete([
-            [
-                'id' => $savvyPaymentMethodId,
-                'salesChannels' => $salesChannelIds
-            ]
-        ], $updateContext->getContext());*/
-
-        // Add new Generic giftcard links to the sales channel
-        $paymentRepository->update([
-            [
-                'id' => $genericPaymentMethodId,
-                'salesChannels' => $salesChannelIds
-            ]
-        ], $updateContext->getContext());
     }
 }
 
