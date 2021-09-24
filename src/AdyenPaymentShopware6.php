@@ -28,8 +28,11 @@ namespace Adyen\Shopware;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
+use Adyen\Shopware\Handlers\GenericGiftCardPaymentMethodHandler;
 use Adyen\Shopware\PaymentMethods;
 use Adyen\Shopware\Service\ConfigurationService;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopware\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
@@ -43,6 +46,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
+use Shopware\Core\System\SalesChannel\SalesChannelCollection;
+use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
 class AdyenPaymentShopware6 extends Plugin
 {
@@ -379,25 +384,57 @@ class AdyenPaymentShopware6 extends Plugin
             );
         }
 
-        // De-activate Savvy payment method. SetPaymentMethodIsActive() is not used since this requires a method and
-        // in our case, the savvy method no longer exists.
+        // Set the Savvy payment method to inactive
         /** @var EntityRepositoryInterface $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
-        $paymentMethodId = $this->getPaymentMethodId(
+        $savvyPaymentMethodId = $this->getPaymentMethodId(
             'Adyen\Shopware\Handlers\SavvyGiftCardPaymentMethodHandler'
         );
-
         // If savvy payment method is not found, return
-        if (!$paymentMethodId) {
+        if (!$savvyPaymentMethodId) {
             return;
         }
-
         $paymentMethodData = [
-            'id' => $paymentMethodId,
-            'active' => false,
+            'id' => $savvyPaymentMethodId,
+            'active' => false
         ];
 
+        // Set the savvy payment method to inactive
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('id', $savvyPaymentMethodId));
+        $criteria->addAssociation('salesChannels');
+
+        /** @var PaymentMethodEntity $savvyPaymentMethod */
+        $savvyPaymentMethod = $paymentRepository->search($criteria, $updateContext->getContext())->first();
+
+        $genericPaymentMethodId = $this->getPaymentMethodId(
+            GenericGiftCardPaymentMethodHandler::class
+        );
+
+        $salesChannelIds = [];
+
+        /** @var SalesChannelEntity $savvySalesChannel */
+        foreach ($savvyPaymentMethod->getSalesChannels() as $savvySalesChannel) {
+            $salesChannelIds[] = ['id' => $savvySalesChannel->getId()];
+        }
+
+        // Delete existing Savvy links to the sales channels
+        /*$paymentRepository->delete([
+            [
+                'id' => $savvyPaymentMethodId,
+                'salesChannels' => $salesChannelIds
+            ]
+        ], $updateContext->getContext());*/
+
+        // Add new Generic giftcard links to the sales channel
+        $paymentRepository->update([
+            [
+                'id' => $genericPaymentMethodId,
+                'salesChannels' => $salesChannelIds
+            ]
+        ], $updateContext->getContext());
     }
 }
 
