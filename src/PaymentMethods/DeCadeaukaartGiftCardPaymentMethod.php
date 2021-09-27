@@ -45,7 +45,7 @@ class DeCadeaukaartGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'DeCadeaukaart';
+        return 'DeCadeaukaart giftcard';
     }
 
     /**
