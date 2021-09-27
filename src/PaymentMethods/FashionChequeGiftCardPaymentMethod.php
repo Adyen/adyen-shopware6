@@ -45,7 +45,7 @@ class FashionChequeGiftCardPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'FashionCheque';
+        return 'FashionCheque giftcard';
     }
 
     /**
