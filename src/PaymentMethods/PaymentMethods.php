@@ -66,10 +66,12 @@ class PaymentMethods
         AlbelliGiftCardPaymentMethod::class,
         BijenkorfGiftCardPaymentMethod::class,
         VVVGiftCardPaymentMethod::class,
-        SavvyGiftCardPaymentMethod::class,
+        GenericGiftCardPaymentMethod::class,
         GallGallGiftCardPaymentMethod::class,
         HunkemollerLingerieGiftCardPaymentMethod::class,
         BeautyGiftCardPaymentMethod::class,
         SVSGiftCardPaymentMethod::class,
+        FashionChequeGiftCardPaymentMethod::class,
+        DeCadeaukaartGiftCardPaymentMethod::class
     ];
 }
