@@ -485,7 +485,7 @@ abstract class AbstractPaymentMethodHandler
 
         if (empty($request['paymentMethod']['personalDetails']['dateOfBirth'])) {
             if ($salesChannelContext->getCustomer()->getBirthday()) {
-                $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('d-m-Y');
+                $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('Y-m-d');
             } else {
                 $shopperDob = '';
             }
