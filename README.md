@@ -7,7 +7,7 @@ We strongly encourage you to join us in contributing to this repository so every
 * Resolved bug fixes and issues
 * Any general improvements
 
-Read our [**contribution guidelines**](https://github.com/Adyen/.github/blob/master/CONTRIBUTING.md) to find out how.
+Read our [**contribution guidelines**](https://github.com/Adyen/.github/blob/main/CONTRIBUTING.md) to find out how.
 
 ## Requirements
 This plugin supports Shopware >= 6.3.1.1
