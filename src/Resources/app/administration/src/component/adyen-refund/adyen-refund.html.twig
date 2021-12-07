@@ -20,6 +20,10 @@
                         :title="$tc('adyen.createRefund')"
                         variant="small">
                     {{ $tc('adyen.refundConfirm') }}: <b>{{ order.orderNumber }}</b>
+                    <div>
+                        <sw-number-field value=null type="inputAmount" numberType="float" allowEmpty="false" v-model="inputAmount" numberType="float"
+                        ></sw-number-field>
+                    </div>
                     <template #modal-footer>
                         <sw-button @click="onCloseModal" size="small">
                             {{ $tc('global.default.cancel') }}

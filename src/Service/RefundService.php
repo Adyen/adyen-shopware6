@@ -116,7 +116,7 @@ class RefundService
      * @return array
      * @throws AdyenException
      */
-    public function refund(OrderEntity $order): array
+    public function refund(OrderEntity $order, $inputAmount): array
     {
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
 
@@ -132,7 +132,7 @@ class RefundService
 
         $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE];
         $currencyIso = $order->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
+        $amount = $this->currency->sanitize($inputAmount, $currencyIso);
 
         $params = [
             'originalReference' => $pspReference,
@@ -142,7 +142,6 @@ class RefundService
             ],
             'merchantAccount' => $merchantAccount
         ];
-
         try {
             $modificationService = new Modification(
                 $this->clientService->getClient($order->getSalesChannelId())
@@ -150,6 +149,7 @@ class RefundService
 
             return $modificationService->refund($params);
         } catch (AdyenException $e) {
+
             $this->logger->error($e->getMessage());
             throw $e;
         }
@@ -206,11 +206,12 @@ class RefundService
         OrderEntity $order,
         string $pspReference,
         string $source,
-        string $status
+        string $status,
+        int $inputAmount
     ) : void {
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
         $currencyIso = $order->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
+        $amount = $this->currency->sanitize($inputAmount, $currencyIso);
 
         $this->adyenRefundRepository->getRepository()->create([
             [

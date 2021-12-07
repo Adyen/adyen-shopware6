@@ -55,15 +55,15 @@ class ApiClient extends ApiService {
             });
     }
 
-    postRefund(orderId) {
+    postRefund(orderId, inputAmount) {
         const headers = this.getBasicHeaders({});
-
         return this.httpClient
-            .post(this.getApiBasePath() + '/refunds', {orderId: orderId}, {
+            .post(this.getApiBasePath() + '/refunds', {orderId: orderId, inputAmount: inputAmount}, {
                 headers
             })
             .then((response) => {
                 return ApiService.handleResponse(response);
+
             }).catch((error) => {
                 console.error('An error occurred during post refund request: ' + error.message);
                 throw error;
@@ -89,8 +89,10 @@ class ApiClient extends ApiService {
         const orderTransactions = order.transactions;
         let isAdyen = false;
         for (let i = 0; i < orderTransactions.length; i++) {
-            if (orderTransactions[i].customFields?.originalPspReference !== undefined) {
-                isAdyen = true;
+            if (orderTransactions[i].customFields !== undefined) {
+                if (orderTransactions[i].customFields.originalPspReference !== undefined) {
+                    isAdyen = true;
+                }
             }
         }
 
