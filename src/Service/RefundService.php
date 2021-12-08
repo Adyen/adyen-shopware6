@@ -149,7 +149,6 @@ class RefundService
 
             return $modificationService->refund($params);
         } catch (AdyenException $e) {
-
             $this->logger->error($e->getMessage());
             throw $e;
         }

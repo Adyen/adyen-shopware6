@@ -17,10 +17,8 @@
                 </div>
                 <sw-modal v-if="showModal"
                         @modal-close="onCloseModal"
-                        :title="$tc('adyen.createRefund')"
+                        :title="$tc('adyen.refundConfirm') + ': ' + order.orderNumber"
                         variant="small">
-                    {{ $tc('adyen.refundConfirm') }}: <b>{{ order.orderNumber }}</b>
-
                     <div>
                         <sw-number-field value=null type="inputAmount" numberType="float" allowEmpty="false" v-model="inputAmount" numberType="float" placeholder="Amount"
                         ></sw-number-field>
