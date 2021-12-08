@@ -49,7 +49,7 @@ Component.register('adyen-refund', {
                 { property: 'createdAt', label: this.$tc('adyen.columnHeaders.created') },
                 { property: 'updatedAt', label: this.$tc('adyen.columnHeaders.updated') }
             ],
-            inputAmount: 0,
+            inputAmount: '',
             showModal: false,
             refunds: [],
             allowRefund: true,
