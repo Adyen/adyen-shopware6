@@ -155,14 +155,14 @@ class AdminController
     {
         $context = Context::createDefaultContext();
         $orderId = $request->request->get('orderId');
-        $inputAmount = $request->request->get('inputAmount');
+        $refundAmount = $request->request->get('refundAmount');
         // If payload does not contain orderNumber
         if (empty($orderId)) {
             $message = 'Order Id was not provided in request';
             $this->logger->error($message);
             return new JsonResponse($message, 400);
-        } elseif (empty($inputAmount)) {
-            $message = 'Input amount was not provided in request';
+        } elseif (empty($refundAmount)) {
+            $message = 'Refund amount was not provided in request';
             $this->logger->error($message);
             return new JsonResponse($message, 400);
         }
@@ -180,7 +180,7 @@ class AdminController
             $this->logger->error($message);
             return new JsonResponse($message, 400);
         } else {
-            $amountInCents = $this->currencyUtil->sanitize($inputAmount, null);
+            $amountInCents = $this->currencyUtil->sanitize($refundAmount, null);
             if (!$this->refundService->isAmountRefundable($order, $amountInCents)) {
                 return new JsonResponse([
                     'success' => false,
@@ -190,7 +190,7 @@ class AdminController
         }
 
         try {
-            $result = $this->refundService->refund($order, $inputAmount);
+            $result = $this->refundService->refund($order, $refundAmount);
             // If response does not contain pspReference
             if (!array_key_exists('pspReference', $result)) {
                 $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
@@ -202,7 +202,7 @@ class AdminController
                 $result['pspReference'],
                 RefundEntity::SOURCE_SHOPWARE,
                 RefundEntity::STATUS_PENDING_WEBHOOK,
-                $inputAmount
+                $refundAmount
             );
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());

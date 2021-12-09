@@ -55,10 +55,10 @@ class ApiClient extends ApiService {
             });
     }
 
-    postRefund(orderId, inputAmount) {
+    postRefund(orderId, refundAmount) {
         const headers = this.getBasicHeaders({});
         return this.httpClient
-            .post(this.getApiBasePath() + '/refunds', {orderId: orderId, inputAmount: inputAmount}, {
+            .post(this.getApiBasePath() + '/refunds', {orderId: orderId, refundAmount: refundAmount}, {
                 headers
             })
             .then((response) => {
