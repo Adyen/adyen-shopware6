@@ -93,10 +93,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         // get selected payment method
         let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
 
-        const giftCardSelected = adyenCheckoutOptions.selectedPaymentMethodHandler.includes('giftcard');
         const updatableSelected = adyenConfiguration.updatablePaymentMethods.includes(selectedAdyenPaymentMethod);
 
-        if (giftCardSelected || (updatableSelected && !this.stateData)) {
+        if (updatableSelected && !this.stateData) {
             // render component to collect payment data
             this.renderPaymentComponent(selectedAdyenPaymentMethod);
             $('[data-adyen-payment-component-modal]').modal({show: true}).on('hidden.bs.modal', function (e) {

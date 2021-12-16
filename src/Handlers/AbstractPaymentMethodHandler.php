@@ -399,6 +399,10 @@ abstract class AbstractPaymentMethodHandler
             $paymentMethodType = $request['paymentMethod']['type'];
         }
 
+        if (static::$isGiftCard) {
+            $request['paymentMethod']['brand'] = static::getBrand();
+        }
+
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
             $request['recurringProcessingModel'] = 'CardOnFile';
             $request['shopperInteraction'] = 'Ecommerce';
