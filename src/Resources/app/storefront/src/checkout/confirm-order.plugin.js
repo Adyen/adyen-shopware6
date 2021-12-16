@@ -115,15 +115,9 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        let identifier = 'type';
-        // Filter payment method configs by brand in the case of giftcards
-        if (adyenCheckoutOptions.selectedPaymentMethodHandler.includes('giftcard')) {
-            identifier = 'brand';
-        }
-
         // Get the payment method object from paymentMethodsResponse
         let paymentMethodConfigs = $.grep(this.adyenCheckout.paymentMethodsResponse.paymentMethods, function(paymentMethod) {
-            return paymentMethod[identifier] === type;
+            return paymentMethod['type'] === type;
         });
         if (paymentMethodConfigs.length === 0) {
             if (this.adyenCheckout.options.environment === 'test') {
@@ -451,9 +445,6 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
         if (!isOneClick && paymentMethod.type === 'scheme' && adyenCheckoutOptions.displaySaveCreditCardOption) {
             configuration.enableStoreDetails = true;
-        }
-        if (paymentMethod.type === 'giftcard') {
-            configuration.type = configuration.brand;
         }
         try {
             const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
