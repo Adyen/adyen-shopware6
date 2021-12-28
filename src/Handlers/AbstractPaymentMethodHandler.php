@@ -399,6 +399,10 @@ abstract class AbstractPaymentMethodHandler
             $paymentMethodType = $request['paymentMethod']['type'];
         }
 
+        if (static::$isGiftCard) {
+            $request['paymentMethod']['brand'] = static::getBrand();
+        }
+
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
             $request['recurringProcessingModel'] = 'CardOnFile';
             $request['shopperInteraction'] = 'Ecommerce';
@@ -485,7 +489,7 @@ abstract class AbstractPaymentMethodHandler
 
         if (empty($request['paymentMethod']['personalDetails']['dateOfBirth'])) {
             if ($salesChannelContext->getCustomer()->getBirthday()) {
-                $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('d-m-Y');
+                $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('Y-m-d');
             } else {
                 $shopperDob = '';
             }
