@@ -187,7 +187,8 @@ class RefundService
                 $order,
                 $notification->getPspreference(),
                 RefundEntity::SOURCE_ADYEN,
-                $newStatus
+                $newStatus,
+                $notification->getAmountValue()
             );
         } else {
             $this->updateAdyenRefundStatus($adyenRefund, $newStatus);
