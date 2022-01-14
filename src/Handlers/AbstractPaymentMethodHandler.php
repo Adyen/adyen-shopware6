@@ -359,7 +359,7 @@ abstract class AbstractPaymentMethodHandler
      * @param string|null $stateData
      * @return array
      */
-    private function preparePaymentsRequest(
+    protected function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
         ?string $stateData = null
@@ -397,6 +397,10 @@ abstract class AbstractPaymentMethodHandler
             $paymentMethodType = static::getPaymentMethodCode();
         } else {
             $paymentMethodType = $request['paymentMethod']['type'];
+        }
+
+        if (static::$isGiftCard) {
+            $request['paymentMethod']['brand'] = static::getBrand();
         }
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
