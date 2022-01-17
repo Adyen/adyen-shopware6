@@ -49,6 +49,7 @@ Component.register('adyen-refund', {
                 { property: 'createdAt', label: this.$tc('adyen.columnHeaders.created') },
                 { property: 'updatedAt', label: this.$tc('adyen.columnHeaders.updated') }
             ],
+            refundAmount: '',
             showModal: false,
             refunds: [],
             allowRefund: true,
@@ -70,7 +71,7 @@ Component.register('adyen-refund', {
 
         onRefund() {
             this.isLoadingRefund = true;
-            this.adyenService.postRefund(this.order.id).then((res) => {
+            this.adyenService.postRefund(this.order.id, this.refundAmount).then((res) => {
                 if (res.success) {
                     this.fetchRefunds();
                     this.createNotificationSuccess({
@@ -122,8 +123,10 @@ Component.register('adyen-refund', {
             const orderTransactions = this.order.transactions;
             let isAdyen = false;
             for (let i = 0; i < orderTransactions.length; i++) {
-                if (orderTransactions[i].customFields?.originalPspReference !== undefined) {
-                    isAdyen = true;
+                if (orderTransactions[i].customFields !== undefined) {
+                    if (orderTransactions[i].customFields.originalPspReference !== undefined) {
+                        isAdyen = true;
+                    }
                 }
             }
 
