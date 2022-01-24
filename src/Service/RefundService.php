@@ -188,7 +188,7 @@ class RefundService
                 $notification->getPspreference(),
                 RefundEntity::SOURCE_ADYEN,
                 $newStatus,
-                $notification->getAmountValue()
+                intval($notification->getAmountValue())
             );
         } else {
             $this->updateAdyenRefundStatus($adyenRefund, $newStatus);
@@ -210,8 +210,6 @@ class RefundService
         int $refundAmount
     ) : void {
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
-        $currencyIso = $order->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize($refundAmount, $currencyIso);
 
         $this->adyenRefundRepository->getRepository()->create([
             [
@@ -219,7 +217,7 @@ class RefundService
                 'pspReference' => $pspReference,
                 'source' => $source,
                 'status' => $status,
-                'amount' => $amount
+                'amount' => $refundAmount
             ]
         ], Context::createDefaultContext());
     }

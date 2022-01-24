@@ -190,7 +190,7 @@ class AdminController
         }
 
         try {
-            $result = $this->refundService->refund($order, $refundAmount);
+            $result = $this->refundService->refund($order, $amountInCents);
             // If response does not contain pspReference
             if (!array_key_exists('pspReference', $result)) {
                 $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
@@ -202,7 +202,7 @@ class AdminController
                 $result['pspReference'],
                 RefundEntity::SOURCE_SHOPWARE,
                 RefundEntity::STATUS_PENDING_WEBHOOK,
-                $refundAmount
+                $amountInCents
             );
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
