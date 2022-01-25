@@ -180,7 +180,8 @@ class AdminController
             $this->logger->error($message);
             return new JsonResponse($message, 400);
         } else {
-            $amountInCents = $this->currencyUtil->sanitize($refundAmount, null);
+            $currencyIso = $order->getCurrency()->getIsoCode();
+            $amountInCents = $this->currencyUtil->sanitize($refundAmount, $currencyIso);
             if (!$this->refundService->isAmountRefundable($order, $amountInCents)) {
                 return new JsonResponse([
                     'success' => false,
