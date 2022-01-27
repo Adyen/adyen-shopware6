@@ -116,7 +116,7 @@ class RefundService
      * @return array
      * @throws AdyenException
      */
-    public function refund(OrderEntity $order): array
+    public function refund(OrderEntity $order, $refundAmount): array
     {
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
 
@@ -132,17 +132,15 @@ class RefundService
 
         $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE];
         $currencyIso = $order->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
 
         $params = [
             'originalReference' => $pspReference,
             'modificationAmount' => [
-                'value' => $amount,
+                'value' => $refundAmount,
                 'currency' => $currencyIso
             ],
             'merchantAccount' => $merchantAccount
         ];
-
         try {
             $modificationService = new Modification(
                 $this->clientService->getClient($order->getSalesChannelId())
@@ -188,7 +186,8 @@ class RefundService
                 $order,
                 $notification->getPspreference(),
                 RefundEntity::SOURCE_ADYEN,
-                $newStatus
+                $newStatus,
+                intval($notification->getAmountValue())
             );
         } else {
             $this->updateAdyenRefundStatus($adyenRefund, $newStatus);
@@ -206,11 +205,10 @@ class RefundService
         OrderEntity $order,
         string $pspReference,
         string $source,
-        string $status
+        string $status,
+        int $refundAmount
     ) : void {
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
-        $currencyIso = $order->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize($order->getAmountTotal(), $currencyIso);
 
         $this->adyenRefundRepository->getRepository()->create([
             [
@@ -218,7 +216,7 @@ class RefundService
                 'pspReference' => $pspReference,
                 'source' => $source,
                 'status' => $status,
-                'amount' => $amount
+                'amount' => $refundAmount
             ]
         ], Context::createDefaultContext());
     }

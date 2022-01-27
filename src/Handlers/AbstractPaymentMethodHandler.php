@@ -359,7 +359,7 @@ abstract class AbstractPaymentMethodHandler
      * @param string|null $stateData
      * @return array
      */
-    private function preparePaymentsRequest(
+    protected function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
         ?string $stateData = null
