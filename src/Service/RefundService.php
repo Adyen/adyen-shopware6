@@ -132,12 +132,11 @@ class RefundService
 
         $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE];
         $currencyIso = $order->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize($refundAmount, $currencyIso);
 
         $params = [
             'originalReference' => $pspReference,
             'modificationAmount' => [
-                'value' => $amount,
+                'value' => $refundAmount,
                 'currency' => $currencyIso
             ],
             'merchantAccount' => $merchantAccount
