@@ -32,7 +32,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\PluginEntity;
-use Shopware\Core\Framework\Store\Services\StoreService;
+use Shopware\Core\Framework\Store\Services\InstanceService;
 use Psr\Cache\CacheItemPoolInterface;
 
 class ClientService
@@ -57,9 +57,9 @@ class ClientService
     private $apiLogger;
 
     /**
-     * @var StoreService
+     * @var InstanceService
      */
-    private $storeService;
+    private $instanceService;
 
     /**
      * @var EntityRepositoryInterface
@@ -78,7 +78,7 @@ class ClientService
      * @param LoggerInterface $genericLogger
      * @param LoggerInterface $apiLogger
      * @param ConfigurationService $configurationService
-     * @param StoreService $storeService
+     * @param InstanceService $instanceService
      * @param CacheItemPoolInterface $cache
      */
     public function __construct(
@@ -86,14 +86,14 @@ class ClientService
         LoggerInterface $genericLogger,
         LoggerInterface $apiLogger,
         ConfigurationService $configurationService,
-        StoreService $storeService,
+        InstanceService $instanceService,
         CacheItemPoolInterface $cache
     ) {
         $this->pluginRepository = $pluginRepository;
         $this->configurationService = $configurationService;
         $this->genericLogger = $genericLogger;
         $this->apiLogger = $apiLogger;
-        $this->storeService = $storeService;
+        $this->instanceService = $instanceService;
         $this->cache = $cache;
     }
 
@@ -110,7 +110,7 @@ class ClientService
             $client = new Client();
             $client->setXApiKey($apiKey);
             $client->setMerchantApplication(self::MERCHANT_APPLICATION_NAME, $this->getModuleVersion());
-            $client->setExternalPlatform(self::EXTERNAL_PLATFORM_NAME, $this->storeService->getShopwareVersion());
+            $client->setExternalPlatform(self::EXTERNAL_PLATFORM_NAME, $this->instanceService->getShopwareVersion());
             $client->setEnvironment($environment, $liveEndpointUrlPrefix);
 
             $client->setLogger($this->apiLogger);
