@@ -195,4 +195,34 @@ class ConfigurationService
 
         return $this->getClientKeyTest($salesChannelId);
     }
+
+    // gesagt.getan. begin
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function isDelayedCaptureActive(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.active', $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function getRescheduleTime(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.rescheduleTime', $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function getOrderState(string $salesChannelId = null)
+    {
+       return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.orderState', $salesChannelId);
+    }
+    // gesagt.getan. end
 }

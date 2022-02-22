@@ -97,5 +97,15 @@
             <argument type="service"
                       id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider.inner"/>
         </service>
+
+        <!--gesagt.getan. services-->
+        <service id="Adyen\Shopware\Service\CaptureService">
+            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            </call>
+        </service>
     </services>
 </container>

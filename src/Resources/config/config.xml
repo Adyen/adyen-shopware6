@@ -117,4 +117,24 @@
             </helpText>
         </input-field>
     </card>
+    <card>
+        <title>Delayed Capture</title>
+        <input-field type="bool">
+            <name>active</name>
+            <label>Active</label>
+        </input-field>
+        <input-field type="int">
+            <name>rescheduleTime</name>
+            <label>Reschedule Notification Time</label>
+            <helpText>
+                This is the time to wait before trying the next capture in seconds
+            </helpText>
+            <defaultValue>43200</defaultValue>
+        </input-field>
+        <component name="sw-entity-single-select">
+            <name>orderState</name>
+            <entity>state_machine_state</entity>
+            <label>Order Shipping State</label>
+        </component>
+    </card>
 </config>

@@ -26,7 +26,9 @@ namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
+use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
+use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
@@ -90,6 +92,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     /** @var OrderTransactionRepository */
     private $orderTransactionRepository;
 
+    /** @var CaptureService */
+    private $captureService;
+
     /** @var array Mapping to convert Shopware transaction states to payment states in the webhook module. */
     private $webhookModuleStateMapping = [
         OrderTransactionStates::STATE_PAID => PaymentStates::STATE_PAID,
@@ -107,7 +112,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         EntityRepositoryInterface $paymentMethodRepository,
         AdyenPluginProvider $adyenPluginProvider,
         RefundService $refundService,
-        OrderTransactionRepository $orderTransactionRepository
+        OrderTransactionRepository $orderTransactionRepository,
+        CaptureService $captureService
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
@@ -117,6 +123,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->refundService = $refundService;
         $this->adyenPluginProvider = $adyenPluginProvider;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->captureService = $captureService;
     }
 
     public static function getHandledMessages(): iterable
@@ -198,6 +205,18 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 if (!$notification->isSuccess()) {
                     $this->handleFailedNotification($notification, $order, $state);
                 }
+/* gesagt.getan. begin -----------------------------------------------------------------------------------------------*/
+                $this->captureService->doKlarnaCapture($notification, $context);
+
+            } catch (CaptureException $e) {
+                $this->logger->warning($e->getMessage(), ['code' => $e->getCode()]);
+
+                $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
+                $this->notificationService->changeNotificationState($notification->getId(), 'processing', false);
+                $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
+                $this->logger->debug("Payment notification {$notification->getId()} requeued.");
+                continue;
+/* gesagt.getan. end -------------------------------------------------------------------------------------------------*/
             } catch (\Exception $exception) {
                 $logContext['errorMessage'] = $exception->getMessage();
                 // set notification error and increment error count
