@@ -233,6 +233,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         Context $context
     ) {
         $order = $orderTransaction->getOrder();
+        if ('REFUND_FAILED' === $notification->getEventCode()) {
+            $this->logger->info(sprintf('Handling REFUND_FAILED on order: %s', $order->getOrderNumber()));
+            $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
+            return;
+        }
+
         switch ($state) {
             case PaymentStates::STATE_PAID:
                 $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
@@ -263,10 +269,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
                 $this->refundService->doRefund($orderTransaction, $transitionState, $context);
 
-                break;
-            case PaymentStates::STATE_REFUND_FAILED:
-                $this->logger->info(sprintf('Handling REFUND_FAILED on order: %s', $order->getOrderNumber()));
-                $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
                 break;
             default:
                 break;

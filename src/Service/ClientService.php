@@ -57,9 +57,9 @@ class ClientService
     private $apiLogger;
 
     /**
-     * @var StoreService
+     * @var string
      */
-    private $storeService;
+    private $shopwareVersion;
 
     /**
      * @var EntityRepositoryInterface
@@ -77,24 +77,24 @@ class ClientService
      * @param EntityRepositoryInterface $pluginRepository
      * @param LoggerInterface $genericLogger
      * @param LoggerInterface $apiLogger
+     * @param string $shopwareVersion
      * @param ConfigurationService $configurationService
-     * @param StoreService $storeService
      * @param CacheItemPoolInterface $cache
      */
     public function __construct(
         EntityRepositoryInterface $pluginRepository,
         LoggerInterface $genericLogger,
         LoggerInterface $apiLogger,
+        string $shopwareVersion,
         ConfigurationService $configurationService,
-        StoreService $storeService,
         CacheItemPoolInterface $cache
     ) {
         $this->pluginRepository = $pluginRepository;
         $this->configurationService = $configurationService;
         $this->genericLogger = $genericLogger;
         $this->apiLogger = $apiLogger;
-        $this->storeService = $storeService;
         $this->cache = $cache;
+        $this->shopwareVersion = $shopwareVersion;
     }
 
     public function getClient($salesChannelId)
@@ -110,7 +110,7 @@ class ClientService
             $client = new Client();
             $client->setXApiKey($apiKey);
             $client->setMerchantApplication(self::MERCHANT_APPLICATION_NAME, $this->getModuleVersion());
-            $client->setExternalPlatform(self::EXTERNAL_PLATFORM_NAME, $this->storeService->getShopwareVersion());
+            $client->setExternalPlatform(self::EXTERNAL_PLATFORM_NAME, $this->shopwareVersion);
             $client->setEnvironment($environment, $liveEndpointUrlPrefix);
 
             $client->setLogger($this->apiLogger);
