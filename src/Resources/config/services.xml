@@ -42,13 +42,20 @@
         </service>
         <service id="Adyen\Shopware\Service\ContainerParametersService" autowire="true">
         </service>
+        <service id="Adyen\Shopware\Service\CaptureService">
+            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            </call>
+        </service>
 
         <!--Commands-->
         <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
             <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
             <tag name="console.command"/>
         </service>
-
         <!--Event subscribers-->
         <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">
             <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
@@ -84,28 +91,16 @@
         <service id="Adyen\Shopware\Service\PaymentMethodsFilterService">
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService" />
         </service>
-
         <!--Shopware Services wiring-->
         <service id="Shopware\Core\Checkout\Payment\Cart\PaymentHandler\DefaultPayment">
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
         </service>
-
         <!--Service decorators-->
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"
                  decorates="Shopware\Storefront\Framework\Cookie\CookieProviderInterface">
             <argument type="service"
                       id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider.inner"/>
-        </service>
-
-        <!--gesagt.getan. services-->
-        <service id="Adyen\Shopware\Service\CaptureService">
-            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
-            <call method="setLogger">
-                <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
-            </call>
         </service>
     </services>
 </container>
