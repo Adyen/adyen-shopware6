@@ -118,14 +118,14 @@
         </input-field>
     </card>
     <card>
-        <title>Delayed Capture</title>
+        <title>Manual Capture</title>
         <input-field type="bool">
             <name>active</name>
-            <label>Active</label>
+            <label>Enabled</label>
         </input-field>
         <input-field type="int">
             <name>rescheduleTime</name>
-            <label>Reschedule Notification Time</label>
+            <label>Capture Delay</label>
             <helpText>
                 This is the time to wait before trying the next capture in seconds
             </helpText>
