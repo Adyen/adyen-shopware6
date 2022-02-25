@@ -131,7 +131,7 @@
             </helpText>
             <defaultValue>43200</defaultValue>
         </input-field>
-        <component name="sw-entity-single-select">
+        <component name="sw-entity-single-select-override">
             <name>orderState</name>
             <entity>state_machine_state</entity>
             <label>Order Shipping State</label>
