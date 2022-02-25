@@ -62,7 +62,7 @@ class CaptureService
             try {
                 $client = $this->clientService->getClient($order->getSalesChannelId());
             } catch (AdyenException|\Exception $e) {
-                throw new CaptureException('Capture not able to retrieve Client.', 1645112503, $e);
+                throw new CaptureException('Capture service not able to retrieve Client.', 1645112503, $e);
             }
 
             $deliveries = $order->getDeliveries();

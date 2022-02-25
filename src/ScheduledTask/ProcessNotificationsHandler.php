@@ -205,7 +205,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 if (!$notification->isSuccess()) {
                     $this->handleFailedNotification($notification, $order, $state);
                 }
-/* gesagt.getan. begin -----------------------------------------------------------------------------------------------*/
                 $this->captureService->doKlarnaCapture($notification, $context);
 
             } catch (CaptureException $e) {
@@ -216,7 +215,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
                 $this->logger->debug("Payment notification {$notification->getId()} requeued.");
                 continue;
-/* gesagt.getan. end -------------------------------------------------------------------------------------------------*/
             } catch (\Exception $exception) {
                 $logContext['errorMessage'] = $exception->getMessage();
                 // set notification error and increment error count
