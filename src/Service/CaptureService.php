@@ -44,7 +44,7 @@ class CaptureService
      */
     public function doKlarnaCapture(NotificationEntity $notification, Context $context)
     {
-        if ($this->configurationService->isDelayedCaptureActive() &&
+        if ($this->configurationService->isManualCaptureActive() &&
             $notification->getPaymentMethod() === KlarnaPayLaterPaymentMethodHandler::getPaymentMethodCode() &&
             $notification->getEventCode() === EventCodes::AUTHORISATION
         ) {
