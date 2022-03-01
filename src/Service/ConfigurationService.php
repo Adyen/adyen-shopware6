@@ -200,9 +200,9 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|bool|float|int|string|null
      */
-    public function isDelayedCaptureActive(string $salesChannelId = null)
+    public function isManualCaptureActive(string $salesChannelId = null)
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.active', $salesChannelId);
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.manualCaptureEnabled', $salesChannelId);
     }
 
     /**

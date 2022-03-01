@@ -120,7 +120,7 @@
     <card>
         <title>Manual Capture</title>
         <input-field type="bool">
-            <name>active</name>
+            <name>manualCaptureEnabled</name>
             <label>Enabled</label>
         </input-field>
         <input-field type="int">
