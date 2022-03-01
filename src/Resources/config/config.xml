@@ -117,4 +117,24 @@
             </helpText>
         </input-field>
     </card>
+    <card>
+        <title>Manual Capture</title>
+        <input-field type="bool">
+            <name>manualCaptureEnabled</name>
+            <label>Enabled</label>
+        </input-field>
+        <input-field type="int">
+            <name>rescheduleTime</name>
+            <label>Capture Delay</label>
+            <helpText>
+                This is the time to wait before trying the next capture in seconds
+            </helpText>
+            <defaultValue>43200</defaultValue>
+        </input-field>
+        <component name="sw-entity-single-select-override">
+            <name>orderState</name>
+            <entity>state_machine_state</entity>
+            <label>Order Shipping State</label>
+        </component>
+    </card>
 </config>

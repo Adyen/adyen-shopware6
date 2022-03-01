@@ -195,4 +195,31 @@ class ConfigurationService
 
         return $this->getClientKeyTest($salesChannelId);
     }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function isManualCaptureActive(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.manualCaptureEnabled', $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function getRescheduleTime(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.rescheduleTime', $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function getOrderState(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.orderState', $salesChannelId);
+    }
 }
