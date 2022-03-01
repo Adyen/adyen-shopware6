@@ -206,7 +206,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     $this->handleFailedNotification($notification, $order, $state);
                 }
                 $this->captureService->doKlarnaCapture($notification, $context);
-
             } catch (CaptureException $e) {
                 $this->logger->warning($e->getMessage(), ['code' => $e->getCode()]);
 

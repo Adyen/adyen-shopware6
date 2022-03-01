@@ -196,8 +196,6 @@ class ConfigurationService
         return $this->getClientKeyTest($salesChannelId);
     }
 
-    // gesagt.getan. begin
-
     /**
      * @param string|null $salesChannelId
      * @return array|bool|float|int|string|null
@@ -222,7 +220,6 @@ class ConfigurationService
      */
     public function getOrderState(string $salesChannelId = null)
     {
-       return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.orderState', $salesChannelId);
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.orderState', $salesChannelId);
     }
-    // gesagt.getan. end
 }

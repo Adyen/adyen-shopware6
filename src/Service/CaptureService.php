@@ -44,8 +44,7 @@ class CaptureService
      */
     public function doKlarnaCapture(NotificationEntity $notification, Context $context)
     {
-        if (
-            $this->configurationService->isDelayedCaptureActive() &&
+        if ($this->configurationService->isDelayedCaptureActive() &&
             $notification->getPaymentMethod() === KlarnaPayLaterPaymentMethodHandler::getPaymentMethodCode() &&
             $notification->getEventCode() === EventCodes::AUTHORISATION
         ) {
@@ -57,12 +56,14 @@ class CaptureService
             );
 
             if (is_null($order)) {
-                throw new CaptureException('Order with order_number ' . $notification->getMerchantReference() . ' not found.', 1645112772);
+                throw new CaptureException(
+                    'Order with order_number ' . $notification->getMerchantReference() . ' not found.'
+                );
             }
             try {
                 $client = $this->clientService->getClient($order->getSalesChannelId());
             } catch (AdyenException|\Exception $e) {
-                throw new CaptureException('Capture service not able to retrieve Client.', 1645112503, $e);
+                throw new CaptureException('Capture service not able to retrieve Client.', 0, $e);
             }
 
             $deliveries = $order->getDeliveries();
@@ -71,7 +72,7 @@ class CaptureService
                 if ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState()) {
                     $this->sendCaptureRequest($order, $notification, $delivery, $client);
                 } else {
-                    throw new CaptureException('Wrong order state', 1645112363);
+                    throw new CaptureException('Wrong order state');
                 }
             }
             $this->logger->info('Capture for order_number ' . $notification->getMerchantReference() . ' end.');
@@ -101,7 +102,8 @@ class CaptureService
             $position = $lineItem->getPosition();
             $key = 'openinvoicedata.line' . $position;
             $lineItemsArray[$key . '.itemAmount'] = ceil($lineItem->getPrice()->getTotalPrice() * 100);
-            $lineItemsArray[$key . '.itemVatPercentage'] = $lineItem->getPrice()->getTaxRules()->highestRate()->getPercentage() * 10;
+            $lineItemsArray[$key . '.itemVatPercentage'] = $lineItem->getPrice()->getTaxRules()
+                    ->highestRate()->getPercentage() * 10;
             $lineItemsArray[$key . '.description'] = $lineItem->getLabel();
             $lineItemsArray[$key . '.itemVatAmount'] = $lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100;
             $lineItemsArray[$key . '.currencyCode'] = $notification->getAmountCurrency();
@@ -148,8 +150,11 @@ class CaptureService
             $modification = new Modification($client);
             $modification->capture($request);
         } catch (AdyenException $e) {
-            throw new CaptureException('Capture for order_number ' . $notification->getMerchantReference() . ' failed.',
-                1645112412, $e);
+            throw new CaptureException(
+                'Capture for order_number ' . $notification->getMerchantReference() . ' failed.',
+                0,
+                $e
+            );
         }
     }
 }
