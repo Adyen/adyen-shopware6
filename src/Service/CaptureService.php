@@ -23,6 +23,37 @@ class CaptureService
 {
     use LoggerAwareTrait;
 
+    const SUPPORTED_PAYMENT_METHOD_CODES = [
+        'cup',
+        'cartebancaire',
+        'visa',
+        'visadankort',
+        'mc',
+        'uatp',
+        'amex',
+        'maestro',
+        'maestrouk',
+        'diners',
+        'discover',
+        'jcb',
+        'laser',
+        'paypal',
+        'sepadirectdebit',
+        'dankort',
+        'elo',
+        'hipercard',
+        'mc_applepay',
+        'visa_applepay',
+        'amex_applepay',
+        'discover_applepay',
+        'maestro_applepay',
+        'paywithgoogle',
+        'svs',
+        'givex',
+        'valuelink',
+        'twint',
+    ];
+
     private OrderRepository $orderRepository;
 
     private ConfigurationService $configurationService;
@@ -156,5 +187,11 @@ class CaptureService
                 $e
             );
         }
+    }
+
+    public function requiresManualCapture($notificationPaymentMethod, $handler)
+    {
+        return $this->configurationService->isManualCaptureActive() &&
+            ($handler::$isOpenInvoice || in_array($notificationPaymentMethod, self::SUPPORTED_PAYMENT_METHOD_CODES));
     }
 }

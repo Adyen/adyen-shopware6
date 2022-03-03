@@ -53,6 +53,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     use LoggerAwareTrait;
 
     const WEBHOOK_TRANSACTION_STATES = [
+        OrderTransactionStates::STATE_OPEN,
         OrderTransactionStates::STATE_PAID,
         OrderTransactionStates::STATE_PARTIALLY_PAID,
         OrderTransactionStates::STATE_REFUNDED,
@@ -97,6 +98,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     /** @var array Mapping to convert Shopware transaction states to payment states in the webhook module. */
     private $webhookModuleStateMapping = [
+        OrderTransactionStates::STATE_OPEN => PaymentStates::STATE_NEW,
         OrderTransactionStates::STATE_PAID => PaymentStates::STATE_PAID,
         OrderTransactionStates::STATE_FAILED => PaymentStates::STATE_FAILED,
         OrderTransactionStates::STATE_IN_PROGRESS => PaymentStates::STATE_IN_PROGRESS,
@@ -177,6 +179,13 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $orderTransaction->getStateMachineState()->getTechnicalName()
             ] ?? '';
 
+            if (empty($currentTransactionState)) {
+                $logContext['paymentState'] = $orderTransaction->getStateMachineState()->getTechnicalName();
+                $this->logger->error('Current payment state is not supported.', $logContext);
+                $this->markAsDone($notification->getId());
+                continue;
+            }
+
             try {
                 $notificationItem = Notification::createItem([
                     'eventCode' => $notification->getEventCode(),
@@ -189,7 +198,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     $this->logger
                 );
             } catch (InvalidDataException $exception) {
-                $logContext['notification'] = get_object_vars($notification);
+                $logContext['notification'] = $notification->getVars();
                 $this->logger->error('Unable to process notification: Invalid notification data', $logContext);
                 $this->markAsDone($notification->getId());
                 continue;
@@ -257,7 +266,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
         switch ($state) {
             case PaymentStates::STATE_PAID:
-                $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
+                if ($this->captureService->requiresManualCapture($notification->getPaymentMethod(), $orderTransaction->getPaymentMethod()->getHandlerIdentifier())) {
+                    $this->transactionStateHandler->authorize($orderTransaction->getId(), $context);
+                } else {
+                    $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
+                }
                 break;
             case PaymentStates::STATE_FAILED:
                 $this->transactionStateHandler->fail($orderTransaction->getId(), $context);

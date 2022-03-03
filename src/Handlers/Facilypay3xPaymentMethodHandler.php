@@ -32,7 +32,7 @@ class Facilypay3xPaymentMethodHandler extends AbstractPaymentMethodHandler imple
     AsynchronousPaymentHandlerInterface
 {
 
-    protected static $isOpenInvoice = true;
+    public static $isOpenInvoice = true;
 
     public static function getPaymentMethodCode()
     {
