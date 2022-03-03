@@ -8,6 +8,8 @@ use Adyen\Shopware\Exception\PaymentFailedException;
 class PaymentResponseHandlerResult
 {
     private $resultCode;
+    private $refusalReason;
+    private $refusalReasonCode;
     private $pspReference;
     private $action;
     private $additionalData;
@@ -21,6 +23,8 @@ class PaymentResponseHandlerResult
     {
         // Set result code
         $this->setResultCode($paymentResponse->getResultCode());
+        $this->setRefusalReason($paymentResponse->getRefusalReason());
+        $this->setRefusalReasonCode($paymentResponse->getRefusalReasonCode());
 
         $response = $paymentResponse->getResponse();
 
@@ -67,6 +71,38 @@ class PaymentResponseHandlerResult
     public function setResultCode($resultCode): void
     {
         $this->resultCode = $resultCode;
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getRefusalReason() : ?string
+    {
+        return $this->refusalReason;
+    }
+
+    /**
+     * @param null|string $refusalReason
+     */
+    public function setRefusalReason($refusalReason): void
+    {
+        $this->refusalReason = $refusalReason;
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getRefusalReasonCode() : ?string
+    {
+        return $this->refusalReasonCode;
+    }
+
+    /**
+     * @param null|string $refusalReasonCode
+     */
+    public function setRefusalReasonCode($refusalReasonCode): void
+    {
+        $this->refusalReasonCode = $refusalReasonCode;
     }
 
     /**

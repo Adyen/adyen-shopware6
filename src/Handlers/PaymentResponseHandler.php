@@ -113,6 +113,13 @@ class PaymentResponseHandler
     ): PaymentResponseHandlerResult {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
+        if (array_key_exists('refusalReason', $response)) {
+            $this->paymentResponseHandlerResult->setRefusalReason($response['refusalReason']);
+        }
+
+        if (array_key_exists('refusalReasonCode', $response)) {
+            $this->paymentResponseHandlerResult->setRefusalReasonCode($response['refusalReasonCode']);
+        }
 
         $this->paymentResponseHandlerResult->setResultCode($resultCode);
 
@@ -292,14 +299,23 @@ class PaymentResponseHandler
         PaymentResponseHandlerResult $paymentResponseHandlerResult
     ): array {
         $resultCode = $paymentResponseHandlerResult->getResultCode();
+        $refusalReason = $paymentResponseHandlerResult->getRefusalReason();
+        $refusalReasonCode= $paymentResponseHandlerResult->getRefusalReasonCode();
 
         switch ($resultCode) {
             case self::AUTHORISED:
+                [
+                    "isFinal" => true,
+                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode()
+                ];
+                break;
             case self::REFUSED:
             case self::ERROR:
                 return [
                     "isFinal" => true,
                     "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                    "refusalReason" => $this->paymentResponseHandlerResult->getRefusalReason(),
+                    "refusalReasonCode" => $this->paymentResponseHandlerResult->getRefusalReasonCode()
                 ];
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
