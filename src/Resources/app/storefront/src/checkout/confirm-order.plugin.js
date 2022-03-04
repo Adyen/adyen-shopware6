@@ -33,6 +33,19 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new StoreApiClient();
+        this.confirmOrderForm = DomAccess.querySelector(document,
+            '#confirmOrderForm');
+        this.confirmOrderForm.addEventListener('submit',
+            this.onConfirmOrderSubmit.bind(this));
+        this.paymentComponent = $(`[data-adyen-payment-component]`);
+        this.responseHandler = this.handlePaymentAction;
+        this.adyenCheckout = Promise;
+        this.initializeCheckoutComponent().then(function () {
+            this.initializeCustomPayButton();
+        }.bind(this));
+    }
+
+    async initializeCheckoutComponent () {
         const { locale, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
@@ -43,14 +56,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
             onAdditionalDetails: this.handleOnAdditionalDetails.bind(this)
         };
-        this.adyenCheckout = new AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
-        this.confirmOrderForm = DomAccess.querySelector(document,
-            '#confirmOrderForm');
-        this.confirmOrderForm.addEventListener('submit',
-            this.onConfirmOrderSubmit.bind(this));
-        this.paymentComponent = $(`[data-adyen-payment-component]`);
-        this.responseHandler = this.handlePaymentAction;
-        this.initializeCustomPayButton();
+        this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
     handleOnAdditionalDetails (state) {
