@@ -304,11 +304,6 @@ class PaymentResponseHandler
 
         switch ($resultCode) {
             case self::AUTHORISED:
-                [
-                    "isFinal" => true,
-                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode()
-                ];
-                break;
             case self::REFUSED:
             case self::ERROR:
                 return [
