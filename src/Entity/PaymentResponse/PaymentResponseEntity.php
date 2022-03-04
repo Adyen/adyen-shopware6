@@ -122,7 +122,7 @@ class PaymentResponseEntity extends Entity
      */
     public function setRefusalReason(string $refusalReason): void
     {
-        $this->resultCode = $refusalReasonCode;
+        $this->refusalReason = $refusalReason;
     }
 
     /**
@@ -138,7 +138,7 @@ class PaymentResponseEntity extends Entity
      */
     public function setRefusalReasonCode(string $refusalReasonCode): void
     {
-        $this->resultCode = $refusalReasonCode;
+        $this->refusalReasonCode = $refusalReasonCode;
     }
 
     /**
