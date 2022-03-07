@@ -1,22 +1,39 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
+/**
+ *                       ######
+ *                       ######
+ * ############    ####( ######  #####. ######  ############   ############
+ * #############  #####( ######  #####. ######  #############  #############
+ *        ######  #####( ######  #####. ######  #####  ######  #####  ######
+ * ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
+ * ###### ######  #####( ######  #####. ######  #####          #####  ######
+ * #############  #############  #############  #############  #####  ######
+ *  ############   ############  #############   ############  #####  ######
+ *                                      ######
+ *                               #############
+ *                               ############
+ *
+ * Adyen Payment Module
+ *
+ * Copyright (c) 2022 Adyen N.V.
+ * This file is open source and available under the MIT license.
+ * See the LICENSE file for more info.
+ *
+ * Author: Adyen <shopware@adyen.com>
+ */
 
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Modification;
-use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
-use Adyen\Shopware\Handlers\KlarnaPayLaterPaymentMethodHandler;
+use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\OrderRepository;
-use Adyen\Webhook\EventCodes;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Psr\Log\LoggerAwareTrait;
-use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
-use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
-use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 
 class CaptureService
@@ -56,16 +73,20 @@ class CaptureService
 
     private OrderRepository $orderRepository;
 
+    private OrderTransactionRepository $orderTransactionRepository;
+
     private ConfigurationService $configurationService;
 
     private ClientService $clientService;
 
     public function __construct(
         OrderRepository $orderRepository,
+        OrderTransactionRepository $orderTransactionRepository,
         ConfigurationService $configurationService,
         ClientService $clientService
     ) {
         $this->orderRepository = $orderRepository;
+        $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
     }
@@ -74,21 +95,30 @@ class CaptureService
      * Send capture request for open invoice payments if de
      * @throws CaptureException
      */
-    public function doOpenInvoiceCapture(NotificationEntity $notification, Context $context)
+    public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context)
     {
-        if ($this->configurationService->isManualCaptureActive()) {
-            $this->logger->info('Capture for order_number ' . $notification->getMerchantReference() . ' start.');
+        if (!$this->configurationService->isManualCaptureActive()) {
+            $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
             $order = $this->orderRepository->getOrderByOrderNumber(
-                $notification->getMerchantReference(),
+                $orderNumber,
                 $context,
                 ['transactions', 'currency', 'lineItems', 'deliveries', 'deliveries.shippingMethod']
             );
 
             if (is_null($order)) {
                 throw new CaptureException(
-                    'Order with order_number ' . $notification->getMerchantReference() . ' not found.'
+                    'Order with order_number ' . $orderNumber . ' not found.'
                 );
             }
+            $orderTransaction = $this->orderTransactionRepository
+                ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
+            $customFields = $orderTransaction->getCustomFields();
+            if (empty($customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE])) {
+                $error = 'Unable to find original authorized payment.';
+                $this->logger->error($error, $order->getVars());
+                throw new CaptureException($error);
+            }
+            $currencyIso = $order->getCurrency()->getIsoCode();
             try {
                 $client = $this->clientService->getClient($order->getSalesChannelId());
             } catch (AdyenException|\Exception $e) {
@@ -99,12 +129,27 @@ class CaptureService
 
             foreach ($deliveries as $delivery) {
                 if ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState()) {
-                    $this->sendCaptureRequest($order, $notification, $delivery, $client);
+                    $lineItems = $order->getLineItems();
+                    $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
+
+                    $additionalData = array_merge($lineItemsArray, [
+                        'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
+                        'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
+                    ]);
+
+                    $request = $this->buildCaptureRequest(
+                        $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
+                        $captureAmount,
+                        $currencyIso,
+                        $additionalData
+                    );
+
+                    $this->sendCaptureRequest($client, $request);
                 } else {
                     throw new CaptureException('Wrong order state');
                 }
             }
-            $this->logger->info('Capture for order_number ' . $notification->getMerchantReference() . ' end.');
+            $this->logger->info('Capture for order_number ' . $order->getOrderNumber() . ' end.');
         }
     }
 
@@ -143,21 +188,19 @@ class CaptureService
     }
 
     private function buildCaptureRequest(
-        NotificationEntity $notification,
-        array $lineItemsArray,
-        OrderDeliveryEntity $delivery
+        string $originalReference,
+        $captureAmountInMinorUnits,
+        string $currency,
+        ?array $additionalData = null
     ): array {
         return [
-            'originalReference' => $notification->getPspReference(),
+            'originalReference' => $originalReference,
             'modificationAmount' => [
-                'value' => $notification->getAmountValue(),
-                'currency' => $notification->getAmountCurrency(),
+                'value' => $captureAmountInMinorUnits,
+                'currency' => $currency,
             ],
             'merchantAccount' => $this->configurationService->getMerchantAccount(),
-            'additionalData' => array_merge($lineItemsArray, [
-                'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
-                'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
-            ])
+            'additionalData' => $additionalData
         ];
     }
 
@@ -165,22 +208,16 @@ class CaptureService
      * @throws CaptureException
      */
     private function sendCaptureRequest(
-        OrderEntity $order,
-        NotificationEntity $notification,
-        OrderDeliveryEntity $delivery,
-        Client $client
+        Client $client,
+        array $request
     ): void {
-        $lineItems = $order->getLineItems();
-        $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
-
-        $request = $this->buildCaptureRequest($notification, $lineItemsArray, $delivery);
-
         try {
             $modification = new Modification($client);
             $modification->capture($request);
         } catch (AdyenException $e) {
+            $this->logger->error('Capture failed', $request);
             throw new CaptureException(
-                'Capture for order_number ' . $notification->getMerchantReference() . ' failed.',
+                'Capture failed.',
                 0,
                 $e
             );
