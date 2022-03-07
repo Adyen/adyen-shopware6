@@ -71,14 +71,12 @@ class CaptureService
     }
 
     /**
+     * Send capture request for open invoice payments if de
      * @throws CaptureException
      */
-    public function doKlarnaCapture(NotificationEntity $notification, Context $context)
+    public function doOpenInvoiceCapture(NotificationEntity $notification, Context $context)
     {
-        if ($this->configurationService->isManualCaptureActive() &&
-            $notification->getPaymentMethod() === KlarnaPayLaterPaymentMethodHandler::getPaymentMethodCode() &&
-            $notification->getEventCode() === EventCodes::AUTHORISATION
-        ) {
+        if ($this->configurationService->isManualCaptureActive()) {
             $this->logger->info('Capture for order_number ' . $notification->getMerchantReference() . ' start.');
             $order = $this->orderRepository->getOrderByOrderNumber(
                 $notification->getMerchantReference(),
@@ -126,7 +124,7 @@ class CaptureService
 
     private function getLineItemsArray(
         ?OrderLineItemCollection $lineItems,
-        NotificationEntity $notification
+        $currencyCode
     ): array {
         $lineItemsArray = [];
         foreach ($lineItems as $lineItem) {
@@ -137,7 +135,7 @@ class CaptureService
                     ->highestRate()->getPercentage() * 10;
             $lineItemsArray[$key . '.description'] = $lineItem->getLabel();
             $lineItemsArray[$key . '.itemVatAmount'] = $lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100;
-            $lineItemsArray[$key . '.currencyCode'] = $notification->getAmountCurrency();
+            $lineItemsArray[$key . '.currencyCode'] = $currencyCode;
             $lineItemsArray[$key . '.numberOfItems'] = $lineItem->getQuantity();
         }
         $lineItemsArray['openinvoicedata.numberOfLines'] = count($lineItems);
@@ -173,7 +171,7 @@ class CaptureService
         Client $client
     ): void {
         $lineItems = $order->getLineItems();
-        $lineItemsArray = $this->getLineItemsArray($lineItems, $notification);
+        $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
 
         $request = $this->buildCaptureRequest($notification, $lineItemsArray, $delivery);
 
@@ -189,9 +187,9 @@ class CaptureService
         }
     }
 
-    public function requiresManualCapture($notificationPaymentMethod, $handler)
+    public function requiresManualCapture($handlerIdentifier)
     {
         return $this->configurationService->isManualCaptureActive() &&
-            ($handler::$isOpenInvoice || in_array($notificationPaymentMethod, self::SUPPORTED_PAYMENT_METHOD_CODES));
+            ($handlerIdentifier::$isOpenInvoice || in_array($handlerIdentifier::getPaymentMethodCode(), self::SUPPORTED_PAYMENT_METHOD_CODES));
     }
 }

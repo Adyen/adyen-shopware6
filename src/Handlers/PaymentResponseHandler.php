@@ -28,6 +28,7 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Service\CaptureService;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -40,7 +41,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentResponseHandler
 {
-
     const AUTHORISED = 'Authorised';
     const REFUSED = 'Refused';
     const REDIRECT_SHOPPER = 'RedirectShopper';
@@ -88,18 +88,25 @@ class PaymentResponseHandler
      */
     private $orderTransactionRepository;
 
+    /**
+     * @var CaptureService
+     */
+    private $captureService;
+
     public function __construct(
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
         PaymentResponseHandlerResult $paymentResponseHandlerResult,
-        EntityRepositoryInterface $orderTransactionRepository
+        EntityRepositoryInterface $orderTransactionRepository,
+        CaptureService $captureService
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->captureService = $captureService;
     }
 
     /**
@@ -193,13 +200,13 @@ class PaymentResponseHandler
         $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
         $resultCode = $paymentResponseHandlerResult->getResultCode();
 
-        // Check if result is already handled
-        if ($this->isTransactionHandled($stateTechnicalName, $resultCode)) {
-            return;
-        }
-
         // Get already stored transaction custom fields
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
+
+        // Check if result is already handled
+        if (!empty($storedTransactionCustomFields['resultCodeProcessed'])) {
+            return;
+        }
 
         // Store action, additionalData and originalPspReference in the transaction
         $transactionCustomFields = [];
@@ -222,6 +229,8 @@ class PaymentResponseHandler
             $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
         }
 
+        $transactionCustomFields['resultCodeProcessed'] = true;
+
         // read custom fields before writing to it so we don't mess with other plugins
         $customFields = array_merge(
             $storedTransactionCustomFields,
@@ -243,24 +252,23 @@ class PaymentResponseHandler
 
         switch ($resultCode) {
             case self::AUTHORISED:
-                // Tag order as paid
-                $this->transactionStateHandler->paid($orderTransactionId, $context);
+                // Set transaction to process authorised if manual capture is not enabled.
+                // Transactions will be set as paid via webhook notification
+                if (!$this->captureService->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier())) {
+                    $this->transactionStateHandler->authorize($orderTransactionId, $context);
+                }
                 break;
             case self::REFUSED:
                 // Fail the order
                 $message = 'The payment was refused';
                 $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
-                throw new PaymentFailedException(
-                    $message
-                );
+                throw new PaymentFailedException($message);
                 break;
             case self::CANCELLED:
                 // Cancel the order
                 $message = 'The payment was cancelled';
                 $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
-                throw new PaymentCancelledException(
-                    $message
-                );
+                throw new PaymentCancelledException($message);
                 break;
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
@@ -282,9 +290,7 @@ class PaymentResponseHandler
                     'orderId' => $transaction->getOrder()->getId(),
                     'resultCode' => $resultCode,
                 ]);
-                throw new PaymentFailedException(
-                    $message
-                );
+                throw new PaymentFailedException($message);
         }
     }
 
@@ -325,41 +331,5 @@ class PaymentResponseHandler
                     "resultCode" => self::ERROR,
                 ];
         }
-    }
-
-    /**
-     * Validates if the state is already changed where the resultCode would switch it
-     * Example: Authorised -> paid, Refused -> failed
-     *
-     * @param string $transactionStateTechnicalName
-     * @param string $resultCode
-     * @return bool
-     */
-    private function isTransactionHandled(
-        $transactionStateTechnicalName,
-        $resultCode
-    ) {
-        // TODO check all the states and adyen resultCodes not just the straightforward ones
-        switch ($resultCode) {
-            case self::AUTHORISED:
-                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_PAID) {
-                    return true;
-                }
-                break;
-            case self::REFUSED:
-            case self::ERROR:
-                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_FAILED) {
-                    return true;
-                }
-                break;
-            case self::CANCELLED:
-                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_CANCELLED) {
-                    return true;
-                }
-                break;
-            default:
-        }
-
-        return false;
     }
 }
