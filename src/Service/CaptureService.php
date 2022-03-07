@@ -97,7 +97,7 @@ class CaptureService
      */
     public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context)
     {
-        if (!$this->configurationService->isManualCaptureActive()) {
+        if ($this->configurationService->isManualCaptureActive()) {
             $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
             $order = $this->orderRepository->getOrderByOrderNumber(
                 $orderNumber,

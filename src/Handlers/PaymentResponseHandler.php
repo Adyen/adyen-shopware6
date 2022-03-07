@@ -206,12 +206,14 @@ class PaymentResponseHandler
         $context = $salesChannelContext->getContext();
         $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
         $resultCode = $paymentResponseHandlerResult->getResultCode();
+        $requiresManualCapture = $this->captureService->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
 
         // Get already stored transaction custom fields
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
 
+        xdebug_break();
         // Check if result is already handled
-        if (!empty($storedTransactionCustomFields['resultCodeProcessed'])) {
+        if ($this->isTransactionHandled($stateTechnicalName, $resultCode, $requiresManualCapture)) {
             return;
         }
 
@@ -236,8 +238,6 @@ class PaymentResponseHandler
             $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
         }
 
-        $transactionCustomFields['resultCodeProcessed'] = true;
-
         // read custom fields before writing to it so we don't mess with other plugins
         $customFields = array_merge(
             $storedTransactionCustomFields,
@@ -261,7 +261,7 @@ class PaymentResponseHandler
             case self::AUTHORISED:
                 // Set transaction to process authorised if manual capture is not enabled.
                 // Transactions will be set as paid via webhook notification
-                if (!$this->captureService->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier())) {
+                if (!$requiresManualCapture) {
                     $this->transactionStateHandler->authorize($orderTransactionId, $context);
                 }
                 break;
@@ -342,5 +342,47 @@ class PaymentResponseHandler
                     "resultCode" => self::ERROR,
                 ];
         }
+    }
+
+    /**
+     * Validates if the state is already changed where the resultCode would switch it
+     * Example: Authorised -> paid, Refused -> failed
+     *
+     * @param string $transactionStateTechnicalName
+     * @param string $resultCode
+     * @param bool $requiresManualCapture
+     * @return bool
+     */
+    private function isTransactionHandled(
+        $transactionStateTechnicalName,
+        $resultCode,
+        $requiresManualCapture = false
+    ) {
+        // TODO check all the states and adyen resultCodes not just the straightforward ones
+        switch ($resultCode) {
+            case self::AUTHORISED:
+                $state = $requiresManualCapture
+                    ? OrderTransactionStates::STATE_OPEN
+                    : OrderTransactionStates::STATE_AUTHORIZED;
+
+                if ($transactionStateTechnicalName === $state) {
+                    return true;
+                }
+                break;
+            case self::REFUSED:
+            case self::ERROR:
+                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_FAILED) {
+                    return true;
+                }
+                break;
+            case self::CANCELLED:
+                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_CANCELLED) {
+                    return true;
+                }
+                break;
+            default:
+        }
+
+        return false;
     }
 }
