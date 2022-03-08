@@ -29,12 +29,15 @@ use Adyen\Client;
 use Adyen\Service\Modification;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class CaptureService
 {
@@ -72,21 +75,21 @@ class CaptureService
     ];
 
     private OrderRepository $orderRepository;
-
     private OrderTransactionRepository $orderTransactionRepository;
-
+    private AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository;
     private ConfigurationService $configurationService;
-
     private ClientService $clientService;
 
     public function __construct(
         OrderRepository $orderRepository,
         OrderTransactionRepository $orderTransactionRepository,
+        AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository,
         ConfigurationService $configurationService,
         ClientService $clientService
     ) {
         $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->adyenPaymentCaptureRepository = $adyenPaymentCaptureRepository;
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
     }
@@ -112,9 +115,16 @@ class CaptureService
             }
             $orderTransaction = $this->orderTransactionRepository
                 ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
+
+            if (!$orderTransaction) {
+                $error = 'Unable to find original authorized transaction.';
+                $this->logger->error($error, $order->getVars());
+                throw new CaptureException($error);
+            }
+
             $customFields = $orderTransaction->getCustomFields();
             if (empty($customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE])) {
-                $error = 'Unable to find original authorized payment.';
+                $error = 'Unable to find original authorized transaction.';
                 $this->logger->error($error, $order->getVars());
                 throw new CaptureException($error);
             }
@@ -127,6 +137,7 @@ class CaptureService
 
             $deliveries = $order->getDeliveries();
 
+            $response = [];
             foreach ($deliveries as $delivery) {
                 if ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState()) {
                     $lineItems = $order->getLineItems();
@@ -144,12 +155,16 @@ class CaptureService
                         $additionalData
                     );
 
-                    $this->sendCaptureRequest($client, $request);
+                    $response[] = $this->sendCaptureRequest($client, $request);
                 } else {
-                    throw new CaptureException('Wrong order state');
+                    throw new CaptureException('Order delivery status does not match configuration');
                 }
             }
             $this->logger->info('Capture for order_number ' . $order->getOrderNumber() . ' end.');
+
+            return $response;
+        } else {
+            throw new CaptureException('Manual capture disabled.');
         }
     }
 
@@ -210,10 +225,10 @@ class CaptureService
     private function sendCaptureRequest(
         Client $client,
         array $request
-    ): void {
+    ) {
         try {
             $modification = new Modification($client);
-            $modification->capture($request);
+            $response = $modification->capture($request);
         } catch (AdyenException $e) {
             $this->logger->error('Capture failed', $request);
             throw new CaptureException(
@@ -222,11 +237,42 @@ class CaptureService
                 $e
             );
         }
+
+        return $response;
     }
 
     public function requiresManualCapture($handlerIdentifier)
     {
         return $this->configurationService->isManualCaptureActive() &&
             ($handlerIdentifier::$isOpenInvoice || in_array($handlerIdentifier::getPaymentMethodCode(), self::SUPPORTED_PAYMENT_METHOD_CODES));
+    }
+
+    public function saveCaptureRequest(
+        OrderEntity $order,
+        string $pspReference,
+        string $source,
+        string $status,
+        int $captureAmount,
+        Context $context
+    )
+    {
+        $orderTransaction = $this->orderTransactionRepository
+            ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
+
+        if (!$orderTransaction) {
+            $error = 'Unable to find original authorized transaction.';
+            $this->logger->error($error, $order->getVars());
+            throw new CaptureException($error);
+        }
+
+        $this->adyenPaymentCaptureRepository->getRepository()->create([
+            [
+                'orderTransactionId' => $orderTransaction->getId(),
+                'pspReference' => $pspReference,
+                'source' => $source,
+                'status' => $status,
+                'amount' => $captureAmount
+            ]
+        ], $context);
     }
 }

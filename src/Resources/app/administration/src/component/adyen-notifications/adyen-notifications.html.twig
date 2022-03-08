@@ -1,4 +1,4 @@
-<template v-if="showWidget">
+<div v-if="showWidget">
     <sw-card :title="$tc('adyen.notificationsTitle')">
         <sw-data-grid
                 v-if="notifications.length"
@@ -9,4 +9,4 @@
         ></sw-data-grid>
         <p v-if="!notifications.length">{{ $tc('adyen.noNotificationsReceived') }}</p>
     </sw-card>
-</template>
+</div>

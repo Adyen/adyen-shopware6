@@ -30,6 +30,9 @@
         <service id="Adyen\Shopware\Entity\Refund\RefundEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_refund"/>
         </service>
+        <service id="Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntityDefinition">
+            <tag name="shopware.entity.definition" entity="adyen_payment_capture"/>
+        </service>
         <service id="Adyen\Shopware\Core\Checkout\Payment\PaymentMethod\PaymentMethodExtension">
             <tag name="shopware.entity.extension"/>
         </service>
@@ -45,6 +48,7 @@
         <service id="Adyen\Shopware\Service\CaptureService">
             <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <call method="setLogger">

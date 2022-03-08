@@ -27,16 +27,21 @@ use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
+use Adyen\Shopware\Exception\CaptureException;
+use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\RefundService;
+use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyFormatter;
@@ -77,6 +82,12 @@ class AdminController
     /** @var Currency */
     private $currencyUtil;
 
+    /** @var CaptureService  */
+    private $captureService;
+
+    /** @var AdyenPaymentCaptureRepository */
+    private $adyenPaymentCaptureRepository;
+
     /**
      * AdminController constructor.
      *
@@ -84,7 +95,9 @@ class AdminController
      * @param OrderRepository $orderRepository
      * @param RefundService $refundService
      * @param AdyenRefundRepository $adyenRefundRepository
+     * @param AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository
      * @param NotificationService $notificationService
+     * @param CaptureService $captureService
      * @param CurrencyFormatter $currencyFormatter
      * @param Currency $currencyUtil
      */
@@ -93,7 +106,9 @@ class AdminController
         OrderRepository $orderRepository,
         RefundService $refundService,
         AdyenRefundRepository $adyenRefundRepository,
+        AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository,
         NotificationService $notificationService,
+        CaptureService $captureService,
         CurrencyFormatter $currencyFormatter,
         Currency $currencyUtil
     ) {
@@ -101,7 +116,9 @@ class AdminController
         $this->orderRepository = $orderRepository;
         $this->refundService = $refundService;
         $this->adyenRefundRepository = $adyenRefundRepository;
+        $this->adyenPaymentCaptureRepository = $adyenPaymentCaptureRepository;
         $this->notificationService = $notificationService;
+        $this->captureService = $captureService;
         $this->currencyFormatter = $currencyFormatter;
         $this->currencyUtil = $currencyUtil;
     }
@@ -137,6 +154,84 @@ class AdminController
         } catch (\Exception $exception) {
             return new JsonResponse(['success' => false, 'message' => $exception->getMessage()]);
         }
+    }
+
+    /**
+     * Send a capture request to the Adyen platform
+     *
+     * @Route(
+     *     "/api/adyen/capture",
+     *     name="api.adyen_payment_capture.post",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function sendCaptureRequest(Request $request)
+    {
+        $context = Context::createDefaultContext();
+        $orderId = $request->request->get('orderId');
+        // If payload does not contain orderNumber
+        if (empty($orderId)) {
+            $message = 'Order Id was not provided in request';
+            $this->logger->error($message);
+            return new JsonResponse($message, 400);
+        }
+
+        xdebug_break();
+        /** @var OrderEntity $order */
+        $order = $this->orderRepository->getOrder($orderId, $context, ['currency']);
+
+        if (is_null($order)) {
+            $message = sprintf('Unable to find order %s', $orderId);
+            $this->logger->error($message);
+            return new JsonResponse($message, 400);
+        }
+
+        $currencyIso = $order->getCurrency()->getIsoCode();
+        $amountInMinorUnit = $this->currencyUtil->sanitize($order->getAmountTotal(), $currencyIso);
+
+        try {
+            $results = $this->captureService->doOpenInvoiceCapture($order->getOrderNumber(), $amountInMinorUnit, $context);
+
+            foreach ($results as $result) {
+                $this->captureService->saveCaptureRequest(
+                    $order,
+                    $result['pspReference'],
+                    PaymentCaptureEntity::SOURCE_SHOPWARE,
+                    PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
+                    $amountInMinorUnit,
+                    $context
+                );
+            }
+        } catch (CaptureException $e) {
+            $this->logger->error($e->getMessage());
+
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'adyen.error',
+            ]);
+        }
+
+        return new JsonResponse(['success' => true, 'response' => $results]);
+    }
+
+    /**
+     * Get payment capture requests by order
+     *
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/captures",
+     *     name="api.adyen_payment_capture.get",
+     *     methods={"GET"}
+     * )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function getCaptureRequests(string $orderId)
+    {
+        $captureRequests = $this->adyenPaymentCaptureRepository->getCaptureRequestsByOrderId($orderId);
+        return new JsonResponse($this->buildResponseData($captureRequests->getElements()));
     }
 
     /**
@@ -181,8 +276,8 @@ class AdminController
             return new JsonResponse($message, 400);
         } else {
             $currencyIso = $order->getCurrency()->getIsoCode();
-            $amountInCents = $this->currencyUtil->sanitize($refundAmount, $currencyIso);
-            if (!$this->refundService->isAmountRefundable($order, $amountInCents)) {
+            $amountInMinorUnit = $this->currencyUtil->sanitize($refundAmount, $currencyIso);
+            if (!$this->refundService->isAmountRefundable($order, $amountInMinorUnit)) {
                 return new JsonResponse([
                     'success' => false,
                     'message' => 'adyen.invalidRefundAmount',
@@ -191,7 +286,7 @@ class AdminController
         }
 
         try {
-            $result = $this->refundService->refund($order, $amountInCents);
+            $result = $this->refundService->refund($order, $amountInMinorUnit);
             // If response does not contain pspReference
             if (!array_key_exists('pspReference', $result)) {
                 $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
@@ -203,14 +298,14 @@ class AdminController
                 $result['pspReference'],
                 RefundEntity::SOURCE_SHOPWARE,
                 RefundEntity::STATUS_PENDING_WEBHOOK,
-                $amountInCents
+                $amountInMinorUnit
             );
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
 
             return new JsonResponse([
                 'success' => false,
-                'message' => 'adyen.refundError',
+                'message' => 'adyen.error',
             ]);
         }
 
@@ -231,7 +326,7 @@ class AdminController
     {
         $refunds = $this->adyenRefundRepository->getRefundsByOrderId($orderId);
 
-        return new JsonResponse($this->buildRefundResponseData($refunds->getElements()));
+        return new JsonResponse($this->buildResponseData($refunds->getElements()));
     }
 
     /**
@@ -269,31 +364,31 @@ class AdminController
     }
 
     /**
-     * Build a response containing the data related to the refunds
+     * Build a response containing the data to be displayed
      *
-     * @param array $refunds
+     * @param array $entities
      * @return array
      */
-    private function buildRefundResponseData(array $refunds)
+    private function buildResponseData(array $entities)
     {
         $context = Context::createDefaultContext();
         $result = [];
-        /** @var RefundEntity $refund */
-        foreach ($refunds as $refund) {
-            $updatedAt = $refund->getUpdatedAt();
-            $order = $refund->getOrderTransaction()->getOrder();
+        /** @var Entity $entity */
+        foreach ($entities as $entity) {
+            $updatedAt = $entity->getUpdatedAt();
+            $order = $entity->getOrderTransaction()->getOrder();
             $amount = $this->currencyFormatter->formatCurrencyByLanguage(
-                $refund->getAmount() / 100,
+                $entity->getAmount() / 100,
                 $order->getCurrency()->getIsoCode(),
                 $order->getLanguageId(),
                 $context
             );
             $result[] = [
-                'pspReference' => $refund->getPspReference(),
+                'pspReference' => $entity->getPspReference(),
                 'amount' => $amount,
-                'rawAmount' => $refund->getAmount(),
-                'status' => $refund->getStatus(),
-                'createdAt' => $refund->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'rawAmount' => $entity->getAmount(),
+                'status' => $entity->getStatus(),
+                'createdAt' => $entity->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
                 'updatedAt' => is_null($updatedAt) ? '-' : $updatedAt->format(self::ADMIN_DATETIME_FORMAT)
             ];
         }

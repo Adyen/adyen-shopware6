@@ -26,6 +26,7 @@ const { Application } = Shopware;
 class ApiClient extends ApiService {
     constructor(httpClient, loginService, apiEndpoint = 'adyen') {
         super(httpClient, loginService, apiEndpoint);
+        this.headers = this.getBasicHeaders({});
     }
 
     check(values) {
@@ -37,6 +38,34 @@ class ApiClient extends ApiService {
             })
             .then((response) => {
                 return ApiService.handleResponse(response);
+            });
+    }
+
+    capture(orderId) {
+        return this.httpClient.post(
+            this.getApiBasePath() + '/capture',
+            { orderId },
+            { headers: this.headers }
+        ).then((response) => {
+            return ApiService.handleResponse(response);
+        }).catch((error) => {
+            console.error('An error occurred during capture request: ' + error.message);
+            throw error;
+        });
+    }
+
+    getCaptureRequests(orderId) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .get(this.getApiBasePath() + '/orders/' + orderId + '/captures', {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred during capture request: ' + error.message);
+                throw error;
             });
     }
 

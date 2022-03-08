@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Service\Repository;
 
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -42,7 +41,6 @@ class AdyenPaymentCaptureRepository
      * AdyenPaymentCaptureRepository constructor.
      *
      * @param EntityRepositoryInterface $repository
-     * @param LoggerInterface $logger
      */
     public function __construct(
         EntityRepositoryInterface $repository
