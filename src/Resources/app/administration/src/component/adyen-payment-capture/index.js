@@ -53,7 +53,6 @@ Component.register('adyen-payment-capture', {
             captureRequests: [],
             allowCapture: true,
             captureEnabled: false,
-            isLoadingTable: true,
             errorOccurred: false,
             isLoading: true,
             showWidget: false,
@@ -122,21 +121,25 @@ Component.register('adyen-payment-capture', {
         },
 
         isCaptureAllowed() {
-            debugger;
-            /*let refundedAmount = 0;
-            for (const refund of this.refunds) {
-                if (refund.status !== 'Failed') {
-                    refundedAmount += refund.rawAmount;
-                }
-            }
+            let capturableTransactions = this.getAuthorizedAdyenOrderTransaction();
+            let capturePending = this.captureRequests.filter(request => {
+                return "Pending Webhook" === request.status;
+            });
 
-            this.allowRefund = this.order.amountTotal > (refundedAmount / 100);*/
+            this.allowCapture = capturableTransactions.length > 0 && capturePending.length === 0;
         },
 
+        getAuthorizedAdyenOrderTransaction() {
+            return this.order.transactions.filter(transaction => {
+                const isAdyenPayment = 'originalPspReference' in transaction.customFields;
+                const isAuthorized = 'Authorized' === transaction.stateMachineState.name;
 
+                return isAdyenPayment && isAuthorized;
+            });
+        }
     },
 
     beforeMount() {
-        this.isCaptureAllowed();
+        this.fetchCaptureRequests();
     }
 })

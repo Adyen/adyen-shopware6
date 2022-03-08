@@ -27,6 +27,7 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Modification;
+use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
@@ -137,7 +138,7 @@ class CaptureService
 
             $deliveries = $order->getDeliveries();
 
-            $response = [];
+            $results = [];
             foreach ($deliveries as $delivery) {
                 if ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState()) {
                     $lineItems = $order->getLineItems();
@@ -155,14 +156,25 @@ class CaptureService
                         $additionalData
                     );
 
-                    $response[] = $this->sendCaptureRequest($client, $request);
+                    $response = $this->sendCaptureRequest($client, $request);
+                    if ('[capture-received]' === $response['response']) {
+                        $this->saveCaptureRequest(
+                            $order,
+                            $response['pspReference'],
+                            PaymentCaptureEntity::SOURCE_SHOPWARE,
+                            PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
+                            $captureAmount,
+                            $context
+                        );
+                    }
+                    $results[] = $response;
                 } else {
                     throw new CaptureException('Order delivery status does not match configuration');
                 }
             }
             $this->logger->info('Capture for order_number ' . $order->getOrderNumber() . ' end.');
 
-            return $response;
+            return $results;
         } else {
             throw new CaptureException('Manual capture disabled.');
         }

@@ -208,14 +208,13 @@ class PaymentResponseHandler
         $resultCode = $paymentResponseHandlerResult->getResultCode();
         $requiresManualCapture = $this->captureService->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
 
-        // Get already stored transaction custom fields
-        $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
-
-        xdebug_break();
         // Check if result is already handled
         if ($this->isTransactionHandled($stateTechnicalName, $resultCode, $requiresManualCapture)) {
             return;
         }
+
+        // Get already stored transaction custom fields
+        $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
 
         // Store action, additionalData and originalPspReference in the transaction
         $transactionCustomFields = [];

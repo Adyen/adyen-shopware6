@@ -179,7 +179,6 @@ class AdminController
             return new JsonResponse($message, 400);
         }
 
-        xdebug_break();
         /** @var OrderEntity $order */
         $order = $this->orderRepository->getOrder($orderId, $context, ['currency']);
 
@@ -194,17 +193,6 @@ class AdminController
 
         try {
             $results = $this->captureService->doOpenInvoiceCapture($order->getOrderNumber(), $amountInMinorUnit, $context);
-
-            foreach ($results as $result) {
-                $this->captureService->saveCaptureRequest(
-                    $order,
-                    $result['pspReference'],
-                    PaymentCaptureEntity::SOURCE_SHOPWARE,
-                    PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
-                    $amountInMinorUnit,
-                    $context
-                );
-            }
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
 
