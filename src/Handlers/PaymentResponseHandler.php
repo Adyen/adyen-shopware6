@@ -362,7 +362,7 @@ class PaymentResponseHandler
         switch ($resultCode) {
             case self::AUTHORISED:
                 $state = $requiresManualCapture
-                    ? OrderTransactionStates::STATE_OPEN
+                    ? OrderTransactionStates::STATE_IN_PROGRESS
                     : OrderTransactionStates::STATE_AUTHORIZED;
 
                 if ($transactionStateTechnicalName === $state) {
