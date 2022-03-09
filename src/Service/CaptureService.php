@@ -123,14 +123,14 @@ class CaptureService
 
             if (!$orderTransaction) {
                 $error = 'Unable to find original authorized transaction.';
-                $this->logger->error($error, $order->getVars());
+                $this->logger->error($error, ['orderNumber' => $order->getOrderNumber()]);
                 throw new CaptureException($error);
             }
 
             $customFields = $orderTransaction->getCustomFields();
             if (empty($customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE])) {
-                $error = 'Unable to find original authorized transaction.';
-                $this->logger->error($error, $order->getVars());
+                $error = 'Order transaction does not contain the original PSP reference.';
+                $this->logger->error($error, ['orderNumber' => $order->getOrderNumber()]);
                 throw new CaptureException($error);
             }
             $currencyIso = $order->getCurrency()->getIsoCode();
@@ -167,7 +167,7 @@ class CaptureService
                             $response['pspReference'],
                             PaymentCaptureEntity::SOURCE_SHOPWARE,
                             PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
-                            $captureAmount,
+                            intval($captureAmount),
                             $context
                         );
                     }
