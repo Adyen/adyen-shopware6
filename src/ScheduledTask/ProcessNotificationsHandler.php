@@ -275,10 +275,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 ) {
                     $this->logger->info('Manual capture required. Setting payment to `authorised` state.', ['notification' => $notification->getVars()]);
                     $this->transactionStateHandler->authorize($orderTransaction->getId(), $context);
-                    if ($paymentMethodHandler::$isOpenInvoice) {
-                        $this->logger->info('Attempting capture for open invoice payment.', ['notification' => $notification->getVars()]);
-                        $this->captureService->doOpenInvoiceCapture($notification->getMerchantReference(), $notification->getAmountValue(), $context);
-                    }
+
+                    $this->logger->info('Attempting capture for open invoice payment.', ['notification' => $notification->getVars()]);
+                    $this->captureService->doOpenInvoiceCapture($notification->getMerchantReference(), $notification->getAmountValue(), $context);
                 } else {
                     $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
                 }

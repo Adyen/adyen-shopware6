@@ -100,7 +100,7 @@ class CaptureService
     }
 
     /**
-     * Send capture request for open invoice payments if de
+     * Send capture request for open invoice payments
      * @throws CaptureException
      */
     public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context)
@@ -259,8 +259,7 @@ class CaptureService
 
     public function requiresManualCapture($handlerIdentifier)
     {
-        return $this->configurationService->isManualCaptureActive() &&
-            ($handlerIdentifier::$isOpenInvoice || in_array($handlerIdentifier::getPaymentMethodCode(), self::SUPPORTED_PAYMENT_METHOD_CODES));
+        return $this->configurationService->isManualCaptureActive() && $handlerIdentifier::$isOpenInvoice;
     }
 
     public function saveCaptureRequest(

@@ -22,7 +22,6 @@
 
 import './service/adyenService';
 import './component/adyen-config-check-button';
-//import './component/adyen-order-detail-card-header';
 import './component/adyen-payment-capture';
 import './component/adyen-refund';
 import './component/adyen-notifications';
