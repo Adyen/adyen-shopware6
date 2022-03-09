@@ -26,6 +26,7 @@ namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
@@ -218,6 +219,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 if (!$notification->isSuccess()) {
                     $this->handleFailedNotification($notification, $order, $state);
                 }
+
+                $this->handleEventCodes($notification, $orderTransaction, $context);
             } catch (CaptureException $e) {
                 $this->logger->warning($e->getMessage(), ['code' => $e->getCode()]);
 
@@ -259,11 +262,6 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         Context $context
     ) {
         $order = $orderTransaction->getOrder();
-        if ('REFUND_FAILED' === $notification->getEventCode()) {
-            $this->logger->info(sprintf('Handling REFUND_FAILED on order: %s', $order->getOrderNumber()));
-            $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
-            return;
-        }
 
         switch ($state) {
             case PaymentStates::STATE_PAID:
@@ -313,6 +311,28 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
                 break;
             default:
+                break;
+        }
+    }
+
+    private function handleEventCodes(NotificationEntity $notification, OrderTransactionEntity $orderTransaction, Context $context)
+    {
+        $order = $orderTransaction->getOrder();
+        switch ($notification->getEventCode()) {
+            case EventCodes::REFUND_FAILED:
+                $this->logger->info(sprintf('Handling REFUND_FAILED on order: %s', $order->getOrderNumber()));
+                $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
+                break;
+            case EventCodes::CAPTURE:
+                $this->logger->info('Handling CAPTURE notification', ['order' => $order->getVars(), 'notification' => $notification->getVars()]);
+                if ($notification->isSuccess()) {
+                    $this->captureService->handleCaptureNotification($orderTransaction, $notification, PaymentCaptureEntity::STATUS_SUCCESS, $context);
+                } else {
+                    $this->captureService->handleCaptureNotification($orderTransaction, $notification, PaymentCaptureEntity::STATUS_FAILED, $context);
+                }
+                break;
+            case EventCodes::CAPTURE_FAILED:
+                $this->captureService->handleCaptureNotification($orderTransaction, $notification, PaymentCaptureEntity::STATUS_FAILED, $context);
                 break;
         }
     }

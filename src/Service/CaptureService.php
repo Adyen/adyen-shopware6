@@ -27,6 +27,7 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Modification;
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
@@ -35,10 +36,13 @@ use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
 class CaptureService
 {
@@ -159,7 +163,7 @@ class CaptureService
                     $response = $this->sendCaptureRequest($client, $request);
                     if ('[capture-received]' === $response['response']) {
                         $this->saveCaptureRequest(
-                            $order,
+                            $orderTransaction,
                             $response['pspReference'],
                             PaymentCaptureEntity::SOURCE_SHOPWARE,
                             PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
@@ -260,7 +264,7 @@ class CaptureService
     }
 
     public function saveCaptureRequest(
-        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction,
         string $pspReference,
         string $source,
         string $status,
@@ -268,14 +272,7 @@ class CaptureService
         Context $context
     )
     {
-        $orderTransaction = $this->orderTransactionRepository
-            ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
-
-        if (!$orderTransaction) {
-            $error = 'Unable to find original authorized transaction.';
-            $this->logger->error($error, $order->getVars());
-            throw new CaptureException($error);
-        }
+        $this->validateNewStatus($status, $pspReference);
 
         $this->adyenPaymentCaptureRepository->getRepository()->create([
             [
@@ -286,5 +283,63 @@ class CaptureService
                 'amount' => $captureAmount
             ]
         ], $context);
+    }
+
+    public function updateCaptureRequestStatus(PaymentCaptureEntity $captureEntity, string $newStatus, Context $context)
+    {
+        $this->validateNewStatus($newStatus, $captureEntity->getPspReference());
+
+        $this->adyenPaymentCaptureRepository->getRepository()->update([
+            [
+                'id' => $captureEntity->getId(),
+                'status' => $newStatus
+            ]
+        ], $context);
+    }
+
+    public function handleCaptureNotification(
+        OrderTransactionEntity $transaction,
+        NotificationEntity $notification,
+        string $newStatus,
+        Context $context
+    )
+    {
+        $criteria = new Criteria();
+
+        $criteria->addFilter(new AndFilter([
+            new EqualsFilter('orderTransactionId', $transaction->getId()),
+            new EqualsFilter('pspReference', $notification->getPspreference())
+        ]));
+
+        /** @var PaymentCaptureEntity $adyenRefund */
+        $capture = $this->adyenPaymentCaptureRepository->getRepository()
+            ->search($criteria, $context)->first();
+
+        if (is_null($capture)) {
+            $this->saveCaptureRequest(
+                $transaction,
+                $notification->getPspreference(),
+                PaymentCaptureEntity::SOURCE_ADYEN,
+                $newStatus,
+                intval($notification->getAmountValue()),
+                $context
+            );
+        } else {
+            $this->updateCaptureRequestStatus($capture, $newStatus, $context);
+        }
+    }
+
+    /**
+     * @param string $newStatus
+     * @param string $pspReference
+     * @throws AdyenException
+     */
+    private function validateNewStatus(string $newStatus, string $pspReference): void
+    {
+        if (!in_array($newStatus, PaymentCaptureEntity::getStatuses())) {
+            $message = 'Invalid update status for payment capture entity.';
+            $this->logger->error($message, ['newStatus' => $newStatus, 'pspReference' => $pspReference]);
+            throw new AdyenException($message);
+        }
     }
 }

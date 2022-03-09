@@ -219,6 +219,7 @@ class AdminController
     public function getCaptureRequests(string $orderId)
     {
         $captureRequests = $this->adyenPaymentCaptureRepository->getCaptureRequestsByOrderId($orderId);
+
         return new JsonResponse($this->buildResponseData($captureRequests->getElements()));
     }
 
