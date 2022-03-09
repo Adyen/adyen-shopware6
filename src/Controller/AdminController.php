@@ -192,7 +192,8 @@ class AdminController
         $amountInMinorUnit = $this->currencyUtil->sanitize($order->getAmountTotal(), $currencyIso);
 
         try {
-            $results = $this->captureService->doOpenInvoiceCapture($order->getOrderNumber(), $amountInMinorUnit, $context);
+            $results = $this->captureService
+                ->doOpenInvoiceCapture($order->getOrderNumber(), $amountInMinorUnit, $context);
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
 

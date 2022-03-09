@@ -269,8 +269,7 @@ class CaptureService
         string $status,
         int $captureAmount,
         Context $context
-    )
-    {
+    ) {
         $this->validateNewStatus($status, $pspReference);
 
         $this->adyenPaymentCaptureRepository->getRepository()->create([
@@ -301,8 +300,7 @@ class CaptureService
         NotificationEntity $notification,
         string $newStatus,
         Context $context
-    )
-    {
+    ) {
         $criteria = new Criteria();
 
         $criteria->addFilter(new AndFilter([

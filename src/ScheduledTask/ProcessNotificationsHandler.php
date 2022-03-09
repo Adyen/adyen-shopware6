@@ -269,15 +269,23 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 // For AUTHORISATION, set Order Transaction to `authorised` if manual capture is required.
                 // Send capture request for open invoice payments.
                 $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
-                if (
-                    EventCodes::AUTHORISATION === $notification->getEventCode() &&
-                    $this->captureService->requiresManualCapture($paymentMethodHandler)
-                ) {
-                    $this->logger->info('Manual capture required. Setting payment to `authorised` state.', ['notification' => $notification->getVars()]);
+                if (EventCodes::AUTHORISATION === $notification->getEventCode() &&
+                    $this->captureService->requiresManualCapture($paymentMethodHandler)) {
+                    $this->logger->info(
+                        'Manual capture required. Setting payment to `authorised` state.',
+                        ['notification' => $notification->getVars()]
+                    );
                     $this->transactionStateHandler->authorize($orderTransaction->getId(), $context);
 
-                    $this->logger->info('Attempting capture for open invoice payment.', ['notification' => $notification->getVars()]);
-                    $this->captureService->doOpenInvoiceCapture($notification->getMerchantReference(), $notification->getAmountValue(), $context);
+                    $this->logger->info(
+                        'Attempting capture for open invoice payment.',
+                        ['notification' => $notification->getVars()]
+                    );
+                    $this->captureService->doOpenInvoiceCapture(
+                        $notification->getMerchantReference(),
+                        $notification->getAmountValue(),
+                        $context
+                    );
                 } else {
                     $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
                 }
@@ -314,8 +322,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         }
     }
 
-    private function handleEventCodes(NotificationEntity $notification, OrderTransactionEntity $orderTransaction, Context $context)
-    {
+    private function handleEventCodes(
+        NotificationEntity $notification,
+        OrderTransactionEntity $orderTransaction,
+        Context $context
+    ) {
         $order = $orderTransaction->getOrder();
         switch ($notification->getEventCode()) {
             case EventCodes::REFUND_FAILED:
@@ -323,15 +334,33 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
                 break;
             case EventCodes::CAPTURE:
-                $this->logger->info('Handling CAPTURE notification', ['order' => $order->getVars(), 'notification' => $notification->getVars()]);
+                $this->logger->info(
+                    'Handling CAPTURE notification',
+                    ['order' => $order->getVars(), 'notification' => $notification->getVars()]
+                );
                 if ($notification->isSuccess()) {
-                    $this->captureService->handleCaptureNotification($orderTransaction, $notification, PaymentCaptureEntity::STATUS_SUCCESS, $context);
+                    $this->captureService->handleCaptureNotification(
+                        $orderTransaction,
+                        $notification,
+                        PaymentCaptureEntity::STATUS_SUCCESS,
+                        $context
+                    );
                 } else {
-                    $this->captureService->handleCaptureNotification($orderTransaction, $notification, PaymentCaptureEntity::STATUS_FAILED, $context);
+                    $this->captureService->handleCaptureNotification(
+                        $orderTransaction,
+                        $notification,
+                        PaymentCaptureEntity::STATUS_FAILED,
+                        $context
+                    );
                 }
                 break;
             case EventCodes::CAPTURE_FAILED:
-                $this->captureService->handleCaptureNotification($orderTransaction, $notification, PaymentCaptureEntity::STATUS_FAILED, $context);
+                $this->captureService->handleCaptureNotification(
+                    $orderTransaction,
+                    $notification,
+                    PaymentCaptureEntity::STATUS_FAILED,
+                    $context
+                );
                 break;
         }
     }

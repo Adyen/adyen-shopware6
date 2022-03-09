@@ -206,7 +206,8 @@ class PaymentResponseHandler
         $context = $salesChannelContext->getContext();
         $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
         $resultCode = $paymentResponseHandlerResult->getResultCode();
-        $requiresManualCapture = $this->captureService->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
+        $requiresManualCapture = $this->captureService
+            ->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
 
         // Check if result is already handled
         if ($this->isTransactionHandled($stateTechnicalName, $resultCode, $requiresManualCapture)) {

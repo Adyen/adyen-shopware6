@@ -28,7 +28,6 @@ use Adyen\AdyenException;
 use Adyen\Shopware\Exception\AuthenticationException;
 use Adyen\Shopware\Exception\HMACKeyValidationException;
 use Adyen\Shopware\Exception\MerchantAccountCodeException;
-use Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,17 +39,15 @@ class NotificationReceiverController extends StorefrontController
 {
     /** @var NotificationReceiverService */
     private $notificationReceiverService;
-    private ProcessNotificationsHandler $handler;
 
     /**
      * NotificationReceiverController constructor.
      *
      * @param NotificationReceiverService $notificationReceiverService
      */
-    public function __construct(NotificationReceiverService $notificationReceiverService, ProcessNotificationsHandler $handler)
+    public function __construct(NotificationReceiverService $notificationReceiverService)
     {
         $this->notificationReceiverService = $notificationReceiverService;
-        $this->handler = $handler;
     }
 
     /**
@@ -70,9 +67,6 @@ class NotificationReceiverController extends StorefrontController
      */
     public function execute(Request $request): JsonResponse
     {
-        xdebug_break();
-        $this->handler->run();
-        return new JsonResponse('[accepted]'); //
-        //return $this->notificationReceiverService->process($request);
+        return $this->notificationReceiverService->process($request);
     }
 }
