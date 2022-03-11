@@ -28,6 +28,7 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Service\CaptureService;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -40,7 +41,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentResponseHandler
 {
-
     const AUTHORISED = 'Authorised';
     const REFUSED = 'Refused';
     const REDIRECT_SHOPPER = 'RedirectShopper';
@@ -88,18 +88,25 @@ class PaymentResponseHandler
      */
     private $orderTransactionRepository;
 
+    /**
+     * @var CaptureService
+     */
+    private $captureService;
+
     public function __construct(
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
         PaymentResponseHandlerResult $paymentResponseHandlerResult,
-        EntityRepositoryInterface $orderTransactionRepository
+        EntityRepositoryInterface $orderTransactionRepository,
+        CaptureService $captureService
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->captureService = $captureService;
     }
 
     /**
@@ -199,9 +206,11 @@ class PaymentResponseHandler
         $context = $salesChannelContext->getContext();
         $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
         $resultCode = $paymentResponseHandlerResult->getResultCode();
+        $requiresManualCapture = $this->captureService
+            ->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
 
         // Check if result is already handled
-        if ($this->isTransactionHandled($stateTechnicalName, $resultCode)) {
+        if ($this->isTransactionHandled($stateTechnicalName, $resultCode, $requiresManualCapture)) {
             return;
         }
 
@@ -250,24 +259,23 @@ class PaymentResponseHandler
 
         switch ($resultCode) {
             case self::AUTHORISED:
-                // Tag order as paid
-                $this->transactionStateHandler->paid($orderTransactionId, $context);
+                // Set transaction to process authorised if manual capture is not enabled.
+                // Transactions will be set as paid via webhook notification
+                if (!$requiresManualCapture) {
+                    $this->transactionStateHandler->authorize($orderTransactionId, $context);
+                }
                 break;
             case self::REFUSED:
                 // Fail the order
                 $message = 'The payment was refused';
                 $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
-                throw new PaymentFailedException(
-                    $message
-                );
+                throw new PaymentFailedException($message);
                 break;
             case self::CANCELLED:
                 // Cancel the order
                 $message = 'The payment was cancelled';
                 $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
-                throw new PaymentCancelledException(
-                    $message
-                );
+                throw new PaymentCancelledException($message);
                 break;
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
@@ -289,9 +297,7 @@ class PaymentResponseHandler
                     'orderId' => $transaction->getOrder()->getId(),
                     'resultCode' => $resultCode,
                 ]);
-                throw new PaymentFailedException(
-                    $message
-                );
+                throw new PaymentFailedException($message);
         }
     }
 
@@ -344,16 +350,22 @@ class PaymentResponseHandler
      *
      * @param string $transactionStateTechnicalName
      * @param string $resultCode
+     * @param bool $requiresManualCapture
      * @return bool
      */
     private function isTransactionHandled(
         $transactionStateTechnicalName,
-        $resultCode
+        $resultCode,
+        $requiresManualCapture = false
     ) {
         // TODO check all the states and adyen resultCodes not just the straightforward ones
         switch ($resultCode) {
             case self::AUTHORISED:
-                if ($transactionStateTechnicalName === OrderTransactionStates::STATE_PAID) {
+                $state = $requiresManualCapture
+                    ? OrderTransactionStates::STATE_OPEN
+                    : OrderTransactionStates::STATE_AUTHORIZED;
+
+                if ($transactionStateTechnicalName === $state) {
                     return true;
                 }
                 break;
