@@ -301,6 +301,8 @@ class PaymentResponseHandler
         $resultCode = $paymentResponseHandlerResult->getResultCode();
         $refusalReason = $paymentResponseHandlerResult->getRefusalReason();
         $refusalReasonCode= $paymentResponseHandlerResult->getRefusalReasonCode();
+        $action = $paymentResponseHandlerResult->getAction();
+        $additionalData = $paymentResponseHandlerResult->getAdditionalData()
 
         switch ($resultCode) {
             case self::AUTHORISED:
@@ -325,14 +327,14 @@ class PaymentResponseHandler
                 return [
                     "isFinal" => false,
                     "resultCode" => $resultCode,
-                    "action" => $this->paymentResponseHandlerResult->getAction()
+                    "action" => $action
                 ];
                 break;
             case self::RECEIVED:
                 return [
                     "isFinal" => true,
                     "resultCode" => $resultCode,
-                    "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
+                    "additionalData" => $additionalData
                 ];
                 break;
             default:
