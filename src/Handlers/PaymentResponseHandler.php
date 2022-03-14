@@ -304,13 +304,18 @@ class PaymentResponseHandler
 
         switch ($resultCode) {
             case self::AUTHORISED:
-            case self::REFUSED:
-            case self::ERROR:
                 return [
                     "isFinal" => true,
-                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
-                    "refusalReason" => $this->paymentResponseHandlerResult->getRefusalReason(),
-                    "refusalReasonCode" => $this->paymentResponseHandlerResult->getRefusalReasonCode()
+                    "resultCode" => $resultCode,
+                ];
+            case self::REFUSED:
+            case self::ERROR:
+            case self::CANCELLED:
+                return [
+                    "isFinal" => true,
+                    "resultCode" => $resultCode,
+                    "refusalReason" => $refusalReason,
+                    "refusalReasonCode" => $refusalReasonCode
                 ];
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
@@ -319,14 +324,14 @@ class PaymentResponseHandler
             case self::PENDING:
                 return [
                     "isFinal" => false,
-                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                    "resultCode" => $resultCode,
                     "action" => $this->paymentResponseHandlerResult->getAction()
                 ];
                 break;
             case self::RECEIVED:
                 return [
                     "isFinal" => true,
-                    "resultCode" => $this->paymentResponseHandlerResult->getResultCode(),
+                    "resultCode" => $resultCode,
                     "additionalData" => $this->paymentResponseHandlerResult->getAdditionalData()
                 ];
                 break;
