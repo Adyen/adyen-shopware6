@@ -308,7 +308,7 @@ class PaymentResponseHandler
         $refusalReason = $paymentResponseHandlerResult->getRefusalReason();
         $refusalReasonCode= $paymentResponseHandlerResult->getRefusalReasonCode();
         $action = $paymentResponseHandlerResult->getAction();
-        $additionalData = $paymentResponseHandlerResult->getAdditionalData()
+        $additionalData = $paymentResponseHandlerResult->getAdditionalData();
 
         switch ($resultCode) {
             case self::AUTHORISED:
