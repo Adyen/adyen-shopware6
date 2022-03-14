@@ -14,20 +14,20 @@
  *
  * Adyen plugin for Shopware 6
  *
- * Copyright (c) 2021 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  */
 
 const { Component, Mixin } = Shopware;
-import template from './adyen-refund.html.twig';
-import './adyen-refund.scss';
+import template from './adyen-payment-capture.html.twig';
+import './adyen-payment-capture.scss';
 
-Component.register('adyen-refund', {
+Component.register('adyen-payment-capture', {
     template,
 
-    inject: ['adyenService'],
+    inject: ['adyenService', 'systemConfigApiService'],
 
     mixins: [
         Mixin.getByName('notification')
@@ -49,18 +49,30 @@ Component.register('adyen-refund', {
                 { property: 'createdAt', label: this.$tc('adyen.columnHeaders.created') },
                 { property: 'updatedAt', label: this.$tc('adyen.columnHeaders.updated') }
             ],
-            refundAmount: 0,
             showModal: false,
-            refunds: [],
-            allowRefund: true,
-            isLoadingTable: true,
+            captureRequests: [],
+            allowCapture: true,
+            captureEnabled: false,
             errorOccurred: false,
-            isLoadingRefund: false,
-            showWidget: true,
+            isLoading: true,
+            showWidget: false,
         };
     },
 
+    created() {
+        this.createdComponent();
+    },
+
     methods: {
+        createdComponent() {
+            return this.systemConfigApiService.getValues('AdyenPaymentShopware6.config')
+                .then((response) => {
+                    this.captureEnabled = response['AdyenPaymentShopware6.config.manualCaptureEnabled'] || null;
+                }).finally(() => {
+                    this.isLoading = false;
+                    this.showWidget = this.adyenService.isAdyenOrder(this.order) && this.captureEnabled;
+                });
+        },
         openModal() {
             this.showModal = true;
         },
@@ -69,75 +81,65 @@ Component.register('adyen-refund', {
             this.showModal = false;
         },
 
-        onRefund() {
-            this.isLoadingRefund = true;
-            this.adyenService.postRefund(this.order.id, this.refundAmount).then((res) => {
+        onSubmitCapture() {
+            this.isLoading = true;
+            this.adyenService.capture(this.order.id).then(res => {
                 if (res.success) {
-                    this.fetchRefunds();
+                    this.fetchCaptureRequests();
                     this.createNotificationSuccess({
-                        title: this.$tc('adyen.refundTitle'),
-                        message: this.$tc('adyen.refundSuccessful')
+                        title: this.$tc('adyen.adyenPaymentCaptureTitle'),
+                        message: this.$tc('adyen.captureSuccessful')
                     });
                 } else {
                     this.createNotificationError({
-                        title: this.$tc('adyen.refundTitle'),
+                        title: this.$tc('adyen.adyenPaymentCaptureTitle'),
                         message: this.$tc(res.message ? res.message : 'adyen.error')
                     });
                 }
             }).catch(() => {
                 this.createNotificationError({
-                    title: this.$tc('adyen.refundTitle'),
+                    title: this.$tc('adyen.adyenPaymentCaptureTitle'),
                     message: this.$tc('adyen.error')
                 });
             }).finally(() => {
-                this.isLoadingRefund = false;
+                this.isLoading = false;
                 this.showModal = false;
             });
         },
 
-        fetchRefunds() {
-            this.isLoadingTable = true;
-            this.adyenService.getRefunds(this.order.id).then((res) => {
-                this.refunds = res;
-                this.isRefundAllowed();
+        fetchCaptureRequests() {
+            this.isLoading = true;
+            this.adyenService.getCaptureRequests(this.order.id).then((res) => {
+                this.captureRequests = res;
+                this.isCaptureAllowed();
             }).catch(() => {
                 this.errorOccurred = true;
-                this.refunds = [];
+                this.captureRequests = [];
             }).finally(() => {
-                this.isLoadingTable = false;
+                this.isLoading = false;
             });
         },
 
-        isRefundAllowed() {
-            let refundedAmount = 0;
-            for (const refund of this.refunds) {
-                if (refund.status !== 'Failed') {
-                    refundedAmount += refund.rawAmount;
-                }
-            }
+        isCaptureAllowed() {
+            let capturableTransactions = this.getAuthorizedAdyenOrderTransaction();
+            let capturePending = this.captureRequests.filter(request => {
+                return "Pending Webhook" === request.status;
+            });
 
-            this.allowRefund = this.order.amountTotal > (refundedAmount / 100);
+            this.allowCapture = capturableTransactions.length > 0 && capturePending.length === 0;
         },
 
-        isAdyenOrder() {
-            const orderTransactions = this.order.transactions;
-            let isAdyen = false;
-            for (let i = 0; i < orderTransactions.length; i++) {
-                if (orderTransactions[i].customFields !== undefined) {
-                    if (orderTransactions[i].customFields.originalPspReference !== undefined) {
-                        isAdyen = true;
-                    }
-                }
-            }
+        getAuthorizedAdyenOrderTransaction() {
+            return this.order.transactions.filter(transaction => {
+                const isAdyenPayment = 'originalPspReference' in transaction.customFields;
+                const isAuthorized = 'Authorized' === transaction.stateMachineState.name;
 
-            this.showWidget = isAdyen;
+                return isAdyenPayment && isAuthorized;
+            });
         }
     },
 
     beforeMount() {
-        this.isAdyenOrder();
-        if (this.showWidget) {
-            this.fetchRefunds();
-        }
+        this.fetchCaptureRequests();
     }
 })

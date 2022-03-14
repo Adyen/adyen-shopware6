@@ -37,6 +37,9 @@
         <service id="Adyen\Shopware\Service\Repository\AdyenRefundRepository" autowire="true">
             <argument type="service" id="adyen_refund.repository"/>
         </service>
+        <service id="Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository" autowire="true">
+            <argument type="service" id="adyen_payment_capture.repository"/>
+        </service>
         <service id="Adyen\Shopware\Service\Repository\OrderTransactionRepository" autowire="true">
             <argument type="service" id="order_transaction.repository"/>
         </service>
