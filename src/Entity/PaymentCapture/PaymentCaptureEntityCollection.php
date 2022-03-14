@@ -1,5 +1,4 @@
 <?php declare(strict_types=1);
-
 /**
  *                       ######
  *                       ######
@@ -16,25 +15,30 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Handlers;
+namespace Adyen\Shopware\Entity\PaymentCapture;
 
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 
-// phpcs:ignore Generic.Files.LineLength.TooLong
-class KlarnaAccountPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+/**
+ * @method void              add(PaymentCaptureEntity $entity)
+ * @method void              set(string $key, PaymentCaptureEntity $entity)
+ * @method PaymentCaptureEntity[]    getIterator()
+ * @method PaymentCaptureEntity[]    getElements()
+ * @method PaymentCaptureEntity|null get(string $key)
+ * @method PaymentCaptureEntity|null first()
+ * @method PaymentCaptureEntity|null last()
+ */
+class PaymentCaptureEntityCollection extends EntityCollection
 {
-
-    public static $isOpenInvoice = true;
-
-    public static function getPaymentMethodCode()
+    protected function getExpectedClass(): string
     {
-        return 'klarna_account';
+        return PaymentCaptureEntity::class;
     }
 }

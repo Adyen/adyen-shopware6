@@ -22,6 +22,7 @@
 
 import './service/adyenService';
 import './component/adyen-config-check-button';
+import './component/adyen-payment-capture';
 import './component/adyen-refund';
 import './component/adyen-notifications';
 import './sw-order-detail-base-override/index';

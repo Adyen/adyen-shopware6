@@ -31,7 +31,7 @@ use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandle
 class Facilypay10xPaymentMethodHandler extends AbstractPaymentMethodHandler implements
     AsynchronousPaymentHandlerInterface
 {
-    protected static $isOpenInvoice = true;
+    public static $isOpenInvoice = true;
 
     public static function getPaymentMethodCode()
     {
