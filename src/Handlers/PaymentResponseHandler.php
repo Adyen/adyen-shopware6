@@ -306,7 +306,7 @@ class PaymentResponseHandler
     ): array {
         $resultCode = $paymentResponseHandlerResult->getResultCode();
         $refusalReason = $paymentResponseHandlerResult->getRefusalReason();
-        $refusalReasonCode= $paymentResponseHandlerResult->getRefusalReasonCode();
+        $refusalReasonCode = $paymentResponseHandlerResult->getRefusalReasonCode();
         $action = $paymentResponseHandlerResult->getAction();
         $additionalData = $paymentResponseHandlerResult->getAdditionalData();
 
