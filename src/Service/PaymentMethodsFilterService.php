@@ -25,6 +25,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
+use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -75,6 +76,7 @@ class PaymentMethodsFilterService
                 /** @var AbstractPaymentMethodHandler $pmHandlerIdentifier */
                 $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
                 $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
+                $isSafari = preg_match('/^((?!chrome|android).)*safari/', strtolower($_SERVER['HTTP_USER_AGENT']));
 
                 if ($pmCode == OneClickPaymentMethodHandler::getPaymentMethodCode()) {
                     // For OneClick, remove it if /paymentMethod response has no stored payment methods
@@ -90,6 +92,11 @@ class PaymentMethodsFilterService
                     );
                     // Remove the PM if it isn't in the paymentMethods response
                     if (empty($paymentMethodFoundInResponse)) {
+                        $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                    }
+                    // Remove ApplePay PM if the browser is not Safari
+                } elseif ($pmCode == ApplePayPaymentMethodHandler::getPaymentMethodCode()) {
+                    if ($isSafari !== 1) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                 } else {
