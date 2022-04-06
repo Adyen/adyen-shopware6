@@ -95,10 +95,8 @@ class PaymentMethodsFilterService
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                     // Remove ApplePay PM if the browser is not Safari
-                } elseif ($pmCode == ApplePayPaymentMethodHandler::getPaymentMethodCode()) {
-                    if ($isSafari !== 1) {
+                } elseif ($pmCode == ApplePayPaymentMethodHandler::getPaymentMethodCode() && $isSafari !== 1) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
-                    }
                 } else {
                     // For all other PMs, search in /paymentMethods response for payment method with matching `type`
                     $paymentMethodFoundInResponse = array_filter(
