@@ -141,12 +141,20 @@ class RefundService
             ],
             'merchantAccount' => $merchantAccount
         ];
+
+        // Set idempotency key to avoid duplicated requests
+        $idempotencyKey = $orderTransaction->getId();
+        $refunds = $this->adyenRefundRepository->getRefundsByOrderId($order->getId());
+        if ($refunds->count() > 0 && $this->isAmountRefundable($order, $refundAmount)) {
+            // Use last saved refund as idempotency key to allow legitimate multiple refunds
+            $idempotencyKey = $refunds->last()->getId();
+        }
         try {
             $modificationService = new Modification(
                 $this->clientService->getClient($order->getSalesChannelId())
             );
 
-            return $modificationService->refund($params);
+            return $modificationService->refund($params, ['idempotencyKey' => $idempotencyKey]);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
             throw $e;
