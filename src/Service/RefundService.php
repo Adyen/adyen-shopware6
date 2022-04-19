@@ -177,17 +177,8 @@ class RefundService
         $statesToSearch[] = OrderTransactionStates::STATE_REFUNDED;
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, $statesToSearch);
 
-        $criteria = new Criteria();
-        // Filtering with pspReference since in the future, multiple refunds are possible
-        /** @var RefundEntity $adyenRefund */
-        $criteria->addFilter(new AndFilter([
-            new EqualsFilter('orderTransactionId', $orderTransaction->getId()),
-            new EqualsFilter('pspReference', $notification->getPspreference())
-        ]));
-
-        /** @var RefundEntity $adyenRefund */
-        $adyenRefund = $this->adyenRefundRepository->getRepository()
-            ->search($criteria, Context::createDefaultContext())->first();
+        $adyenRefund = $this->adyenRefundRepository
+            ->getRefundForOrderByPspReference($orderTransaction->getId(), $notification->getPspreference());
 
         if (is_null($adyenRefund)) {
             $this->insertAdyenRefund(
@@ -311,7 +302,7 @@ class RefundService
      * @return OrderTransactionEntity
      * @throws AdyenException
      */
-    private function getAdyenOrderTransactionForRefund(OrderEntity $order, array $states): OrderTransactionEntity
+    public function getAdyenOrderTransactionForRefund(OrderEntity $order, array $states): OrderTransactionEntity
     {
         $orderTransaction = $this->transactionRepository->getFirstAdyenOrderTransactionByStates(
             $order->getId(),
