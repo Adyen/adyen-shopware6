@@ -38,7 +38,7 @@ use Psr\Cache\CacheItemPoolInterface;
 class ClientService
 {
     const MERCHANT_APPLICATION_NAME = 'adyen-shopware6';
-    const EXTERNAL_PLATFORM_NAME = 'Shopware';
+    const EXTERNAL_PLATFORM_NAME = 'Shopware6';
     const MODULE_VERSION_CACHE_TAG = 'adyen_module_version';
 
     /**
