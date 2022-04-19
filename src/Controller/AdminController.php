@@ -285,7 +285,8 @@ class AdminController
 
             $statesToSearch = RefundService::REFUNDABLE_STATES;
             $orderTransaction = $this->refundService->getAdyenOrderTransactionForRefund($order, $statesToSearch);
-            $adyenRefund = $this->adyenRefundRepository->getRefundForOrderByPspReference($orderTransaction->getId(), $result['pspReference']);
+            $adyenRefund = $this->adyenRefundRepository
+                ->getRefundForOrderByPspReference($orderTransaction->getId(), $result['pspReference']);
 
             if (is_null($adyenRefund)) {
                 $this->refundService->insertAdyenRefund(
