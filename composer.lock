@@ -6840,16 +6840,16 @@
         },
         {
             "name": "symfony/doctrine-messenger",
-            "version": "v6.0.7",
+            "version": "v5.4.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/doctrine-messenger.git",
-                "reference": "7e34c5d35061bb1961d71aa60123222d5ae648a6"
+                "reference": "bea918cb8363d8fe7953ebcc300454207a3e6093"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/doctrine-messenger/zipball/7e34c5d35061bb1961d71aa60123222d5ae648a6",
-                "reference": "7e34c5d35061bb1961d71aa60123222d5ae648a6",
+                "url": "https://api.github.com/repos/symfony/doctrine-messenger/zipball/bea918cb8363d8fe7953ebcc300454207a3e6093",
+                "reference": "bea918cb8363d8fe7953ebcc300454207a3e6093",
                 "shasum": ""
             },
             "require": {
@@ -6892,7 +6892,7 @@
             "description": "Symfony Doctrine Messenger Bridge",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/doctrine-messenger/tree/v6.0.7"
+                "source": "https://github.com/symfony/doctrine-messenger/tree/v5.4.7"
             },
             "funding": [
                 {
@@ -6908,7 +6908,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-04-01T10:25:38+00:00"
+            "time": "2022-04-01T10:23:59+00:00"
         },
         {
             "name": "symfony/dotenv",
@@ -7834,16 +7834,16 @@
         },
         {
             "name": "symfony/lock",
-            "version": "v6.0.7",
+            "version": "v5.4.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/lock.git",
-                "reference": "dcbb2a00ddf90f0ea8d370c354e0cde1303bf4a5"
+                "reference": "a16279554621453840eb8af14d12cfa24c10b8d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/lock/zipball/dcbb2a00ddf90f0ea8d370c354e0cde1303bf4a5",
-                "reference": "dcbb2a00ddf90f0ea8d370c354e0cde1303bf4a5",
+                "url": "https://api.github.com/repos/symfony/lock/zipball/a16279554621453840eb8af14d12cfa24c10b8d3",
+                "reference": "a16279554621453840eb8af14d12cfa24c10b8d3",
                 "shasum": ""
             },
             "require": {
@@ -7891,7 +7891,7 @@
                 "semaphore"
             ],
             "support": {
-                "source": "https://github.com/symfony/lock/tree/v6.0.7"
+                "source": "https://github.com/symfony/lock/tree/v5.4.7"
             },
             "funding": [
                 {
@@ -7907,7 +7907,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-03-22T16:12:04+00:00"
+            "time": "2022-03-22T15:31:03+00:00"
         },
         {
             "name": "symfony/mailer",
@@ -13466,5 +13466,5 @@
         "ext-json": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.0.0"
 }
