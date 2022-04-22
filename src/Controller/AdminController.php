@@ -283,13 +283,20 @@ class AdminController
                 throw new AdyenException($message);
             }
 
-            $this->refundService->insertAdyenRefund(
-                $order,
-                $result['pspReference'],
-                RefundEntity::SOURCE_SHOPWARE,
-                RefundEntity::STATUS_PENDING_WEBHOOK,
-                $amountInMinorUnit
-            );
+            $statesToSearch = RefundService::REFUNDABLE_STATES;
+            $orderTransaction = $this->refundService->getAdyenOrderTransactionForRefund($order, $statesToSearch);
+            $adyenRefund = $this->adyenRefundRepository
+                ->getRefundForOrderByPspReference($orderTransaction->getId(), $result['pspReference']);
+
+            if (is_null($adyenRefund)) {
+                $this->refundService->insertAdyenRefund(
+                    $order,
+                    $result['pspReference'],
+                    RefundEntity::SOURCE_SHOPWARE,
+                    RefundEntity::STATUS_PENDING_WEBHOOK,
+                    $amountInMinorUnit
+                );
+            }
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
 

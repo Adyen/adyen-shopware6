@@ -141,12 +141,20 @@ class RefundService
             ],
             'merchantAccount' => $merchantAccount
         ];
+
+        // Set idempotency key to avoid duplicated requests
+        $idempotencyKey = $orderTransaction->getId();
+        $refunds = $this->adyenRefundRepository->getRefundsByOrderId($order->getId());
+        if ($refunds->count() > 0 && $this->isAmountRefundable($order, $refundAmount)) {
+            // Use last saved refund as idempotency key to allow legitimate multiple refunds
+            $idempotencyKey = $refunds->last()->getId();
+        }
         try {
             $modificationService = new Modification(
                 $this->clientService->getClient($order->getSalesChannelId())
             );
 
-            return $modificationService->refund($params);
+            return $modificationService->refund($params, ['idempotencyKey' => $idempotencyKey]);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
             throw $e;
@@ -169,17 +177,8 @@ class RefundService
         $statesToSearch[] = OrderTransactionStates::STATE_REFUNDED;
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, $statesToSearch);
 
-        $criteria = new Criteria();
-        // Filtering with pspReference since in the future, multiple refunds are possible
-        /** @var RefundEntity $adyenRefund */
-        $criteria->addFilter(new AndFilter([
-            new EqualsFilter('orderTransactionId', $orderTransaction->getId()),
-            new EqualsFilter('pspReference', $notification->getPspreference())
-        ]));
-
-        /** @var RefundEntity $adyenRefund */
-        $adyenRefund = $this->adyenRefundRepository->getRepository()
-            ->search($criteria, Context::createDefaultContext())->first();
+        $adyenRefund = $this->adyenRefundRepository
+            ->getRefundForOrderByPspReference($orderTransaction->getId(), $notification->getPspreference());
 
         if (is_null($adyenRefund)) {
             $this->insertAdyenRefund(
@@ -303,7 +302,7 @@ class RefundService
      * @return OrderTransactionEntity
      * @throws AdyenException
      */
-    private function getAdyenOrderTransactionForRefund(OrderEntity $order, array $states): OrderTransactionEntity
+    public function getAdyenOrderTransactionForRefund(OrderEntity $order, array $states): OrderTransactionEntity
     {
         $orderTransaction = $this->transactionRepository->getFirstAdyenOrderTransactionByStates(
             $order->getId(),
