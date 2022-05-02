@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  *                       ######
  *                       ######
@@ -15,51 +15,75 @@
  *
  * Adyen plugin for Shopware 6
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  */
 
-namespace Adyen\Shopware\Entity\PaymentResponse;
+namespace Adyen\Shopware\Entity\PaymentCapture;
 
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
-class PaymentResponseEntity extends Entity
+class PaymentCaptureEntity extends Entity
 {
+    const SOURCE_ADYEN = 'Adyen Platform';
+    const SOURCE_SHOPWARE = 'Shopware';
+
+    const STATUS_SUCCESS = 'Success';
+    const STATUS_FAILED = 'Failed';
+    const STATUS_PENDING_WEBHOOK = 'Pending Webhook';
+
     use EntityIdTrait;
 
     /**
      * @var string
      */
-    protected $orderTransactionId;
+    protected string $orderTransactionId;
 
     /**
      * @var OrderTransactionEntity
      */
-    protected $orderTransaction;
+    protected OrderTransactionEntity $orderTransaction;
 
     /**
      * @var string
      */
-    protected $resultCode;
+    protected string $pspReference;
 
     /**
      * @var string
      */
-    protected $refusalReason;
+    protected string $source;
 
     /**
      * @var string
      */
-    protected $refusalReasonCode;
+    protected string $status;
 
     /**
-     * @var string
+     * @var \DateTimeInterface|null
      */
-    protected $response;
+    protected $createdAt;
+
+    /**
+     * @var int
+     */
+    protected int $amount;
+
+    /**
+     * @return string[]
+     */
+    public static function getStatuses() : array
+    {
+        return [
+            self::STATUS_SUCCESS,
+            self::STATUS_FAILED,
+            self::STATUS_PENDING_WEBHOOK
+        ];
+    }
 
     /**
      * @return string
@@ -78,9 +102,9 @@ class PaymentResponseEntity extends Entity
     }
 
     /**
-     * @return OrderTransactionEntity|null
+     * @return OrderTransactionEntity
      */
-    public function getOrderTransaction(): ?OrderTransactionEntity
+    public function getOrderTransaction(): OrderTransactionEntity
     {
         return $this->orderTransaction;
     }
@@ -96,64 +120,80 @@ class PaymentResponseEntity extends Entity
     /**
      * @return string
      */
-    public function getResultCode(): string
+    public function getPspReference(): string
     {
-        return $this->resultCode;
+        return $this->pspReference;
     }
 
-     /**
-     * @param string $resultCode
+    /**
+     * @param string $pspReference
      */
-    public function setResultCode(string $resultCode): void
+    public function setPspReference(string $pspReference): void
     {
-        $this->resultCode = $resultCode;
+        $this->pspReference = $pspReference;
     }
 
     /**
      * @return string
      */
-    public function getRefusalReason(): ?string
+    public function getSource(): string
     {
-        return $this->refusalReason;
+        return $this->source;
     }
 
     /**
-     * @param string $refusalReason
+     * @param string $source
      */
-    public function setRefusalReason(string $refusalReason): void
+    public function setSource(string $source): void
     {
-        $this->refusalReason = $refusalReason;
-    }
-
-    /**
-     * @return string
-     */
-    public function getRefusalReasonCode(): ?string
-    {
-        return $this->refusalReasonCode;
-    }
-
-    /**
-     * @param string $refusalReasonCode
-     */
-    public function setRefusalReasonCode(string $refusalReasonCode): void
-    {
-        $this->refusalReasonCode = $refusalReasonCode;
+        $this->source = $source;
     }
 
     /**
      * @return string
      */
-    public function getResponse(): string
+    public function getStatus(): string
     {
-        return $this->response;
+        return $this->status;
     }
 
     /**
-     * @param string $response
+     * @param string $status
      */
-    public function setResponse(string $response): void
+    public function setStatus(string $status): void
     {
-        $this->response = $response;
+        $this->status = $status;
+    }
+
+    /**
+     * @return \DateTimeInterface|null
+     */
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * @param \DateTimeInterface|null $createdAt
+     */
+    public function setCreatedAt(?\DateTimeInterface $createdAt): void
+    {
+        $this->createdAt = $createdAt;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAmount(): int
+    {
+        return $this->amount;
+    }
+
+    /**
+     * @param int $amount
+     */
+    public function setAmount(int $amount): void
+    {
+        $this->amount = $amount;
     }
 }

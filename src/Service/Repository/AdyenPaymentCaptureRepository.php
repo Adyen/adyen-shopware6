@@ -24,17 +24,13 @@
 
 namespace Adyen\Shopware\Service\Repository;
 
-use Adyen\Shopware\Entity\Refund\RefundEntity;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
-class AdyenRefundRepository
+class AdyenPaymentCaptureRepository
 {
     /**
      * @var EntityRepositoryInterface
@@ -42,10 +38,9 @@ class AdyenRefundRepository
     private $repository;
 
     /**
-     * AdyenRefundRepository constructor.
+     * AdyenPaymentCaptureRepository constructor.
      *
      * @param EntityRepositoryInterface $repository
-     * @param LoggerInterface $logger
      */
     public function __construct(
         EntityRepositoryInterface $repository
@@ -54,12 +49,12 @@ class AdyenRefundRepository
     }
 
     /**
-     * Get all refunds linked to an order, based on the order id
+     * Get all captures linked to an order, based on the order id
      *
      * @param string $orderId
      * @return EntityCollection
      */
-    public function getRefundsByOrderId(string $orderId): EntityCollection
+    public function getCaptureRequestsByOrderId(string $orderId): EntityCollection
     {
         $criteria = new Criteria();
         $criteria->addAssociation('orderTransaction');
@@ -68,23 +63,6 @@ class AdyenRefundRepository
         $criteria->addFilter(new EqualsFilter('orderTransaction.order.id', $orderId));
 
         return $this->repository->search($criteria, Context::createDefaultContext());
-    }
-
-    /**
-     * Filtering with pspReference and orderTransactionId since multiple refunds are possible
-     * @param string $orderTransactionId
-     * @param string $pspReference
-     * @return RefundEntity|null
-     */
-    public function getRefundForOrderByPspReference(string $orderTransactionId, string $pspReference): ?RefundEntity
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new AndFilter([
-            new EqualsFilter('orderTransactionId', $orderTransactionId),
-            new EqualsFilter('pspReference', $pspReference)
-        ]));
-
-        return $this->repository->search($criteria, Context::createDefaultContext())->first();
     }
 
     /**

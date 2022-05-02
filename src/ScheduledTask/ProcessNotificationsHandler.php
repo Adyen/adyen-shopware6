@@ -24,9 +24,13 @@
 
 namespace Adyen\Shopware\ScheduledTask;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
+use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
+use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
@@ -51,6 +55,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     use LoggerAwareTrait;
 
     const WEBHOOK_TRANSACTION_STATES = [
+        OrderTransactionStates::STATE_OPEN,
+        OrderTransactionStates::STATE_IN_PROGRESS,
+        OrderTransactionStates::STATE_AUTHORIZED,
         OrderTransactionStates::STATE_PAID,
         OrderTransactionStates::STATE_PARTIALLY_PAID,
         OrderTransactionStates::STATE_REFUNDED,
@@ -90,8 +97,13 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     /** @var OrderTransactionRepository */
     private $orderTransactionRepository;
 
+    /** @var CaptureService */
+    private $captureService;
+
     /** @var array Mapping to convert Shopware transaction states to payment states in the webhook module. */
     private $webhookModuleStateMapping = [
+        OrderTransactionStates::STATE_OPEN => PaymentStates::STATE_NEW,
+        OrderTransactionStates::STATE_AUTHORIZED => PaymentStates::STATE_PENDING,
         OrderTransactionStates::STATE_PAID => PaymentStates::STATE_PAID,
         OrderTransactionStates::STATE_FAILED => PaymentStates::STATE_FAILED,
         OrderTransactionStates::STATE_IN_PROGRESS => PaymentStates::STATE_IN_PROGRESS,
@@ -107,7 +119,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         EntityRepositoryInterface $paymentMethodRepository,
         AdyenPluginProvider $adyenPluginProvider,
         RefundService $refundService,
-        OrderTransactionRepository $orderTransactionRepository
+        OrderTransactionRepository $orderTransactionRepository,
+        CaptureService $captureService
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
@@ -117,6 +130,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->refundService = $refundService;
         $this->adyenPluginProvider = $adyenPluginProvider;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->captureService = $captureService;
     }
 
     public static function getHandledMessages(): iterable
@@ -170,6 +184,13 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $orderTransaction->getStateMachineState()->getTechnicalName()
             ] ?? '';
 
+            if (empty($currentTransactionState)) {
+                $logContext['paymentState'] = $orderTransaction->getStateMachineState()->getTechnicalName();
+                $this->logger->error('Current payment state is not supported.', $logContext);
+                $this->markAsDone($notification->getId());
+                continue;
+            }
+
             try {
                 $notificationItem = Notification::createItem([
                     'eventCode' => $notification->getEventCode(),
@@ -182,7 +203,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     $this->logger
                 );
             } catch (InvalidDataException $exception) {
-                $logContext['notification'] = get_object_vars($notification);
+                $logContext['notification'] = $notification->getVars();
                 $this->logger->error('Unable to process notification: Invalid notification data', $logContext);
                 $this->markAsDone($notification->getId());
                 continue;
@@ -198,6 +219,14 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 if (!$notification->isSuccess()) {
                     $this->handleFailedNotification($notification, $order, $state);
                 }
+
+                $this->handleEventCodes($notification, $orderTransaction, $context);
+            } catch (CaptureException $e) {
+                $this->logger->warning($e->getMessage(), ['code' => $e->getCode()]);
+
+                $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
+                $this->rescheduleNotification($notification->getId(), $scheduledProcessingTime);
+                continue;
             } catch (\Exception $exception) {
                 $logContext['errorMessage'] = $exception->getMessage();
                 // set notification error and increment error count
@@ -207,7 +236,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $this->logger->error('Notification processing failed.', $logContext);
 
                 if ($errorCount < self::MAX_ERROR_COUNT) {
-                    $this->requeueNotification($notification->getId());
+                    $this->rescheduleNotification($notification->getId());
                 }
 
                 continue;
@@ -224,7 +253,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param OrderTransactionEntity $orderTransaction
      * @param string $state
      * @param Context $context
-     * @throws \Adyen\AdyenException
+     * @throws AdyenException|CaptureException
      */
     private function transitionToState(
         NotificationEntity $notification,
@@ -233,15 +262,33 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         Context $context
     ) {
         $order = $orderTransaction->getOrder();
-        if ('REFUND_FAILED' === $notification->getEventCode()) {
-            $this->logger->info(sprintf('Handling REFUND_FAILED on order: %s', $order->getOrderNumber()));
-            $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
-            return;
-        }
 
         switch ($state) {
             case PaymentStates::STATE_PAID:
-                $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
+                // The webhook processor returns 'PAID' for both AUTHORISATION and CAPTURE event codes.
+                // For AUTHORISATION, set Order Transaction to `authorised` if manual capture is required.
+                // Send capture request for open invoice payments.
+                $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+                if (EventCodes::AUTHORISATION === $notification->getEventCode() &&
+                    $this->captureService->requiresManualCapture($paymentMethodHandler)) {
+                    $this->logger->info(
+                        'Manual capture required. Setting payment to `authorised` state.',
+                        ['notification' => $notification->getVars()]
+                    );
+                    $this->transactionStateHandler->authorize($orderTransaction->getId(), $context);
+
+                    $this->logger->info(
+                        'Attempting capture for open invoice payment.',
+                        ['notification' => $notification->getVars()]
+                    );
+                    $this->captureService->doOpenInvoiceCapture(
+                        $notification->getMerchantReference(),
+                        $notification->getAmountValue(),
+                        $context
+                    );
+                } else {
+                    $this->transactionStateHandler->paid($orderTransaction->getId(), $context);
+                }
                 break;
             case PaymentStates::STATE_FAILED:
                 $this->transactionStateHandler->fail($orderTransaction->getId(), $context);
@@ -275,17 +322,60 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         }
     }
 
+    private function handleEventCodes(
+        NotificationEntity $notification,
+        OrderTransactionEntity $orderTransaction,
+        Context $context
+    ) {
+        $order = $orderTransaction->getOrder();
+        switch ($notification->getEventCode()) {
+            case EventCodes::REFUND_FAILED:
+                $this->logger->info(sprintf('Handling REFUND_FAILED on order: %s', $order->getOrderNumber()));
+                $this->refundService->handleRefundNotification($order, $notification, RefundEntity::STATUS_FAILED);
+                break;
+            case EventCodes::CAPTURE:
+                $this->logger->info(
+                    'Handling CAPTURE notification',
+                    ['order' => $order->getVars(), 'notification' => $notification->getVars()]
+                );
+                if ($notification->isSuccess()) {
+                    $this->captureService->handleCaptureNotification(
+                        $orderTransaction,
+                        $notification,
+                        PaymentCaptureEntity::STATUS_SUCCESS,
+                        $context
+                    );
+                } else {
+                    $this->captureService->handleCaptureNotification(
+                        $orderTransaction,
+                        $notification,
+                        PaymentCaptureEntity::STATUS_FAILED,
+                        $context
+                    );
+                }
+                break;
+            case EventCodes::CAPTURE_FAILED:
+                $this->captureService->handleCaptureNotification(
+                    $orderTransaction,
+                    $notification,
+                    PaymentCaptureEntity::STATUS_FAILED,
+                    $context
+                );
+                break;
+        }
+    }
+
     private function markAsProcessing(string $notificationId)
     {
         $this->notificationService->changeNotificationState($notificationId, 'processing', true);
         $this->logger->debug("Payment notification {$notificationId} marked as processing.");
     }
 
-    private function requeueNotification(string $notificationId)
+    private function rescheduleNotification(string $notificationId, ?\DateTime $dateTime = null)
     {
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
-        $this->notificationService->setNotificationSchedule($notificationId, new \DateTime());
-        $this->logger->debug("Payment notification {$notificationId} requeued.");
+        $this->notificationService->setNotificationSchedule($notificationId, $dateTime ?? new \DateTime());
+        $this->logger->debug("Payment notification {$notificationId} rescheduled.");
     }
 
     private function markAsDone(string $notificationId)
@@ -302,7 +392,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param OrderEntity $order
      * @param string $state
      * @return OrderEntity
-     * @throws \Adyen\AdyenException
+     * @throws AdyenException
      */
     private function handleFailedNotification(
         NotificationEntity $notification,

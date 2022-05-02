@@ -76,7 +76,7 @@ abstract class AbstractPaymentMethodHandler
      */
     const SAFE_ERROR_CODES = ['124'];
 
-    protected static $isOpenInvoice = false;
+    public static $isOpenInvoice = false;
     public static $isGiftCard = false;
 
     /**

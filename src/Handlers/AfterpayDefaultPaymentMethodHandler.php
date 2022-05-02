@@ -32,7 +32,7 @@ class AfterpayDefaultPaymentMethodHandler extends AbstractPaymentMethodHandler i
     AsynchronousPaymentHandlerInterface
 {
 
-    protected static $isOpenInvoice = true;
+    public static $isOpenInvoice = true;
 
     public static function getPaymentMethodCode()
     {
