@@ -30,8 +30,7 @@ class SalesChannelRepository
     public function __construct(
         EntityRepositoryInterface $domainRepository,
         EntityRepositoryInterface $salesChannelRepository
-    )
-    {
+    ) {
         $this->domainRepository = $domainRepository;
         $this->salesChannelRepository = $salesChannelRepository;
     }
