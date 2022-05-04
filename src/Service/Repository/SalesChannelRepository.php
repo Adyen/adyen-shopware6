@@ -30,7 +30,8 @@ class SalesChannelRepository
     public function __construct(
         EntityRepositoryInterface $domainRepository,
         EntityRepositoryInterface $salesChannelRepository
-    ) {
+    )
+    {
         $this->domainRepository = $domainRepository;
         $this->salesChannelRepository = $salesChannelRepository;
     }
@@ -45,8 +46,7 @@ class SalesChannelRepository
 
         if (!empty($context->getSalesChannel()->getHreflangDefaultDomainId())) {
             $criteria->addFilter(new EqualsFilter('id', $context->getSalesChannel()->getHreflangDefaultDomainId()));
-        }
-        else {
+        } else {
             $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
             $criteria->setLimit(1);
         }
