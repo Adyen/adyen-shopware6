@@ -37,6 +37,7 @@ use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
@@ -180,6 +181,11 @@ abstract class AbstractPaymentMethodHandler
     protected Session $session;
 
     /**
+     * @var PaymentMethodsService
+     */
+    protected $paymentMethodsService;
+
+    /**
      * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
      * @param ClientService $clientService
@@ -199,6 +205,7 @@ abstract class AbstractPaymentMethodHandler
      * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param EntityRepositoryInterface $currencyRepository
      * @param EntityRepositoryInterface $productRepository
+     * @param PaymentMethodsService $paymentMethodsService
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -221,6 +228,7 @@ abstract class AbstractPaymentMethodHandler
         Session $session,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
+        PaymentMethodsService $paymentMethodsService,
         LoggerInterface $logger
     ) {
         $this->clientService = $clientService;
@@ -243,6 +251,7 @@ abstract class AbstractPaymentMethodHandler
         $this->session = $session;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
+        $this->paymentMethodsService = $paymentMethodsService;
     }
 
     abstract public static function getPaymentMethodCode();
@@ -344,6 +353,8 @@ abstract class AbstractPaymentMethodHandler
     /**
      * @param string $address
      * @return array
+     *
+     * @deprecated Use PaymentMethodsService instead.
      */
     private function splitStreetAddressHouseNumber(string $address): array
     {
@@ -429,7 +440,7 @@ abstract class AbstractPaymentMethodHandler
                 $shippingState = '';
             }
 
-            $shippingStreetAddress = $this->splitStreetAddressHouseNumber(
+            $shippingStreetAddress = $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
                 $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
             );
             $request = $this->addressBuilder->buildDeliveryAddress(
@@ -452,7 +463,7 @@ abstract class AbstractPaymentMethodHandler
                 $billingState = '';
             }
 
-            $billingStreetAddress = $this->splitStreetAddressHouseNumber(
+            $billingStreetAddress = $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
                 $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
             );
             $request = $this->addressBuilder->buildBillingAddress(

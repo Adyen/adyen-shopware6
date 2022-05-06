@@ -11,14 +11,16 @@
              data-shopper-email="{{ context.customer.email }}"
         ></div>
         <div id="active-billing-address"
-            data-street="{{ billingAddress.street }}"
+            data-street="{{ adyenFrontendData.billingAddressStreetHouse.street }}"
+            data-house-number-or-name="{{ adyenFrontendData.billingAddressStreetHouse.houseNumber }}"
             data-city="{{ billingAddress.city }}"
             data-postal-code="{{ billingAddress.zipcode }}"
             data-country="{{ billingAddress.country.iso }}"
             data-phone-number="{{ billingAddress.phoneNumber }}"
         ></div>
         <div id="active-shipping-address"
-            data-street="{{ shippingAddress.street }}"
+            data-street="{{ adyenFrontendData.shippingAddressStreetHouse.street }}"
+            data-house-number-or-name="{{ adyenFrontendData.shippingAddressStreetHouse.houseNumber }}"
             data-city="{{ shippingAddress.city }}"
             data-postal-code="{{ shippingAddress.zipcode }}"
             data-country="{{ shippingAddress.country.iso }}"
