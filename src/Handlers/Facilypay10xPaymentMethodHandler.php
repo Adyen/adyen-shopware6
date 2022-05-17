@@ -27,9 +27,10 @@ declare(strict_types=1);
 namespace Adyen\Shopware\Handlers;
 
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
 
 class Facilypay10xPaymentMethodHandler extends AbstractPaymentMethodHandler implements
-    AsynchronousPaymentHandlerInterface
+    AsynchronousPaymentHandlerInterface, PreparedPaymentHandlerInterface
 {
     public static $isOpenInvoice = true;
 

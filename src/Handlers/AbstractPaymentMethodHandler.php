@@ -44,18 +44,25 @@ use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
 use Exception;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
+use Shopware\Core\Checkout\Payment\Cart\PreparedPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
+use Shopware\Core\Checkout\Payment\Exception\CapturePreparedPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
+use Shopware\Core\Checkout\Payment\Exception\ValidatePreparedPaymentException;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Struct\ArrayStruct;
+use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyCollection;
 use Shopware\Core\System\Currency\CurrencyEntity;
@@ -203,6 +210,7 @@ abstract class AbstractPaymentMethodHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
      * @param CsrfTokenManagerInterface $csrfTokenManager
+     * @param Session $session
      * @param EntityRepositoryInterface $currencyRepository
      * @param EntityRepositoryInterface $productRepository
      * @param PaymentMethodsService $paymentMethodsService
@@ -348,6 +356,16 @@ abstract class AbstractPaymentMethodHandler
         } catch (PaymentFailedException $exception) {
             throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
         }
+    }
+
+    public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): Struct
+    {
+        return new ArrayStruct(['valid']);
+    }
+
+    public function capture(PreparedPaymentTransactionStruct $transaction, RequestDataBag $requestDataBag, SalesChannelContext $context, Struct $preOrderPaymentStruct): void
+    {
+        // TODO: Implement capture() method.
     }
 
     /**
