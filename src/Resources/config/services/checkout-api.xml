@@ -51,6 +51,21 @@
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="cache.tags"/>
         </service>
+        <service id="Adyen\Shopware\Service\PaymentRequestService">
+            <argument type="service" id="Adyen\Service\Builder\Address"/>
+            <argument type="service" id="Adyen\Service\Builder\Browser"/>
+            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Util\Currency"/>
+            <argument type="service" id="Adyen\Service\Builder\Customer"/>
+            <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="currency.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="Adyen\Service\Builder\Payment"/>
+            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
+            <argument type="service" id="session"/>
+        </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
