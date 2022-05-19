@@ -26,52 +26,32 @@
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
-use Adyen\Service\Builder\Address;
-use Adyen\Service\Builder\Browser;
-use Adyen\Service\Builder\Customer;
-use Adyen\Service\Builder\Payment;
-use Adyen\Service\Builder\OpenInvoice;
-use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
-use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentRequestService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Cart\PreparedPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Cart\SyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CapturePreparedPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
-use Shopware\Core\Checkout\Payment\Exception\ValidatePreparedPaymentException;
-use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
-use Shopware\Core\Content\Product\ProductCollection;
-use Shopware\Core\Content\Product\ProductEntity;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\Currency\CurrencyCollection;
-use Shopware\Core\System\Currency\CurrencyEntity;
-use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
@@ -92,16 +72,6 @@ abstract class AbstractPaymentMethodHandler
      * @var ClientService
      */
     protected $clientService;
-
-    /**
-     * @var OpenInvoice
-     */
-    protected $openInvoiceBuilder;
-
-    /**
-     * @var Currency
-     */
-    protected $currency;
 
     /**
      * @var PaymentStateDataService
@@ -139,6 +109,16 @@ abstract class AbstractPaymentMethodHandler
     protected $paymentRequestService;
 
     /**
+     * @var CsrfTokenManagerInterface
+     */
+    private $csrfTokenManager;
+
+    /**
+     * @var RouterInterface
+     */
+    private $router;
+
+    /**
      * AbstractPaymentMethodHandler constructor.
      * @param ClientService $clientService
      * @param PaymentStateDataService $paymentStateDataService
@@ -146,8 +126,8 @@ abstract class AbstractPaymentMethodHandler
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
-     * @param OpenInvoice $openInvoiceBuilder
-     * @param Currency $currency
+     * @param RouterInterface $router
+     * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param PaymentRequestService $paymentRequestService
      * @param LoggerInterface $logger
      */
@@ -158,8 +138,8 @@ abstract class AbstractPaymentMethodHandler
         PaymentResponseHandler $paymentResponseHandler,
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
-        OpenInvoice $openInvoiceBuilder,
-        Currency $currency,
+        RouterInterface $router,
+        CsrfTokenManagerInterface $csrfTokenManager,
         PaymentRequestService $paymentRequestService,
         LoggerInterface $logger
     ) {
@@ -169,8 +149,8 @@ abstract class AbstractPaymentMethodHandler
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->resultHandler = $resultHandler;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
-        $this->openInvoiceBuilder = $openInvoiceBuilder;
-        $this->currency = $currency;
+        $this->router = $router;
+        $this->csrfTokenManager = $csrfTokenManager;
         $this->paymentRequestService = $paymentRequestService;
         $this->logger = $logger;
     }
@@ -199,9 +179,10 @@ abstract class AbstractPaymentMethodHandler
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );
         $stateData = $dataBag->get('stateData');
+        $returnUrl = $this->getAdyenReturnUrl($this->getReturnUrlQuery($transaction));
 
         try {
-            $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $stateData);
+            $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $returnUrl, $stateData);
         } catch (AsyncPaymentProcessException $exception) {
             $this->logger->error($exception->getMessage());
             throw $exception;
@@ -246,7 +227,7 @@ abstract class AbstractPaymentMethodHandler
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->paymentRequestService->getAdyenReturnUrl($this->getReturnUrlQuery($transaction)));
+        return new RedirectResponse($returnUrl);
     }
 
     /**
@@ -290,6 +271,7 @@ abstract class AbstractPaymentMethodHandler
     protected function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
+        string $returnUrl,
         ?string $stateData = null
     ): array {
         $request = [];
@@ -312,10 +294,17 @@ abstract class AbstractPaymentMethodHandler
                 'Invalid payment state data.'
             );
         }
-        $lineItems = null;
-        if (static::$isOpenInvoice) {
-            $lineItems = $this->getLineItems($transaction, $salesChannelContext);
-        }
+
+        $currency = $this->paymentRequestService->getCurrency(
+            $transaction->getOrder()->getCurrencyId(),
+            $salesChannelContext->getContext()
+        );
+        $lineItems = $this->paymentRequestService->getLineItems(
+            $transaction->getOrder()->getLineItems(),
+            $salesChannelContext->getContext(),
+            $currency,
+            $transaction->getOrder()->getTaxStatus()
+        );
 
         $request = $this->paymentRequestService->buildPaymentRequest(
             $request,
@@ -323,7 +312,7 @@ abstract class AbstractPaymentMethodHandler
             static::class,
             $transaction->getOrder()->getPrice()->getTotalPrice(),
             $transaction->getOrder()->getOrderNumber(),
-            $this->getReturnUrlQuery($transaction),
+            $returnUrl,
             $lineItems
         );
 
@@ -335,65 +324,13 @@ abstract class AbstractPaymentMethodHandler
         return $request;
     }
 
-    private function getLineItems(SyncPaymentTransactionStruct $transaction, SalesChannelContext $salesChannelContext)
-    {
-        $orderLines = $transaction->getOrder()->getLineItems();
-        $lineItems = [];
-        foreach ($orderLines->getElements() as $orderLine) {
-            //Getting line price
-            $price = $orderLine->getPrice();
-
-            // Skip promotion line items.
-            if (empty($orderLine->getProductId()) && $orderLine->getType() === self::PROMOTION) {
-                continue;
-            }
-
-            $product = $this->paymentRequestService->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
-            $productName = $product->getTranslation('name');
-            $productNumber = $product->getProductNumber();
-
-            //Getting line tax amount and rate
-            $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
-            $taxRate = $price->getCalculatedTaxes()->first();
-            if (!empty($taxRate)) {
-                $taxRate = $taxRate->getTaxRate();
-            } else {
-                $taxRate = 0;
-            }
-
-            $currency = $this->paymentRequestService->getCurrency(
-                $transaction->getOrder()->getCurrencyId(),
-                $salesChannelContext->getContext()
-            );
-            //Building open invoice line
-            $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
-                $productName,
-                $this->currency->sanitize(
-                    $price->getUnitPrice() -
-                    ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
-                    $currency->getIsoCode()
-                ),
-                $this->currency->sanitize(
-                    $lineTax,
-                    $currency->getIsoCode()
-                ),
-                $taxRate * 100,
-                $orderLine->getQuantity(),
-                '',
-                $productNumber
-            );
-        }
-
-        return $lineItems;
-    }
-
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @return array|int|string|null
      */
-    public function getReturnUrlQuery(AsyncPaymentTransactionStruct $transaction)
+    private function getReturnUrlQuery(AsyncPaymentTransactionStruct $transaction)
     {
-// Parse the original return URL to retrieve the query parameters
+        // Parse the original return URL to retrieve the query parameters
         $returnUrlQuery = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
 
         // In case the URL is malformed it cannot be parsed
@@ -404,5 +341,29 @@ abstract class AbstractPaymentMethodHandler
             );
         }
         return $returnUrlQuery;
+    }
+
+    /**
+     * Creates the Adyen Redirect Result URL with the same query as the original return URL
+     * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
+     *
+     * @param string $returnUrlQuery
+     * @return string
+     */
+    private function getAdyenReturnUrl(string $returnUrlQuery): string
+    {
+        // Generate the custom Adyen endpoint to receive the redirect from the issuer page
+        $adyenReturnUrl = $this->router->generate(
+            'payment.adyen.redirect_result',
+            [
+                RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
+                    'payment.finalize.transaction'
+                )->getValue()
+            ],
+            RouterInterface::ABSOLUTE_URL
+        );
+
+        // Create the adyen redirect result URL with the same query as the original return URL
+        return $adyenReturnUrl . '&' . $returnUrlQuery;
     }
 }

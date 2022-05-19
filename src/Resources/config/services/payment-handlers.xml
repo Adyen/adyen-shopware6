@@ -34,8 +34,8 @@
             <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Adyen\Service\Builder\OpenInvoice"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
+            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument type="service" id="security.csrf.token_manager"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentRequestService"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
         </service>

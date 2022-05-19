@@ -28,25 +28,26 @@ use Adyen\AdyenException;
 use Adyen\Service\Builder\Address;
 use Adyen\Service\Builder\Browser;
 use Adyen\Service\Builder\Customer;
+use Adyen\Service\Builder\OpenInvoice;
 use Adyen\Service\Builder\Payment;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
-use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
+use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Struct\Collection;
 use Shopware\Core\System\Currency\CurrencyCollection;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 class PaymentRequestService
 {
@@ -67,9 +68,8 @@ class PaymentRequestService
     private Payment $paymentBuilder;
     private SalesChannelRepository $salesChannelRepository;
     private ConfigurationService $configurationService;
-    private RouterInterface $router;
-    private CsrfTokenManagerInterface $csrfTokenManager;
     private CheckoutStateDataValidator $checkoutStateDataValidator;
+    private OpenInvoice $openInvoiceBuilder;
 
     public function __construct(
         Address $addressBuilder,
@@ -78,11 +78,10 @@ class PaymentRequestService
         ConfigurationService $configurationService,
         Currency $currency,
         Customer $customerBuilder,
-        CsrfTokenManagerInterface $csrfTokenManager,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
+        OpenInvoice $openInvoiceBuilder,
         Payment $paymentBuilder,
-        RouterInterface $router,
         SalesChannelRepository $salesChannelRepository,
         Session $session
     ) {
@@ -93,11 +92,10 @@ class PaymentRequestService
         $this->addressBuilder = $addressBuilder;
         $this->customerBuilder = $customerBuilder;
         $this->paymentBuilder = $paymentBuilder;
+        $this->openInvoiceBuilder = $openInvoiceBuilder;
         $this->currency = $currency;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
-        $this->router = $router;
-        $this->csrfTokenManager = $csrfTokenManager;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
     }
 
@@ -107,7 +105,7 @@ class PaymentRequestService
         string $paymentMethodHandler,
         float $totalPrice,
         string $reference,
-        string $returnUrlQuery,
+        string $returnUrl,
         ?array $lineItems = null
     ): array {
         //Validate state.data for payment and build request object
@@ -283,7 +281,7 @@ class PaymentRequestService
             ),
             $reference,
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $this->getAdyenReturnUrl($returnUrlQuery),
+            $returnUrl,
             $request
         );
 
@@ -312,27 +310,61 @@ class PaymentRequestService
     }
 
     /**
-     * Creates the Adyen Redirect Result URL with the same query as the original return URL
-     * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
-     *
-     * @param string $returnUrlQuery
-     * @return string
+     * @param OrderLineItemCollection|LineItemCollection $lineItemsCollection
+     * @param Context $context
+     * @param CurrencyEntity $currency
+     * @param string $taxStatus
+     * @return array
      */
-    public function getAdyenReturnUrl(string $returnUrlQuery): string
-    {
-        // Generate the custom Adyen endpoint to receive the redirect from the issuer page
-        $adyenReturnUrl = $this->router->generate(
-            'payment.adyen.redirect_result',
-            [
-                RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
-                    'payment.finalize.transaction'
-                )->getValue()
-            ],
-            RouterInterface::ABSOLUTE_URL
-        );
+    public function getLineItems(
+        Collection $lineItemsCollection,
+        Context $context,
+        CurrencyEntity $currency,
+        string $taxStatus
+    ): array {
+        $lineItems = [];
+        foreach ($lineItemsCollection as $orderLine) {
+            //Getting line price
+            $price = $orderLine->getPrice();
 
-        // Create the adyen redirect result URL with the same query as the original return URL
-        return $adyenReturnUrl . '&' . $returnUrlQuery;
+            // Skip promotion line items.
+            if (empty($orderLine->getProductId()) && $orderLine->getType() === self::PROMOTION) {
+                continue;
+            }
+
+            $product = $this->getProduct($orderLine->getProductId(), $context);
+            $productName = $product->getTranslation('name');
+            $productNumber = $product->getProductNumber();
+
+            //Getting line tax amount and rate
+            $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
+            $taxRate = $price->getCalculatedTaxes()->first();
+            if (!empty($taxRate)) {
+                $taxRate = $taxRate->getTaxRate();
+            } else {
+                $taxRate = 0;
+            }
+
+            //Building open invoice line
+            $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
+                $productName,
+                $this->currency->sanitize(
+                    $price->getUnitPrice() -
+                    ($taxStatus == 'gross' ? $lineTax : 0),
+                    $currency->getIsoCode()
+                ),
+                $this->currency->sanitize(
+                    $lineTax,
+                    $currency->getIsoCode()
+                ),
+                $taxRate * 100,
+                $orderLine->getQuantity(),
+                '',
+                $productNumber
+            );
+        }
+
+        return $lineItems;
     }
 
     /**

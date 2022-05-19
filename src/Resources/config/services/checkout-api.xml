@@ -58,11 +58,10 @@
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Util\Currency"/>
             <argument type="service" id="Adyen\Service\Builder\Customer"/>
-            <argument type="service" id="security.csrf.token_manager"/>
             <argument type="service" id="currency.repository"/>
             <argument type="service" id="product.repository"/>
+            <argument type="service" id="Adyen\Service\Builder\OpenInvoice"/>
             <argument type="service" id="Adyen\Service\Builder\Payment"/>
-            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="session"/>
         </service>
