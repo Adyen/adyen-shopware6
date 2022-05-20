@@ -179,7 +179,7 @@ abstract class AbstractPaymentMethodHandler
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );
         $stateData = $dataBag->get('stateData');
-        $returnUrl = $this->getAdyenReturnUrl($this->getReturnUrlQuery($transaction));
+        $returnUrl = $this->getAdyenReturnUrl($transaction);
 
         try {
             $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $returnUrl, $stateData);
@@ -216,7 +216,7 @@ abstract class AbstractPaymentMethodHandler
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
-        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $transaction->getOrderTransaction());
+        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $transaction->getOrderTransaction()->getId());
 
         try {
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
@@ -265,6 +265,7 @@ abstract class AbstractPaymentMethodHandler
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param AsyncPaymentTransactionStruct $transaction
+     * @param string $returnUrl
      * @param string|null $stateData
      * @return array
      */
@@ -325,10 +326,13 @@ abstract class AbstractPaymentMethodHandler
     }
 
     /**
+     * Creates the Adyen Redirect Result URL with the same query as the original return URL
+     * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
+     *
      * @param AsyncPaymentTransactionStruct $transaction
-     * @return array|int|string|null
+     * @return string
      */
-    private function getReturnUrlQuery(AsyncPaymentTransactionStruct $transaction)
+    private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction): string
     {
         // Parse the original return URL to retrieve the query parameters
         $returnUrlQuery = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
@@ -340,18 +344,7 @@ abstract class AbstractPaymentMethodHandler
                 'Return URL is malformed'
             );
         }
-        return $returnUrlQuery;
-    }
 
-    /**
-     * Creates the Adyen Redirect Result URL with the same query as the original return URL
-     * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
-     *
-     * @param string $returnUrlQuery
-     * @return string
-     */
-    private function getAdyenReturnUrl(string $returnUrlQuery): string
-    {
         // Generate the custom Adyen endpoint to receive the redirect from the issuer page
         $adyenReturnUrl = $this->router->generate(
             'payment.adyen.redirect_result',

@@ -80,31 +80,41 @@ class PaymentResponseService
                 Context::createDefaultContext()
             )
             ->first();
-        return $this->getWithOrderTransaction($orderTransaction);
+        return $this->getWithOrderTransaction($orderTransaction->getId());
     }
 
-    public function getWithOrderTransaction(OrderTransactionEntity $orderTransaction): ?PaymentResponseEntity
+    public function getWithOrderTransaction(string $orderTransactionId): ?PaymentResponseEntity
     {
         return $this->repository
             ->search(
                 (new Criteria())
-                    ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
+                    ->addFilter(new EqualsFilter('orderTransactionId', $orderTransactionId))
                     ->addAssociation('orderTransaction.order'),
                 Context::createDefaultContext()
             )
             ->first();
     }
 
+    public function getWithPspReference(string $pspReference)
+    {
+        return $this->repository
+            ->search(
+                (new Criteria())
+                ->addFilter(new EqualsFilter('pspReference', $pspReference)),
+                Context::createDefaultContext()
+            )->first();
+    }
+
     public function insertPaymentResponse(
         array $paymentResponse,
-        OrderTransactionEntity $orderTransaction
+        string $orderTransactionId
     ): void {
-        $storedPaymentResponse = $this->getWithOrderTransaction($orderTransaction);
+        $storedPaymentResponse = $this->getWithOrderTransaction($orderTransactionId);
         if ($storedPaymentResponse) {
             $fields['id'] = $storedPaymentResponse->getId();
         }
 
-        $fields['orderTransactionId'] = $orderTransaction->getId();
+        $fields['orderTransactionId'] = $orderTransactionId;
         $fields['resultCode'] = $paymentResponse["resultCode"];
         $fields['response'] = json_encode($paymentResponse);
 

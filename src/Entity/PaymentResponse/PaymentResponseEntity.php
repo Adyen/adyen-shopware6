@@ -44,6 +44,11 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
+    protected $pspReference;
+
+    /**
+     * @var string
+     */
     protected $resultCode;
 
     /**
@@ -62,9 +67,9 @@ class PaymentResponseEntity extends Entity
     protected $response;
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getOrderTransactionId(): string
+    public function getOrderTransactionId(): ?string
     {
         return $this->orderTransactionId;
     }
@@ -91,6 +96,16 @@ class PaymentResponseEntity extends Entity
     public function setOrderTransaction(OrderTransactionEntity $orderTransaction): void
     {
         $this->orderTransaction = $orderTransaction;
+    }
+
+    public function getPspReference(): ?string
+    {
+        return $this->pspReference;
+    }
+
+    public function setPspReference(string $pspReference): void
+    {
+        $this->pspReference = $pspReference;
     }
 
     /**

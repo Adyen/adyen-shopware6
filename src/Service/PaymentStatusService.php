@@ -50,6 +50,7 @@ class PaymentStatusService
     }
 
     /**
+     * @deprecated
      * @param OrderTransactionEntity $orderTransaction
      * @return array
      * @throws MissingDataException
@@ -57,7 +58,7 @@ class PaymentStatusService
      */
     public function getPaymentStatusWithOrderTransaction(OrderTransactionEntity $orderTransaction): array
     {
-        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($orderTransaction);
+        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($orderTransaction->getId());
 
         if (empty($paymentResponse)) {
             throw new MissingDataException(
@@ -77,7 +78,7 @@ class PaymentStatusService
 
         $result = $this->paymentResponseHandler->handlePaymentResponse(
             $responseData,
-            $orderTransaction
+            $orderTransaction->getId()
         );
 
         return $this->paymentResponseHandler->handleAdyenApis($result);
@@ -104,7 +105,7 @@ class PaymentStatusService
 
         $result = $this->paymentResponseHandler->handlePaymentResponse(
             $responseData,
-            $paymentResponse->getOrderTransaction()
+            $paymentResponse->getOrderTransaction()->getId()
         );
 
         return $this->paymentResponseHandler->handleAdyenApis($result);

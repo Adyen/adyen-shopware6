@@ -111,12 +111,14 @@ class PaymentResponseHandler
 
     /**
      * @param array $response
-     * @param OrderTransactionEntity $orderTransaction
+     * @param string $orderTransactionId
+     * @param string|null $pspReference
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
         array $response,
-        OrderTransactionEntity $orderTransaction
+        string $orderTransactionId,
+        string $pspReference = null
     ): PaymentResponseHandlerResult {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
@@ -148,7 +150,7 @@ class PaymentResponseHandler
         // Store response for cart until the payment is finalised
         $this->paymentResponseService->insertPaymentResponse(
             $response,
-            $orderTransaction
+            $orderTransactionId
         );
 
         // Based on the result code start different payment flows
@@ -191,6 +193,8 @@ class PaymentResponseHandler
     }
 
     /**
+     * Update Order Transaction state based on payment response.
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
@@ -200,7 +204,7 @@ class PaymentResponseHandler
     public function handleShopwareApis(
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult
+        PaymentResponseHandlerResult $paymentResponseHandlerResult // todo we don't need this argument, use $this->paymentResponseHa.....
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $context = $salesChannelContext->getContext();

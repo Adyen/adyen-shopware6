@@ -24,12 +24,12 @@
 
 namespace Adyen\Shopware\Controller;
 
-use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\CheckoutService;
+use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentRequestService;
@@ -109,11 +109,14 @@ class StoreApiController
     private $logger;
     private CartService $cartService;
     private CartCalculator $cartCalculator;
-    private CheckoutService $checkoutService;
+    private ClientService $clientService;
 
     /**
      * StoreApiController constructor.
      *
+     * @param CartService $cartService
+     * @param CartCalculator $cartCalculator
+     * @param ClientService $clientService
      * @param PaymentMethodsService $paymentMethodsService
      * @param PaymentDetailsService $paymentDetailsService
      * @param PaymentRequestService $paymentRequestService
@@ -129,10 +132,10 @@ class StoreApiController
     public function __construct(
         CartService $cartService,
         CartCalculator $cartCalculator,
+        ClientService $clientService,
         PaymentMethodsService $paymentMethodsService,
         PaymentDetailsService $paymentDetailsService,
         PaymentRequestService $paymentRequestService,
-        CheckoutService $checkoutService,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStatusService $paymentStatusService,
         PaymentResponseHandler $paymentResponseHandler,
@@ -155,7 +158,7 @@ class StoreApiController
         $this->orderService = $orderService;
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
-        $this->checkoutService = $checkoutService;
+        $this->clientService = $clientService;
     }
 
     /**
@@ -183,7 +186,7 @@ class StoreApiController
      * @param Request $request
      * @param SalesChannelContext $context
      * @return JsonResponse
-     * @throws AdyenException
+     * @throws \Adyen\AdyenException
      */
     public function makePayment(Request $request, SalesChannelContext $context): JsonResponse
     {
@@ -214,8 +217,11 @@ class StoreApiController
             $lineItems
         );
 
-        $response = $this->checkoutService->payments($request);
+        $checkoutService = new CheckoutService(
+            $this->clientService->getClient($context->getSalesChannel()->getId())
+        );
 
+        $response = $checkoutService->payments($request);
 
         return new JsonResponse([]);
     }
