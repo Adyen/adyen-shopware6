@@ -30,6 +30,7 @@ use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
+use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentRequestService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
@@ -72,6 +73,11 @@ abstract class AbstractPaymentMethodHandler
      * @var ClientService
      */
     protected $clientService;
+
+    /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
 
     /**
      * @var PaymentStateDataService
@@ -121,6 +127,7 @@ abstract class AbstractPaymentMethodHandler
     /**
      * AbstractPaymentMethodHandler constructor.
      * @param ClientService $clientService
+     * @param ConfigurationService $configurationService
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -133,6 +140,7 @@ abstract class AbstractPaymentMethodHandler
      */
     public function __construct(
         ClientService $clientService,
+        ConfigurationService $configurationService,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
         PaymentResponseHandler $paymentResponseHandler,
@@ -144,6 +152,7 @@ abstract class AbstractPaymentMethodHandler
         LoggerInterface $logger
     ) {
         $this->clientService = $clientService;
+        $this->configurationService = $configurationService;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
@@ -173,7 +182,11 @@ abstract class AbstractPaymentMethodHandler
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
-    ): RedirectResponse {
+    ): ?RedirectResponse {
+        if ($this->configurationService->usesPreparedPaymentFlow($salesChannelContext->getSalesChannelId())) {
+            return null;
+        }
+
         $transactionId = $transaction->getOrderTransaction()->getId();
         $checkoutService = new CheckoutService(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
@@ -216,7 +229,8 @@ abstract class AbstractPaymentMethodHandler
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
-        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $transaction->getOrderTransaction()->getId());
+        $result = $this->paymentResponseHandler
+            ->handlePaymentResponse($response, $transaction->getOrderTransaction()->getId());
 
         try {
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
@@ -242,6 +256,10 @@ abstract class AbstractPaymentMethodHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
+        if ($this->configurationService->usesPreparedPaymentFlow($salesChannelContext->getSalesChannelId())) {
+            return;
+        }
+
         $transactionId = $transaction->getOrderTransaction()->getId();
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
@@ -252,13 +270,23 @@ abstract class AbstractPaymentMethodHandler
         }
     }
 
-    public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): Struct
+    public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): ?Struct
     {
+        if (!$this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
+            return null;
+        }
         return new ArrayStruct(['valid']);
     }
 
-    public function capture(PreparedPaymentTransactionStruct $transaction, RequestDataBag $requestDataBag, SalesChannelContext $context, Struct $preOrderPaymentStruct): void
-    {
+    public function capture(
+        PreparedPaymentTransactionStruct $transaction,
+        RequestDataBag $requestDataBag,
+        SalesChannelContext $context,
+        Struct $preOrderPaymentStruct
+    ): void {
+        if (!$this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
+            return;
+        }
         // TODO: Implement capture() method.
     }
 

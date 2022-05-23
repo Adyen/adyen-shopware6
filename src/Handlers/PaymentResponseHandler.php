@@ -221,7 +221,7 @@ class PaymentResponseHandler
     public function handleShopwareApis(
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult // todo we don't need this argument, use $this->pa..
+        PaymentResponseHandlerResult $paymentResponseHandlerResult // todo do we need this argument, use $this->pa..
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $context = $salesChannelContext->getContext();
