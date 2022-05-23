@@ -28,6 +28,7 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\CaptureService;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
@@ -63,6 +64,7 @@ class PaymentResponseHandler
 
     // Merchant reference key in API response
     const MERCHANT_REFERENCE = 'merchantReference';
+    const ORDER_TRANSACTION_ID = 'orderTransactionId';
     /**
      * @var LoggerInterface
      */
@@ -111,14 +113,12 @@ class PaymentResponseHandler
 
     /**
      * @param array $response
-     * @param string $orderTransactionId
-     * @param string|null $pspReference
+     * @param string|null $orderTransactionId
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
         array $response,
-        string $orderTransactionId,
-        string $pspReference = null
+        string $orderTransactionId = null
     ): PaymentResponseHandlerResult {
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
@@ -148,10 +148,19 @@ class PaymentResponseHandler
         }
 
         // Store response for cart until the payment is finalised
-        $this->paymentResponseService->insertPaymentResponse(
-            $response,
-            $orderTransactionId
-        );
+        if ($orderTransactionId) {
+            $this->paymentResponseService->insertPaymentResponse(
+                $response,
+                $orderTransactionId,
+                self::ORDER_TRANSACTION_ID
+            );
+        } else {
+            $this->paymentResponseService->insertPaymentResponse(
+                $response,
+                $response['pspReference'],
+                self::PSP_REFERENCE
+            );
+        }
 
         // Based on the result code start different payment flows
         switch ($resultCode) {

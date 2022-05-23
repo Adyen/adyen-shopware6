@@ -24,7 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -106,15 +106,21 @@ class PaymentResponseService
     }
 
     public function insertPaymentResponse(
-        array $paymentResponse,
-        string $orderTransactionId
+        array  $paymentResponse,
+        string $value,
+        string $identifier
     ): void {
-        $storedPaymentResponse = $this->getWithOrderTransaction($orderTransactionId);
+        if ($identifier === PaymentResponseHandler::ORDER_TRANSACTION_ID) {
+            $storedPaymentResponse = $this->getWithOrderTransaction($value);
+        } else {
+            $storedPaymentResponse = $this->getWithPspReference($value);
+        }
+
         if ($storedPaymentResponse) {
             $fields['id'] = $storedPaymentResponse->getId();
         }
 
-        $fields['orderTransactionId'] = $orderTransactionId;
+        $fields[$identifier] = $value;
         $fields['resultCode'] = $paymentResponse["resultCode"];
         $fields['response'] = json_encode($paymentResponse);
 
