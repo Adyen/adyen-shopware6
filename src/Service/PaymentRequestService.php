@@ -392,8 +392,7 @@ class PaymentRequestService
                 'street' => $streetFirstAddress['streetName'],
                 'houseNumber' => $streetFirstAddress['houseNumber']
             ];
-        }
-        else if ($numberFirstAddress) {
+        } elseif ($numberFirstAddress) {
             return [
                 'street' => $numberFirstAddress['streetName'],
                 'houseNumber' => $numberFirstAddress['houseNumber']

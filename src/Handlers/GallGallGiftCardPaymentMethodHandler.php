@@ -29,7 +29,8 @@ use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandle
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
 
 class GallGallGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
-    AsynchronousPaymentHandlerInterface, PreparedPaymentHandlerInterface
+    AsynchronousPaymentHandlerInterface,
+    PreparedPaymentHandlerInterface
 {
     public static $isGiftCard = true;
 

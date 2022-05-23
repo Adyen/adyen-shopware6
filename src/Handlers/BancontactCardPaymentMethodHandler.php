@@ -30,7 +30,8 @@ use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInt
 
 // phpcs:ignore Generic.Files.LineLength.TooLong
 class BancontactCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
-    AsynchronousPaymentHandlerInterface, PreparedPaymentHandlerInterface
+    AsynchronousPaymentHandlerInterface,
+    PreparedPaymentHandlerInterface
 {
 
     public static function getPaymentMethodCode()

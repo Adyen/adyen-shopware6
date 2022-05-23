@@ -345,8 +345,12 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
                     'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
                     'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
-                    'billingAddressStreetHouse' => $this->paymentRequestService->getSplitStreetAddressHouseNumber($salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()),
-                    'shippingAddressStreetHouse' => $this->paymentRequestService->getSplitStreetAddressHouseNumber($salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()),
+                    'billingAddressStreetHouse' => $this->paymentRequestService->getSplitStreetAddressHouseNumber(
+                        $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
+                    ),
+                    'shippingAddressStreetHouse' => $this->paymentRequestService->getSplitStreetAddressHouseNumber(
+                        $salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()
+                    ),
                 ]
             )
         );
