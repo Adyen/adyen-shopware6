@@ -44,7 +44,7 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
-    protected $pspReference;
+    protected $paymentReference;
 
     /**
      * @var string
@@ -98,14 +98,14 @@ class PaymentResponseEntity extends Entity
         $this->orderTransaction = $orderTransaction;
     }
 
-    public function getPspReference(): ?string
+    public function getPaymentReference(): ?string
     {
-        return $this->pspReference;
+        return $this->paymentReference;
     }
 
-    public function setPspReference(string $pspReference): void
+    public function setPaymentReference(string $paymentReference): void
     {
-        $this->pspReference = $pspReference;
+        $this->paymentReference = $paymentReference;
     }
 
     /**

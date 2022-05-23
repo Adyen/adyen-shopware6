@@ -35,8 +35,10 @@ use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
+use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -323,21 +325,27 @@ class PaymentRequestService
         string $taxStatus
     ): array {
         $lineItems = [];
-        foreach ($lineItemsCollection as $orderLine) {
+        foreach ($lineItemsCollection as $lineItem) {
             //Getting line price
-            $price = $orderLine->getPrice();
+            $price = $lineItem->getPrice();
 
             // Skip promotion line items.
-            if (empty($orderLine->getProductId()) && $orderLine->getType() === self::PROMOTION) {
+            if (LineItem::PROMOTION_LINE_ITEM_TYPE === $lineItem->getType()) {
                 continue;
             }
 
-            $product = $this->getProduct($orderLine->getProductId(), $context);
+            if ($lineItem instanceof LineItem) {
+                $productId = $lineItem->getReferencedId();
+            } elseif ($lineItem instanceof OrderLineItemEntity) {
+                $productId = $lineItem->getProductId();
+            }
+
+            $product = $this->getProduct($productId, $context);
             $productName = $product->getTranslation('name');
             $productNumber = $product->getProductNumber();
 
             //Getting line tax amount and rate
-            $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
+            $lineTax = $price->getCalculatedTaxes()->getAmount() / $lineItem->getQuantity();
             $taxRate = $price->getCalculatedTaxes()->first();
             if (!empty($taxRate)) {
                 $taxRate = $taxRate->getTaxRate();
@@ -358,7 +366,7 @@ class PaymentRequestService
                     $currency->getIsoCode()
                 ),
                 $taxRate * 100,
-                $orderLine->getQuantity(),
+                $lineItem->getQuantity(),
                 '',
                 $productNumber
             );

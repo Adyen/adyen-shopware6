@@ -381,7 +381,7 @@ class AdminController
                 $context
             );
             $result[] = [
-                'pspReference' => $entity->getPspReference(),
+                'pspReference' => $entity->getPaymentReference(),
                 'amount' => $amount,
                 'rawAmount' => $entity->getAmount(),
                 'status' => $entity->getStatus(),

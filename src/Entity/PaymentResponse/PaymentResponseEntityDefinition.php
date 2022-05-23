@@ -66,7 +66,7 @@ class PaymentResponseEntityDefinition extends EntityDefinition
                 'orderTransactionId',
                 OrderTransactionDefinition::class
             )),
-            new StringField('psp_reference', 'pspReference'),
+            new StringField('payment_reference', 'paymentReference'),
             new StringField('result_code', 'resultCode'),
             new LongTextField('response', 'response'),
             new CreatedAtField(),

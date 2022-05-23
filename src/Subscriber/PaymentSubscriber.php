@@ -222,7 +222,6 @@ class PaymentSubscriber implements EventSubscriberInterface
      */
     public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
     {
-        xdebug_break();
         // Clear state.data if payment method is updated
         if ($event->getRequestDataBag()->has('paymentMethodId')) {
             $this->removeCurrentStateData($event);

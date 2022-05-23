@@ -16,7 +16,7 @@ class Migration1653031120AdyenPaymentResponse extends MigrationStep
     {
         $connection->executeUpdate("
             alter table `adyen_payment_response`
-            add column psp_reference varchar(64) NULL after order_transaction_id;
+            add column payment_reference varchar(64) NULL after order_transaction_id;
         ");
     }
 

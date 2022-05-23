@@ -24,8 +24,10 @@
 
 namespace Adyen\Shopware\Controller;
 
+use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\CheckoutService;
@@ -198,7 +200,7 @@ class StoreApiController
         $totalPrice = $calculatedCart->getPrice()->getTotalPrice();
         $paymentMethod = $context->getPaymentMethod();
         $paymentHandler = $paymentMethod->getHandlerIdentifier();
-        $reference = Uuid::fromBytesToHex($calculatedCart->getToken()); // todo save to transaction/order
+        $reference = Uuid::fromStringToHex($calculatedCart->getToken()); // todo save to transaction/order
         $currency = $this->paymentRequestService->getCurrency($context->getCurrencyId(), $context->getContext());
         $lineItems = $this->paymentRequestService->getLineItems(
             $calculatedCart->getLineItems(),
@@ -221,9 +223,17 @@ class StoreApiController
             $this->clientService->getClient($context->getSalesChannel()->getId())
         );
 
-        $response = $checkoutService->payments($request);
+        try {
+            $response = $checkoutService->payments($request);
+        } catch (AdyenException $exception) {
+            $this->logger->error($exception->getMessage());
 
-        return new JsonResponse([]);
+            return new JsonResponse('An error occurred.', 400);
+        }
+
+        $result = $this->paymentResponseHandler->handlePaymentResponse($response, null, $reference);
+
+        return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
     }
 
     /**

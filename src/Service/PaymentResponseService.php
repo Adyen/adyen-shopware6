@@ -95,12 +95,12 @@ class PaymentResponseService
             ->first();
     }
 
-    public function getWithPspReference(string $pspReference)
+    public function getWithPaymentReference(string $paymentReference)
     {
         return $this->repository
             ->search(
                 (new Criteria())
-                ->addFilter(new EqualsFilter('pspReference', $pspReference)),
+                ->addFilter(new EqualsFilter('paymentReference', $paymentReference)),
                 Context::createDefaultContext()
             )->first();
     }
@@ -113,7 +113,7 @@ class PaymentResponseService
         if ($identifier === PaymentResponseHandler::ORDER_TRANSACTION_ID) {
             $storedPaymentResponse = $this->getWithOrderTransaction($value);
         } else {
-            $storedPaymentResponse = $this->getWithPspReference($value);
+            $storedPaymentResponse = $this->getWithPaymentReference($value);
         }
 
         if ($storedPaymentResponse) {

@@ -64,6 +64,8 @@ class PaymentResponseHandler
 
     // Merchant reference key in API response
     const MERCHANT_REFERENCE = 'merchantReference';
+
+    const PAYMENT_REFERENCE = 'paymentReference';
     const ORDER_TRANSACTION_ID = 'orderTransactionId';
     /**
      * @var LoggerInterface
@@ -114,12 +116,18 @@ class PaymentResponseHandler
     /**
      * @param array $response
      * @param string|null $orderTransactionId
+     * @param string|null $paymentReference
      * @return PaymentResponseHandlerResult
+     * @throws ValidationException
      */
     public function handlePaymentResponse(
         array $response,
-        string $orderTransactionId = null
+        string $orderTransactionId = null,
+        string $paymentReference = null
     ): PaymentResponseHandlerResult {
+        if (is_null($orderTransactionId) && is_null($paymentReference)) {
+            throw new ValidationException('Error: either orderTransactionId or paymentReference is required');
+        }
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
         if (array_key_exists('refusalReason', $response)) {
@@ -157,8 +165,8 @@ class PaymentResponseHandler
         } else {
             $this->paymentResponseService->insertPaymentResponse(
                 $response,
-                $response['pspReference'],
-                self::PSP_REFERENCE
+                $paymentReference,
+                self::PAYMENT_REFERENCE
             );
         }
 
