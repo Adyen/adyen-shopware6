@@ -265,7 +265,7 @@ class StoreApiController
 
         // Validate stateData object
         if (!empty($stateData)) {
-            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
+            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData((array)$stateData);
         }
 
         if (empty($stateData['details'])) {
@@ -280,13 +280,75 @@ class StoreApiController
         try {
             $result = $this->paymentDetailsService->getPaymentDetails(
                 $stateData,
-                $paymentResponse->getOrderTransaction()
+                $context->getSalesChannelId(),
+                $paymentResponse->getOrderTransactionId()
             );
         } catch (PaymentFailedException $exception) {
             $message = 'Error occurred finalizing payment';
             $this->logger->error(
                 $message,
                 ['orderId' => $orderId, 'paymentDetails' => $stateData]
+            );
+            return new JsonResponse($message, 500);
+        }
+
+        return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/prepared-payment-details",
+     *     name="store-api.action.adyen.prepared-payment-details",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     * @throws ValidationException
+     */
+    public function getPreparedPaymentDetails(
+        Request $request,
+        SalesChannelContext $context
+    ): JsonResponse {
+
+        $paymentReference = $request->request->get('paymentReference');
+        $paymentResponse = $this->paymentResponseService->getWithPaymentReference($paymentReference);
+        if (!$paymentResponse) {
+            $message = 'Could not find a transaction';
+            $this->logger->error($message, ['paymentReference' => $paymentReference]);
+            return new JsonResponse($message, 404);
+        }
+
+        // Get state data object if sent
+        $stateData = $request->request->get('stateData');
+
+        // Validate stateData object
+        if (!empty($stateData)) {
+            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData((array)$stateData);
+        }
+
+        if (empty($stateData['details'])) {
+            $message = 'Details missing in $stateData';
+            $this->logger->error(
+                $message,
+                ['stateData' => $stateData]
+            );
+            return new JsonResponse($message, 400);
+        }
+
+        try {
+            $result = $this->paymentDetailsService->getPaymentDetails(
+                $stateData,
+                $context->getSalesChannelId(),
+                null,
+                $paymentResponse->getPaymentReference()
+            );
+        } catch (PaymentFailedException $exception) {
+            $message = 'Error occurred finalizing payment';
+            $this->logger->error(
+                $message,
+                ['paymentReference' => $paymentReference, 'paymentDetails' => $stateData]
             );
             return new JsonResponse($message, 500);
         }
@@ -332,6 +394,8 @@ class StoreApiController
      * @param Request $request
      * @param SalesChannelContext $context
      * @return JsonResponse
+     * @throws \Adyen\Exception\MissingDataException
+     * @throws \JsonException
      */
     public function getPreparedPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
     {
@@ -340,14 +404,9 @@ class StoreApiController
             return new JsonResponse('Payment reference not provided', 400);
         }
 
-        try {
-            return new JsonResponse(
-                $this->paymentStatusService->getWithPaymentReference($paymentReference)
-            );
-        } catch (\Exception $exception) {
-            $this->logger->error($exception->getMessage());
-            return new JsonResponse(["isFinal" => true]);
-        }
+        return new JsonResponse(
+            $this->paymentStatusService->getWithPaymentReference($paymentReference)
+        );
     }
 
     /**

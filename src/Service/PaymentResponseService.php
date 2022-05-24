@@ -95,7 +95,7 @@ class PaymentResponseService
             ->first();
     }
 
-    public function getWithPaymentReference(string $paymentReference)
+    public function getWithPaymentReference(string $paymentReference): ?PaymentResponseEntity
     {
         return $this->repository
             ->search(

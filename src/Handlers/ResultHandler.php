@@ -137,7 +137,8 @@ class ResultHandler
             // Validate the return
             $result = $this->paymentDetailsService->getPaymentDetails(
                 $requestData,
-                $transaction->getOrderTransaction()
+                $transaction->getOrder()->getSalesChannelId(),
+                $transaction->getOrderTransaction()->getId()
             );
         }
 

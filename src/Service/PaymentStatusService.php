@@ -91,7 +91,7 @@ class PaymentStatusService
         if (empty($paymentResponse)) {
             throw new MissingDataException(
                 'Payment response cannot be found for payment: ' .
-                $paymentReference . '!'
+                $paymentReference
             );
         }
 
@@ -100,7 +100,7 @@ class PaymentStatusService
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new JsonException(
                 'Payment response is an invalid JSON for payment: ' .
-                $paymentReference . '!'
+                $paymentReference
             );
         }
 

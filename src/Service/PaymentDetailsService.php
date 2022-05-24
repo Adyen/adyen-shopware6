@@ -66,21 +66,26 @@ class PaymentDetailsService
 
     /**
      * @param array $requestData
-     * @param OrderTransactionEntity $orderTransaction
+     * @param string $salesChannelId
+     * @param string|null $orderTransactionId
+     * @param string|null $paymentReference
      * @return PaymentResponseHandlerResult
      * @throws PaymentFailedException
+     * @throws \Adyen\Shopware\Exception\ValidationException
      */
     public function getPaymentDetails(
         array $requestData,
-        OrderTransactionEntity $orderTransaction
+        string $salesChannelId,
+        string $orderTransactionId = null,
+        string $paymentReference = null
     ): PaymentResponseHandlerResult {
 
         try {
             $checkoutService = new CheckoutService(
-                $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
+                $this->clientService->getClient($salesChannelId)
             );
             $response = $checkoutService->paymentsDetails($requestData);
-            return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction->getId());
+            return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransactionId, $paymentReference);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
             throw new PaymentFailedException($exception->getMessage());

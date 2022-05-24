@@ -183,10 +183,6 @@ abstract class AbstractPaymentMethodHandler
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): RedirectResponse {
-        if ($this->configurationService->usesPreparedPaymentFlow($salesChannelContext->getSalesChannelId())) {
-            return null;
-        }
-
         $transactionId = $transaction->getOrderTransaction()->getId();
         $checkoutService = new CheckoutService(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
@@ -256,10 +252,6 @@ abstract class AbstractPaymentMethodHandler
         Request $request,
         SalesChannelContext $salesChannelContext
     ): void {
-        if ($this->configurationService->usesPreparedPaymentFlow($salesChannelContext->getSalesChannelId())) {
-            return;
-        }
-
         $transactionId = $transaction->getOrderTransaction()->getId();
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
@@ -288,7 +280,7 @@ abstract class AbstractPaymentMethodHandler
     ): void {
         if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
             // TODO: Implement capture() method.
-
+            $paymentReference = $requestDataBag['paymentReference'];
         }
     }
 
