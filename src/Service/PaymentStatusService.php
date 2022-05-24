@@ -84,6 +84,35 @@ class PaymentStatusService
         return $this->paymentResponseHandler->handleAdyenApis($result);
     }
 
+    public function getWithPaymentReference(string $paymentReference): array
+    {
+        $paymentResponse = $this->paymentResponseService->getWithPaymentReference($paymentReference);
+
+        if (empty($paymentResponse)) {
+            throw new MissingDataException(
+                'Payment response cannot be found for payment: ' .
+                $paymentReference . '!'
+            );
+        }
+
+        $responseData = json_decode($paymentResponse->getResponse(), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new JsonException(
+                'Payment response is an invalid JSON for payment: ' .
+                $paymentReference . '!'
+            );
+        }
+
+        $result = $this->paymentResponseHandler->handlePaymentResponse(
+            $responseData,
+            null,
+            $paymentReference
+        );
+
+        return $this->paymentResponseHandler->handleAdyenApis($result);
+    }
+
     public function getWithOrderId(string $orderId): array
     {
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);

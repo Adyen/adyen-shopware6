@@ -323,6 +323,34 @@ class StoreApiController
     }
 
     /**
+     * @Route(
+     *     "/store-api/adyen/prepared-payment-status",
+     *     name="store-api.action.adyen.prepared-payment-status",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function getPreparedPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        $paymentReference = $request->get('paymentReference');
+        if (empty($paymentReference)) {
+            return new JsonResponse('Payment reference not provided', 400);
+        }
+
+        try {
+            return new JsonResponse(
+                $this->paymentStatusService->getWithPaymentReference($paymentReference)
+            );
+        } catch (\Exception $exception) {
+            $this->logger->error($exception->getMessage());
+            return new JsonResponse(["isFinal" => true]);
+        }
+    }
+
+    /**
      * @OA\Post(
      *      path="/adyen/set-payment",
      *      summary="set payment for an order",

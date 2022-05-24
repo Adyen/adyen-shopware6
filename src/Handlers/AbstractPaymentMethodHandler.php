@@ -272,10 +272,12 @@ abstract class AbstractPaymentMethodHandler
 
     public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): Struct
     {
-        if (!$this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
-            return null;
+        if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
+            // TODO
+            return new ArrayStruct(['valid']);
         }
-        return new ArrayStruct(['valid']);
+
+        return new ArrayStruct([]);
     }
 
     public function capture(
@@ -284,10 +286,10 @@ abstract class AbstractPaymentMethodHandler
         SalesChannelContext $context,
         Struct $preOrderPaymentStruct
     ): void {
-        if (!$this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
-            return;
+        if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
+            // TODO: Implement capture() method.
+
         }
-        // TODO: Implement capture() method.
     }
 
     /**
