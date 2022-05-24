@@ -182,7 +182,7 @@ abstract class AbstractPaymentMethodHandler
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
-    ): ?RedirectResponse {
+    ): RedirectResponse {
         if ($this->configurationService->usesPreparedPaymentFlow($salesChannelContext->getSalesChannelId())) {
             return null;
         }
@@ -270,7 +270,7 @@ abstract class AbstractPaymentMethodHandler
         }
     }
 
-    public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): ?Struct
+    public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): Struct
     {
         if (!$this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
             return null;

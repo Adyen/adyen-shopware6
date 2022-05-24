@@ -163,6 +163,7 @@ class PaymentResponseHandler
                 self::ORDER_TRANSACTION_ID
             );
         } else {
+            $this->paymentResponseHandlerResult->setPaymentReference($paymentReference);
             $this->paymentResponseService->insertPaymentResponse(
                 $response,
                 $paymentReference,
@@ -333,43 +334,49 @@ class PaymentResponseHandler
 
         switch ($resultCode) {
             case self::AUTHORISED:
-                return [
+                $response = [
                     "isFinal" => true,
                     "resultCode" => $resultCode,
                 ];
+                break;
             case self::REFUSED:
             case self::ERROR:
             case self::CANCELLED:
-                return [
+                $response = [
                     "isFinal" => true,
                     "resultCode" => $resultCode,
                     "refusalReason" => $refusalReason,
                     "refusalReasonCode" => $refusalReasonCode
                 ];
+                break;
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::PRESENT_TO_SHOPPER:
             case self::PENDING:
-                return [
+                $response = [
                     "isFinal" => false,
                     "resultCode" => $resultCode,
                     "action" => $action
                 ];
                 break;
             case self::RECEIVED:
-                return [
+                $response = [
                     "isFinal" => true,
                     "resultCode" => $resultCode,
                     "additionalData" => $additionalData
                 ];
                 break;
             default:
-                return [
+                $response = [
                     "isFinal" => true,
                     "resultCode" => self::ERROR,
                 ];
         }
+
+        $response['paymentReference'] = $paymentResponseHandlerResult->getPaymentReference() ?: null;
+
+        return $response;
     }
 
     /**
