@@ -32,10 +32,10 @@ use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentRequestService;
+use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
-use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -47,6 +47,7 @@ use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CapturePreparedPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
+use Shopware\Core\Checkout\Payment\Exception\ValidatePreparedPaymentException;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -125,6 +126,11 @@ abstract class AbstractPaymentMethodHandler
     private $router;
 
     /**
+     * @var PaymentResponseService
+     */
+    private $paymentResponseService;
+
+    /**
      * AbstractPaymentMethodHandler constructor.
      * @param ClientService $clientService
      * @param ConfigurationService $configurationService
@@ -134,6 +140,7 @@ abstract class AbstractPaymentMethodHandler
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
+     * @param PaymentResponseService $paymentResponseService
      * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param PaymentRequestService $paymentRequestService
      * @param LoggerInterface $logger
@@ -147,6 +154,7 @@ abstract class AbstractPaymentMethodHandler
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $router,
+        PaymentResponseService $paymentResponseService,
         CsrfTokenManagerInterface $csrfTokenManager,
         PaymentRequestService $paymentRequestService,
         LoggerInterface $logger
@@ -159,6 +167,7 @@ abstract class AbstractPaymentMethodHandler
         $this->resultHandler = $resultHandler;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->router = $router;
+        $this->paymentResponseService = $paymentResponseService;
         $this->csrfTokenManager = $csrfTokenManager;
         $this->paymentRequestService = $paymentRequestService;
         $this->logger = $logger;
@@ -265,8 +274,18 @@ abstract class AbstractPaymentMethodHandler
     public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): Struct
     {
         if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
-            // TODO
-            return new ArrayStruct(['valid']);
+            $paymentReference = $requestDataBag->get('paymentReference');
+            if (empty($paymentReference)) {
+                throw new ValidatePreparedPaymentException('Error: Payment reference is required.');
+            }
+            $response = $this->paymentResponseService->getWithPaymentReference($paymentReference);
+            if (empty($response)) {
+                throw new ValidatePreparedPaymentException('Error: Payment result not found.');
+            }
+
+            $valid = $response->getResultCode() === PaymentResponseHandler::AUTHORISED;
+
+            return new ArrayStruct(['isValid' => $valid]);
         }
 
         return new ArrayStruct([]);
@@ -280,7 +299,7 @@ abstract class AbstractPaymentMethodHandler
     ): void {
         if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
             // TODO: Implement capture() method.
-            $paymentReference = $requestDataBag['paymentReference'];
+            $paymentReference = $requestDataBag->get('paymentReference');
         }
     }
 
