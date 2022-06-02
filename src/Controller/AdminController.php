@@ -193,7 +193,7 @@ class AdminController
 
         try {
             $results = $this->captureService
-                ->doOpenInvoiceCapture($order->getOrderNumber(), $amountInMinorUnit, $context);
+                ->capture($context, $order->getOrderNumber(), $amountInMinorUnit);
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
 
@@ -381,7 +381,7 @@ class AdminController
                 $context
             );
             $result[] = [
-                'pspReference' => $entity->getPaymentReference(),
+                'pspReference' => $entity->getPspReference(),
                 'amount' => $amount,
                 'rawAmount' => $entity->getAmount(),
                 'status' => $entity->getStatus(),

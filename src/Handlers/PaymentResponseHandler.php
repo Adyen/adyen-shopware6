@@ -35,7 +35,7 @@ use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\SyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -213,14 +213,14 @@ class PaymentResponseHandler
     /**
      * Update Order Transaction state based on payment response.
      *
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param SyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
      * @throws PaymentCancelledException
      * @throws PaymentFailedException
      */
     public function handleShopwareApis(
-        AsyncPaymentTransactionStruct $transaction,
+        SyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
         PaymentResponseHandlerResult $paymentResponseHandlerResult // todo do we need this argument, use $this->pa..
     ): void {

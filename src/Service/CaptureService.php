@@ -100,12 +100,12 @@ class CaptureService
     }
 
     /**
-     * Send capture request for open invoice payments
+     * Send capture request
      * @throws CaptureException
      */
-    public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context)
+    public function capture(Context $context, string $orderNumber, int $captureAmount, bool $preparedPaymentFlow = false)
     {
-        if ($this->configurationService->isManualCaptureActive()) {
+        if ($preparedPaymentFlow || $this->configurationService->isManualCaptureActive()) {
             $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
             $order = $this->orderRepository->getOrderByOrderNumber(
                 $orderNumber,
@@ -144,7 +144,7 @@ class CaptureService
 
             $results = [];
             foreach ($deliveries as $delivery) {
-                if ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState()) {
+                if ($preparedPaymentFlow || ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState())) {
                     $lineItems = $order->getLineItems();
                     $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
 
