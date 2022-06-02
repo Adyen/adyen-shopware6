@@ -378,7 +378,8 @@ abstract class AbstractPaymentMethodHandler
             $this->captureService->capture(
                 $context->getContext(),
                 $transaction->getOrder()->getOrderNumber(),
-                $captureAmount, true
+                $captureAmount,
+                true
             );
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
