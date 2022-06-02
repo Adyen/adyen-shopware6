@@ -118,7 +118,7 @@ class StoreApiController
      */
     private $cartCalculator;
     /**
-     * @var ClientService 
+     * @var ClientService
      */
     private $clientService;
 

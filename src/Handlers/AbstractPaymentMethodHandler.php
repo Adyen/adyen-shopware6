@@ -308,7 +308,6 @@ abstract class AbstractPaymentMethodHandler
      */
     public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): Struct
     {
-        xdebug_break();
         if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
             $paymentReference = $requestDataBag->get('paymentReference');
             if (empty($paymentReference)) {
@@ -341,7 +340,6 @@ abstract class AbstractPaymentMethodHandler
         SalesChannelContext $context,
         Struct $preOrderPaymentStruct
     ): void {
-        xdebug_break();
         if (!$this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
             return;
         }
@@ -368,11 +366,8 @@ abstract class AbstractPaymentMethodHandler
             );
         }
 
-        if (
-            $this->captureService->requiresManualCapture(
-                $transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier()
-            )
-        ) {
+        if ($this->captureService
+            ->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier())) {
             return;
         }
 
@@ -383,8 +378,8 @@ abstract class AbstractPaymentMethodHandler
             $this->captureService->capture(
                 $context->getContext(),
                 $transaction->getOrder()->getOrderNumber(),
-                $captureAmount, true)
-            ;
+                $captureAmount, true
+            );
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
             throw new CapturePreparedPaymentException(

@@ -144,10 +144,8 @@ class CaptureService
 
             $results = [];
             foreach ($deliveries as $delivery) {
-                if (
-                    $preparedPaymentFlow ||
-                    ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState())
-                ) {
+                if ($preparedPaymentFlow ||
+                    ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState())) {
                     $lineItems = $order->getLineItems();
                     $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
 
