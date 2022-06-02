@@ -368,7 +368,11 @@ abstract class AbstractPaymentMethodHandler
             );
         }
 
-        if ($this->captureService->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier())) {
+        if (
+            $this->captureService->requiresManualCapture(
+                $transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier()
+            )
+        ) {
             return;
         }
 
@@ -376,7 +380,11 @@ abstract class AbstractPaymentMethodHandler
         $captureAmount = $this->currency->sanitize($transaction->getOrder()->getAmountTotal(), $currency);
 
         try {
-            $this->captureService->capture($context->getContext(), $transaction->getOrder()->getOrderNumber(), $captureAmount, true);
+            $this->captureService->capture(
+                $context->getContext(),
+                $transaction->getOrder()->getOrderNumber(),
+                $captureAmount, true)
+            ;
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
             throw new CapturePreparedPaymentException(

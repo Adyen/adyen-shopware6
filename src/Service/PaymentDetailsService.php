@@ -85,7 +85,8 @@ class PaymentDetailsService
                 $this->clientService->getClient($salesChannelId)
             );
             $response = $checkoutService->paymentsDetails($requestData);
-            return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransactionId, $paymentReference);
+            return $this->paymentResponseHandler
+                ->handlePaymentResponse($response, $orderTransactionId, $paymentReference);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
             throw new PaymentFailedException($exception->getMessage());
