@@ -28,6 +28,8 @@
     <services>
         <service id="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler" abstract="true">
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
+            <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
+            <argument type="service" id="Adyen\Util\Currency"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
@@ -36,6 +38,7 @@
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
             <argument type="service" id="security.csrf.token_manager"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentRequestService"/>

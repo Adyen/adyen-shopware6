@@ -26,8 +26,11 @@
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
+use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Exception\PaymentCancelledException;
+use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -36,6 +39,7 @@ use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
+use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -76,6 +80,11 @@ abstract class AbstractPaymentMethodHandler
     protected $clientService;
 
     /**
+     * @var CaptureService
+     */
+    private $captureService;
+
+    /**
      * @var ConfigurationService
      */
     private $configurationService;
@@ -99,6 +108,11 @@ abstract class AbstractPaymentMethodHandler
      * @var PaymentResponseHandler
      */
     protected $paymentResponseHandler;
+
+    /**
+     * @var PaymentResponseHandlerResult
+     */
+    protected $paymentResponseHandlerResult;
 
     /**
      * @var ResultHandler
@@ -131,8 +145,15 @@ abstract class AbstractPaymentMethodHandler
     private $paymentResponseService;
 
     /**
+     * @var Currency
+     */
+    private $currency;
+
+    /**
      * AbstractPaymentMethodHandler constructor.
      * @param ClientService $clientService
+     * @param CaptureService $captureService
+     * @param Currency $currency
      * @param ConfigurationService $configurationService
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
@@ -140,6 +161,7 @@ abstract class AbstractPaymentMethodHandler
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
+     * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
      * @param PaymentResponseService $paymentResponseService
      * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param PaymentRequestService $paymentRequestService
@@ -147,6 +169,8 @@ abstract class AbstractPaymentMethodHandler
      */
     public function __construct(
         ClientService $clientService,
+        CaptureService $captureService,
+        Currency $currency,
         ConfigurationService $configurationService,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
@@ -154,6 +178,7 @@ abstract class AbstractPaymentMethodHandler
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $router,
+        PaymentResponseHandlerResult $paymentResponseHandlerResult,
         PaymentResponseService $paymentResponseService,
         CsrfTokenManagerInterface $csrfTokenManager,
         PaymentRequestService $paymentRequestService,
@@ -164,6 +189,7 @@ abstract class AbstractPaymentMethodHandler
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
+        $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
         $this->resultHandler = $resultHandler;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->router = $router;
@@ -171,6 +197,8 @@ abstract class AbstractPaymentMethodHandler
         $this->csrfTokenManager = $csrfTokenManager;
         $this->paymentRequestService = $paymentRequestService;
         $this->logger = $logger;
+        $this->captureService = $captureService;
+        $this->currency = $currency;
     }
 
     abstract public static function getPaymentMethodCode();
@@ -271,8 +299,16 @@ abstract class AbstractPaymentMethodHandler
         }
     }
 
+    /**
+     * @param Cart $cart
+     * @param RequestDataBag $requestDataBag
+     * @param SalesChannelContext $context
+     * @return Struct
+     * @throws ValidatePreparedPaymentException
+     */
     public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): Struct
     {
+        xdebug_break();
         if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
             $paymentReference = $requestDataBag->get('paymentReference');
             if (empty($paymentReference)) {
@@ -291,15 +327,62 @@ abstract class AbstractPaymentMethodHandler
         return new ArrayStruct([]);
     }
 
+    /**
+     * @param PreparedPaymentTransactionStruct $transaction
+     * @param RequestDataBag $requestDataBag
+     * @param SalesChannelContext $context
+     * @param Struct $preOrderPaymentStruct
+     * @return void
+     * @throws PaymentProcessException
+     */
     public function capture(
         PreparedPaymentTransactionStruct $transaction,
         RequestDataBag $requestDataBag,
         SalesChannelContext $context,
         Struct $preOrderPaymentStruct
     ): void {
-        if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
-            // TODO: Implement capture() method.
-            $paymentReference = $requestDataBag->get('paymentReference');
+        xdebug_break();
+        if (!$this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
+            return;
+        }
+        if (!$preOrderPaymentStruct->get('isValid')) {
+            return;
+        }
+
+        $paymentReference = $requestDataBag->get('paymentReference');
+        if (empty($paymentReference)) {
+            throw new CapturePreparedPaymentException(
+                $transaction->getOrderTransaction()->getId(),
+                'Error: Payment reference is required.'
+            );
+        }
+        $paymentResponse = $this->paymentResponseService->getWithPaymentReference($paymentReference);
+        try {
+            $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
+            $this->paymentResponseHandler->handleShopwareApis($transaction, $context, $result);
+        } catch (PaymentException $e) {
+            $this->logger->error('Error occurred in updating order transaction: ' . $e->getMessage());
+            throw new CapturePreparedPaymentException(
+                $transaction->getOrderTransaction()->getId(),
+                'An error occurred. Please contact administrator.'
+            );
+        }
+
+        if ($this->captureService->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier())) {
+            return;
+        }
+
+        $currency = $transaction->getOrder()->getCurrency()->getIsoCode();
+        $captureAmount = $this->currency->sanitize($transaction->getOrder()->getAmountTotal(), $currency);
+
+        try {
+            $this->captureService->capture($context->getContext(), $transaction->getOrder()->getOrderNumber(), $captureAmount, true);
+        } catch (CaptureException $e) {
+            $this->logger->error($e->getMessage());
+            throw new CapturePreparedPaymentException(
+                $transaction->getOrderTransaction()->getId(),
+                'An error occurred. Please contact administrator.'
+            );
         }
     }
 

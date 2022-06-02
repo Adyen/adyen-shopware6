@@ -109,9 +109,18 @@ class StoreApiController
      * @var LoggerInterface
      */
     private $logger;
-    private CartService $cartService;
-    private CartCalculator $cartCalculator;
-    private ClientService $clientService;
+    /**
+     * @var CartService
+     */
+    private $cartService;
+    /**
+     * @var CartCalculator
+     */
+    private $cartCalculator;
+    /**
+     * @var ClientService 
+     */
+    private $clientService;
 
     /**
      * StoreApiController constructor.
