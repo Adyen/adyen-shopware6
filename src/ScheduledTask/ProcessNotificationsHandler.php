@@ -166,7 +166,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $logContext['orderId'] = $order->getId();
             $logContext['orderNumber'] = $order->getOrderNumber();
 
-            $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+            $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction(
                 $order->getId(),
                 self::WEBHOOK_TRANSACTION_STATES
             );

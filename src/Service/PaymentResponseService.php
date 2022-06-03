@@ -25,11 +25,11 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class PaymentResponseService
 {
@@ -39,22 +39,15 @@ class PaymentResponseService
     private $repository;
 
     /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderRepository;
-
-    /**
-     * @var EntityRepositoryInterface
+     * @var OrderTransactionRepository
      */
     private $orderTransactionRepository;
 
     public function __construct(
         EntityRepositoryInterface $repository,
-        EntityRepositoryInterface $orderRepository,
-        EntityRepositoryInterface $orderTransactionRepository
+        OrderTransactionRepository $orderTransactionRepository
     ) {
         $this->repository = $repository;
-        $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
@@ -72,14 +65,7 @@ class PaymentResponseService
     public function getWithOrderId(string $orderId): ?PaymentResponseEntity
     {
         $orderTransaction = $this->orderTransactionRepository
-            ->search(
-                (new Criteria())
-                    ->addFilter((new EqualsFilter('orderId', $orderId)))
-                    ->addAssociation('order')
-                ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
-                Context::createDefaultContext()
-            )
-            ->first();
+            ->getFirstAdyenOrderTransaction($orderId);
         return $this->getWithOrderTransaction($orderTransaction->getId());
     }
 

@@ -222,7 +222,7 @@ class PaymentResponseHandler
     public function handleShopwareApis(
         SyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult // todo do we need this argument, use $this->pa..
+        PaymentResponseHandlerResult $paymentResponseHandlerResult
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $context = $salesChannelContext->getContext();
@@ -243,19 +243,24 @@ class PaymentResponseHandler
         $transactionCustomFields = [];
 
         // Only store psp reference for the transaction if this is the first/original pspreference
-        $pspReference = $this->paymentResponseHandlerResult->getPspReference();
+        $pspReference = $paymentResponseHandlerResult->getPspReference();
         if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE]) && !empty($pspReference)) {
             $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
         }
 
+        $paymentReference = $paymentResponseHandlerResult->getPaymentReference();
+        if (empty($storedTransactionCustomFields[self::PAYMENT_REFERENCE]) && !empty($paymentReference)) {
+            $transactionCustomFields[self::PAYMENT_REFERENCE] = $paymentReference;
+        }
+
         // Only store action for the transaction if this is the first action
-        $action = $this->paymentResponseHandlerResult->getAction();
+        $action = $paymentResponseHandlerResult->getAction();
         if (empty($storedTransactionCustomFields[self::ACTION]) && !empty($action)) {
             $transactionCustomFields[self::ACTION] = $action;
         }
 
         // Only store additional data for the transaction if this is the first additional data
-        $additionalData = $this->paymentResponseHandlerResult->getAdditionalData();
+        $additionalData = $paymentResponseHandlerResult->getAdditionalData();
         if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA]) && !empty($additionalData)) {
             $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
         }

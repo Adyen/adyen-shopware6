@@ -1,0 +1,6 @@
+<sw-label v-if="refAvailable" size="medium" appearance="default">
+    Adyen Payment Reference:
+    <a target="_blank" :href="caLink">
+        {{ paymentReference }}
+    </a>
+</sw-label>

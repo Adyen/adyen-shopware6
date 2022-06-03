@@ -209,7 +209,7 @@ class StoreApiController
         $totalPrice = $calculatedCart->getPrice()->getTotalPrice();
         $paymentMethod = $context->getPaymentMethod();
         $paymentHandler = $paymentMethod->getHandlerIdentifier();
-        $reference = Uuid::fromStringToHex($calculatedCart->getToken()); // todo save to transaction/order
+        $reference = Uuid::fromStringToHex($calculatedCart->getToken());
         $currency = $this->paymentRequestService->getCurrency($context->getCurrencyId(), $context->getContext());
         $lineItems = $this->paymentRequestService->getLineItems(
             $calculatedCart->getLineItems(),

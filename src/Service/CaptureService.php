@@ -119,7 +119,7 @@ class CaptureService
                 );
             }
             $orderTransaction = $this->orderTransactionRepository
-                ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
+                ->getFirstAdyenOrderTransaction($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
 
             if (!$orderTransaction) {
                 $error = 'Unable to find original authorized transaction.';
