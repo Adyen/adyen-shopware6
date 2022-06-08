@@ -25,14 +25,8 @@
 
 namespace Adyen\Shopware\Handlers;
 
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
-
-class SwishPaymentMethodHandler extends AbstractPaymentMethodHandler implements
-    AsynchronousPaymentHandlerInterface,
-    PreparedPaymentHandlerInterface
+class SwishPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-
     public static function getPaymentMethodCode()
     {
         return 'swish';

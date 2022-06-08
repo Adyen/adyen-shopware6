@@ -25,14 +25,8 @@
 
 namespace Adyen\Shopware\Handlers;
 
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
-
-class GiroPayPaymentMethodHandler extends AbstractPaymentMethodHandler implements
-    AsynchronousPaymentHandlerInterface,
-    PreparedPaymentHandlerInterface
+class GiroPayPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-
     public static function getPaymentMethodCode()
     {
         return 'giropay';

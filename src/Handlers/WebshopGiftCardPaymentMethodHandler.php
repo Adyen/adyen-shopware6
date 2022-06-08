@@ -25,12 +25,7 @@
 
 namespace Adyen\Shopware\Handlers;
 
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
-
-class WebshopGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
-    AsynchronousPaymentHandlerInterface,
-    PreparedPaymentHandlerInterface
+class WebshopGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static $isGiftCard = true;
 

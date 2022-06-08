@@ -44,6 +44,7 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Cart\PreparedPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
@@ -61,7 +62,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
-abstract class AbstractPaymentMethodHandler
+abstract class AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface,
+    PreparedPaymentHandlerInterface
 {
 
     const PROMOTION = 'promotion';
