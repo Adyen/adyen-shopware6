@@ -127,6 +127,21 @@ class ApiClient extends ApiService {
 
         return isAdyen;
     }
+
+    getPaymentDetails(orderId) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .get(this.getApiBasePath() + '/orders/' + orderId + '/payment-details', {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred: ' + error.message);
+                throw error;
+            });
+    }
 }
 
 Application.addServiceProvider('adyenService', (container) => {

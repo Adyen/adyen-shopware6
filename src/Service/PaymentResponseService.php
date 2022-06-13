@@ -24,12 +24,12 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class PaymentResponseService
 {
@@ -39,22 +39,15 @@ class PaymentResponseService
     private $repository;
 
     /**
-     * @var EntityRepositoryInterface
-     */
-    private $orderRepository;
-
-    /**
-     * @var EntityRepositoryInterface
+     * @var OrderTransactionRepository
      */
     private $orderTransactionRepository;
 
     public function __construct(
         EntityRepositoryInterface $repository,
-        EntityRepositoryInterface $orderRepository,
-        EntityRepositoryInterface $orderTransactionRepository
+        OrderTransactionRepository $orderTransactionRepository
     ) {
         $this->repository = $repository;
-        $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
@@ -72,39 +65,48 @@ class PaymentResponseService
     public function getWithOrderId(string $orderId): ?PaymentResponseEntity
     {
         $orderTransaction = $this->orderTransactionRepository
-            ->search(
-                (new Criteria())
-                    ->addFilter((new EqualsFilter('orderId', $orderId)))
-                    ->addAssociation('order')
-                ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
-                Context::createDefaultContext()
-            )
-            ->first();
-        return $this->getWithOrderTransaction($orderTransaction);
+            ->getFirstAdyenOrderTransaction($orderId);
+        return $this->getWithOrderTransaction($orderTransaction->getId());
     }
 
-    public function getWithOrderTransaction(OrderTransactionEntity $orderTransaction): ?PaymentResponseEntity
+    public function getWithOrderTransaction(string $orderTransactionId): ?PaymentResponseEntity
     {
         return $this->repository
             ->search(
                 (new Criteria())
-                    ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
+                    ->addFilter(new EqualsFilter('orderTransactionId', $orderTransactionId))
                     ->addAssociation('orderTransaction.order'),
                 Context::createDefaultContext()
             )
             ->first();
     }
 
+    public function getWithPaymentReference(string $paymentReference): ?PaymentResponseEntity
+    {
+        return $this->repository
+            ->search(
+                (new Criteria())
+                ->addFilter(new EqualsFilter('paymentReference', $paymentReference)),
+                Context::createDefaultContext()
+            )->first();
+    }
+
     public function insertPaymentResponse(
-        array $paymentResponse,
-        OrderTransactionEntity $orderTransaction
+        array  $paymentResponse,
+        string $value,
+        string $identifier
     ): void {
-        $storedPaymentResponse = $this->getWithOrderTransaction($orderTransaction);
+        if ($identifier === PaymentResponseHandler::ORDER_TRANSACTION_ID) {
+            $storedPaymentResponse = $this->getWithOrderTransaction($value);
+        } else {
+            $storedPaymentResponse = $this->getWithPaymentReference($value);
+        }
+
         if ($storedPaymentResponse) {
             $fields['id'] = $storedPaymentResponse->getId();
         }
 
-        $fields['orderTransactionId'] = $orderTransaction->getId();
+        $fields[$identifier] = $value;
         $fields['resultCode'] = $paymentResponse["resultCode"];
         $fields['response'] = json_encode($paymentResponse);
 

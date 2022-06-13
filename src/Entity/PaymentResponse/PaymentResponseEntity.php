@@ -44,6 +44,11 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
+    protected $paymentReference;
+
+    /**
+     * @var string
+     */
     protected $resultCode;
 
     /**
@@ -62,9 +67,9 @@ class PaymentResponseEntity extends Entity
     protected $response;
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getOrderTransactionId(): string
+    public function getOrderTransactionId(): ?string
     {
         return $this->orderTransactionId;
     }
@@ -91,6 +96,16 @@ class PaymentResponseEntity extends Entity
     public function setOrderTransaction(OrderTransactionEntity $orderTransaction): void
     {
         $this->orderTransaction = $orderTransaction;
+    }
+
+    public function getPaymentReference(): ?string
+    {
+        return $this->paymentReference;
+    }
+
+    public function setPaymentReference(string $paymentReference): void
+    {
+        $this->paymentReference = $paymentReference;
     }
 
     /**
