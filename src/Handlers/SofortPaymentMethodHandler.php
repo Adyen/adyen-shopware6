@@ -25,11 +25,8 @@
 
 namespace Adyen\Shopware\Handlers;
 
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-
-class SofortPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+class SofortPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-
     public static function getPaymentMethodCode()
     {
         return 'directEbanking';

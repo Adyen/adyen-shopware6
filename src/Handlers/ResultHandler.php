@@ -105,7 +105,8 @@ class ResultHandler
         SalesChannelContext $salesChannelContext
     ) {
         // Retrieve paymentResponse and if it exists
-        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($transaction->getOrderTransaction());
+        $paymentResponse = $this->paymentResponseService
+            ->getWithOrderTransaction($transaction->getOrderTransaction()->getId());
 
         if (!$paymentResponse) {
             throw new PaymentFailedException('Payment response not found.');
@@ -136,7 +137,8 @@ class ResultHandler
             // Validate the return
             $result = $this->paymentDetailsService->getPaymentDetails(
                 $requestData,
-                $transaction->getOrderTransaction()
+                $transaction->getOrder()->getSalesChannelId(),
+                $transaction->getOrderTransaction()->getId()
             );
         }
 

@@ -33,10 +33,12 @@ use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
+use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -45,6 +47,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyFormatter;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -74,7 +77,7 @@ class AdminController
     /**
      * @var NotificationService
      */
-    private NotificationService $notificationService;
+    private $notificationService;
 
     /** @var CurrencyFormatter */
     private $currencyFormatter;
@@ -88,12 +91,20 @@ class AdminController
     /** @var AdyenPaymentCaptureRepository */
     private $adyenPaymentCaptureRepository;
 
+    /** @var OrderTransactionRepository */
+    private $orderTransactionRepository;
+
+    /** @var ConfigurationService */
+    private $configurationService;
+
     /**
      * AdminController constructor.
      *
      * @param LoggerInterface $logger
      * @param OrderRepository $orderRepository
      * @param RefundService $refundService
+     * @param OrderTransactionRepository $orderTransactionRepository
+     * @param ConfigurationService $configurationService
      * @param AdyenRefundRepository $adyenRefundRepository
      * @param AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository
      * @param NotificationService $notificationService
@@ -105,6 +116,8 @@ class AdminController
         LoggerInterface $logger,
         OrderRepository $orderRepository,
         RefundService $refundService,
+        OrderTransactionRepository $orderTransactionRepository,
+        ConfigurationService $configurationService,
         AdyenRefundRepository $adyenRefundRepository,
         AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository,
         NotificationService $notificationService,
@@ -121,6 +134,8 @@ class AdminController
         $this->captureService = $captureService;
         $this->currencyFormatter = $currencyFormatter;
         $this->currencyUtil = $currencyUtil;
+        $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->configurationService = $configurationService;
     }
 
     /**
@@ -196,7 +211,7 @@ class AdminController
 
         try {
             $results = $this->captureService
-                ->doOpenInvoiceCapture($order->getOrderNumber(), $amountInMinorUnit, $context);
+                ->capture($context, $order->getOrderNumber(), $amountInMinorUnit);
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
 
@@ -359,6 +374,25 @@ class AdminController
                 'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
             ];
         }
+
+        return new JsonResponse($response);
+    }
+
+    /**
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/payment-details",
+     *     methods={"GET"}
+     * )
+     */
+    public function getPaymentDetails(string $orderId): JsonResponse
+    {
+        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId);
+        $customFields = $orderTransaction->getCustomFields();
+        $response = [
+            'paymentReference' => $customFields['paymentReference'] ?? null,
+            'pspReference' => $customFields['originalPspReference'] ?? null,
+            'environment' => $this->configurationService->getEnvironment()
+        ];
 
         return new JsonResponse($response);
     }

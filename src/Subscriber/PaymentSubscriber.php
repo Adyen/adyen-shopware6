@@ -30,6 +30,7 @@ use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentMethodsFilterService;
 use Adyen\Shopware\Service\PaymentMethodsService;
+use Adyen\Shopware\Service\PaymentRequestService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
@@ -143,6 +144,7 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @var AbstractSalesChannelContextFactory
      */
     private $salesChannelContextFactory;
+    private PaymentRequestService $paymentRequestService;
 
     /**
      * PaymentSubscriber constructor.
@@ -168,6 +170,7 @@ class PaymentSubscriber implements EventSubscriberInterface
         AdyenPluginProvider $adyenPluginProvider,
         PaymentMethodsFilterService $paymentMethodsFilterService,
         PaymentStateDataService $paymentStateDataService,
+        PaymentRequestService $paymentRequestService,
         RouterInterface $router,
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
@@ -198,6 +201,7 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->currency = $currency;
         $this->logger = $logger;
         $this->adyenPluginProvider = $adyenPluginProvider;
+        $this->paymentRequestService = $paymentRequestService;
     }
 
     /**
@@ -341,10 +345,10 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
                     'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
                     'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
-                    'billingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
+                    'billingAddressStreetHouse' => $this->paymentRequestService->getSplitStreetAddressHouseNumber(
                         $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
                     ),
-                    'shippingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
+                    'shippingAddressStreetHouse' => $this->paymentRequestService->getSplitStreetAddressHouseNumber(
                         $salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()
                     ),
                 ]
