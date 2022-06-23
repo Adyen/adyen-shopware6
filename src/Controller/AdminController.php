@@ -148,9 +148,12 @@ class AdminController
     {
         try {
             $client = new Client();
-            $client->setXApiKey($dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.apiKeyTest'));
+            $environment = $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.environment') ? 'live' : 'test';
+            $client->setXApiKey(
+                $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.apiKey' . ucfirst($environment))
+            );
             $client->setEnvironment(
-                $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.environment') ? 'live' : 'test',
+                $environment,
                 $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.liveEndpointUrlPrefix')
             );
             $service = new Checkout($client);
