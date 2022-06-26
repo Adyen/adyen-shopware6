@@ -39,6 +39,8 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopware\Core\Content\Media\MediaCollection;
+use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -63,6 +65,7 @@ class PaymentRequestService
     private Session $session;
     private EntityRepositoryInterface $currencyRepository;
     private EntityRepositoryInterface $productRepository;
+    private EntityRepositoryInterface $mediaRepository;
     private Currency $currency;
     private Browser $browserBuilder;
     private Address $addressBuilder;
@@ -82,6 +85,7 @@ class PaymentRequestService
         Customer $customerBuilder,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
+        EntityRepositoryInterface $mediaRepository,
         OpenInvoice $openInvoiceBuilder,
         Payment $paymentBuilder,
         SalesChannelRepository $salesChannelRepository,
@@ -90,6 +94,7 @@ class PaymentRequestService
         $this->session = $session;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
+        $this->mediaRepository = $mediaRepository;
         $this->browserBuilder = $browserBuilder;
         $this->addressBuilder = $addressBuilder;
         $this->customerBuilder = $customerBuilder;
@@ -353,8 +358,7 @@ class PaymentRequestService
                 $taxRate = 0;
             }
 
-            //Building open invoice line
-            $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
+            $item = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                 $productName,
                 $this->currency->sanitize(
                     $price->getUnitPrice() -
@@ -370,6 +374,13 @@ class PaymentRequestService
                 '',
                 $productNumber
             );
+
+            if ($lineItem->getCoverId()) {
+                $item['imageUrl'] = $this->getCover($lineItem->getCoverId(), $context)->getUrl();
+            }
+
+            //Building open invoice line
+            $lineItems[] = $item;
         }
 
         return $lineItems;
@@ -443,6 +454,26 @@ class PaymentRequestService
         }
 
         return $product;
+    }
+
+    /**
+     * @param string $coverId
+     * @param Context $context
+     * @return MediaEntity
+     */
+    public function getCover(string $coverId, Context $context): ?MediaEntity
+    {
+        $criteria = new Criteria([$coverId]);
+
+        /** @var MediaCollection $mediaCollection */
+        $mediaCollection = $this->mediaRepository->search($criteria, $context);
+
+        $cover = $mediaCollection->get($coverId);
+        if ($cover === null) {
+            return null;
+        }
+
+        return $cover;
     }
 
     public function displaySafeErrorMessages(AdyenException $exception)
