@@ -334,7 +334,6 @@ export default class ConfirmOrderPlugin extends Plugin {
             },
             onError: (error, component) => {
                 if (component.props.name === 'PayPal' && error.name === 'CANCEL') {
-                    debugger;
                     this._client.post(
                         `${adyenCheckoutOptions.cancelOrderTransactionUrl}`,
                         JSON.stringify({orderId: this.orderId})
