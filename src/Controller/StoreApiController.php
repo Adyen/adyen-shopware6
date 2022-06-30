@@ -471,7 +471,8 @@ class StoreApiController
 
         $context->scope(
             Context::SYSTEM_SCOPE,
-            function () use ($order, $initialState, $orderId, $paymentMethodId, $context): void {if ($order->getTransactions() !== null && $order->getTransactions()->count() >= 1) {
+            function () use ($order, $initialState, $orderId, $paymentMethodId, $context): void {
+                if ($order->getTransactions() !== null && $order->getTransactions()->count() >= 1) {
                     foreach ($order->getTransactions() as $transaction) {
                         if ($transaction->getStateMachineState()->getTechnicalName()
                             !== OrderTransactionStates::STATE_CANCELLED) {
@@ -483,7 +484,7 @@ class StoreApiController
                             );
                         }
                     }
-                }
+            }
                 $transactionAmount = new CalculatedPrice(
                     $order->getPrice()->getTotalPrice(),
                     $order->getPrice()->getTotalPrice(),
