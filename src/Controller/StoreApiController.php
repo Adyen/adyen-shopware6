@@ -484,7 +484,7 @@ class StoreApiController
                             );
                         }
                     }
-            }
+                }
                 $transactionAmount = new CalculatedPrice(
                     $order->getPrice()->getTotalPrice(),
                     $order->getPrice()->getTotalPrice(),
