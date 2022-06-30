@@ -65,7 +65,7 @@ class PaymentResponseService
     public function getWithOrderId(string $orderId): ?PaymentResponseEntity
     {
         $orderTransaction = $this->orderTransactionRepository
-            ->getFirstAdyenOrderTransaction($orderId);
+            ->getRecentAdyenOrderTransaction($orderId);
         return $this->getWithOrderTransaction($orderTransaction->getId());
     }
 
@@ -78,7 +78,7 @@ class PaymentResponseService
                     ->addAssociation('orderTransaction.order'),
                 Context::createDefaultContext()
             )
-            ->first();
+            ->last();
     }
 
     public function getWithPaymentReference(string $paymentReference): ?PaymentResponseEntity

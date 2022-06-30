@@ -330,6 +330,9 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'updatePaymentUrl' => $this->router->generate(
                         'store-api.action.adyen.set-payment'
                     ),
+                    'cancelOrderTransactionUrl' => $this->router->generate(
+                        'store-api.action.adyen.cancel-order-transaction',
+                    ),
                     'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                     'clientKey' => $this->configurationService->getClientKey($salesChannelId),
                     'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
