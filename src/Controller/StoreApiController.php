@@ -44,6 +44,7 @@ use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
@@ -53,6 +54,7 @@ use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
+use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
@@ -260,7 +262,6 @@ class StoreApiController
         Request $request,
         SalesChannelContext $context
     ): JsonResponse {
-
         $orderId = $request->request->get('orderId');
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
         if (!$paymentResponse) {
@@ -503,5 +504,34 @@ class StoreApiController
                 ], $context);
             }
         );
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/cancel-order-transaction",
+     *     name="store-api.action.adyen.cancel-order-transaction",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function cancelOrderTransaction(
+        Request $request,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse {
+        $context = $salesChannelContext->getContext();
+        $orderId = $request->get('orderId');
+        $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
+
+        $transaction = $order->getTransactions()->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)->first();
+
+        $this->stateMachineRegistry->transition(
+            new Transition(OrderTransactionDefinition::ENTITY_NAME, $transaction->getId(), 'cancel', 'stateId'),
+            $context
+        );
+
+        return new JsonResponse($this->paymentStatusService->getWithOrderId($orderId));
     }
 }

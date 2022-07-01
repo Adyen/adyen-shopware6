@@ -78,7 +78,7 @@ class PaymentResponseService
                     ->addAssociation('orderTransaction.order'),
                 Context::createDefaultContext()
             )
-            ->first();
+            ->last();
     }
 
     public function getWithPaymentReference(string $paymentReference): ?PaymentResponseEntity
