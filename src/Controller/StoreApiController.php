@@ -525,16 +525,12 @@ class StoreApiController
         $orderId = $request->get('orderId');
         $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
 
-        $transaction = $order->getTransactions()->last();
-        $latestState = $order->getStateMachineState()->getTechnicalName();
+        $transaction = $order->getTransactions()->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)->first();
 
-        if ($latestState === OrderTransactionStates::STATE_OPEN ||
-            $latestState === OrderTransactionStates::STATE_IN_PROGRESS) {
-            $this->stateMachineRegistry->transition(
-                new Transition(OrderTransactionDefinition::ENTITY_NAME, $transaction->getId(), 'cancel', 'stateId'),
-                $context
-            );
-        }
+        $this->stateMachineRegistry->transition(
+            new Transition(OrderTransactionDefinition::ENTITY_NAME, $transaction->getId(), 'cancel', 'stateId'),
+            $context
+        );
 
         return new JsonResponse($this->paymentStatusService->getWithOrderId($orderId));
     }
