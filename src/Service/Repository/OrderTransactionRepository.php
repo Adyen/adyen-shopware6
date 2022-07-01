@@ -79,37 +79,6 @@ class OrderTransactionRepository
         );
 
         $criteria->setLimit(1);
-        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING));
-
-        return $this->repository->search($criteria, Context::createDefaultContext())->first();
-    }
-
-    /**
-     * @param string $orderId
-     * @param array $statesFilter
-     * @return OrderTransactionEntity|null
-     */
-    public function getRecentAdyenOrderTransaction(
-        string $orderId,
-        array $statesFilter = []
-    ): ?OrderTransactionEntity {
-        $criteria = new Criteria();
-        $criteria->addAssociation('stateMachineState');
-        $criteria->addAssociation('order');
-        $criteria->addAssociation('order.currency');
-        $criteria->addAssociation('paymentMethod');
-        $criteria->addAssociation('paymentMethod.plugin');
-        $criteria->addFilter(new EqualsFilter('order.id', $orderId));
-        if (!empty($statesFilter)) {
-            $criteria->addFilter(
-                new EqualsAnyFilter('stateMachineState.technicalName', $statesFilter)
-            );
-        }
-        $criteria->addFilter(
-            new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME)
-        );
-
-        $criteria->setLimit(1);
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
         return $this->repository->search($criteria, Context::createDefaultContext())->first();

@@ -65,7 +65,7 @@ class PaymentResponseService
     public function getWithOrderId(string $orderId): ?PaymentResponseEntity
     {
         $orderTransaction = $this->orderTransactionRepository
-            ->getRecentAdyenOrderTransaction($orderId);
+            ->getFirstAdyenOrderTransaction($orderId);
         return $this->getWithOrderTransaction($orderTransaction->getId());
     }
 
