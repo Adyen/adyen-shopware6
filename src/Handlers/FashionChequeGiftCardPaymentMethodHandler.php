@@ -25,7 +25,10 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class FashionChequeGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class FashionChequeGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
 {
     public static $isGiftCard = true;
 

@@ -25,7 +25,10 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class BijenkorfGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class BijenkorfGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
 {
     public static $isGiftCard = true;
 

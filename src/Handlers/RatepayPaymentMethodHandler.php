@@ -25,7 +25,9 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class RatepayPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class RatepayPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
     public static $isOpenInvoice = true;
     

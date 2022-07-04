@@ -55,12 +55,12 @@ class OrderTransactionRepository
 
     /**
      * @param string $orderId
-     * @param array $statesFilter
+     * @param array $states
      * @return OrderTransactionEntity|null
      */
-    public function getFirstAdyenOrderTransaction(
+    public function getFirstAdyenOrderTransactionByStates(
         string $orderId,
-        array $statesFilter = []
+        array $states
     ): ?OrderTransactionEntity {
         $criteria = new Criteria();
         $criteria->addAssociation('stateMachineState');
@@ -69,11 +69,9 @@ class OrderTransactionRepository
         $criteria->addAssociation('paymentMethod');
         $criteria->addAssociation('paymentMethod.plugin');
         $criteria->addFilter(new EqualsFilter('order.id', $orderId));
-        if (!empty($statesFilter)) {
-            $criteria->addFilter(
-                new EqualsAnyFilter('stateMachineState.technicalName', $statesFilter)
-            );
-        }
+        $criteria->addFilter(
+            new EqualsAnyFilter('stateMachineState.technicalName', $states)
+        );
         $criteria->addFilter(
             new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME)
         );

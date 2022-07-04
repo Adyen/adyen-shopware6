@@ -100,12 +100,12 @@ class CaptureService
     }
 
     /**
-     * Send capture request
+     * Send capture request for open invoice payments
      * @throws CaptureException
      */
-    public function capture(Context $context, string $orderNumber, int $amount, bool $preparedPaymentFlow = false)
+    public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context)
     {
-        if ($preparedPaymentFlow || $this->configurationService->isManualCaptureActive()) {
+        if ($this->configurationService->isManualCaptureActive()) {
             $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
             $order = $this->orderRepository->getOrderByOrderNumber(
                 $orderNumber,
@@ -119,7 +119,7 @@ class CaptureService
                 );
             }
             $orderTransaction = $this->orderTransactionRepository
-                ->getFirstAdyenOrderTransaction($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
+                ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
 
             if (!$orderTransaction) {
                 $error = 'Unable to find original authorized transaction.';
@@ -144,8 +144,7 @@ class CaptureService
 
             $results = [];
             foreach ($deliveries as $delivery) {
-                if ($preparedPaymentFlow ||
-                    ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState())) {
+                if ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState()) {
                     $lineItems = $order->getLineItems();
                     $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
 
@@ -156,7 +155,7 @@ class CaptureService
 
                     $request = $this->buildCaptureRequest(
                         $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
-                        $amount,
+                        $captureAmount,
                         $currencyIso,
                         $additionalData
                     );
@@ -168,7 +167,7 @@ class CaptureService
                             $response['pspReference'],
                             PaymentCaptureEntity::SOURCE_SHOPWARE,
                             PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
-                            intval($amount),
+                            intval($captureAmount),
                             $context
                         );
                     }

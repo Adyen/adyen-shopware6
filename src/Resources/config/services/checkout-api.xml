@@ -37,7 +37,8 @@
         <service id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
         <service id="Adyen\Shopware\Service\PaymentResponseService" autowire="true">
             <argument type="service" id="adyen_payment_response.repository"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
+            <argument type="service" id="order.repository"/>
+            <argument type="service" id="order_transaction.repository"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentStatusService" autowire="true">
             <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
@@ -49,20 +50,6 @@
             <argument>%kernel.shopware_version%</argument>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="cache.tags"/>
-        </service>
-        <service id="Adyen\Shopware\Service\PaymentRequestService">
-            <argument type="service" id="Adyen\Service\Builder\Address"/>
-            <argument type="service" id="Adyen\Service\Builder\Browser"/>
-            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
-            <argument type="service" id="Adyen\Service\Builder\Customer"/>
-            <argument type="service" id="currency.repository"/>
-            <argument type="service" id="product.repository"/>
-            <argument type="service" id="Adyen\Service\Builder\OpenInvoice"/>
-            <argument type="service" id="Adyen\Service\Builder\Payment"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="session"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>

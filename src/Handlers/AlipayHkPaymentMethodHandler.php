@@ -25,7 +25,9 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class AlipayHkPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class AlipayHkPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
 
     public static function getPaymentMethodCode()

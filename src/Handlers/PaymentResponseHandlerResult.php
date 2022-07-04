@@ -11,7 +11,6 @@ class PaymentResponseHandlerResult
     private $refusalReason;
     private $refusalReasonCode;
     private $pspReference;
-    private $paymentReference;
     private $action;
     private $additionalData;
 
@@ -22,10 +21,10 @@ class PaymentResponseHandlerResult
      */
     public function createFromPaymentResponse(PaymentResponseEntity $paymentResponse): PaymentResponseHandlerResult
     {
+        // Set result code
         $this->setResultCode($paymentResponse->getResultCode());
         $this->setRefusalReason($paymentResponse->getRefusalReason());
         $this->setRefusalReasonCode($paymentResponse->getRefusalReasonCode());
-        $this->setPaymentReference($paymentResponse->getPaymentReference());
 
         $response = $paymentResponse->getResponse();
 
@@ -152,21 +151,5 @@ class PaymentResponseHandlerResult
     public function setAdditionalData($additionalData): void
     {
         $this->additionalData = $additionalData;
-    }
-
-    /**
-     * @return null|string
-     */
-    public function getPaymentReference(): ?string
-    {
-        return $this->paymentReference;
-    }
-
-    /**
-     * @param null|string $paymentReference
-     */
-    public function setPaymentReference(?string $paymentReference): void
-    {
-        $this->paymentReference = $paymentReference;
     }
 }
