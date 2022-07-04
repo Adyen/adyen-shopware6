@@ -37,7 +37,6 @@ use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
-use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
@@ -181,11 +180,6 @@ abstract class AbstractPaymentMethodHandler
     protected Session $session;
 
     /**
-     * @var PaymentMethodsService
-     */
-    protected $paymentMethodsService;
-
-    /**
      * AbstractPaymentMethodHandler constructor.
      * @param ConfigurationService $configurationService
      * @param ClientService $clientService
@@ -205,7 +199,6 @@ abstract class AbstractPaymentMethodHandler
      * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param EntityRepositoryInterface $currencyRepository
      * @param EntityRepositoryInterface $productRepository
-     * @param PaymentMethodsService $paymentMethodsService
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -228,7 +221,6 @@ abstract class AbstractPaymentMethodHandler
         Session $session,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
-        PaymentMethodsService $paymentMethodsService,
         LoggerInterface $logger
     ) {
         $this->clientService = $clientService;
@@ -251,7 +243,6 @@ abstract class AbstractPaymentMethodHandler
         $this->session = $session;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
-        $this->paymentMethodsService = $paymentMethodsService;
     }
 
     abstract public static function getPaymentMethodCode();
@@ -440,7 +431,7 @@ abstract class AbstractPaymentMethodHandler
                 $shippingState = '';
             }
 
-            $shippingStreetAddress = $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
+            $shippingStreetAddress = $this->getSplitStreetAddressHouseNumber(
                 $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
             );
             $request = $this->addressBuilder->buildDeliveryAddress(
@@ -463,7 +454,7 @@ abstract class AbstractPaymentMethodHandler
                 $billingState = '';
             }
 
-            $billingStreetAddress = $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
+            $billingStreetAddress = $this->getSplitStreetAddressHouseNumber(
                 $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
             );
             $request = $this->addressBuilder->buildBillingAddress(
@@ -731,5 +722,36 @@ abstract class AbstractPaymentMethodHandler
             && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)) {
             $this->session->getFlashBag()->add('warning', $exception->getMessage());
         }
+    }
+
+    /**
+     * @param string $address
+     * @return array
+     */
+    private function getSplitStreetAddressHouseNumber(string $address): array
+    {
+        $streetFirstRegex = '/(?<streetName>[\w\W]+)\s+(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)$/m';
+        $numberFirstRegex = '/^(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)\s+(?<streetName>[\w\W]+)/m';
+
+        preg_match($streetFirstRegex, $address, $streetFirstAddress);
+        preg_match($numberFirstRegex, $address, $numberFirstAddress);
+
+        if ($streetFirstAddress) {
+            return [
+                'street' => $streetFirstAddress['streetName'],
+                'houseNumber' => $streetFirstAddress['houseNumber']
+            ];
+        }
+        else if ($numberFirstAddress) {
+            return [
+                'street' => $numberFirstAddress['streetName'],
+                'houseNumber' => $numberFirstAddress['houseNumber']
+            ];
+        }
+
+        return [
+            'street' => $address,
+            'houseNumber' => 'N/A'
+        ];
     }
 }
