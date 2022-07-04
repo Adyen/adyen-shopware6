@@ -26,8 +26,12 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
-class PaysafecardPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class PaysafecardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
 {
+
     public static function getPaymentMethodCode()
     {
         return 'paysafecard';

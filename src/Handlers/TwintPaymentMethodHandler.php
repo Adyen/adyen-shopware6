@@ -25,8 +25,11 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class TwintPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class TwintPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
+
     public static function getPaymentMethodCode()
     {
         return 'twint';

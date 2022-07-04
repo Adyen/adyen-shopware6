@@ -25,8 +25,12 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class BancontactCardPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+// phpcs:ignore Generic.Files.LineLength.TooLong
+class BancontactCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
+
     public static function getPaymentMethodCode()
     {
         return 'bcmc';

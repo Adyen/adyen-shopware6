@@ -25,7 +25,9 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class ClearpayPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class ClearpayPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
     public static $isOpenInvoice = true;
 

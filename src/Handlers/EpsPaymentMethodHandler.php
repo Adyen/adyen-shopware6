@@ -25,8 +25,11 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class EpsPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class EpsPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
+
     public static function getPaymentMethodCode()
     {
         return 'eps';

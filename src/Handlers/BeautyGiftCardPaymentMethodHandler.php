@@ -25,7 +25,10 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class BeautyGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+
+class BeautyGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface
 {
     public static $isGiftCard = true;
 

@@ -25,8 +25,6 @@ import './component/adyen-config-check-button';
 import './component/adyen-payment-capture';
 import './component/adyen-refund';
 import './component/adyen-notifications';
-import './component/adyen-payment-reference';
-import './sw-order-detail-override/index';
 import './sw-order-detail-base-override/index';
 import './component/entity/sw-entity-single-select-override';
 
