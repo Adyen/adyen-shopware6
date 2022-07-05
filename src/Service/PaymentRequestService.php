@@ -39,8 +39,6 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
-use Shopware\Core\Content\Media\MediaCollection;
-use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -85,7 +83,6 @@ class PaymentRequestService
         Customer $customerBuilder,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
-        EntityRepositoryInterface $mediaRepository,
         OpenInvoice $openInvoiceBuilder,
         Payment $paymentBuilder,
         SalesChannelRepository $salesChannelRepository,
@@ -94,7 +91,6 @@ class PaymentRequestService
         $this->session = $session;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
-        $this->mediaRepository = $mediaRepository;
         $this->browserBuilder = $browserBuilder;
         $this->addressBuilder = $addressBuilder;
         $this->customerBuilder = $customerBuilder;
@@ -318,18 +314,19 @@ class PaymentRequestService
 
     /**
      * @param OrderLineItemCollection|LineItemCollection $lineItemsCollection
-     * @param Context $context
+     * @param SalesChannelContext $salesChannelContext
      * @param CurrencyEntity $currency
      * @param string $taxStatus
      * @return array
      */
     public function getLineItems(
         Collection $lineItemsCollection,
-        Context $context,
+        SalesChannelContext $salesChannelContext,
         CurrencyEntity $currency,
         string $taxStatus
     ): array {
         $lineItems = [];
+        $context = $salesChannelContext->getContext();
         foreach ($lineItemsCollection as $lineItem) {
             //Getting line price
             $price = $lineItem->getPrice();
@@ -375,8 +372,15 @@ class PaymentRequestService
                 $productNumber
             );
 
-            if ($lineItem->getCoverId()) {
-                $item['imageUrl'] = $this->getCover($lineItem->getCoverId(), $context)->getUrl();
+            if (!is_null($product->getCover())) {
+                $item['imageUrl'] = $product->getCover()->getMedia()->getUrl();
+            }
+
+            if (!is_null($product->getSeoUrls())) {
+                $hostname = $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl();
+                $productPath = $product->getSeoUrls()->first()->getPathInfo();
+
+                $item['productUrl'] = str_replace('//', '/', $hostname . $productPath);
             }
 
             //Building open invoice line
@@ -445,6 +449,9 @@ class PaymentRequestService
     {
         $criteria = new Criteria([$productId]);
 
+        $criteria->addAssociation('seoUrls');
+        $criteria->addAssociation('cover');
+
         /** @var ProductCollection $productCollection */
         $productCollection = $this->productRepository->search($criteria, $context);
 
@@ -454,26 +461,6 @@ class PaymentRequestService
         }
 
         return $product;
-    }
-
-    /**
-     * @param string $coverId
-     * @param Context $context
-     * @return MediaEntity
-     */
-    public function getCover(string $coverId, Context $context): ?MediaEntity
-    {
-        $criteria = new Criteria([$coverId]);
-
-        /** @var MediaCollection $mediaCollection */
-        $mediaCollection = $this->mediaRepository->search($criteria, $context);
-
-        $cover = $mediaCollection->get($coverId);
-        if ($cover === null) {
-            return null;
-        }
-
-        return $cover;
     }
 
     public function displaySafeErrorMessages(AdyenException $exception)

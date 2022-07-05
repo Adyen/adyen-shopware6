@@ -59,7 +59,6 @@
             <argument type="service" id="Adyen\Service\Builder\Customer"/>
             <argument type="service" id="currency.repository"/>
             <argument type="service" id="product.repository"/>
-            <argument type="service" id="media.repository"/>
             <argument type="service" id="Adyen\Service\Builder\OpenInvoice"/>
             <argument type="service" id="Adyen\Service\Builder\Payment"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>

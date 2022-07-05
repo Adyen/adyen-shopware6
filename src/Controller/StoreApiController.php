@@ -213,7 +213,7 @@ class StoreApiController
         $currency = $this->paymentRequestService->getCurrency($context->getCurrencyId(), $context->getContext());
         $lineItems = $this->paymentRequestService->getLineItems(
             $calculatedCart->getLineItems(),
-            $context->getContext(),
+            $context,
             $currency,
             $calculatedCart->getPrice()->getTaxStatus()
         );

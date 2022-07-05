@@ -433,7 +433,7 @@ abstract class AbstractPaymentMethodHandler implements
         );
         $lineItems = $this->paymentRequestService->getLineItems(
             $transaction->getOrder()->getLineItems(),
-            $salesChannelContext->getContext(),
+            $salesChannelContext,
             $currency,
             $transaction->getOrder()->getTaxStatus()
         );
