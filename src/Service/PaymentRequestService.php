@@ -63,7 +63,6 @@ class PaymentRequestService
     private Session $session;
     private EntityRepositoryInterface $currencyRepository;
     private EntityRepositoryInterface $productRepository;
-    private EntityRepositoryInterface $mediaRepository;
     private Currency $currency;
     private Browser $browserBuilder;
     private Address $addressBuilder;
