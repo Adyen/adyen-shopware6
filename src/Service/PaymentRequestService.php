@@ -313,18 +313,19 @@ class PaymentRequestService
 
     /**
      * @param OrderLineItemCollection|LineItemCollection $lineItemsCollection
-     * @param Context $context
+     * @param SalesChannelContext $salesChannelContext
      * @param CurrencyEntity $currency
      * @param string $taxStatus
      * @return array
      */
     public function getLineItems(
         Collection $lineItemsCollection,
-        Context $context,
+        SalesChannelContext $salesChannelContext,
         CurrencyEntity $currency,
         string $taxStatus
     ): array {
         $lineItems = [];
+        $context = $salesChannelContext->getContext();
         foreach ($lineItemsCollection as $lineItem) {
             //Getting line price
             $price = $lineItem->getPrice();
@@ -353,8 +354,7 @@ class PaymentRequestService
                 $taxRate = 0;
             }
 
-            //Building open invoice line
-            $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
+            $item = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                 $productName,
                 $this->currency->sanitize(
                     $price->getUnitPrice() -
@@ -370,6 +370,20 @@ class PaymentRequestService
                 '',
                 $productNumber
             );
+
+            if (!is_null($product->getCover())) {
+                $item['imageUrl'] = $product->getCover()->getMedia()->getUrl();
+            }
+
+            if (!is_null($product->getSeoUrls())) {
+                $hostname = $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl();
+                $productPath = $product->getSeoUrls()->first()->getPathInfo();
+
+                $item['productUrl'] = str_replace('//', '/', $hostname . $productPath);
+            }
+
+            //Building open invoice line
+            $lineItems[] = $item;
         }
 
         return $lineItems;
@@ -433,6 +447,9 @@ class PaymentRequestService
     public function getProduct(string $productId, Context $context): ProductEntity
     {
         $criteria = new Criteria([$productId]);
+
+        $criteria->addAssociation('seoUrls');
+        $criteria->addAssociation('cover');
 
         /** @var ProductCollection $productCollection */
         $productCollection = $this->productRepository->search($criteria, $context);
