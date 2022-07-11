@@ -124,6 +124,11 @@
             <tag name="shopware.payment.method.async"/>
             <tag name="shopware.payment.method.prepared"/>
         </service>
+        <service id="Adyen\Shopware\Handlers\BancontactMobilePaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+            <tag name="shopware.payment.method.prepared"/>
+        </service>
         <service id="Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>

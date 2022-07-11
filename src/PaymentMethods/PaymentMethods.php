@@ -43,6 +43,7 @@ class PaymentMethods
         GooglePayPaymentMethod::class,
         DotpayPaymentMethod::class,
         BancontactCardPaymentMethod::class,
+        BancontactMobilePaymentMethod::class,
         AmazonPayPaymentMethod::class,
         TwintPaymentMethod::class,
         EpsPaymentMethod::class,
