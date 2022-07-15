@@ -1,41 +1,14 @@
 {% sw_extends '@Storefront/storefront/component/payment/payment-fields.html.twig' %}
+
 {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+
 {% block component_payment_methods %}
     <div class="payment-methods">
         <template data-adyen-payment></template>
-        {% include '@AdyenPaymentShopware6/storefront/component/payment/adyencheckout.html.twig' %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/adyencheckout.html.twig' %}
 
         {% block component_payment_method %}
-            {% for payment in page.paymentMethods[:visiblePaymentMethodsLimit] %}
-                {% include '@AdyenPaymentShopware6/storefront/component/payment/payment-method.html.twig' %}
-            {% endfor %}
-            {% block component_payment_method_collapse %}
-                {% if page.paymentMethods | length > visiblePaymentMethodsLimit and visiblePaymentMethodsLimit is not same as(null) %}
-                    <div class="collapse">
-                        {% for payment in page.paymentMethods[visiblePaymentMethodsLimit:] %}
-                            {% include '@AdyenPaymentShopware6/storefront/component/payment/payment-method.html.twig' %}
-                        {% endfor %}
-                    </div>
-                    {% block component_payment_method_collapse_trigger %}
-                        <div class="btn btn-link confirm-checkout-collapse-trigger"
-                             data-collapse-checkout-confirm-methods="true"
-                             data-collapse-checkout-confirm-methods-options='{{ collapseTriggerLabels|json_encode }}'>
-                            <span class="confirm-checkout-collapse-trigger-label">
-                                {% block component_payment_method_collapse_trigger_label %}
-                                    {{ collapseTriggerLabels.collapseTriggerMoreLabel }}
-                                {% endblock %}
-                            </span>
-                            {% block component_payment_method_collapse_trigger_icon %}
-                                {% sw_icon 'arrow-down' style {
-                                    'class': 'confirm-checkout-chevron',
-                                    'size': 'xs',
-                                    'pack' : 'solid'
-                                } %}
-                            {% endblock %}
-                        </div>
-                    {% endblock %}
-                {% endif %}
-            {% endblock %}
+            {{ parent() }}
         {% endblock %}
 
         <input type="hidden" name="adyenStateData" id="adyenStateData">
