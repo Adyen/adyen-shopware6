@@ -152,4 +152,63 @@
             </helpText>
         </input-field>
     </card>
+    <card>
+        <title>Adyen Giving</title>
+        <input-field type="bool">
+            <name>adyenGivingEnabled</name>
+            <label>Enable Adyen Giving</label>
+            <helpText>
+                <!-- TODO-Giving:: Add description -->
+            </helpText>
+        </input-field>
+        <input-field type="text">
+            <name>adyenGivingCharityMerchantAccount</name>
+            <label>Charity Merchant Account</label>
+            <helpText>
+                <!-- TODO-Giving:: Add description -->
+            </helpText>
+        </input-field>
+        <input-field type="text">
+            <name>adyenGivingCharityName</name>
+            <label>Charity Name</label>
+            <helpText>
+                <!-- TODO-Giving:: Add description -->
+            </helpText>
+        </input-field>
+        <input-field type="text">
+            <name>adyenGivingCharityDescription</name>
+            <label>Charity Description</label>
+            <helpText>
+                <!-- TODO-Giving:: Add description -->
+            </helpText>
+        </input-field>
+        <input-field type="text">
+            <name>adyenGivingCharityWebsite</name>
+            <label>Charity Website</label>
+            <helpText>
+                <!-- TODO-Giving:: Add description -->
+            </helpText>
+        </input-field>
+        <input-field type="text">
+            <name>adyenGivingDonationAmounts</name>
+            <label>Donation Amounts</label>
+            <helpText>
+                <!-- TODO-Giving:: Add description -->
+            </helpText>
+        </input-field>
+        <component name="sw-media-field">
+            <name>adyenGivingCharityLogo</name>
+            <label>Charity Logo</label>
+            <helpText>
+                <!-- TODO-Giving:: Add description -->
+            </helpText>
+        </component>
+        <component name="sw-media-field">
+            <name>adyenGivingBackgroundImage</name>
+            <label>Background Image</label>
+            <helpText>
+                <!-- TODO-Giving:: Add description -->
+            </helpText>
+        </component>
+    </card>
 </config>
