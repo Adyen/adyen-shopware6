@@ -204,7 +204,6 @@
             </helpText>
         </component>
         <component name="sw-media-field">
-            <!-- TODO-Giving:: try to save to adyenmedia folder -->
             <name>adyenGivingBackgroundImage</name>
             <label>Background Image</label>
             <helpText>
