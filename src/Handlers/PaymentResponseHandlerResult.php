@@ -14,6 +14,7 @@ class PaymentResponseHandlerResult
     private $paymentReference;
     private $action;
     private $additionalData;
+    private $donationToken;
 
     /**
      * @param PaymentResponseEntity $paymentResponse
@@ -152,6 +153,22 @@ class PaymentResponseHandlerResult
     public function setAdditionalData($additionalData): void
     {
         $this->additionalData = $additionalData;
+    }
+
+    /**
+     * @param string $donationToken
+     */
+    public function setDonationToken(string $donationToken): void
+    {
+        $this->donationToken = $donationToken;
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getDonationToken(): ?string
+    {
+        return $this->donationToken;
     }
 
     /**

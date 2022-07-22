@@ -57,6 +57,7 @@ class PaymentResponseHandler
     const ORIGINAL_PSP_REFERENCE = 'originalPspReference';
     const ADDITIONAL_DATA = 'additionalData';
     const ACTION = 'action';
+    const DONATION_TOKEN = 'donationToken';
 
 
     // Merchant reference parameter in return GET parameters list
@@ -155,6 +156,11 @@ class PaymentResponseHandler
             $this->paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
         }
 
+        // Set Donation Token if response containes it
+        if (!empty($response[self::DONATION_TOKEN])) {
+            $this->paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
+        }
+
         // Store response for cart until the payment is finalised
         if ($orderTransactionId) {
             $this->paymentResponseService->insertPaymentResponse(
@@ -251,6 +257,11 @@ class PaymentResponseHandler
         $paymentReference = $paymentResponseHandlerResult->getPaymentReference();
         if (empty($storedTransactionCustomFields[self::PAYMENT_REFERENCE]) && !empty($paymentReference)) {
             $transactionCustomFields[self::PAYMENT_REFERENCE] = $paymentReference;
+        }
+
+        $donationToken = $paymentResponseHandlerResult->getDonationToken();
+        if (!empty($donationToken)) {
+            $transactionCustomFields[self::DONATION_TOKEN] = $donationToken;
         }
 
         // Only store action for the transaction if this is the first action
