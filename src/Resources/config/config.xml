@@ -158,56 +158,57 @@
             <name>adyenGivingEnabled</name>
             <label>Enable Adyen Giving</label>
             <helpText>
-                <!-- TODO-Giving:: Add description -->
+                This enables Adyen Giving and offer the donation form in the order success page.
             </helpText>
         </input-field>
         <input-field type="text">
             <name>adyenGivingCharityMerchantAccount</name>
             <label>Charity Merchant Account</label>
             <helpText>
-                <!-- TODO-Giving:: Add description -->
+                Adyen merchant account for the charity.
             </helpText>
         </input-field>
         <input-field type="text">
             <name>adyenGivingCharityName</name>
             <label>Charity Name</label>
             <helpText>
-                <!-- TODO-Giving:: Add description -->
+                Name of the charity displayed on the Adyen Giving form.
             </helpText>
         </input-field>
         <input-field type="text">
             <name>adyenGivingCharityDescription</name>
             <label>Charity Description</label>
             <helpText>
-                <!-- TODO-Giving:: Add description -->
+                Description of the charity.
             </helpText>
         </input-field>
         <input-field type="text">
             <name>adyenGivingCharityWebsite</name>
             <label>Charity Website</label>
             <helpText>
-                <!-- TODO-Giving:: Add description -->
+                Link to the charity website.
             </helpText>
         </input-field>
         <input-field type="text">
             <name>adyenGivingDonationAmounts</name>
             <label>Donation Amounts</label>
             <helpText>
-                <!-- TODO-Giving:: Add description -->
+                Suggested amounts that the shopper can choose to donate using the order currency, separated by commas.
             </helpText>
         </input-field>
         <component name="sw-media-field">
             <name>adyenGivingCharityLogo</name>
             <label>Charity Logo</label>
             <helpText>
-                <!-- TODO-Giving:: Add description -->
+                Logo displayed on the Adyen Giving form.
             </helpText>
         </component>
         <component name="sw-media-field">
+            <!-- TODO-Giving:: try to save to adyenmedia folder -->
             <name>adyenGivingBackgroundImage</name>
             <label>Background Image</label>
             <helpText>
-                <!-- TODO-Giving:: Add description -->
+                Background image of the Adyen Giving form.
             </helpText>
         </component>
     </card>
