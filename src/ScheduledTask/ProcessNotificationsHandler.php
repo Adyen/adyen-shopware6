@@ -236,7 +236,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     $this->rescheduleNotification(
                         $notification->getId(),
                         $notification->getMerchantReference(),
-                        $scheduledProcessingTime);
+                        $scheduledProcessingTime
+                    );
                 }
 
                 continue;
