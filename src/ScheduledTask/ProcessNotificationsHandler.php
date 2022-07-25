@@ -233,7 +233,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
                 $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
                 if ($notification->getErrorCount() < self::MAX_ERROR_COUNT) {
-                    $this->rescheduleNotification($notification->getId(), $notification->getMerchantReference(), $scheduledProcessingTime);
+                    $this->rescheduleNotification(
+                        $notification->getId(),
+                        $notification->getMerchantReference(),
+                        $scheduledProcessingTime);
                 }
 
                 continue;
@@ -378,8 +381,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->logger->debug("Payment notification for order {$merchantReference} marked as processing.");
     }
 
-    private function rescheduleNotification(string $notificationId, string $merchantReference, ?\DateTime $dateTime = null)
-    {
+    private function rescheduleNotification(
+        string $notificationId,
+        string $merchantReference,
+        ?\DateTime $dateTime = null
+    ) {
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
         $this->notificationService->setNotificationSchedule($notificationId, $dateTime ?? new \DateTime());
         $this->logger->debug("Payment notification for order {$merchantReference} rescheduled.");
