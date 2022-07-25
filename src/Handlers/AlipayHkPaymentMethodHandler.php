@@ -27,7 +27,6 @@ namespace Adyen\Shopware\Handlers;
 
 class AlipayHkPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-
     public static function getPaymentMethodCode()
     {
         return 'alipay_hk';
