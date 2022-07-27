@@ -277,7 +277,8 @@ class PaymentResponseHandler
         }
 
         $donationToken = $paymentResponseHandlerResult->getDonationToken();
-        if (!empty($donationToken) && $this->configurationService->isAdyenGivingEnabled($salesChannelContext->getSalesChannelId())) {
+        if (!empty($donationToken) &&
+            $this->configurationService->isAdyenGivingEnabled($salesChannelContext->getSalesChannelId())) {
             $transactionCustomFields[self::DONATION_TOKEN] = $donationToken;
         }
 

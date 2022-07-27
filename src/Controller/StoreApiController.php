@@ -329,7 +329,8 @@ class StoreApiController
 
         // If donation token is present in the result, store it in the custom fields of order transaction.
         $donationToken = $result->getDonationToken();
-        if (!is_null($donationToken) && $this->configurationService->isAdyenGivingEnabled($context->getSalesChannelId())) {
+        if (!is_null($donationToken) &&
+            $this->configurationService->isAdyenGivingEnabled($context->getSalesChannelId())) {
             $storedTransactionCustomFields = $paymentResponse->getOrderTransaction()->getCustomFields() ?: [];
             $transactionCustomFields[PaymentResponseHandler::DONATION_TOKEN] = $donationToken;
 
@@ -608,8 +609,10 @@ class StoreApiController
         $value = $payload['amount']['value'];
         $returnUrl = $payload['returnUrl'];
 
-        $order = $this->orderRepository->getOrder($orderId, $salesChannelContext->getContext(), ['transactions', 'currency']);
-        $transaction = $order->getTransactions()->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
+        $order = $this->orderRepository
+            ->getOrder($orderId, $salesChannelContext->getContext(), ['transactions', 'currency']);
+        $transaction = $order->getTransactions()
+            ->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
         $donationToken = $transaction->getCustomFields()['donationToken'];
         $pspReference = $transaction->getCustomFields()['originalPspReference'];
 
@@ -631,9 +634,9 @@ class StoreApiController
         );
 
         try {
-            $this->donationService->donate($salesChannelContext, $donationToken, $currency, $value, $returnUrl, $pspReference);
-        }
-        catch (AdyenException $e) {
+            $this->donationService->donate(
+                $salesChannelContext, $donationToken, $currency, $value, $returnUrl, $pspReference);
+        } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
             return new JsonResponse('An unknown error occurred', $e->getCode());
         }

@@ -76,8 +76,7 @@ class AdyenGivingSubscriber implements EventSubscriberInterface
         Currency $currency,
         RouterInterface $router,
         LoggerInterface $logger
-    )
-    {
+    ) {
         $this->configurationService = $configurationService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->currency = $currency;
@@ -111,7 +110,8 @@ class AdyenGivingSubscriber implements EventSubscriberInterface
         $amounts = $this->configurationService->getAdyenGivingDonationAmounts($salesChannelId);
 
         $order = $page->getOrder();
-        $orderTransaction = $order->getTransactions()->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
+        $orderTransaction = $order->getTransactions()
+            ->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
 
         if (is_null($orderTransaction)) {
             return;
@@ -119,15 +119,15 @@ class AdyenGivingSubscriber implements EventSubscriberInterface
 
         $customFields = $orderTransaction->getCustomFields();
 
-        if (isset($customFields['donationToken']) && $this->configurationService->isAdyenGivingEnabled($salesChannelId)) {
+        if (isset($customFields['donationToken']) &&
+            $this->configurationService->isAdyenGivingEnabled($salesChannelId)) {
             $donationAmounts = [];
             try {
                 foreach (explode(',', $amounts) as $donationAmount) {
                     $donationAmounts[] = $this->currency->sanitize($donationAmount, $currency);
                 }
                 $donationAmounts = implode(',', $donationAmounts);
-            }
-            catch (\Exception $e) {
+            } catch (\Exception $e) {
                 $this->logger->error("Field 'donationAmounts' is not valid.");
                 return;
             }
