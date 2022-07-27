@@ -100,7 +100,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     /** @var CaptureService */
     private $captureService;
 
-    /** @var array Mapping to convert Shopware transaction states to payment states in the webhook module. */
+    /** @var array Map Shopware transaction states to payment states in the webhook module. */
     private $webhookModuleStateMapping = [
         OrderTransactionStates::STATE_OPEN => PaymentStates::STATE_NEW,
         OrderTransactionStates::STATE_AUTHORIZED => PaymentStates::STATE_PENDING,
@@ -146,7 +146,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         foreach ($notifications->getElements() as $notification) {
             /** @var NotificationEntity $notification */
 
-            $this->markAsProcessing($notification->getId());
+            $this->markAsProcessing($notification->getId(), $notification->getMerchantReference());
 
             $order = $this->orderRepository->getOrderByOrderNumber(
                 $notification->getMerchantReference(),
@@ -156,11 +156,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             $logContext = ['eventCode' => $notification->getEventCode()];
             if (!$order) {
-                $this->logger->warning(
-                    "Order with order_number {$notification->getMerchantReference()} not found.",
-                    $logContext
-                );
-                $this->markAsDone($notification->getId());
+                $errorMessage = "Skipped: Order with order_number {$notification->getMerchantReference()} not found.";
+                $this->logger->error($errorMessage, $logContext);
+                $this->logNotificationFailure($notification, $errorMessage);
+                $this->markAsDone($notification->getId(), $notification->getMerchantReference());
                 continue;
             }
             $logContext['orderId'] = $order->getId();
@@ -173,10 +172,13 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             // Skip if orderTransaction not found (non-Adyen)
             if (is_null($orderTransaction)) {
-                $this->logger->error(
-                    sprintf('Unable to identify Adyen orderTransaction linked to order %s', $order->getOrderNumber())
+                $errorMessage = sprintf(
+                    'Skipped: Unable to identify Adyen orderTransaction linked to order %s',
+                    $order->getOrderNumber()
                 );
-                $this->markAsDone($notification->getId());
+                $this->logger->error($errorMessage, $logContext);
+                $this->logNotificationFailure($notification, $errorMessage);
+                $this->markAsDone($notification->getId(), $notification->getMerchantReference());
                 continue;
             }
 
@@ -186,8 +188,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             if (empty($currentTransactionState)) {
                 $logContext['paymentState'] = $orderTransaction->getStateMachineState()->getTechnicalName();
-                $this->logger->error('Current payment state is not supported.', $logContext);
-                $this->markAsDone($notification->getId());
+                $errorMessage = 'Skipped: Current order transaction payment state is not supported.';
+                $this->logger->error($errorMessage, $logContext);
+                $this->logNotificationFailure($notification, $errorMessage);
+                $this->markAsDone($notification->getId(), $notification->getMerchantReference());
                 continue;
             }
 
@@ -204,8 +208,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 );
             } catch (InvalidDataException $exception) {
                 $logContext['notification'] = $notification->getVars();
-                $this->logger->error('Unable to process notification: Invalid notification data', $logContext);
-                $this->markAsDone($notification->getId());
+                $errorMessage = 'Skipped: Unable to process notification. Invalid notification data';
+                $this->logger->error($errorMessage, $logContext);
+                $this->logNotificationFailure($notification, $errorMessage);
+                $this->markAsDone($notification->getId(), $notification->getMerchantReference());
                 continue;
             }
 
@@ -221,28 +227,33 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 }
 
                 $this->handleEventCodes($notification, $orderTransaction, $context);
-            } catch (CaptureException $e) {
-                $this->logger->warning($e->getMessage(), ['code' => $e->getCode()]);
+            } catch (CaptureException $exception) {
+                $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
+                $this->logNotificationFailure($notification, $exception->getMessage());
 
                 $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
-                $this->rescheduleNotification($notification->getId(), $scheduledProcessingTime);
+                if ($notification->getErrorCount() < self::MAX_ERROR_COUNT) {
+                    $this->rescheduleNotification(
+                        $notification->getId(),
+                        $notification->getMerchantReference(),
+                        $scheduledProcessingTime
+                    );
+                }
+
                 continue;
             } catch (\Exception $exception) {
                 $logContext['errorMessage'] = $exception->getMessage();
-                // set notification error and increment error count
-                $errorCount = (int)$notification->getErrorCount();
-                $this->notificationService
-                    ->saveError($notification->getId(), $exception->getMessage(), ++$errorCount);
                 $this->logger->error('Notification processing failed.', $logContext);
+                $this->logNotificationFailure($notification, $exception->getMessage());
 
-                if ($errorCount < self::MAX_ERROR_COUNT) {
-                    $this->rescheduleNotification($notification->getId());
+                if ($notification->getErrorCount() < self::MAX_ERROR_COUNT) {
+                    $this->rescheduleNotification($notification->getId(), $notification->getMerchantReference());
                 }
 
                 continue;
             }
 
-            $this->markAsDone($notification->getId());
+            $this->markAsDone($notification->getId(), $notification->getMerchantReference());
         }
 
         $this->logger->info('Processed ' . $notifications->count() . ' notifications.');
@@ -365,24 +376,27 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         }
     }
 
-    private function markAsProcessing(string $notificationId)
+    private function markAsProcessing(string $notificationId, string $merchantReference)
     {
         $this->notificationService->changeNotificationState($notificationId, 'processing', true);
-        $this->logger->debug("Payment notification {$notificationId} marked as processing.");
+        $this->logger->debug("Payment notification for order {$merchantReference} marked as processing.");
     }
 
-    private function rescheduleNotification(string $notificationId, ?\DateTime $dateTime = null)
-    {
+    private function rescheduleNotification(
+        string $notificationId,
+        string $merchantReference,
+        ?\DateTime $dateTime = null
+    ) {
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
         $this->notificationService->setNotificationSchedule($notificationId, $dateTime ?? new \DateTime());
-        $this->logger->debug("Payment notification {$notificationId} rescheduled.");
+        $this->logger->debug("Payment notification for order {$merchantReference} rescheduled.");
     }
 
-    private function markAsDone(string $notificationId)
+    private function markAsDone(string $notificationId, string $merchantReference)
     {
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
         $this->notificationService->changeNotificationState($notificationId, 'done', true);
-        $this->logger->debug("Payment notification {$notificationId} marked as done.");
+        $this->logger->debug("Payment notification for order {$merchantReference} marked as done.");
     }
 
     /**
@@ -413,5 +427,18 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         }
 
         return $order;
+    }
+
+    /**
+     * set notification error and increment error count
+     * @param NotificationEntity $notification
+     * @param string $errorMessage
+     * @return void
+     */
+    private function logNotificationFailure(NotificationEntity $notification, string $errorMessage)
+    {
+        $errorCount = (int) $notification->getErrorCount();
+        $this->notificationService
+            ->saveError($notification->getId(), $errorMessage, ++$errorCount);
     }
 }
