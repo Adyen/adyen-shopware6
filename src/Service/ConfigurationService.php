@@ -283,8 +283,8 @@ class ConfigurationService
     {
         $backgroundImageMediaId = $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.adyenGivingBackgroundImage',
-            $salesChannelId)
-        ;
+            $salesChannelId
+        );
 
         if (!is_null($backgroundImageMediaId)) {
             $criteria = new Criteria([$backgroundImageMediaId]);
