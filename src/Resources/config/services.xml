@@ -19,6 +19,7 @@
         <!--Adyen Services-->
         <service id="Adyen\Shopware\Service\ConfigurationService" autowire="true">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="media.repository"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition">
@@ -55,6 +56,10 @@
                 <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             </call>
         </service>
+        <service id="Adyen\Shopware\Service\DonationService" autowire="true">
+            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+        </service>
 
         <!--Commands-->
         <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
@@ -79,6 +84,14 @@
             <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
             <argument type="service" id="Adyen\Util\Currency"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+        <service id="Adyen\Shopware\Subscriber\AdyenGivingSubscriber">
+            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Util\Currency"/>
+            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
         </service>

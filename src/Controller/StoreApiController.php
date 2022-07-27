@@ -32,6 +32,8 @@ use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
+use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentRequestService;
@@ -50,6 +52,7 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -104,6 +107,10 @@ class StoreApiController
      */
     private $orderService;
     /**
+     * @var EntityRepositoryInterface
+     */
+    private $orderTransactionRepository;
+    /**
      * @var StateMachineRegistry
      */
     private $stateMachineRegistry;
@@ -125,6 +132,15 @@ class StoreApiController
     private $clientService;
 
     /**
+     * @var DonationService
+     */
+    private $donationService;
+    /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
      * StoreApiController constructor.
      *
      * @param CartService $cartService
@@ -133,6 +149,7 @@ class StoreApiController
      * @param PaymentMethodsService $paymentMethodsService
      * @param PaymentDetailsService $paymentDetailsService
      * @param PaymentRequestService $paymentRequestService
+     * @param DonationService $donationService
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStatusService $paymentStatusService
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -141,6 +158,8 @@ class StoreApiController
      * @param OrderService $orderService
      * @param StateMachineRegistry $stateMachineRegistry
      * @param LoggerInterface $logger
+     * @param EntityRepositoryInterface $orderTransactionRepository
+     * @param ConfigurationService $configurationService
      */
     public function __construct(
         CartService $cartService,
@@ -149,6 +168,7 @@ class StoreApiController
         PaymentMethodsService $paymentMethodsService,
         PaymentDetailsService $paymentDetailsService,
         PaymentRequestService $paymentRequestService,
+        DonationService $donationService,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStatusService $paymentStatusService,
         PaymentResponseHandler $paymentResponseHandler,
@@ -156,7 +176,9 @@ class StoreApiController
         OrderRepository $orderRepository,
         OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        EntityRepositoryInterface $orderTransactionRepository,
+        ConfigurationService $configurationService
     ) {
         $this->cartService = $cartService;
         $this->cartCalculator = $cartCalculator;
@@ -172,6 +194,9 @@ class StoreApiController
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
         $this->clientService = $clientService;
+        $this->donationService = $donationService;
+        $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->configurationService = $configurationService;
     }
 
     /**
@@ -300,6 +325,32 @@ class StoreApiController
                 ['orderId' => $orderId, 'paymentDetails' => $stateData]
             );
             return new JsonResponse($message, 500);
+        }
+
+        // If donation token is present in the result, store it in the custom fields of order transaction.
+        $donationToken = $result->getDonationToken();
+        if (!is_null($donationToken) && $this->configurationService->isAdyenGivingEnabled($context->getSalesChannelId())) {
+            $storedTransactionCustomFields = $paymentResponse->getOrderTransaction()->getCustomFields() ?: [];
+            $transactionCustomFields[PaymentResponseHandler::DONATION_TOKEN] = $donationToken;
+
+            $customFields = array_merge(
+                $storedTransactionCustomFields,
+                $transactionCustomFields
+            );
+
+            $paymentResponse->getOrderTransaction()->setCustomFields($customFields);
+            $orderTransactionId = $paymentResponse->getOrderTransactionId();
+            $context->getContext()->scope(
+                Context::SYSTEM_SCOPE,
+                function (Context $context) use ($orderTransactionId, $customFields) {
+                    $this->orderTransactionRepository->update([
+                        [
+                            'id' => $orderTransactionId,
+                            'customFields' => $customFields,
+                        ]
+                    ], $context);
+                }
+            );
         }
 
         return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
@@ -533,5 +584,60 @@ class StoreApiController
         );
 
         return new JsonResponse($this->paymentStatusService->getWithOrderId($orderId));
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/donate",
+     *     name="store-api.action.adyen.donate",
+     *     methods={"POST"}
+     * )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
+     * @return JsonResponse
+     */
+    public function donate(
+        Request $request,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse {
+        $payload = $request->get('payload');
+
+        $orderId = $payload['orderId'];
+        $currency = $payload['amount']['currency'];
+        $value = $payload['amount']['value'];
+        $returnUrl = $payload['returnUrl'];
+
+        $order = $this->orderRepository->getOrder($orderId, $salesChannelContext->getContext(), ['transactions', 'currency']);
+        $transaction = $order->getTransactions()->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
+        $donationToken = $transaction->getCustomFields()['donationToken'];
+        $pspReference = $transaction->getCustomFields()['originalPspReference'];
+
+        // Set donation token as null after first call.
+        $storedTransactionCustomFields = $transaction->getCustomFields();
+        $storedTransactionCustomFields[PaymentResponseHandler::DONATION_TOKEN] = null;
+        $transaction->setCustomFields($storedTransactionCustomFields);
+        $orderTransactionId = $transaction->getId();
+        $salesChannelContext->getContext()->scope(
+            Context::SYSTEM_SCOPE,
+            function (Context $salesChannelContext) use ($orderTransactionId, $storedTransactionCustomFields) {
+                $this->orderTransactionRepository->update([
+                    [
+                        'id' => $orderTransactionId,
+                        'customFields' => $storedTransactionCustomFields,
+                    ]
+                ], $salesChannelContext);
+            }
+        );
+
+        try {
+            $this->donationService->donate($salesChannelContext, $donationToken, $currency, $value, $returnUrl, $pspReference);
+        }
+        catch (AdyenException $e) {
+            $this->logger->error($e->getMessage());
+            return new JsonResponse('An unknown error occurred', $e->getCode());
+        }
+
+        return new JsonResponse('Donation completed successfully.');
     }
 }
