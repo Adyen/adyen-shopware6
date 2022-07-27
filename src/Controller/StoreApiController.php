@@ -635,7 +635,13 @@ class StoreApiController
 
         try {
             $this->donationService->donate(
-                $salesChannelContext, $donationToken, $currency, $value, $returnUrl, $pspReference);
+                $salesChannelContext,
+                $donationToken,
+                $currency,
+                $value,
+                $returnUrl,
+                $pspReference
+            );
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
             return new JsonResponse('An unknown error occurred', $e->getCode());

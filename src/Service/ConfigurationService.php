@@ -258,7 +258,9 @@ class ConfigurationService
     public function getAdyenGivingCharityMerchantAccount(string $salesChannelId)
     {
         return $this->systemConfigService->get(
-            self::BUNDLE_NAME . '.config.adyenGivingCharityMerchantAccount', $salesChannelId);
+            self::BUNDLE_NAME . '.config.adyenGivingCharityMerchantAccount',
+            $salesChannelId
+        );
     }
 
     /**
@@ -268,7 +270,9 @@ class ConfigurationService
     public function getAdyenGivingDonationAmounts(string $salesChannelId)
     {
         return $this->systemConfigService->get(
-            self::BUNDLE_NAME . '.config.adyenGivingDonationAmounts', $salesChannelId);
+            self::BUNDLE_NAME . '.config.adyenGivingDonationAmounts',
+            $salesChannelId
+        );
     }
 
     /**
@@ -278,7 +282,9 @@ class ConfigurationService
     public function getAdyenGivingBackgroundUrl(string $salesChannelId, Context $context)
     {
         $backgroundImageMediaId = $this->systemConfigService->get(
-            self::BUNDLE_NAME . '.config.adyenGivingBackgroundImage', $salesChannelId);
+            self::BUNDLE_NAME . '.config.adyenGivingBackgroundImage',
+            $salesChannelId)
+        ;
 
         if (!is_null($backgroundImageMediaId)) {
             $criteria = new Criteria([$backgroundImageMediaId]);
@@ -298,7 +304,9 @@ class ConfigurationService
     public function getAdyenGivingCharityLogo(string $salesChannelId, Context $context)
     {
         $charityLogoMediaId = $this->systemConfigService->get(
-            self::BUNDLE_NAME . '.config.adyenGivingCharityLogo', $salesChannelId);
+            self::BUNDLE_NAME . '.config.adyenGivingCharityLogo',
+            $salesChannelId
+        );
 
         if (!is_null($charityLogoMediaId)) {
             $criteria = new Criteria([$charityLogoMediaId]);
@@ -318,7 +326,9 @@ class ConfigurationService
     public function getAdyenGivingCharityDescription(string $salesChannelId)
     {
         return $this->systemConfigService->get(
-            self::BUNDLE_NAME . '.config.adyenGivingCharityDescription', $salesChannelId);
+            self::BUNDLE_NAME . '.config.adyenGivingCharityDescription',
+            $salesChannelId
+        );
     }
 
     /**
@@ -328,7 +338,9 @@ class ConfigurationService
     public function getAdyenGivingCharityName(string $salesChannelId)
     {
         return $this->systemConfigService->get(
-            self::BUNDLE_NAME . '.config.adyenGivingCharityName', $salesChannelId);
+            self::BUNDLE_NAME . '.config.adyenGivingCharityName',
+            $salesChannelId
+        );
     }
 
     /**
@@ -338,6 +350,8 @@ class ConfigurationService
     public function getAdyenGivingCharityWebsite(string $salesChannelId)
     {
         return $this->systemConfigService->get(
-            self::BUNDLE_NAME . '.config.adyenGivingCharityWebsite', $salesChannelId);
+            self::BUNDLE_NAME . '.config.adyenGivingCharityWebsite',
+            $salesChannelId
+        );
     }
 }

@@ -72,7 +72,13 @@ class DonationService
         $responseData = [];
 
         $requestData = $this->buildDonationRequest(
-            $context, $donationToken, $currency, $value, $returnUrl, $pspReference);
+            $context,
+            $donationToken,
+            $currency,
+            $value,
+            $returnUrl,
+            $pspReference
+        );
 
         if (!empty($requestData)) {
             $checkoutService = new CheckoutService(
@@ -107,9 +113,11 @@ class DonationService
         $request['donationToken'] = $donationToken;
         $request['donationOriginalPspReference'] = $pspReference;
         $request['donationAccount'] = $this->configurationService->getAdyenGivingCharityMerchantAccount(
-            $context->getSalesChannel()->getId());
+            $context->getSalesChannel()->getId()
+        );
         $request['merchantAccount'] =  $this->configurationService->getMerchantAccount(
-            $context->getSalesChannel()->getId());
+            $context->getSalesChannel()->getId()
+        );
         $request['paymentMethod']['type'] = self::PAYMENT_METHOD_TYPE_SCHEME;
         $request['shopperInteraction'] = self::SHOPPER_INTERACTION_CONTAUTH;
         $request['returnUrl'] = $returnUrl;
