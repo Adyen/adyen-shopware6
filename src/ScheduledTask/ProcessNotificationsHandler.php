@@ -165,7 +165,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $logContext['orderId'] = $order->getId();
             $logContext['orderNumber'] = $order->getOrderNumber();
 
-            $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction(
+            $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
                 $order->getId(),
                 self::WEBHOOK_TRANSACTION_STATES
             );
@@ -292,10 +292,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                         'Attempting capture for open invoice payment.',
                         ['notification' => $notification->getVars()]
                     );
-                    $this->captureService->capture(
-                        $context,
+                    $this->captureService->doOpenInvoiceCapture(
                         $notification->getMerchantReference(),
-                        (int) $notification->getAmountValue()
+                        $notification->getAmountValue(),
+                        $context
                     );
                 } else {
                     $this->transactionStateHandler->paid($orderTransaction->getId(), $context);

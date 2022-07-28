@@ -65,8 +65,7 @@ class PaymentResponseEntityDefinition extends EntityDefinition
                 'order_transaction_id',
                 'orderTransactionId',
                 OrderTransactionDefinition::class
-            )),
-            new StringField('payment_reference', 'paymentReference'),
+            ))->addFlags(new Required()),
             new StringField('result_code', 'resultCode'),
             new LongTextField('response', 'response'),
             new CreatedAtField(),
