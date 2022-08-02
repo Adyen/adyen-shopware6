@@ -29,3 +29,7 @@
 .paypal-checkout-sandbox{
     pointer-events: auto;
 }
+
+.adyen-checkout__card__brands img {
+    vertical-align: top;
+}
