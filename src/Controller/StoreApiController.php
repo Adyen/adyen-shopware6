@@ -329,7 +329,7 @@ class StoreApiController
 
         // If donation token is present in the result, store it in the custom fields of order transaction.
         $donationToken = $result->getDonationToken();
-        if (!is_null($donationToken) &&
+        if (isset($donationToken) &&
             $this->configurationService->isAdyenGivingEnabled($context->getSalesChannelId())) {
             $storedTransactionCustomFields = $paymentResponse->getOrderTransaction()->getCustomFields() ?: [];
             $transactionCustomFields[PaymentResponseHandler::DONATION_TOKEN] = $donationToken;

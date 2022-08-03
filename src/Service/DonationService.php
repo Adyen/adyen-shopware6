@@ -107,21 +107,25 @@ class DonationService
         $returnUrl,
         $pspReference
     ) : array {
-        $request['amount']['currency'] = $currency;
-        $request['amount']['value'] = $value;
-        $request['reference'] = Uuid::randomHex();
-        $request['donationToken'] = $donationToken;
-        $request['donationOriginalPspReference'] = $pspReference;
-        $request['donationAccount'] = $this->configurationService->getAdyenGivingCharityMerchantAccount(
-            $context->getSalesChannel()->getId()
-        );
-        $request['merchantAccount'] =  $this->configurationService->getMerchantAccount(
-            $context->getSalesChannel()->getId()
-        );
-        $request['paymentMethod']['type'] = self::PAYMENT_METHOD_TYPE_SCHEME;
-        $request['shopperInteraction'] = self::SHOPPER_INTERACTION_CONTAUTH;
-        $request['returnUrl'] = $returnUrl;
-
-        return $request;
+        return [
+            'amount' => [
+                'currency' => $currency,
+                'value' => $value
+            ],
+            'reference' => Uuid::randomHex(),
+            'donationToken' => $donationToken,
+            'donationOriginalPspReference' => $pspReference,
+            'donationAccount' => $this->configurationService->getAdyenGivingCharityMerchantAccount(
+                $context->getSalesChannel()->getId()
+            ),
+            'merchantAccount' => $this->configurationService->getMerchantAccount(
+                $context->getSalesChannel()->getId()
+            ),
+            'paymentMethod' => [
+                'type' => self::PAYMENT_METHOD_TYPE_SCHEME
+            ],
+            'shopperInteraction' => self::SHOPPER_INTERACTION_CONTAUTH,
+            'returnUrl' => $returnUrl
+        ];
     }
 }
