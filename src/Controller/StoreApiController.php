@@ -40,6 +40,7 @@ use Adyen\Shopware\Service\PaymentRequestService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
@@ -111,6 +112,10 @@ class StoreApiController
      */
     private $orderTransactionRepository;
     /**
+     * @var OrderTransactionRepository
+     */
+    private $adyenOrderTransactionRepository;
+    /**
      * @var StateMachineRegistry
      */
     private $stateMachineRegistry;
@@ -178,7 +183,8 @@ class StoreApiController
         StateMachineRegistry $stateMachineRegistry,
         LoggerInterface $logger,
         EntityRepositoryInterface $orderTransactionRepository,
-        ConfigurationService $configurationService
+        ConfigurationService $configurationService,
+        OrderTransactionRepository $adyenOrderTransactionRepository
     ) {
         $this->cartService = $cartService;
         $this->cartCalculator = $cartCalculator;
@@ -197,6 +203,7 @@ class StoreApiController
         $this->donationService = $donationService;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
+        $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
     }
 
     /**
@@ -609,17 +616,20 @@ class StoreApiController
         $value = $payload['amount']['value'];
         $returnUrl = $payload['returnUrl'];
 
-        $order = $this->orderRepository
-            ->getOrder($orderId, $salesChannelContext->getContext(), ['transactions', 'currency']);
-        $transaction = $order->getTransactions()
-            ->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
+        $transaction = $this->adyenOrderTransactionRepository
+            ->getFirstAdyenOrderTransaction($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
+
+        /** @var AbstractPaymentMethodHandler $paymentMethodIdentifier */
+        $paymentMethodIdentifier = $transaction->getPaymentMethod()->getHandlerIdentifier();
+        $paymentMethodCode = $paymentMethodIdentifier::getPaymentMethodCode();
+
         $donationToken = $transaction->getCustomFields()['donationToken'];
         $pspReference = $transaction->getCustomFields()['originalPspReference'];
 
         // Set donation token as null after first call.
         $storedTransactionCustomFields = $transaction->getCustomFields();
         $storedTransactionCustomFields[PaymentResponseHandler::DONATION_TOKEN] = null;
-        $transaction->setCustomFields($storedTransactionCustomFields);
+
         $orderTransactionId = $transaction->getId();
         $salesChannelContext->getContext()->scope(
             Context::SYSTEM_SCOPE,
@@ -640,7 +650,8 @@ class StoreApiController
                 $currency,
                 $value,
                 $returnUrl,
-                $pspReference
+                $pspReference,
+                $paymentMethodCode
             );
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());

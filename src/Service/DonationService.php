@@ -29,8 +29,9 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class DonationService
 {
-    const PAYMENT_METHOD_TYPE_SCHEME = 'scheme';
     const SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
+    const PAYMENT_METHOD_IDEAL = 'ideal';
+    const PAYMENT_METHOD_SEPA = 'sepadirectdebit';
 
     /**
      * @var ClientService
@@ -64,11 +65,19 @@ class DonationService
      * @param $value
      * @param $returnUrl
      * @param $pspReference
+     * @param $paymentMethodCode
      * @return array|mixed
      * @throws \Adyen\AdyenException
      */
-    public function donate(SalesChannelContext $context, $donationToken, $currency, $value, $returnUrl, $pspReference)
-    {
+    public function donate(
+        SalesChannelContext $context,
+        $donationToken,
+        $currency,
+        $value,
+        $returnUrl,
+        $pspReference,
+        $paymentMethodCode
+    ) {
         $responseData = [];
 
         $requestData = $this->buildDonationRequest(
@@ -77,7 +86,8 @@ class DonationService
             $currency,
             $value,
             $returnUrl,
-            $pspReference
+            $pspReference,
+            $paymentMethodCode
         );
 
         if (!empty($requestData)) {
@@ -97,6 +107,7 @@ class DonationService
      * @param $value
      * @param $returnUrl
      * @param $pspReference
+     * @param $paymentMethodCode
      * @return array
      */
     public function buildDonationRequest(
@@ -105,8 +116,20 @@ class DonationService
         $currency,
         $value,
         $returnUrl,
-        $pspReference
+        $pspReference,
+        $paymentMethodCode
     ) : array {
+        /**
+         * For donations with iDeal!
+         * As iDeal does not support recurring payments and Adyen do not have the IBAN yet
+         * when the merchant makes a /payments call, the flow works different from credit card payments.
+         * The subsequent call to /donations should include the donationToken,
+         * and have `sepadirectdebit` specified as payment method to charge the shopper's bank account
+         */
+        if ($paymentMethodCode === self::PAYMENT_METHOD_IDEAL) {
+            $paymentMethodCode = self::PAYMENT_METHOD_SEPA;
+        }
+
         return [
             'amount' => [
                 'currency' => $currency,
@@ -122,7 +145,7 @@ class DonationService
                 $context->getSalesChannel()->getId()
             ),
             'paymentMethod' => [
-                'type' => self::PAYMENT_METHOD_TYPE_SCHEME
+                'type' => $paymentMethodCode
             ],
             'shopperInteraction' => self::SHOPPER_INTERACTION_CONTAUTH,
             'returnUrl' => $returnUrl

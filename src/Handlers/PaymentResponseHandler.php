@@ -173,7 +173,7 @@ class PaymentResponseHandler
             $this->paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
         }
 
-        // Set Donation Token if response containes it
+        // Set Donation Token if response contains it
         if (isset($response[self::DONATION_TOKEN])) {
             $this->paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
         }

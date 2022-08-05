@@ -51,6 +51,11 @@ class PaymentResponseHandlerResult
             $this->setAction($response['action']);
         }
 
+        // Set donation token if exists
+        if (!empty($response['donationToken'])) {
+            $this->setDonationToken($response['donationToken']);
+        }
+
         // Set additional data if exists
         if (!empty($response['additionalData'])) {
             $this->setAdditionalData($response['additionalData']);
