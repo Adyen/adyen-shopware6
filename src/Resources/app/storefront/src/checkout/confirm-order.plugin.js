@@ -54,7 +54,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             showPayButton: true,
             hasHolderName: true,
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
-            onAdditionalDetails: this.handleOnAdditionalDetails.bind(this)
+            onAdditionalDetails: this.handleOnAdditionalDetails.bind(this),
+            countryCode: activeShippingAddress.country
         };
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
@@ -302,6 +303,11 @@ export default class ConfirmOrderPlugin extends Plugin {
             amount: {
                 value: adyenCheckoutOptions.amount,
                 currency: adyenCheckoutOptions.currency,
+            },
+            data: {
+                personalDetails: shopperDetails,
+                billingAddress: activeBillingAddress,
+                deliveryAddress: activeShippingAddress
             },
             onClick: (resolve, reject) => {
                 if (!componentConfig.onClick(resolve, reject, this)) {
