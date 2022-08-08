@@ -25,10 +25,7 @@
 
 namespace Adyen\Shopware\Handlers;
 
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-
-// phpcs:ignore Generic.Files.LineLength.TooLong
-class PaypalPaymentMethodHandler extends AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+class PaypalPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static function getPaymentMethodCode()
     {

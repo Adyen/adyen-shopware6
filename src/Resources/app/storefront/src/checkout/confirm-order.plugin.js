@@ -33,10 +33,9 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new StoreApiClient();
-        this.confirmOrderForm = DomAccess.querySelector(document,
-            '#confirmOrderForm');
-        this.confirmOrderForm.addEventListener('submit',
-            this.onConfirmOrderSubmit.bind(this));
+        this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
+        this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
+        this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
         this.paymentComponent = $(`[data-adyen-payment-component]`);
         this.responseHandler = this.handlePaymentAction;
         this.adyenCheckout = Promise;
@@ -54,7 +53,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             showPayButton: true,
             hasHolderName: true,
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
-            onAdditionalDetails: this.handleOnAdditionalDetails.bind(this)
+            onAdditionalDetails: this.handleOnAdditionalDetails.bind(this),
+            countryCode: activeShippingAddress.country
         };
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
@@ -87,7 +87,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        const form = event.target;
+        const form =  DomAccess.querySelector(document, '#confirmOrderForm');
         if (!form.checkValidity()) {
             return;
         }
@@ -303,6 +303,11 @@ export default class ConfirmOrderPlugin extends Plugin {
                 value: adyenCheckoutOptions.amount,
                 currency: adyenCheckoutOptions.currency,
             },
+            data: {
+                personalDetails: shopperDetails,
+                billingAddress: activeBillingAddress,
+                deliveryAddress: activeShippingAddress
+            },
             onClick: (resolve, reject) => {
                 if (!componentConfig.onClick(resolve, reject, this)) {
                     return false;
@@ -333,6 +338,13 @@ export default class ConfirmOrderPlugin extends Plugin {
                 componentConfig.onCancel(data, component, this);
             },
             onError: (error, component) => {
+                if (component.props.name === 'PayPal' && error.name === 'CANCEL') {
+                    this._client.post(
+                        `${adyenCheckoutOptions.cancelOrderTransactionUrl}`,
+                        JSON.stringify({orderId: this.orderId})
+                    );
+                }
+
                 ElementLoadingIndicatorUtil.remove(document.body);
                 componentConfig.onError(error, component, this);
                 console.log(error);

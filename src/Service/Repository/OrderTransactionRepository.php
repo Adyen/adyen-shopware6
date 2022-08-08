@@ -77,7 +77,7 @@ class OrderTransactionRepository
         );
 
         $criteria->setLimit(1);
-        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING));
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
         return $this->repository->search($criteria, Context::createDefaultContext())->first();
     }

@@ -16,7 +16,7 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2021 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
@@ -25,17 +25,10 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class AlbelliGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
+class BancontactMobilePaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-    public static $isGiftCard = true;
-
     public static function getPaymentMethodCode()
     {
-        return 'giftcard';
-    }
-
-    public static function getBrand(): string
-    {
-        return 'albelligiftcard';
+        return 'bcmc_mobile';
     }
 }

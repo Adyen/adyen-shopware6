@@ -1,7 +1,11 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/index.html.twig' %}
+
 {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+
 {% block base_footer %}
     {{ parent() }}
-    {% include '@AdyenPaymentShopware6/storefront/component/payment/payment-action-modal.html.twig' %}
-    {% include '@AdyenPaymentShopware6/storefront/component/payment/payment-component-modal.html.twig' %}
+    {% block base_footer_adyen %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-action-modal.html.twig' %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-component-modal.html.twig' %}
+    {% endblock %}
 {% endblock %}

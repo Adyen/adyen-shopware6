@@ -42,8 +42,13 @@ class SalesChannelRepository
     public function getSalesChannelUrl(SalesChannelContext $context): string
     {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
-        $criteria->setLimit(1);
+
+        if (!empty($context->getSalesChannel()->getHreflangDefaultDomainId())) {
+            $criteria->addFilter(new EqualsFilter('id', $context->getSalesChannel()->getHreflangDefaultDomainId()));
+        } else {
+            $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
+            $criteria->setLimit(1);
+        }
 
         $domainEntity = $this->domainRepository
             ->search($criteria, $context->getContext())
@@ -53,9 +58,7 @@ class SalesChannelRepository
             throw new SalesChannelDomainNotFoundException($context->getSalesChannel());
         }
 
-        $url = $domainEntity->getUrl();
-
-        return $url;
+        return $domainEntity->getUrl();
     }
 
     /**

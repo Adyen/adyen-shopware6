@@ -26,12 +26,8 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-
-class AfterpayDefaultPaymentMethodHandler extends AbstractPaymentMethodHandler implements
-    AsynchronousPaymentHandlerInterface
+class AfterpayDefaultPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-
     public static $isOpenInvoice = true;
 
     public static function getPaymentMethodCode()

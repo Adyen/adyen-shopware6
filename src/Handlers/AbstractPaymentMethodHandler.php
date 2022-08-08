@@ -41,10 +41,10 @@ use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
@@ -66,7 +66,7 @@ use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
-abstract class AbstractPaymentMethodHandler
+abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
 
     const PROMOTION = 'promotion';
@@ -197,6 +197,7 @@ abstract class AbstractPaymentMethodHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
      * @param CsrfTokenManagerInterface $csrfTokenManager
+     * @param Session $session
      * @param EntityRepositoryInterface $currencyRepository
      * @param EntityRepositoryInterface $productRepository
      * @param LoggerInterface $logger
@@ -342,18 +343,6 @@ abstract class AbstractPaymentMethodHandler
     }
 
     /**
-     * @param string $address
-     * @return array
-     */
-    private function splitStreetAddressHouseNumber(string $address): array
-    {
-        return [
-            'street' => $address,
-            'houseNumber' => 'N/A'
-        ];
-    }
-
-    /**
      * @param SalesChannelContext $salesChannelContext
      * @param AsyncPaymentTransactionStruct $transaction
      * @param string|null $stateData
@@ -429,7 +418,7 @@ abstract class AbstractPaymentMethodHandler
                 $shippingState = '';
             }
 
-            $shippingStreetAddress = $this->splitStreetAddressHouseNumber(
+            $shippingStreetAddress = $this->getSplitStreetAddressHouseNumber(
                 $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
             );
             $request = $this->addressBuilder->buildDeliveryAddress(
@@ -452,7 +441,7 @@ abstract class AbstractPaymentMethodHandler
                 $billingState = '';
             }
 
-            $billingStreetAddress = $this->splitStreetAddressHouseNumber(
+            $billingStreetAddress = $this->getSplitStreetAddressHouseNumber(
                 $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
             );
             $request = $this->addressBuilder->buildBillingAddress(
@@ -720,5 +709,35 @@ abstract class AbstractPaymentMethodHandler
             && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)) {
             $this->session->getFlashBag()->add('warning', $exception->getMessage());
         }
+    }
+
+    /**
+     * @param string $address
+     * @return array
+     */
+    private function getSplitStreetAddressHouseNumber(string $address): array
+    {
+        $streetFirstRegex = '/(?<streetName>[\w\W]+)\s+(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)$/m';
+        $numberFirstRegex = '/^(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)\s+(?<streetName>[\w\W]+)/m';
+
+        preg_match($streetFirstRegex, $address, $streetFirstAddress);
+        preg_match($numberFirstRegex, $address, $numberFirstAddress);
+
+        if ($streetFirstAddress) {
+            return [
+                'street' => $streetFirstAddress['streetName'],
+                'houseNumber' => $streetFirstAddress['houseNumber']
+            ];
+        } elseif ($numberFirstAddress) {
+            return [
+                'street' => $numberFirstAddress['streetName'],
+                'houseNumber' => $numberFirstAddress['houseNumber']
+            ];
+        }
+
+        return [
+            'street' => $address,
+            'houseNumber' => 'N/A'
+        ];
     }
 }

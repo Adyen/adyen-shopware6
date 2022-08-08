@@ -123,6 +123,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.2.0', '<')) {
             $this->updateTo320($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.5.0', '<')) {
+            $this->updateTo350($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -444,6 +448,24 @@ class AdyenPaymentShopware6 extends Plugin
                     'salesChannels' => $salesChannelIds
                 ]
             ], $updateContext->getContext());
+        }
+    }
+
+    private function updateTo350(UpdateContext $updateContext): void
+    {
+        //Version 3.5.0 introduces Bancontact mobile
+        foreach ([
+                     new PaymentMethods\BancontactMobilePaymentMethod()
+                 ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
         }
     }
 }
