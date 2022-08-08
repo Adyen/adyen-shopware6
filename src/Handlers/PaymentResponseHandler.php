@@ -30,6 +30,7 @@ use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\CaptureService;
+use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -57,6 +58,7 @@ class PaymentResponseHandler
     const ORIGINAL_PSP_REFERENCE = 'originalPspReference';
     const ADDITIONAL_DATA = 'additionalData';
     const ACTION = 'action';
+    const DONATION_TOKEN = 'donationToken';
 
 
     // Merchant reference parameter in return GET parameters list
@@ -93,17 +95,32 @@ class PaymentResponseHandler
     private $orderTransactionRepository;
 
     /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
      * @var CaptureService
      */
     private $captureService;
 
+    /**
+     * @param LoggerInterface $logger
+     * @param PaymentResponseService $paymentResponseService
+     * @param OrderTransactionStateHandler $transactionStateHandler
+     * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
+     * @param EntityRepositoryInterface $orderTransactionRepository
+     * @param CaptureService $captureService
+     * @param ConfigurationService $configurationService
+     */
     public function __construct(
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
         PaymentResponseHandlerResult $paymentResponseHandlerResult,
         EntityRepositoryInterface $orderTransactionRepository,
-        CaptureService $captureService
+        CaptureService $captureService,
+        ConfigurationService $configurationService
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
@@ -111,6 +128,7 @@ class PaymentResponseHandler
         $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->captureService = $captureService;
+        $this->configurationService = $configurationService;
     }
 
     /**
@@ -153,6 +171,11 @@ class PaymentResponseHandler
         // Set additionalData in result object if available
         if (!empty($response[self::ADDITIONAL_DATA])) {
             $this->paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
+        }
+
+        // Set Donation Token if response contains it
+        if (isset($response[self::DONATION_TOKEN])) {
+            $this->paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
         }
 
         // Store response for cart until the payment is finalised
@@ -251,6 +274,12 @@ class PaymentResponseHandler
         $paymentReference = $paymentResponseHandlerResult->getPaymentReference();
         if (empty($storedTransactionCustomFields[self::PAYMENT_REFERENCE]) && !empty($paymentReference)) {
             $transactionCustomFields[self::PAYMENT_REFERENCE] = $paymentReference;
+        }
+
+        $donationToken = $paymentResponseHandlerResult->getDonationToken();
+        if (isset($donationToken) &&
+            $this->configurationService->isAdyenGivingEnabled($salesChannelContext->getSalesChannelId())) {
+            $transactionCustomFields[self::DONATION_TOKEN] = $donationToken;
         }
 
         // Only store action for the transaction if this is the first action

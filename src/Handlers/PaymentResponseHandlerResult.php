@@ -14,6 +14,7 @@ class PaymentResponseHandlerResult
     private $paymentReference;
     private $action;
     private $additionalData;
+    private $donationToken;
 
     /**
      * @param PaymentResponseEntity $paymentResponse
@@ -48,6 +49,11 @@ class PaymentResponseHandlerResult
         // Set action if exists
         if (!empty($response['action'])) {
             $this->setAction($response['action']);
+        }
+
+        // Set donation token if exists
+        if (!empty($response['donationToken'])) {
+            $this->setDonationToken($response['donationToken']);
         }
 
         // Set additional data if exists
@@ -152,6 +158,22 @@ class PaymentResponseHandlerResult
     public function setAdditionalData($additionalData): void
     {
         $this->additionalData = $additionalData;
+    }
+
+    /**
+     * @param string $donationToken
+     */
+    public function setDonationToken(string $donationToken): void
+    {
+        $this->donationToken = $donationToken;
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getDonationToken(): ?string
+    {
+        return $this->donationToken;
     }
 
     /**
