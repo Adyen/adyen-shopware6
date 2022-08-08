@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Service\Validator\DataArrayValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
@@ -114,12 +115,16 @@ class ResultHandler
         $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
 
         if ('RedirectShopper' === $result->getResultCode()) {
-            $redirectResult = $request->query->get(
-                self::REDIRECT_RESULT,
-                $request->request->get(self::REDIRECT_RESULT)
-            );
+            $requestResponse = $request->getMethod() === 'GET' ? $request->query->all() : $request->request->all();
 
-            if (empty($redirectResult)) {
+            $details = DataArrayValidator::getArrayOnlyWithApprovedKeys($requestResponse, [
+                self::PA_RES,
+                self::MD,
+                self::REDIRECT_RESULT,
+                self::PAYLOAD,
+            ]);
+
+            if (empty($details)) {
                 $error = 'Payment details are missing.';
                 $this->logger->error(
                     $error,
@@ -127,15 +132,10 @@ class ResultHandler
                 );
                 throw new PaymentFailedException($error);
             }
-            $requestData = [
-                'details' => [
-                    self::REDIRECT_RESULT => $redirectResult
-                ]
-            ];
 
             // Validate the return
             $result = $this->paymentDetailsService->getPaymentDetails(
-                $requestData,
+                ['details' => $details],
                 $transaction->getOrderTransaction()
             );
         }
