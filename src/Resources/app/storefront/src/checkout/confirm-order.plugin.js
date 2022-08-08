@@ -34,7 +34,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     init() {
         this._client = new StoreApiClient();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
-        this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmFormSubmit');
+        this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
         this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
         this.paymentComponent = $(`[data-adyen-payment-component]`);
         this.responseHandler = this.handlePaymentAction;
