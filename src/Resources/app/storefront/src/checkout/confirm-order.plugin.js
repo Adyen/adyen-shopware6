@@ -75,7 +75,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             locale,
             clientKey,
             environment,
-            showPayButton: false,
+            showPayButton: this.selectedAdyenPaymentMethod in adyenConfiguration.componentsWithPayButton,
             hasHolderName: true,
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
             onAdditionalDetails: this.handleOnAdditionalDetails.bind(this),
