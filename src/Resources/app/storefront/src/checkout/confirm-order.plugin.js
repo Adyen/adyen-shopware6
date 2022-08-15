@@ -36,7 +36,6 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
-        this.paymentComponent = $(`[data-adyen-payment-component]`);
         this.responseHandler = this.handlePaymentAction;
         this.adyenCheckout = Promise;
         this.initializeCheckoutComponent().then(function () {
