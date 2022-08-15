@@ -424,10 +424,18 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     mountCustomPayButton(paymentMethodInstance) {
-        let confirmButtonContainer = $('<div id="adyen-confirm-button" data-adyen-confirm-button></div>');
-        $('#confirmOrderForm').append(confirmButtonContainer);
-        paymentMethodInstance.mount(confirmButtonContainer.get(0));
-        $('#confirmOrderForm button[type=submit]').remove();
+        let form = document.querySelector('#confirmOrderForm');
+        if (form) {
+            let submitButton = form.querySelector('button[type=submit]');
+            if (submitButton && !submitButton.disabled) {
+                let confirmButtonContainer = document.createElement('div');
+                confirmButtonContainer.id = 'adyen-confirm-button';
+                confirmButtonContainer.setAttribute('data-adyen-confirm-button', '')
+                form.appendChild(confirmButtonContainer);
+                paymentMethodInstance.mount(confirmButtonContainer);
+                submitButton.remove();
+            }
+        }
     }
 
     mountPaymentComponent(paymentMethod, isOneClick = false) {
