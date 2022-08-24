@@ -3,4 +3,4 @@ import ConfirmOrderPlugin from './checkout/confirm-order.plugin';
 
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
-PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '[data-adyen-payment]');
+PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '#adyen-payment-checkout-mask');

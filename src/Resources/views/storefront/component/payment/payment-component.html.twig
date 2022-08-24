@@ -1,0 +1,23 @@
+<div id="adyen-payment-checkout-mask" data-adyen-payment-container>
+    {% if(adyenFrontendData.storedPaymentMethods|length > 0) and 'oneclick' in adyenFrontendData.selectedPaymentMethodHandler %}
+        {% for storedPaymentMethod in adyenFrontendData.storedPaymentMethods %}
+            <div class="container">
+                <div class="col">
+                    <label>
+                        <input type="radio"
+                               name="adyenStoredPaymentMethodId"
+                               value="{{ storedPaymentMethod.id }}"
+                               class="form-check-input"
+                               {% if loop.first == true %}checked="checked"{% endif %}
+                        >
+                        {{ "%s ending in %s" |format(storedPaymentMethod.name, storedPaymentMethod.lastFour) }}
+                    </label>
+                </div>
+                <div class="col stored-payment-component"
+                     data-adyen-stored-payment-method-id="{{ storedPaymentMethod.id }}"></div>
+            </div>
+            {% if loop.last == false %}
+                <hr>{% endif %}
+        {% endfor %}
+    {% endif %}
+</div>
