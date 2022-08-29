@@ -174,20 +174,4 @@ class PaymentResponseHandlerResult
     {
         return $this->donationToken;
     }
-
-    /**
-     * @return null|string
-     */
-    public function getPaymentReference(): ?string
-    {
-        return $this->paymentReference;
-    }
-
-    /**
-     * @param null|string $paymentReference
-     */
-    public function setPaymentReference(?string $paymentReference): void
-    {
-        $this->paymentReference = $paymentReference;
-    }
 }
