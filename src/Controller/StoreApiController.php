@@ -27,26 +27,19 @@ namespace Adyen\Shopware\Controller;
 use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
-use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
-use Adyen\Shopware\Service\CheckoutService;
-use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\PaymentDetailsService;
 use Adyen\Shopware\Service\PaymentMethodsService;
-use Adyen\Shopware\Service\PaymentRequestService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Checkout\Cart\Cart;
-use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
-use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -79,10 +72,6 @@ class StoreApiController
      * @var PaymentDetailsService
      */
     private $paymentDetailsService;
-    /**
-     * @var PaymentRequestService
-     */
-    private $paymentRequestService;
     /**
      * @var CheckoutStateDataValidator
      */
@@ -124,19 +113,6 @@ class StoreApiController
      */
     private $logger;
     /**
-     * @var CartService
-     */
-    private $cartService;
-    /**
-     * @var CartCalculator
-     */
-    private $cartCalculator;
-    /**
-     * @var ClientService
-     */
-    private $clientService;
-
-    /**
      * @var DonationService
      */
     private $donationService;
@@ -148,12 +124,8 @@ class StoreApiController
     /**
      * StoreApiController constructor.
      *
-     * @param CartService $cartService
-     * @param CartCalculator $cartCalculator
-     * @param ClientService $clientService
      * @param PaymentMethodsService $paymentMethodsService
      * @param PaymentDetailsService $paymentDetailsService
-     * @param PaymentRequestService $paymentRequestService
      * @param DonationService $donationService
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStatusService $paymentStatusService
@@ -167,12 +139,8 @@ class StoreApiController
      * @param ConfigurationService $configurationService
      */
     public function __construct(
-        CartService $cartService,
-        CartCalculator $cartCalculator,
-        ClientService $clientService,
         PaymentMethodsService $paymentMethodsService,
         PaymentDetailsService $paymentDetailsService,
-        PaymentRequestService $paymentRequestService,
         DonationService $donationService,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStatusService $paymentStatusService,
@@ -186,11 +154,8 @@ class StoreApiController
         ConfigurationService $configurationService,
         OrderTransactionRepository $adyenOrderTransactionRepository
     ) {
-        $this->cartService = $cartService;
-        $this->cartCalculator = $cartCalculator;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
-        $this->paymentRequestService = $paymentRequestService;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStatusService = $paymentStatusService;
         $this->paymentResponseHandler = $paymentResponseHandler;
@@ -199,7 +164,6 @@ class StoreApiController
         $this->orderService = $orderService;
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
-        $this->clientService = $clientService;
         $this->donationService = $donationService;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
@@ -219,64 +183,6 @@ class StoreApiController
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
         return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
-    }
-
-    /**
-     * @Route(
-     *     "/store-api/adyen/payments",
-     *     name="store-api.action.adyen.payments",
-     *     methods={"POST"}
-     * )
-     *
-     * @param Request $request
-     * @param SalesChannelContext $context
-     * @return JsonResponse
-     * @throws \Adyen\AdyenException
-     */
-    public function makePayment(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        $returnUrl = $request->get('returnUrl');
-        $stateData = $request->get('stateData');
-        $data = json_decode($stateData, true);
-        $cart = $this->cartService->getCart($context->getToken(), $context);
-        $calculatedCart = $this->cartCalculator->calculate($cart, $context);
-        $totalPrice = $calculatedCart->getPrice()->getTotalPrice();
-        $paymentMethod = $context->getPaymentMethod();
-        $paymentHandler = $paymentMethod->getHandlerIdentifier();
-        $reference = Uuid::fromStringToHex($calculatedCart->getToken());
-        $currency = $this->paymentRequestService->getCurrency($context->getCurrencyId(), $context->getContext());
-        $lineItems = $this->paymentRequestService->getLineItems(
-            $calculatedCart->getLineItems(),
-            $context,
-            $currency,
-            $calculatedCart->getPrice()->getTaxStatus()
-        );
-
-        $request = $this->paymentRequestService->buildPaymentRequest(
-            $data,
-            $context,
-            $paymentHandler,
-            $totalPrice,
-            $reference,
-            $returnUrl,
-            $lineItems
-        );
-
-        $checkoutService = new CheckoutService(
-            $this->clientService->getClient($context->getSalesChannel()->getId())
-        );
-
-        try {
-            $response = $checkoutService->payments($request);
-        } catch (AdyenException $exception) {
-            $this->logger->error($exception->getMessage());
-
-            return new JsonResponse('An error occurred.', 400);
-        }
-
-        $result = $this->paymentResponseHandler->handlePaymentResponse($response, null, $reference);
-
-        return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
     }
 
     /**
@@ -307,7 +213,7 @@ class StoreApiController
 
         // Validate stateData object
         if (!empty($stateData)) {
-            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData((array)$stateData);
+            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
         }
 
         if (empty($stateData['details'])) {
@@ -322,8 +228,7 @@ class StoreApiController
         try {
             $result = $this->paymentDetailsService->getPaymentDetails(
                 $stateData,
-                $context->getSalesChannelId(),
-                $paymentResponse->getOrderTransactionId()
+                $paymentResponse->getOrderTransaction()
             );
         } catch (PaymentFailedException $exception) {
             $message = 'Error occurred finalizing payment';
@@ -366,67 +271,6 @@ class StoreApiController
 
     /**
      * @Route(
-     *     "/store-api/adyen/prepared-payment-details",
-     *     name="store-api.action.adyen.prepared-payment-details",
-     *     methods={"POST"}
-     * )
-     *
-     * @param Request $request
-     * @param SalesChannelContext $context
-     * @return JsonResponse
-     * @throws ValidationException
-     */
-    public function getPreparedPaymentDetails(
-        Request $request,
-        SalesChannelContext $context
-    ): JsonResponse {
-
-        $paymentReference = $request->request->get('paymentReference');
-        $paymentResponse = $this->paymentResponseService->getWithPaymentReference($paymentReference);
-        if (!$paymentResponse) {
-            $message = 'Could not find a transaction';
-            $this->logger->error($message, ['paymentReference' => $paymentReference]);
-            return new JsonResponse($message, 404);
-        }
-
-        // Get state data object if sent
-        $stateData = $request->request->get('stateData');
-
-        // Validate stateData object
-        if (!empty($stateData)) {
-            $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData((array)$stateData);
-        }
-
-        if (empty($stateData['details'])) {
-            $message = 'Details missing in $stateData';
-            $this->logger->error(
-                $message,
-                ['stateData' => $stateData]
-            );
-            return new JsonResponse($message, 400);
-        }
-
-        try {
-            $result = $this->paymentDetailsService->getPaymentDetails(
-                $stateData,
-                $context->getSalesChannelId(),
-                null,
-                $paymentResponse->getPaymentReference()
-            );
-        } catch (PaymentFailedException $exception) {
-            $message = 'Error occurred finalizing payment';
-            $this->logger->error(
-                $message,
-                ['paymentReference' => $paymentReference, 'paymentDetails' => $stateData]
-            );
-            return new JsonResponse($message, 500);
-        }
-
-        return new JsonResponse($this->paymentResponseHandler->handleAdyenApis($result));
-    }
-
-    /**
-     * @Route(
      *     "/store-api/adyen/payment-status",
      *     name="store-api.action.adyen.payment-status",
      *     methods={"POST"}
@@ -451,31 +295,6 @@ class StoreApiController
             $this->logger->error($exception->getMessage());
             return new JsonResponse(["isFinal" => true]);
         }
-    }
-
-    /**
-     * @Route(
-     *     "/store-api/adyen/prepared-payment-status",
-     *     name="store-api.action.adyen.prepared-payment-status",
-     *     methods={"POST"}
-     * )
-     *
-     * @param Request $request
-     * @param SalesChannelContext $context
-     * @return JsonResponse
-     * @throws \Adyen\Exception\MissingDataException
-     * @throws \JsonException
-     */
-    public function getPreparedPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        $paymentReference = $request->get('paymentReference');
-        if (empty($paymentReference)) {
-            return new JsonResponse('Payment reference not provided', 400);
-        }
-
-        return new JsonResponse(
-            $this->paymentStatusService->getWithPaymentReference($paymentReference)
-        );
     }
 
     /**
@@ -573,8 +392,10 @@ class StoreApiController
      * )
      *
      * @param Request $request
-     * @param SalesChannelContext $context
+     * @param SalesChannelContext $salesChannelContext
      * @return JsonResponse
+     * @throws \Adyen\Exception\MissingDataException
+     * @throws \JsonException
      */
     public function cancelOrderTransaction(
         Request $request,
@@ -617,7 +438,7 @@ class StoreApiController
         $returnUrl = $payload['returnUrl'];
 
         $transaction = $this->adyenOrderTransactionRepository
-            ->getFirstAdyenOrderTransaction($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
+            ->getFirstAdyenOrderTransactionByStates($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
 
         /** @var AbstractPaymentMethodHandler $paymentMethodIdentifier */
         $paymentMethodIdentifier = $transaction->getPaymentMethod()->getHandlerIdentifier();

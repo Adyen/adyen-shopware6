@@ -142,17 +142,6 @@
         </component>
     </card>
     <card>
-        <title>Payment Flow</title>
-        <input-field type="bool">
-            <name>usePreparedPayment</name>
-            <label>Use Prepared Payment Flow</label>
-            <helpText>
-                This flow enables merchants with a custom checkout flow (e.g. headless integrations) to create a payment request before creating an order.
-                See https://github.com/shopware/platform/blob/trunk/adr/2021-10-01-payment-flow.md#accepting-pre-created-payments for more information.
-            </helpText>
-        </input-field>
-    </card>
-    <card>
         <title>Adyen Giving</title>
         <input-field type="bool">
             <name>adyenGivingEnabled</name>

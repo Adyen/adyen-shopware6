@@ -304,7 +304,7 @@ class RefundService
      */
     public function getAdyenOrderTransactionForRefund(OrderEntity $order, array $states): OrderTransactionEntity
     {
-        $orderTransaction = $this->transactionRepository->getFirstAdyenOrderTransaction(
+        $orderTransaction = $this->transactionRepository->getFirstAdyenOrderTransactionByStates(
             $order->getId(),
             $states
         );

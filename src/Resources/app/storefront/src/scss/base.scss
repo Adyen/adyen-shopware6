@@ -30,6 +30,10 @@
     pointer-events: auto;
 }
 
+.adyen-checkout__card__brands img {
+    vertical-align: top;
+}
+
 #donation-container {
     margin-top: -50px;
     margin-bottom: 50px;

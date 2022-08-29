@@ -2,60 +2,62 @@
 
 {% block page_checkout_confirm_payment_inner %}
     {{ parent() }}
-    {% set billingAddress = context.customer.activeBillingAddress %}
-    {% set shippingAddress = context.customer.activeShippingAddress %}
-    {% if billingAddress and shippingAddress %}
-        <div id="shopper-details"
-             data-first-name="{{ billingAddress.firstName }}"
-             data-last-name="{{ billingAddress.lastName }}"
-             data-shopper-email="{{ context.customer.email }}"
-        ></div>
-        <div id="active-billing-address"
-            data-street="{{ adyenFrontendData.billingAddressStreetHouse.street }}"
-            data-house-number-or-name="{{ adyenFrontendData.billingAddressStreetHouse.houseNumber }}"
-            data-city="{{ billingAddress.city }}"
-            data-postal-code="{{ billingAddress.zipcode }}"
-            data-country="{{ billingAddress.country.iso }}"
-            data-phone-number="{{ billingAddress.phoneNumber }}"
-        ></div>
-        <div id="active-shipping-address"
-            data-street="{{ adyenFrontendData.shippingAddressStreetHouse.street }}"
-            data-house-number-or-name="{{ adyenFrontendData.shippingAddressStreetHouse.houseNumber }}"
-            data-city="{{ shippingAddress.city }}"
-            data-postal-code="{{ shippingAddress.zipcode }}"
-            data-country="{{ shippingAddress.country.iso }}"
-            data-phone-number="{{ shippingAddress.phoneNumber }}"
-        ></div>
-        <script>
-            var shopperDetails = document.querySelector('#shopper-details').dataset;
-            var activeBillingAddress = document.querySelector('#active-billing-address').dataset;
-            var activeShippingAddress = document.querySelector('#active-shipping-address').dataset;
-        </script>
-    {% endif %}
-    {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
-    {% if adyenFrontendData and adyenFrontendData.paymentStatusUrl %}
-        <div id="adyen-checkout-options"
-             data-language-id="{{ adyenFrontendData.languageId }}"
-             data-payment-status-url="{{ adyenFrontendData.paymentStatusUrl }}"
-             data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}"
-             data-payment-handle-url="{{ adyenFrontendData.paymentHandleUrl }}"
-             data-payment-details-url="{{ adyenFrontendData.paymentDetailsUrl }}"
-             data-payment-finish-url="{{ adyenFrontendData.paymentFinishUrl }}"
-             data-payment-error-url="{{ adyenFrontendData.paymentErrorUrl }}"
-             data-update-payment-url="{{ adyenFrontendData.updatePaymentUrl }}"
-             data-cancel-order-transaction-url="{{ adyenFrontendData.cancelOrderTransactionUrl }}"
-             data-order-id="{{ adyenFrontendData.orderId }}"
-             data-currency="{{ adyenFrontendData.currency }}"
-             data-amount="{{ adyenFrontendData.amount }}"
-             data-state-data-is-stored="{{ adyenFrontendData.stateDataIsStored }}"
-             data-adyen-plugin-id="{{ adyenFrontendData.pluginId }}"
-             data-selected-payment-method-handler="{{ adyenFrontendData.selectedPaymentMethodHandler }}"
-             data-selected-payment-method-plugin-id="{{ adyenFrontendData.selectedPaymentMethodPluginId }}"
-             data-display-save-credit-card-option="{{ adyenFrontendData.displaySaveCreditCardOption }}"
-        >
-        </div>
-        <script>
-            var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
-        </script>
-    {% endif %}
+    {% block page_checkout_confirm_payment_inner_adyen %}
+        {% set billingAddress = context.customer.activeBillingAddress %}
+        {% set shippingAddress = context.customer.activeShippingAddress %}
+        {% if billingAddress and shippingAddress %}
+            <div id="shopper-details"
+                 data-first-name="{{ billingAddress.firstName }}"
+                 data-last-name="{{ billingAddress.lastName }}"
+                 data-shopper-email="{{ context.customer.email }}"
+            ></div>
+            <div id="active-billing-address"
+                data-street="{{ adyenFrontendData.billingAddressStreetHouse.street }}"
+                data-house-number-or-name="{{ adyenFrontendData.billingAddressStreetHouse.houseNumber }}"
+                data-city="{{ billingAddress.city }}"
+                data-postal-code="{{ billingAddress.zipcode }}"
+                data-country="{{ billingAddress.country.iso }}"
+                data-phone-number="{{ billingAddress.phoneNumber }}"
+            ></div>
+            <div id="active-shipping-address"
+                data-street="{{ adyenFrontendData.shippingAddressStreetHouse.street }}"
+                data-house-number-or-name="{{ adyenFrontendData.shippingAddressStreetHouse.houseNumber }}"
+                data-city="{{ shippingAddress.city }}"
+                data-postal-code="{{ shippingAddress.zipcode }}"
+                data-country="{{ shippingAddress.country.iso }}"
+                data-phone-number="{{ shippingAddress.phoneNumber }}"
+            ></div>
+            <script>
+                var shopperDetails = document.querySelector('#shopper-details').dataset;
+                var activeBillingAddress = document.querySelector('#active-billing-address').dataset;
+                var activeShippingAddress = document.querySelector('#active-shipping-address').dataset;
+            </script>
+        {% endif %}
+        {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+        {% if adyenFrontendData and adyenFrontendData.paymentStatusUrl %}
+            <div id="adyen-checkout-options"
+                 data-language-id="{{ adyenFrontendData.languageId }}"
+                 data-payment-status-url="{{ adyenFrontendData.paymentStatusUrl }}"
+                 data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}"
+                 data-payment-handle-url="{{ adyenFrontendData.paymentHandleUrl }}"
+                 data-payment-details-url="{{ adyenFrontendData.paymentDetailsUrl }}"
+                 data-payment-finish-url="{{ adyenFrontendData.paymentFinishUrl }}"
+                 data-payment-error-url="{{ adyenFrontendData.paymentErrorUrl }}"
+                 data-update-payment-url="{{ adyenFrontendData.updatePaymentUrl }}"
+                 data-cancel-order-transaction-url="{{ adyenFrontendData.cancelOrderTransactionUrl }}"
+                 data-order-id="{{ adyenFrontendData.orderId }}"
+                 data-currency="{{ adyenFrontendData.currency }}"
+                 data-amount="{{ adyenFrontendData.amount }}"
+                 data-state-data-is-stored="{{ adyenFrontendData.stateDataIsStored }}"
+                 data-adyen-plugin-id="{{ adyenFrontendData.pluginId }}"
+                 data-selected-payment-method-handler="{{ adyenFrontendData.selectedPaymentMethodHandler }}"
+                 data-selected-payment-method-plugin-id="{{ adyenFrontendData.selectedPaymentMethodPluginId }}"
+                 data-display-save-credit-card-option="{{ adyenFrontendData.displaySaveCreditCardOption }}"
+            >
+            </div>
+            <script>
+                var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
+            </script>
+        {% endif %}
+    {% endblock %}
 {% endblock %}
