@@ -2,33 +2,9 @@
 {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\AdyenGivingSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
 
 {% block page_checkout_finish_data %}
+
     {{ parent() }}
 
-    {% if adyenFrontendData and adyenFrontendData.locale and adyenFrontendData.clientKey and adyenFrontendData.environment %}
-        <template data-adyen-giving></template>
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/adyen-giving/adyen-giving-component.html.twig' %}
 
-        <div id="adyen-giving-configuration"
-             data-locale="{{ adyenFrontendData.locale }}"
-             data-client-key="{{ adyenFrontendData.clientKey }}"
-             data-environment="{{ adyenFrontendData.environment }}"
-             data-currency="{{ adyenFrontendData.currency }}"
-             data-values="{{ adyenFrontendData.values }}"
-             data-background-url="{{ adyenFrontendData.backgroundUrl }}"
-             data-logo-url="{{ adyenFrontendData.logoUrl }}"
-             data-description="{{ adyenFrontendData.description }}"
-             data-name="{{ adyenFrontendData.name }}"
-             data-charity-url="{{ adyenFrontendData.charityUrl }}"
-             data-order-id="{{ adyenFrontendData.orderId }}"
-             data-donation-endpoint-url="{{ adyenFrontendData.donationEndpointUrl }}"
-             data-continue-action-url="{{ adyenFrontendData.continueActionUrl }}"
-        ></div>
-
-        <div id='donation-container'></div>
-
-        <link rel="stylesheet" href="{{ asset('bundles/adyenpaymentshopware6/css/adyen.css', 'asset') }}">
-        <script type="text/javascript" src="{{ asset('bundles/adyenpaymentshopware6/js/adyen.js', 'asset') }}"></script>
-        <script>
-            var adyenGivingConfiguration = document.querySelector('#adyen-giving-configuration').dataset;
-        </script>
-    {% endif %}
 {% endblock %}
