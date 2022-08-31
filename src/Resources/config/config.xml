@@ -147,7 +147,7 @@
             <name>adyenGivingEnabled</name>
             <label>Enable Adyen Giving</label>
             <helpText>
-                This enables Adyen Giving and offer the donation form in the order success page.
+                This enables Adyen Giving and offers the donation form in the order success page.
             </helpText>
         </input-field>
         <input-field type="text">
