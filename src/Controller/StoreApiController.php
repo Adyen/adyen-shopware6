@@ -193,10 +193,13 @@ class StoreApiController
         }
 
         try {
-            $result = $this->paymentDetailsService->getPaymentDetails(
+            $paymentDetails = $this->paymentDetailsService->getPaymentDetails(
                 $stateData,
-                $paymentResponse->getOrderTransaction()
+                $paymentResponse->getOrderTransaction()->getOrder()->getSalesChannelId()
             );
+
+            $result = $this->paymentResponseHandler
+                ->handlePaymentResponse($paymentDetails, $paymentResponse->getOrderTransaction());
         } catch (PaymentFailedException $exception) {
             $message = 'Error occurred finalizing payment';
             $this->logger->error(

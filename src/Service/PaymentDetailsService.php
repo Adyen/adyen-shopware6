@@ -25,10 +25,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Exception\PaymentFailedException;
-use Adyen\Shopware\Handlers\PaymentResponseHandler;
-use Adyen\Shopware\Handlers\PaymentResponseHandlerResult;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 
 class PaymentDetailsService
 {
@@ -43,44 +40,35 @@ class PaymentDetailsService
     private $logger;
 
     /**
-     * @var PaymentResponseHandler
-     */
-    private $paymentResponseHandler;
-
-    /**
      * PaymentDetailsService constructor.
      *
      * @param LoggerInterface $logger
      * @param ClientService $clientService
-     * @param PaymentResponseHandler $paymentResponseHandler
      */
     public function __construct(
         LoggerInterface $logger,
-        ClientService $clientService,
-        PaymentResponseHandler $paymentResponseHandler
+        ClientService $clientService
     ) {
         $this->logger = $logger;
         $this->clientService = $clientService;
-        $this->paymentResponseHandler = $paymentResponseHandler;
     }
 
     /**
      * @param array $requestData
-     * @param OrderTransactionEntity $orderTransaction
-     * @return PaymentResponseHandlerResult
+     * @param string $salesChannelId
+     * @return mixed
      * @throws PaymentFailedException
      */
     public function getPaymentDetails(
         array $requestData,
-        OrderTransactionEntity $orderTransaction
-    ): PaymentResponseHandlerResult {
+        string $salesChannelId
+    ) {
 
         try {
             $checkoutService = new CheckoutService(
-                $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
+                $this->clientService->getClient($salesChannelId)
             );
-            $response = $checkoutService->paymentsDetails($requestData);
-            return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
+            return $checkoutService->paymentsDetails($requestData);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
             throw new PaymentFailedException($exception->getMessage());

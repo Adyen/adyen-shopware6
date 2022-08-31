@@ -75,4 +75,17 @@ class PaymentMethods
         FashionChequeGiftCardPaymentMethod::class,
         DeCadeaukaartGiftCardPaymentMethod::class
     ];
+
+    public static function getPaymentMethodHandlerByCode($paymentCode): ?string
+    {
+        foreach (self::PAYMENT_METHODS as $paymentMethod) {
+            /** @var PaymentMethodInterface $paymentMethod */
+            $handlerIdentifier = (new $paymentMethod)->getPaymentHandler();
+            if ($paymentCode === $handlerIdentifier::getPaymentMethodCode()) {
+                return $handlerIdentifier;
+            }
+        }
+
+        return null;
+    }
 }

@@ -309,7 +309,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $result = $this->paymentResponseHandler->handlePaymentResponse($response, $transaction->getOrderTransaction());
 
         try {
-            $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
+            $this->paymentResponseHandler->handleShopwareApis(
+                $transaction->getOrderTransaction(),
+                $salesChannelContext,
+                $result,
+                $transaction->getOrder()->getOrderNumber()
+            );
         } catch (PaymentCancelledException $exception) {
             throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
         } catch (PaymentFailedException $exception) {

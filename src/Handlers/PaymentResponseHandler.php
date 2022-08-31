@@ -31,12 +31,17 @@ use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CaptureService;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
+use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Write\CloneBehavior;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentResponseHandler
@@ -191,23 +196,25 @@ class PaymentResponseHandler
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param OrderTransactionEntity $orderTransaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
+     * @param string $orderNumber
      * @throws PaymentCancelledException
      * @throws PaymentFailedException
      */
     public function handleShopwareApis(
-        AsyncPaymentTransactionStruct $transaction,
+        OrderTransactionEntity $orderTransaction,
         SalesChannelContext $salesChannelContext,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult
+        PaymentResponseHandlerResult $paymentResponseHandlerResult,
+        string $orderNumber
     ): void {
-        $orderTransactionId = $transaction->getOrderTransaction()->getId();
+        $orderTransactionId = $orderTransaction->getId();
         $context = $salesChannelContext->getContext();
-        $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
+        $stateTechnicalName = $orderTransaction->getStateMachineState()->getTechnicalName();
         $resultCode = $paymentResponseHandlerResult->getResultCode();
         $requiresManualCapture = $this->captureService
-            ->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
+            ->requiresManualCapture($orderTransaction->getPaymentMethod()->getHandlerIdentifier());
 
         // Check if result is already handled
         if ($this->isTransactionHandled($stateTechnicalName, $resultCode, $requiresManualCapture)) {
@@ -215,7 +222,7 @@ class PaymentResponseHandler
         }
 
         // Get already stored transaction custom fields
-        $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
+        $storedTransactionCustomFields = $orderTransaction->getCustomFields() ?: [];
 
         // Store action, additionalData and originalPspReference in the transaction
         $transactionCustomFields = [];
@@ -244,7 +251,7 @@ class PaymentResponseHandler
             $transactionCustomFields
         );
 
-        $transaction->getOrderTransaction()->setCustomFields($customFields);
+        $orderTransaction->setCustomFields($customFields);
         $context->scope(
             Context::SYSTEM_SCOPE,
             function (Context $context) use ($orderTransactionId, $customFields) {
@@ -268,13 +275,13 @@ class PaymentResponseHandler
             case self::REFUSED:
                 // Fail the order
                 $message = 'The payment was refused';
-                $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
+                $this->logger->info($message, ['orderNumber' => $orderNumber]);
                 throw new PaymentFailedException($message);
                 break;
             case self::CANCELLED:
                 // Cancel the order
                 $message = 'The payment was cancelled';
-                $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
+                $this->logger->info($message, ['orderNumber' => $orderNumber]);
                 throw new PaymentCancelledException($message);
                 break;
             case self::REDIRECT_SHOPPER:
@@ -294,7 +301,7 @@ class PaymentResponseHandler
                 // Cancel the order
                 $message = 'The payment had an error or an unhandled result code';
                 $this->logger->error($message, [
-                    'orderId' => $transaction->getOrder()->getId(),
+                    'orderNumber' => $orderNumber,
                     'resultCode' => $resultCode,
                 ]);
                 throw new PaymentFailedException($message);
@@ -349,6 +356,32 @@ class PaymentResponseHandler
                     "resultCode" => self::ERROR,
                 ];
         }
+    }
+
+    public function cloneOrderTransaction(
+        Context $context,
+        OrderTransactionEntity $orderTransaction,
+        CartPrice $cartPrice,
+        float $amount,
+        array $overwrites
+    ): OrderTransactionEntity {
+        $newId = Uuid::randomHex();
+
+        $this->orderTransactionRepository
+            ->clone($orderTransaction->getId(), $context, $newId, new CloneBehavior($overwrites));
+
+        $criteria = new Criteria([$newId]);
+        $criteria->addAssociation('paymentMethod');
+        $clone = $this->orderTransactionRepository->search($criteria, $context)->first();
+
+        $clone->setAmount(new CalculatedPrice(
+            $amount,
+            $amount,
+            $cartPrice->getCalculatedTaxes(), // @todo need to recalculate taxes
+            $cartPrice->getTaxRules()
+        ));
+
+        return $clone;
     }
 
     /**
