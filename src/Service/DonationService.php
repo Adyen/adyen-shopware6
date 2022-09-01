@@ -41,7 +41,8 @@ class DonationService
      */
     const PAYMENT_METHOD_CODE_MAPPING = [
         'ideal' => 'sepadirectdebit',
-        'storedPaymentMethods' => 'scheme'
+        'storedPaymentMethods' => 'scheme',
+        'paywithgoogle' => 'scheme'
     ];
 
     /**
