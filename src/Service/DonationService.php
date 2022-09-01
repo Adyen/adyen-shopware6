@@ -23,7 +23,6 @@
 
 namespace Adyen\Shopware\Service;
 
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -58,16 +57,13 @@ class DonationService
     /**
      * @param ClientService $clientService
      * @param ConfigurationService $configurationService
-     * @param LoggerInterface $logger
      */
     public function __construct(
         ClientService $clientService,
-        ConfigurationService $configurationService,
-        LoggerInterface $logger
+        ConfigurationService $configurationService
     ) {
         $this->clientService = $clientService;
         $this->configurationService = $configurationService;
-        $this->logger = $logger;
     }
 
     /**
