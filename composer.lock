@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "dcc0c9c2555ceb19dd544e7d70e91f80",
+    "content-hash": "3a391a1e153349ae01b86ad02d2bc4c6",
     "packages": [
         {
             "name": "adyen/php-api-library",
-            "version": "11.0.0",
+            "version": "13.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Adyen/adyen-php-api-library.git",
-                "reference": "c2207139042d09c46954512f2333eac7330cef34"
+                "reference": "84845f9f7ea4aab3cce3ca4575026c45c22e37c3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/c2207139042d09c46954512f2333eac7330cef34",
-                "reference": "c2207139042d09c46954512f2333eac7330cef34",
+                "url": "https://api.github.com/repos/Adyen/adyen-php-api-library/zipball/84845f9f7ea4aab3cce3ca4575026c45c22e37c3",
+                "reference": "84845f9f7ea4aab3cce3ca4575026c45c22e37c3",
                 "shasum": ""
             },
             "require": {
@@ -30,11 +30,11 @@
                 "php": ">=7.3"
             },
             "require-dev": {
-                "dms/phpunit-arraysubset-asserts": "0.3.0",
+                "dms/phpunit-arraysubset-asserts": "0.4.0",
                 "friendsofphp/php-cs-fixer": "*",
-                "php-coveralls/php-coveralls": "2.4.3",
-                "phpunit/phpunit": "9.5.10",
-                "squizlabs/php_codesniffer": "3.6.1"
+                "php-coveralls/php-coveralls": "2.5.2",
+                "phpunit/phpunit": "9.5.24",
+                "squizlabs/php_codesniffer": "3.7.1"
             },
             "type": "library",
             "autoload": {
@@ -53,33 +53,30 @@
             ],
             "support": {
                 "issues": "https://github.com/Adyen/adyen-php-api-library/issues",
-                "source": "https://github.com/Adyen/adyen-php-api-library/tree/11.0.0"
+                "source": "https://github.com/Adyen/adyen-php-api-library/tree/13.0.2"
             },
-            "time": "2021-10-18T07:52:10+00:00"
+            "time": "2022-09-01T11:23:47+00:00"
         },
         {
             "name": "adyen/php-webhook-module",
-            "version": "0.5.0",
+            "version": "0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Adyen/php-webhook-module.git",
-                "reference": "3b21ea97cfd05a883a4ce37c6ebe300769db8dfe"
+                "reference": "1106faadc94a803f6803d38032811a991d2d6f27"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Adyen/php-webhook-module/zipball/3b21ea97cfd05a883a4ce37c6ebe300769db8dfe",
-                "reference": "3b21ea97cfd05a883a4ce37c6ebe300769db8dfe",
+                "url": "https://api.github.com/repos/Adyen/php-webhook-module/zipball/1106faadc94a803f6803d38032811a991d2d6f27",
+                "reference": "1106faadc94a803f6803d38032811a991d2d6f27",
                 "shasum": ""
             },
             "require": {
-                "adyen/php-api-library": "^11"
+                "monolog/monolog": "^1.16 || ^2.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "^9.5.0",
                 "squizlabs/php_codesniffer": "^3.5"
-            },
-            "suggest": {
-                "monolog/monolog": "~2.2.0"
             },
             "type": "library",
             "autoload": {
@@ -99,9 +96,9 @@
             "description": "Webhook module for Adyen Payment Integrations",
             "support": {
                 "issues": "https://github.com/Adyen/php-webhook-module/issues",
-                "source": "https://github.com/Adyen/php-webhook-module/tree/0.5.0"
+                "source": "https://github.com/Adyen/php-webhook-module/tree/0.6.0"
             },
-            "time": "2022-01-12T09:34:16+00:00"
+            "time": "2022-03-28T13:42:57+00:00"
         },
         {
             "name": "aws/aws-crt-php",
@@ -155,16 +152,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.234.6",
+            "version": "3.234.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "c0ae9fbc8295678502a8fde6a2ecc49f2bd39580"
+                "reference": "325931ead99e794657f88393c5b7cdf56723aadb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/c0ae9fbc8295678502a8fde6a2ecc49f2bd39580",
-                "reference": "c0ae9fbc8295678502a8fde6a2ecc49f2bd39580",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/325931ead99e794657f88393c5b7cdf56723aadb",
+                "reference": "325931ead99e794657f88393c5b7cdf56723aadb",
                 "shasum": ""
             },
             "require": {
@@ -241,9 +238,9 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.234.6"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.234.7"
             },
-            "time": "2022-08-30T20:25:10+00:00"
+            "time": "2022-08-31T18:25:01+00:00"
         },
         {
             "name": "brick/math",
@@ -5513,16 +5510,16 @@
         },
         {
             "name": "seld/phar-utils",
-            "version": "1.2.0",
+            "version": "1.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/phar-utils.git",
-                "reference": "9f3452c93ff423469c0d56450431562ca423dcee"
+                "reference": "ea2f4014f163c1be4c601b9b7bd6af81ba8d701c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/phar-utils/zipball/9f3452c93ff423469c0d56450431562ca423dcee",
-                "reference": "9f3452c93ff423469c0d56450431562ca423dcee",
+                "url": "https://api.github.com/repos/Seldaek/phar-utils/zipball/ea2f4014f163c1be4c601b9b7bd6af81ba8d701c",
+                "reference": "ea2f4014f163c1be4c601b9b7bd6af81ba8d701c",
                 "shasum": ""
             },
             "require": {
@@ -5555,9 +5552,9 @@
             ],
             "support": {
                 "issues": "https://github.com/Seldaek/phar-utils/issues",
-                "source": "https://github.com/Seldaek/phar-utils/tree/1.2.0"
+                "source": "https://github.com/Seldaek/phar-utils/tree/1.2.1"
             },
-            "time": "2021-12-10T11:20:11+00:00"
+            "time": "2022-08-31T10:31:18+00:00"
         },
         {
             "name": "sensio/framework-extra-bundle",
