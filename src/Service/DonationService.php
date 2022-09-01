@@ -35,7 +35,8 @@ class DonationService
      * For donations with iDeal!
      * As iDeal does not support recurring payments and Adyen do not have the IBAN yet
      * when the merchant makes a /payments call, the flow works different from credit card payments.
-     * The subsequent call to /donations should include the donationToken and have `sepadirectdebit` specified as payment method to charge the shopper's bank account,
+     * The subsequent call to /donations should include the donationToken and have `sepadirectdebit`
+     * specified as payment method to charge the shopper's bank account,
      *
      */
     const PAYMENT_METHOD_CODE_MAPPING = [
@@ -129,7 +130,7 @@ class DonationService
         $pspReference,
         $paymentMethodCode
     ) : array {
-        if(isset(self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode])){
+        if (isset(self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode])) {
             $paymentMethodCode = self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode];
         }
 
