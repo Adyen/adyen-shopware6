@@ -30,8 +30,20 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 class DonationService
 {
     const SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
-    const PAYMENT_METHOD_IDEAL = 'ideal';
-    const PAYMENT_METHOD_SEPA = 'sepadirectdebit';
+
+    /**
+     * For donations with iDeal!
+     * As iDeal does not support recurring payments and Adyen do not have the IBAN yet
+     * when the merchant makes a /payments call, the flow works different from credit card payments.
+     * The subsequent call to /donations should include the donationToken and have `sepadirectdebit`
+     * specified as payment method to charge the shopper's bank account,
+     *
+     */
+    const PAYMENT_METHOD_CODE_MAPPING = [
+        'ideal' => 'sepadirectdebit',
+        'storedPaymentMethods' => 'scheme',
+        'paywithgoogle' => 'scheme'
+    ];
 
     /**
      * @var ClientService
@@ -119,15 +131,8 @@ class DonationService
         $pspReference,
         $paymentMethodCode
     ) : array {
-        /**
-         * For donations with iDeal!
-         * As iDeal does not support recurring payments and Adyen do not have the IBAN yet
-         * when the merchant makes a /payments call, the flow works different from credit card payments.
-         * The subsequent call to /donations should include the donationToken,
-         * and have `sepadirectdebit` specified as payment method to charge the shopper's bank account
-         */
-        if ($paymentMethodCode === self::PAYMENT_METHOD_IDEAL) {
-            $paymentMethodCode = self::PAYMENT_METHOD_SEPA;
+        if (isset(self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode])) {
+            $paymentMethodCode = self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode];
         }
 
         return [
