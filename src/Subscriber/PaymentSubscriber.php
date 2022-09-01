@@ -273,6 +273,12 @@ class PaymentSubscriber implements EventSubscriberInterface
             }
         }
 
+        $displaySaveCreditCardOption = $this->paymentMethodsFilterService->isPaymentMethodInCollection(
+            $page->getPaymentMethods(),
+            OneClickPaymentMethodHandler::getPaymentMethodCode(),
+            $this->adyenPluginProvider->getAdyenPluginId(),
+        );
+
         $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, $orderId);
         $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),
@@ -285,12 +291,6 @@ class PaymentSubscriber implements EventSubscriberInterface
 
         $stateDataIsStored = (bool)$this->paymentStateDataService->getPaymentStateDataFromContextToken(
             $salesChannelContext->getToken()
-        );
-
-        $displaySaveCreditCardOption = $this->paymentMethodsFilterService->isPaymentMethodInCollection(
-            $page->getPaymentMethods(),
-            OneClickPaymentMethodHandler::getPaymentMethodCode(),
-            $this->adyenPluginProvider->getAdyenPluginId(),
         );
 
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();

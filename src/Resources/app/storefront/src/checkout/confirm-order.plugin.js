@@ -33,14 +33,38 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new StoreApiClient();
+        this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
-        this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
-        this.paymentComponent = $(`[data-adyen-payment-component]`);
         this.responseHandler = this.handlePaymentAction;
         this.adyenCheckout = Promise;
         this.initializeCheckoutComponent().then(function () {
-            this.initializeCustomPayButton();
+
+            // Non adyen payment method selected
+            // this can not happen, because this js plugin is registered only if adyen methods selected
+            // PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '#adyen-payment-checkout-mask');
+            if (adyenCheckoutOptions.selectedPaymentMethodPluginId !==
+                adyenCheckoutOptions.adyenPluginId) {
+                return;
+            }
+
+            if (!adyenCheckoutOptions || !adyenCheckoutOptions.paymentStatusUrl ||
+                !adyenCheckoutOptions.checkoutOrderUrl || !adyenCheckoutOptions.paymentHandleUrl) {
+                console.error('Adyen payment configuration missing.');
+                return;
+            }
+
+            if (this.selectedAdyenPaymentMethod in adyenConfiguration.componentsWithPayButton) {
+                // replaces confirm button with adyen pay button for paywithgoogle, applepay etc.
+                this.initializeCustomPayButton();
+            }
+
+            if (adyenConfiguration.updatablePaymentMethods.includes(this.selectedAdyenPaymentMethod) && !this.stateData) {
+                // create inline component for cards etc. and set event listener for submit button to confirm payment component
+                this.renderPaymentComponent(this.selectedAdyenPaymentMethod);
+            } else {
+                this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
+            }
         }.bind(this));
     }
 
@@ -50,11 +74,16 @@ export default class ConfirmOrderPlugin extends Plugin {
             locale,
             clientKey,
             environment,
-            showPayButton: true,
+            showPayButton: this.selectedAdyenPaymentMethod in adyenConfiguration.componentsWithPayButton,
             hasHolderName: true,
             paymentMethodsResponse: JSON.parse(paymentMethodsResponse),
             onAdditionalDetails: this.handleOnAdditionalDetails.bind(this),
-            countryCode: activeShippingAddress.country
+            countryCode: activeShippingAddress.country,
+            paymentMethodsConfiguration: {
+                card: {
+                    hasHolderName: true,
+                }
+            },
         };
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
@@ -75,43 +104,13 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     onConfirmOrderSubmit(event) {
-        // Non adyen payment method selected
-        if (adyenCheckoutOptions.selectedPaymentMethodPluginId !==
-            adyenCheckoutOptions.adyenPluginId) {
-            return true;
-        }
-
-        if (!adyenCheckoutOptions || !adyenCheckoutOptions.paymentStatusUrl ||
-            !adyenCheckoutOptions.checkoutOrderUrl || !adyenCheckoutOptions.paymentHandleUrl) {
-            console.error('Adyen payment configuration missing.');
-            return;
-        }
-
         const form =  DomAccess.querySelector(document, '#confirmOrderForm');
         if (!form.checkValidity()) {
             return;
         }
-
         event.preventDefault();
-
         ElementLoadingIndicatorUtil.create(document.body);
-
-        // get selected payment method
-        let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
-
-        const updatableSelected = adyenConfiguration.updatablePaymentMethods.includes(selectedAdyenPaymentMethod);
-
-        if (updatableSelected && !this.stateData) {
-            // render component to collect payment data
-            this.renderPaymentComponent(selectedAdyenPaymentMethod);
-            $('[data-adyen-payment-component-modal]').modal({show: true}).on('hidden.bs.modal', function (e) {
-                window.location.reload();
-            });
-            return;
-        }
-
         const formData = FormSerializeUtil.serialize(form);
-
         this.confirmOrder(formData);
     }
 
@@ -134,7 +133,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         let paymentMethod = paymentMethodConfigs[0];
 
         // Mount payment method instance
-        this.mountPaymentComponent(paymentMethod, '[data-adyen-payment-container]', false);
+        this.mountPaymentComponent(paymentMethod, false);
     }
 
     renderStoredPaymentMethodComponents() {
@@ -248,7 +247,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     handlePaymentAction(response) {
-        $('[data-adyen-payment-component-modal]').modal().hide();
         try {
             const paymentResponse = JSON.parse(response);
             if (paymentResponse.isFinal) {
@@ -269,19 +267,14 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     initializeCustomPayButton() {
-        // get selected payment method
-        let selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
-        if (!(selectedAdyenPaymentMethod in adyenConfiguration.componentsWithPayButton)) {
-            return;
-        }
 
-        const componentConfig = adyenConfiguration.componentsWithPayButton[selectedAdyenPaymentMethod];
+        const componentConfig = adyenConfiguration.componentsWithPayButton[this.selectedAdyenPaymentMethod];
 
-        this.completePendingPayment(selectedAdyenPaymentMethod, componentConfig);
+        this.completePendingPayment(this.selectedAdyenPaymentMethod, componentConfig);
 
         // get selected payment method object
         let selectedPaymentMethod = this.adyenCheckout.paymentMethodsResponse.paymentMethods
-            .filter(item => item.type === selectedAdyenPaymentMethod);
+            .filter(item => item.type === this.selectedAdyenPaymentMethod);
 
         if (selectedPaymentMethod.length < 1) {
             return;
@@ -431,13 +424,21 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     mountCustomPayButton(paymentMethodInstance) {
-        let confirmButtonContainer = $('<div id="adyen-confirm-button" data-adyen-confirm-button></div>');
-        $('#confirmOrderForm').append(confirmButtonContainer);
-        paymentMethodInstance.mount(confirmButtonContainer.get(0));
-        $('#confirmOrderForm button[type=submit]').remove();
+        let form = document.querySelector('#confirmOrderForm');
+        if (form) {
+            let submitButton = form.querySelector('button[type=submit]');
+            if (submitButton && !submitButton.disabled) {
+                let confirmButtonContainer = document.createElement('div');
+                confirmButtonContainer.id = 'adyen-confirm-button';
+                confirmButtonContainer.setAttribute('data-adyen-confirm-button', '')
+                form.appendChild(confirmButtonContainer);
+                paymentMethodInstance.mount(confirmButtonContainer);
+                submitButton.remove();
+            }
+        }
     }
 
-    mountPaymentComponent(paymentMethod, selector, isOneClick = false) {
+    mountPaymentComponent(paymentMethod, isOneClick = false) {
         const configuration = Object.assign({}, paymentMethod, {
             data: {
                 personalDetails: shopperDetails,
@@ -445,13 +446,12 @@ export default class ConfirmOrderPlugin extends Plugin {
                 deliveryAddress: activeShippingAddress
             },
             onSubmit: function(state, component) {
-                this.paymentComponent.find('.loader').show();
-                this.paymentComponent.find('[data-adyen-payment-container]').hide();
                 if (state.isValid) {
                     let extraParams = {
                         stateData: JSON.stringify(state.data)
                     };
                     let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
+                    ElementLoadingIndicatorUtil.create(document.body);
                     this.confirmOrder(formData, extraParams);
                 } else {
                     component.showValidation();
@@ -466,8 +466,19 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
         try {
             const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
-            paymentMethodInstance.mount(this.paymentComponent.find(selector).get(0));
-            this.paymentComponent.find('.loader').hide();
+            paymentMethodInstance.mount('#' + this.el.id);
+            this.confirmFormSubmit.addEventListener('click', function(event) {
+                const form =  DomAccess.querySelector(document, '#confirmOrderForm');
+                if (!form.checkValidity()) {
+                    return;
+                }
+                event.preventDefault();
+                this.el.parentNode.scrollIntoView({
+                    behavior: "smooth",
+                    block:    "start",
+                });
+                paymentMethodInstance.submit();
+            }.bind(this));
         } catch (err) {
             console.error(paymentMethod.type, err);
             return false;
