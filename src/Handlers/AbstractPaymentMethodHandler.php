@@ -42,6 +42,7 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
@@ -569,8 +570,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 //Getting line price
                 $price = $orderLine->getPrice();
 
-                // Skip promotion line items.
-                if (empty($orderLine->getProductId()) && $orderLine->getType() === self::PROMOTION) {
+
+                if (empty($orderLine->getProductId()) || $orderLine->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
                     continue;
                 }
 
