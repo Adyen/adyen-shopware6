@@ -20,7 +20,7 @@
  *
  */
 
-const { Component } = Shopware;
+const { Component, Mixin } = Shopware;
 import template from './adyen-notifications.html.twig';
 
 
@@ -28,6 +28,10 @@ Component.register('adyen-notifications', {
     template,
 
     inject: ['adyenService'],
+
+    mixins: [
+        Mixin.getByName('notification')
+    ],
 
     props: {
         order: {
@@ -47,6 +51,8 @@ Component.register('adyen-notifications', {
                 { property: 'status', label: this.$tc('adyen.columnHeaders.status') },
                 { property: 'createdAt', label: this.$tc('adyen.columnHeaders.created') },
                 { property: 'updatedAt', label: this.$tc('adyen.columnHeaders.updated') },
+                { property: 'errorCount', label: this.$tc('adyen.columnHeaders.errorCount') },
+                { property: 'errorMessage', label: this.$tc('adyen.columnHeaders.errorMessage') },
             ],
             showWidget: false,
         }
@@ -56,6 +62,17 @@ Component.register('adyen-notifications', {
         fetchNotifications() {
             this.adyenService.fetchNotifications(this.order.id).then((res) => {
                 this.notifications = res;
+            });
+        },
+
+        onReschedule(item) {
+            this.adyenService.rescheduleNotification(item.notificationId).then((response) => {
+                this.createNotificationSuccess({
+                    title: this.$tc('adyen.reprocessNotification'),
+                    message: this.$tc('adyen.notificationRescheduleSuccess')
+                });
+
+                this.fetchNotifications();
             });
         }
     },

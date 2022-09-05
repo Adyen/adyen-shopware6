@@ -64,7 +64,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
     ];
 
-    private const MAX_ERROR_COUNT = 3;
+    public const MAX_ERROR_COUNT = 3;
 
     /**
      * @var NotificationService
@@ -238,6 +238,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                         $notification->getMerchantReference(),
                         $scheduledProcessingTime
                     );
+                } else {
+                    $this->markAsDone($notification->getId(), $notification->getMerchantReference());
                 }
 
                 continue;
@@ -248,6 +250,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
                 if ($notification->getErrorCount() < self::MAX_ERROR_COUNT) {
                     $this->rescheduleNotification($notification->getId(), $notification->getMerchantReference());
+                } else {
+                    $this->markAsDone($notification->getId(), $notification->getMerchantReference());
                 }
 
                 continue;

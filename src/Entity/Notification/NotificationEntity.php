@@ -95,7 +95,7 @@ class NotificationEntity extends Entity
     protected $done;
 
     /**
-     * @var string
+     * @var bool
      */
     protected $processing;
 
@@ -307,17 +307,17 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return bool
      */
-    public function getProcessing(): string
+    public function getProcessing(): bool
     {
         return $this->processing;
     }
 
     /**
-     * @param string $processing
+     * @param bool $processing
      */
-    public function setProcessing(string $processing): void
+    public function setProcessing(bool $processing): void
     {
         $this->processing = $processing;
     }

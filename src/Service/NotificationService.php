@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler;
 use DateTimeInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -131,6 +132,14 @@ class NotificationService
         );
     }
 
+    public function getNotificationById($notificationId)
+    {
+        return $this->notificationRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('id', $notificationId)),
+            Context::createDefaultContext()
+        )->first();
+    }
+
     public function getAllNotificationsByOrderNumber(string $orderNumber): EntityCollection
     {
         return $this->notificationRepository->search(
@@ -175,6 +184,36 @@ class NotificationService
             )
             ->addSorting(new FieldSorting('scheduledProcessingTime', FieldSorting::ASCENDING))
             ->setLimit(100),
+            Context::createDefaultContext()
+        )->getEntities();
+    }
+
+    public function getSkippedUnprocessedNotifications(): EntityCollection
+    {
+        $oneDayAgo = (new \DateTime())->sub(new \DateInterval('P1D'));
+
+        return $this->notificationRepository->search(
+            (new Criteria())->addFilter(
+                new EqualsFilter('done', 0),
+                new NotFilter(
+                    NotFilter::CONNECTION_AND,
+                    [ new EqualsFilter('scheduledProcessingTime', null) ]
+                ),
+                new RangeFilter(
+                    'scheduledProcessingTime',
+                    [
+                        RangeFilter::LTE => $oneDayAgo->format('Y-m-d H:i:s')
+                    ]
+                ),
+                new RangeFilter(
+                    'error_count',
+                    [
+                        RangeFilter::LTE => ProcessNotificationsHandler::MAX_ERROR_COUNT
+                    ]
+                )
+            )
+                ->addSorting(new FieldSorting('scheduledProcessingTime', FieldSorting::ASCENDING))
+                ->setLimit(100),
             Context::createDefaultContext()
         )->getEntities();
     }

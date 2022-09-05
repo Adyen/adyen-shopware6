@@ -27,9 +27,9 @@ use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
-use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\CaptureException;
+use Adyen\Shopware\Handlers\NotificationHandler;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
@@ -48,6 +48,7 @@ use Shopware\Core\System\Currency\CurrencyFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\RouterInterface;
 
 /**
  * @RouteScope(scopes={"administration"})
@@ -89,6 +90,11 @@ class AdminController
     private $adyenPaymentCaptureRepository;
 
     /**
+     * @var NotificationHandler;
+     */
+    private $notificationHandler;
+
+    /**
      * AdminController constructor.
      *
      * @param LoggerInterface $logger
@@ -100,6 +106,7 @@ class AdminController
      * @param CaptureService $captureService
      * @param CurrencyFormatter $currencyFormatter
      * @param Currency $currencyUtil
+     * @param NotificationHandler $notificationHandler
      */
     public function __construct(
         LoggerInterface $logger,
@@ -110,7 +117,8 @@ class AdminController
         NotificationService $notificationService,
         CaptureService $captureService,
         CurrencyFormatter $currencyFormatter,
-        Currency $currencyUtil
+        Currency $currencyUtil,
+        NotificationHandler $notificationHandler
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
@@ -121,6 +129,7 @@ class AdminController
         $this->captureService = $captureService;
         $this->currencyFormatter = $currencyFormatter;
         $this->currencyUtil = $currencyUtil;
+        $this->notificationHandler = $notificationHandler;
     }
 
     /**
@@ -357,6 +366,10 @@ class AdminController
                     : NotificationEntity::NOTIFICATION_STATUS_PENDING,
                 'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
                 'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'notificationId' => $notification->getId(),
+                'canBeRescheduled' => $this->notificationHandler->canBeRescheduled($notification),
+                'errorCount' => $notification->getErrorCount(),
+                'errorMessage' => $notification->getErrorMessage()
             ];
         }
 
@@ -394,5 +407,31 @@ class AdminController
         }
 
         return $result;
+    }
+
+    /**
+     * @Route(
+     *     "/api/adyen/reschedule-notification/{notificationId}",
+     *     name="admin.action.adyen.reschedule-notification",
+     *     methods={"GET"}
+     * )
+     *
+     * @param string $notificationId
+     * @return JsonResponse
+     */
+    public function rescheduleNotification(string $notificationId): JsonResponse
+    {
+        $notification = $this->notificationService->getNotificationById($notificationId);
+
+        if ($this->notificationHandler->canBeRescheduled($notification)) {
+            $scheduledProcessingTime = $this->notificationHandler->calculateScheduledProcessingTime($notification, true);
+            // If notification was stuck in state Processing=true, reset the state and reschedule.
+            if ($notification->getProcessing()) {
+                $this->notificationService->changeNotificationState($notification->getId(), 'processing', false);
+            }
+            $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
+        }
+
+        return new JsonResponse($notificationId);
     }
 }
