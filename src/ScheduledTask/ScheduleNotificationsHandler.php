@@ -80,7 +80,10 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
         $skippedNotifications = $this->notificationService->getSkippedUnprocessedNotifications();
 
         foreach ($skippedNotifications->getElements() as $notification) {
-            $scheduledProcessingTime = $this->notificationHandler->calculateScheduledProcessingTime($notification, true);
+            $scheduledProcessingTime = $this->notificationHandler->calculateScheduledProcessingTime(
+                $notification,
+                true
+            );
             // If notification was stuck in state Processing=true, reset the state and reschedule.
             if ($notification->getProcessing()) {
                 $this->notificationService->changeNotificationState($notification->getId(), 'processing', false);

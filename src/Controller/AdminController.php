@@ -424,7 +424,10 @@ class AdminController
         $notification = $this->notificationService->getNotificationById($notificationId);
 
         if ($this->notificationHandler->canBeRescheduled($notification)) {
-            $scheduledProcessingTime = $this->notificationHandler->calculateScheduledProcessingTime($notification, true);
+            $scheduledProcessingTime = $this->notificationHandler->calculateScheduledProcessingTime(
+                $notification,
+                true
+            );
             // If notification was stuck in state Processing=true, reset the state and reschedule.
             if ($notification->getProcessing()) {
                 $this->notificationService->changeNotificationState($notification->getId(), 'processing', false);
