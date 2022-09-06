@@ -565,7 +565,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 //Getting line price
                 $price = $orderLine->getPrice();
 
-
                 if (empty($orderLine->getProductId()) || $orderLine->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
                     continue;
                 }
@@ -587,6 +586,15 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $transaction->getOrder()->getCurrencyId(),
                     $salesChannelContext->getContext()
                 );
+
+                if (!is_null($product->getSeoUrls())) {
+                    $hostname = $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl();
+                    $productPath = $product->getSeoUrls()->first()->getPathInfo();
+                    $productUrl = str_replace('//', '/', $hostname . $productPath);
+                } else {
+                    $productUrl = null;
+                }
+
                 //Building open invoice line
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
@@ -602,7 +610,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $taxRate * 100,
                     $orderLine->getQuantity(),
                     '',
-                    $productNumber
+                    $productNumber,
+                    $productUrl,
+                    $product->getCover() ? $product->getCover()->getMedia()->getUrl() : null,
+                    $this->currency->sanitize(
+                        $price->getUnitPrice(),
+                        $currency
+                    ),
+                    $product->getCategories() ? $product->getCategories()->first()->getName() : null
                 );
             }
 
@@ -692,6 +707,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     private function getProduct(string $productId, Context $context): ProductEntity
     {
         $criteria = new Criteria([$productId]);
+
+        $criteria->addAssociation('seoUrls');
+        $criteria->addAssociation('cover');
+        $criteria->addAssociation('categories');
 
         /** @var ProductCollection $productCollection */
         $productCollection = $this->productRepository->search($criteria, $context);
