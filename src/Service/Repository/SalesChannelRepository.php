@@ -2,6 +2,7 @@
 
 namespace Adyen\Shopware\Service\Repository;
 
+use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -39,17 +40,10 @@ class SalesChannelRepository
      * @param SalesChannelContext $context
      * @return string
      */
-    public function getSalesChannelUrl(SalesChannelContext $context): string
+    public function getHrefLangDomainUrl(SalesChannelContext $context): string
     {
         $criteria = new Criteria();
-
-        if (!empty($context->getSalesChannel()->getHreflangDefaultDomainId())) {
-            $criteria->addFilter(new EqualsFilter('id', $context->getSalesChannel()->getHreflangDefaultDomainId()));
-        } else {
-            $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
-            $criteria->setLimit(1);
-        }
-
+        $criteria->addFilter(new EqualsFilter('id', $context->getSalesChannel()->getHreflangDefaultDomainId()));
         $domainEntity = $this->domainRepository
             ->search($criteria, $context->getContext())
             ->first();
