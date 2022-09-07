@@ -628,7 +628,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         if (!empty($stateDataAdditionalData['origin'])) {
             $request['origin'] = $stateDataAdditionalData['origin'];
         } else {
-            $request['origin'] = $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext);
+            // Use Hreflang default domain if set, otherwise get origin from the request
+            if (!empty($salesChannelContext->getSalesChannel()->getHreflangDefaultDomainId())) {
+                $origin = $this->salesChannelRepository->getHrefLangDomainUrl($salesChannelContext);
+            } else {
+                $originScheme = parse_url($transaction->getReturnUrl(), PHP_URL_SCHEME);
+                $originHost = parse_url($transaction->getReturnUrl(), PHP_URL_HOST);
+                $origin = $originScheme.'://'.$originHost;
+            }
+
+            $request['origin'] = $origin;
         }
 
         $request['additionalData']['allow3DS2'] = true;
