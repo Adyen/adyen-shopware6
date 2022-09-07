@@ -61,6 +61,7 @@ use Shopware\Core\System\Currency\CurrencyCollection;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Framework\Routing\Router;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -318,7 +319,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction));
+        return new RedirectResponse($this->getAdyenReturnUrl($transaction, $salesChannelContext));
     }
 
     /**
@@ -548,7 +549,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $this->getAdyenReturnUrl($transaction),
+            $this->getAdyenReturnUrl($transaction, $salesChannelContext),
             $request
         );
 
@@ -628,15 +629,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         if (!empty($stateDataAdditionalData['origin'])) {
             $request['origin'] = $stateDataAdditionalData['origin'];
         } else {
-            // Use Hreflang default domain if set, otherwise get origin from the request
-            if (!empty($salesChannelContext->getSalesChannel()->getHreflangDefaultDomainId())) {
-                $origin = $this->salesChannelRepository->getHrefLangDomainUrl($salesChannelContext);
-            } else {
-                $originScheme = parse_url($transaction->getReturnUrl(), PHP_URL_SCHEME);
-                $originHost = parse_url($transaction->getReturnUrl(), PHP_URL_HOST);
-                $origin = $originScheme.'://'.$originHost;
-            }
-
+            $origin = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
             $request['origin'] = $origin;
         }
 
@@ -660,7 +653,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @return string
      * @throws AsyncPaymentProcessException
      */
-    private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction, SalesChannelContext $context): string
     {
         // Parse the original return URL to retrieve the query parameters
         $returnUrlQuery = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
@@ -673,19 +666,21 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
         }
 
+        $baseUrl = $this->salesChannelRepository->getCurrentDomainUrl($context);
+
         // Generate the custom Adyen endpoint to receive the redirect from the issuer page
-        $adyenReturnUrl = $this->router->generate(
+        $adyenReturnPath = $this->router->generate(
             'payment.adyen.redirect_result',
             [
                 RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
                     'payment.finalize.transaction'
                 )->getValue()
             ],
-            RouterInterface::ABSOLUTE_URL
+            RouterInterface::ABSOLUTE_PATH
         );
 
         // Create the adyen redirect result URL with the same query as the original return URL
-        return $adyenReturnUrl . '&' . $returnUrlQuery;
+        return $baseUrl . $adyenReturnPath . '&' . $returnUrlQuery;
     }
 
     /**
