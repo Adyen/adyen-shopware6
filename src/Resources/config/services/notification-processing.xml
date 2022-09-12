@@ -39,7 +39,6 @@
         <service id="Adyen\Shopware\Service\NotificationService">
             <argument type="service" id="adyen_notification.repository"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\NotificationHandler"></service>
 
         <!--Scheduled Tasks-->
         <service id="Adyen\Shopware\ScheduledTask\ProcessNotifications">
@@ -66,7 +65,6 @@
         <service id="Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler">
             <argument type="service" id="scheduled_task.repository" />
             <argument type="service" id="Adyen\Shopware\Service\NotificationService"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\NotificationHandler"/>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
