@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\ScheduledTask;
 
-use Adyen\Shopware\Handlers\NotificationHandler;
 use Adyen\Shopware\Service\NotificationService;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -35,23 +34,16 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
     use LoggerAwareTrait;
 
     /**
-     * @var NotificationHandler
-     */
-    private $notificationHandler;
-
-    /**
      * @var NotificationService
      */
     private $notificationService;
 
     public function __construct(
         EntityRepositoryInterface $scheduledTaskRepository,
-        NotificationService $notificationService,
-        NotificationHandler $notificationHandler
+        NotificationService $notificationService
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
-        $this->notificationHandler = $notificationHandler;
     }
 
     public static function getHandledMessages(): iterable
@@ -68,7 +60,7 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
         }
 
         foreach ($unscheduledNotifications->getElements() as $notification) {
-            $scheduledProcessingTime = $this->notificationHandler->calculateScheduledProcessingTime($notification);
+            $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime($notification);
             $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
         }
 
@@ -80,7 +72,7 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
         $skippedNotifications = $this->notificationService->getSkippedUnprocessedNotifications();
 
         foreach ($skippedNotifications->getElements() as $notification) {
-            $scheduledProcessingTime = $this->notificationHandler->calculateScheduledProcessingTime(
+            $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime(
                 $notification,
                 true
             );

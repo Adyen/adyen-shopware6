@@ -29,7 +29,6 @@ use Adyen\Service\Checkout;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\CaptureException;
-use Adyen\Shopware\Handlers\NotificationHandler;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
@@ -90,11 +89,6 @@ class AdminController
     private $adyenPaymentCaptureRepository;
 
     /**
-     * @var NotificationHandler;
-     */
-    private $notificationHandler;
-
-    /**
      * AdminController constructor.
      *
      * @param LoggerInterface $logger
@@ -106,7 +100,6 @@ class AdminController
      * @param CaptureService $captureService
      * @param CurrencyFormatter $currencyFormatter
      * @param Currency $currencyUtil
-     * @param NotificationHandler $notificationHandler
      */
     public function __construct(
         LoggerInterface $logger,
@@ -117,8 +110,7 @@ class AdminController
         NotificationService $notificationService,
         CaptureService $captureService,
         CurrencyFormatter $currencyFormatter,
-        Currency $currencyUtil,
-        NotificationHandler $notificationHandler
+        Currency $currencyUtil
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
@@ -129,7 +121,6 @@ class AdminController
         $this->captureService = $captureService;
         $this->currencyFormatter = $currencyFormatter;
         $this->currencyUtil = $currencyUtil;
-        $this->notificationHandler = $notificationHandler;
     }
 
     /**
@@ -367,7 +358,7 @@ class AdminController
                 'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
                 'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
                 'notificationId' => $notification->getId(),
-                'canBeRescheduled' => $this->notificationHandler->canBeRescheduled($notification),
+                'canBeRescheduled' => $this->notificationService->canBeRescheduled($notification),
                 'errorCount' => $notification->getErrorCount(),
                 'errorMessage' => $notification->getErrorMessage()
             ];
@@ -423,8 +414,8 @@ class AdminController
     {
         $notification = $this->notificationService->getNotificationById($notificationId);
 
-        if ($this->notificationHandler->canBeRescheduled($notification)) {
-            $scheduledProcessingTime = $this->notificationHandler->calculateScheduledProcessingTime(
+        if ($this->notificationService->canBeRescheduled($notification)) {
+            $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime(
                 $notification,
                 true
             );
