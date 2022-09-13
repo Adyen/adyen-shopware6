@@ -158,6 +158,14 @@ export default {
         'beautycadeaukaart': 'handler_adyen_beautygiftcardpaymentmethodhandler',
         'svs': 'handler_adyen_svsgiftcardpaymentmethodhandler',
         'fashioncheque': 'handler_adyen_fashionchequegiftcardpaymentmethodhandler',
-        'decadeaukaart': 'handler_adyen_decadeaukaartgiftcardpaymentmethodhandler'
+        'decadeaukaart': 'handler_adyen_decadeaukaartgiftcardpaymentmethodhandler',
+        'mbway': 'handler_adyen_mbwaypaymentmethodhandler',
+        'multibanco': 'handler_adyen_multibancopaymentmethodhandler',
+        'wechatpayQR': 'handler_adyen_wechatpayqrpaymentmethodhandler',
+        'wechatpayWeb': 'handler_adyen_wechatpaywebpaymentmethodhandler',
+        'mobilepay': 'handler_adyen_mobilepaypaymentmethodhandler',
+        'vipps': 'handler_adyen_vippspaymentmethodhandler',
+        'affirm': 'handler_adyen_affirmpaymentmethodhandler',
+        'paybright': 'handler_adyen_paybrightpaymentmethodhandler'
     }
 }
