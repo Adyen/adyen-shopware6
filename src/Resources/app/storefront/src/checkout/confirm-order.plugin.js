@@ -249,14 +249,14 @@ export default class ConfirmOrderPlugin extends Plugin {
     handlePaymentAction(response) {
         try {
             const paymentResponse = JSON.parse(response);
-            if (paymentResponse.isFinal) {
+            if (paymentResponse.isFinal || paymentResponse.action.type === 'voucher') {
                 location.href = this.returnUrl;
             }
             if (!!paymentResponse.action) {
                 this.adyenCheckout
                     .createFromAction(paymentResponse.action)
                     .mount('[data-adyen-payment-action-container]');
-                const modalActionTypes = ['threeDS2', 'qrCode', 'voucher']
+                const modalActionTypes = ['threeDS2', 'qrCode']
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
                     $('[data-adyen-payment-action-modal]').modal({show: true});
                 }
