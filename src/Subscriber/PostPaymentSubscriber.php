@@ -143,8 +143,14 @@ class PostPaymentSubscriber implements EventSubscriberInterface
 
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
 
-        $backgroundImageUrl = $this->configurationService->getAdyenGivingBackgroundUrl($salesChannelId, $salesChannelContext->getContext());
-        $charityLogoUrl = $this->configurationService->getAdyenGivingCharityLogo($salesChannelId, $salesChannelContext->getContext());
+        $backgroundImageUrl = $this->configurationService->getAdyenGivingBackgroundUrl(
+            $salesChannelId,
+            $salesChannelContext->getContext()
+        );
+        $charityLogoUrl = $this->configurationService->getAdyenGivingCharityLogo(
+            $salesChannelId,
+            $salesChannelContext->getContext()
+        );
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amounts = $this->configurationService->getAdyenGivingDonationAmounts($salesChannelId);
 
