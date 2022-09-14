@@ -24,7 +24,8 @@ export default {
     updatablePaymentMethods: [
         'scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'bcmc_mobile', 'blik', 'eps', 'facilypay_3x',
         'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay',
-        'ratepay_directdebit', 'giftcard'
+        'ratepay_directdebit', 'giftcard', 'paybright', 'affirm', 'multibanco', 'mbway', 'vipps', 'mobilepay',
+        'wechatpayQR', 'wechatpayWeb'
     ],
     componentsWithPayButton: {
         'applepay': {

@@ -27,6 +27,8 @@ namespace Adyen\Shopware\Handlers;
 
 class PayBrightPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
+    public static $isOpenInvoice = true;
+
     public static function getPaymentMethodCode()
     {
         return 'paybright';

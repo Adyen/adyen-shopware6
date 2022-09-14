@@ -256,7 +256,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 this.adyenCheckout
                     .createFromAction(paymentResponse.action)
                     .mount('[data-adyen-payment-action-container]');
-                const modalActionTypes = ['threeDS2', 'qrCode']
+                const modalActionTypes = ['threeDS2', 'qrCode', 'voucher']
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
                     $('[data-adyen-payment-action-modal]').modal({show: true});
                 }

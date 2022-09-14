@@ -417,7 +417,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $shippingState = $salesChannelContext->getShippingLocation()
                     ->getAddress()->getCountryState()->getShortCode();
             } else {
-                $shippingState = '';
+                $shippingState = 'n/a';
             }
 
             $shippingStreetAddress = $this->getSplitStreetAddressHouseNumber(
@@ -440,7 +440,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $billingState = $salesChannelContext->getCustomer()
                     ->getActiveBillingAddress()->getCountryState()->getShortCode();
             } else {
-                $billingState = '';
+                $billingState = 'n/a';
             }
 
             $billingStreetAddress = $this->getSplitStreetAddressHouseNumber(
