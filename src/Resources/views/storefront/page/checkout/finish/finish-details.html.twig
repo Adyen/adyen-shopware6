@@ -1,9 +1,16 @@
 {% sw_extends '@Storefront/storefront/page/checkout/finish/finish-details.html.twig' %}
-{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\AdyenGivingSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PostPaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
 
 {% block page_checkout_finish_data %}
 
     {{ parent() }}
+
+    {% if adyenFrontendData and (adyenFrontendData.givingEnabled or adyenFrontendData.action) %}
+        <link rel="stylesheet" href="{{ asset('bundles/adyenpaymentshopware6/css/adyen.css', 'asset') }}">
+        <script type="text/javascript" src="{{ asset('bundles/adyenpaymentshopware6/js/adyen.js', 'asset') }}"></script>
+    {% endif %}
+
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-success-action.html.twig' %}
 
     {% sw_include '@AdyenPaymentShopware6/storefront/component/adyen-giving/adyen-giving-component.html.twig' %}
 
