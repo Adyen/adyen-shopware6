@@ -60,10 +60,23 @@
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
         </service>
+        <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
+            <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
+            <argument type="service" id="Adyen\Shopware\Service\RefundService"/>
+            <argument type="service"
+                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            </call>
+        </service>
 
         <!--Commands-->
         <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
             <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
+            <tag name="console.command"/>
+        </service>
+        <service id="Adyen\Shopware\Command\ProcessWebhooksCommand">
+            <argument type="service" id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler"/>
             <tag name="console.command"/>
         </service>
         <!--Event subscribers-->
