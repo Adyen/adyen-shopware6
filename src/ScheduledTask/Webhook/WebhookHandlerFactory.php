@@ -106,22 +106,11 @@ class WebhookHandlerFactory
                     self::$refundService
                 );
                 break;
-            case EventCodes::RECURRING_CONTRACT:
-            case EventCodes::MANUAL_REVIEW_ACCEPT:
-            case EventCodes::MANUAL_REVIEW_REJECT:
-            case EventCodes::OFFER_CLOSED:
-            case EventCodes::CANCELLED:
-            case EventCodes::PENDING:
+            default:
                 $handler = new DefaultWebhookHandler(
                     self::$logger
                 );
                 break;
-            default:
-                $exceptionMessage = sprintf(
-                    'Unknown webhook type: %s. This type is not yet handled by the Adyen Magento plugin', $eventCode
-                );
-
-                throw new AdyenException($exceptionMessage);
         }
 
         return $handler;
