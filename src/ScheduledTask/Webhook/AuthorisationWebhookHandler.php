@@ -80,8 +80,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
     ) {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
-        }
-        else {
+        } else {
             $this->handleFailedNotification($orderTransactionEntity, $context);
         }
     }

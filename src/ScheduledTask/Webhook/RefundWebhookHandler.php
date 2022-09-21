@@ -43,7 +43,8 @@ class RefundWebhookHandler implements WebhookHandlerInterface
      * @param RefundService $refundService
      * @return void
      */
-    public function __construct(RefundService $refundService) {
+    public function __construct(RefundService $refundService)
+    {
         $this->refundService = $refundService;
     }
 
@@ -65,8 +66,7 @@ class RefundWebhookHandler implements WebhookHandlerInterface
     ) {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
-        }
-        else {
+        } else {
             $this->handleFailedNotification($orderTransactionEntity, $notificationEntity);
         }
     }
@@ -95,7 +95,12 @@ class RefundWebhookHandler implements WebhookHandlerInterface
             throw new \Exception('The refunded amount is greater than the transaction amount.');
         }
 
-        $this->refundService->handleRefundNotification($orderTransactionEntity->getOrder(), $notificationEntity, RefundEntity::STATUS_SUCCESS);
+        $this->refundService->handleRefundNotification(
+            $orderTransactionEntity->getOrder(),
+            $notificationEntity,
+            RefundEntity::STATUS_SUCCESS
+        );
+
         $transitionState = $refundedAmount < $transactionAmount
             ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
             : OrderTransactionStates::STATE_REFUNDED;
@@ -113,6 +118,10 @@ class RefundWebhookHandler implements WebhookHandlerInterface
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity
     ) {
-        $this->refundService->handleRefundNotification($orderTransactionEntity->getOrder(), $notificationEntity, RefundEntity::STATUS_FAILED);
+        $this->refundService->handleRefundNotification(
+            $orderTransactionEntity->getOrder(),
+            $notificationEntity,
+            RefundEntity::STATUS_FAILED
+        );
     }
 }

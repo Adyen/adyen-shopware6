@@ -44,7 +44,8 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
      * @param RefundService $refundService
      * @return void
      */
-    public function __construct(RefundService $refundService) {
+    public function __construct(RefundService $refundService)
+    {
         $this->refundService = $refundService;
     }
 
@@ -71,8 +72,7 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
             }
 
             // TODO-WEBHOOK:: Implement cancel success/fail flow for notification
-        }
-        else {
+        } else {
             // WH processor returns STATE_PAID for unsuccessful REFUND notifications.
             if ($state === PaymentStates::STATE_PAID) {
                 $this->handleFailedRefundNotification($orderTransactionEntity, $notificationEntity);
@@ -101,7 +101,11 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
             throw new \Exception('The refunded amount is greater than the transaction amount.');
         }
 
-        $this->refundService->handleRefundNotification($orderTransactionEntity->getOrder(), $notificationEntity, RefundEntity::STATUS_SUCCESS);
+        $this->refundService->handleRefundNotification(
+            $orderTransactionEntity->getOrder(),
+            $notificationEntity,
+            RefundEntity::STATUS_SUCCESS
+        );
         $transitionState = $refundedAmount < $transactionAmount
             ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
             : OrderTransactionStates::STATE_REFUNDED;
@@ -117,6 +121,10 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
      */
     private function handleFailedRefundNotification($orderTransactionEntity, $notificationEntity)
     {
-        $this->refundService->handleRefundNotification($orderTransactionEntity->getOrder(), $notificationEntity, RefundEntity::STATUS_FAILED);
+        $this->refundService->handleRefundNotification(
+            $orderTransactionEntity->getOrder(),
+            $notificationEntity,
+            RefundEntity::STATUS_FAILED
+        );
     }
 }

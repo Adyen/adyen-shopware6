@@ -174,7 +174,13 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             try {
                 $webhookHandler = self::$webhookHandlerFactory::create($notification->getEventCode());
-                $webhookHandler->handleWebhook($orderTransaction, $notification, $state, $currentTransactionState, $context);
+                $webhookHandler->handleWebhook(
+                    $orderTransaction,
+                    $notification,
+                    $state,
+                    $currentTransactionState,
+                    $context
+                );
             } catch (CaptureException $exception) {
                 $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
                 $this->logNotificationFailure($notification, $exception->getMessage());

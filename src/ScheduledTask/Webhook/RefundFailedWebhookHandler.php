@@ -41,7 +41,8 @@ class RefundFailedWebhookHandler implements WebhookHandlerInterface
      * @param RefundService $refundService
      * @return void
      */
-    public function __construct(RefundService $refundService) {
+    public function __construct(RefundService $refundService)
+    {
         $this->refundService = $refundService;
     }
 
@@ -61,6 +62,10 @@ class RefundFailedWebhookHandler implements WebhookHandlerInterface
         string $currentTransactionState,
         Context $context
     ) {
-        $this->refundService->handleRefundNotification($orderTransactionEntity->getOrder(), $notificationEntity, RefundEntity::STATUS_FAILED);
+        $this->refundService->handleRefundNotification(
+            $orderTransactionEntity->getOrder(),
+            $notificationEntity,
+            RefundEntity::STATUS_FAILED
+        );
     }
 }
