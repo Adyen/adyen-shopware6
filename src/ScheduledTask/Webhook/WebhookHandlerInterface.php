@@ -30,6 +30,14 @@ use Shopware\Core\Framework\Context;
 
 interface WebhookHandlerInterface
 {
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param NotificationEntity $notificationEntity
+     * @param string $state
+     * @param string $currentTransactionState
+     * @param Context $context
+     * @return mixed
+     */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity,

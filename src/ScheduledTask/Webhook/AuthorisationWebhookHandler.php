@@ -26,14 +26,17 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\CaptureService;
-use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Framework\Context;
 
 class AuthorisationWebhookHandler implements WebhookHandlerInterface
 {
-    use LoggerAwareTrait;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * @var CaptureService
@@ -45,14 +48,29 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      */
     private $orderTransactionStateHandler;
 
+    /**
+     * @param CaptureService $captureService
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         CaptureService $captureService,
-        OrderTransactionStateHandler $orderTransactionStateHandler
+        OrderTransactionStateHandler $orderTransactionStateHandler,
+        LoggerInterface $logger
     ) {
         $this->captureService = $captureService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
+        $this->logger = $logger;
     }
 
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param NotificationEntity $notificationEntity
+     * @param string $state
+     * @param string $currentTransactionState
+     * @param Context $context
+     * @return mixed|void
+     */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity,
@@ -68,6 +86,13 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         }
     }
 
+    /**
+     * @param $orderTransaction
+     * @param $notification
+     * @param $context
+     * @return void
+     * @throws \Adyen\Shopware\Exception\CaptureException
+     */
     private function handleSuccessfulNotification($orderTransaction, $notification, $context)
     {
         $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
@@ -93,6 +118,11 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         }
     }
 
+    /**
+     * @param $orderTransactionEntity
+     * @param $context
+     * @return void
+     */
     private function handleFailedNotification($orderTransactionEntity, $context)
     {
         $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);

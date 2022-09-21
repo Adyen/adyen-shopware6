@@ -25,25 +25,23 @@
 namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
-use Adyen\Shopware\Service\CaptureService;
-use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Framework\Context;
 
 class DefaultWebhookHandler implements WebhookHandlerInterface
 {
-    use LoggerAwareTrait;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
-     * @var CaptureService
+     * @param LoggerInterface $logger
      */
-    private $captureService;
-
-    /**
-     * @var OrderTransactionStateHandler
-     */
-    protected $orderTransactionStateHandler;
+    public function __construct(LoggerInterface $logger) {
+        $this->logger = $logger;
+    }
 
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -52,6 +50,9 @@ class DefaultWebhookHandler implements WebhookHandlerInterface
         string $currentTransactionState,
         Context $context
     ) {
-        // Do nothing
+        $this->logger->info(
+            sprintf('Notification %s cannot be handled by the plugin.', $notificationEntity->getEventCode()),
+            ['notification' => $notificationEntity->getVars()]
+        );
     }
 }

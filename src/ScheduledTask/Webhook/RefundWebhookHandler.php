@@ -28,15 +28,12 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Util\Currency;
-use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 
 class RefundWebhookHandler implements WebhookHandlerInterface
 {
-    use LoggerAwareTrait;
-
     /**
      * @var RefundService
      */
@@ -74,12 +71,18 @@ class RefundWebhookHandler implements WebhookHandlerInterface
         }
     }
 
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param NotificationEntity $notificationEntity
+     * @param Context $context
+     * @return void
+     * @throws \Adyen\AdyenException
+     */
     private function handleSuccessfulNotification(
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity,
         Context $context
     ) {
-        // TODO-WEBHOOK:: Create an abstract method for successfull refund.
         // Determine whether refund was full or partial.
         $refundedAmount = (int) $notificationEntity->getAmountValue();
 
@@ -100,6 +103,12 @@ class RefundWebhookHandler implements WebhookHandlerInterface
         $this->refundService->doRefund($orderTransactionEntity, $transitionState, $context);
     }
 
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param NotificationEntity $notificationEntity
+     * @return void
+     * @throws \Adyen\AdyenException
+     */
     private function handleFailedNotification(
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity

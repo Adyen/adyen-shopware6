@@ -92,7 +92,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private static $webhookHandlerFactory;
 
-    /** @var array Map Shopware transaction states to payment states in the webhook module. */
+    /**
+     * @var array Map Shopware transaction states to payment states in the webhook module.
+     */
     const WEBHOOK_MODULE_STATE_MAPPING = [
         OrderTransactionStates::STATE_OPEN => PaymentStates::STATE_NEW,
         OrderTransactionStates::STATE_AUTHORIZED => PaymentStates::STATE_PENDING,
@@ -103,6 +105,15 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderTransactionStates::STATE_PARTIALLY_REFUNDED => PaymentStates::STATE_PARTIALLY_REFUNDED,
     ];
 
+    /**
+     * @param EntityRepositoryInterface $scheduledTaskRepository
+     * @param NotificationService $notificationService
+     * @param OrderRepository $orderRepository
+     * @param EntityRepositoryInterface $paymentMethodRepository
+     * @param OrderTransactionRepository $orderTransactionRepository
+     * @param CaptureService $captureService
+     * @param WebhookHandlerFactory $webhookHandlerFactory
+     */
     public function __construct(
         EntityRepositoryInterface $scheduledTaskRepository,
         NotificationService $notificationService,
@@ -196,6 +207,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->logger->info('Processed ' . $notifications->count() . ' notifications.');
     }
 
+    /**
+     * @param $notification
+     * @param $currentTransactionState
+     * @return \Adyen\Webhook\Processor\ProcessorInterface|null
+     */
     private function createProcessor($notification, $currentTransactionState)
     {
         try {
@@ -220,6 +236,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         }
     }
 
+    /**
+     * @param $orderTransaction
+     * @param $notification
+     * @return mixed|string|null
+     */
     private function getCurrentTransactionState($orderTransaction, $notification)
     {
         $currentTransactionState = self::WEBHOOK_MODULE_STATE_MAPPING[
@@ -239,6 +260,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         }
     }
 
+    /**
+     * @param $order
+     * @param $notification
+     * @param $logContext
+     * @return \Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity|null
+     */
     private function getOrderTransaction($order, $notification, $logContext)
     {
         $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
@@ -261,6 +288,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         }
     }
 
+    /**
+     * @param $notification
+     * @param $context
+     * @param $logContext
+     * @return \Shopware\Core\Checkout\Order\OrderEntity|null
+     */
     private function getOrder($notification, $context, $logContext)
     {
         $order = $this->orderRepository->getOrderByOrderNumber(
@@ -280,12 +313,22 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         }
     }
 
+    /**
+     * @param string $notificationId
+     * @param string $merchantReference
+     * @return void
+     */
     private function markAsProcessing(string $notificationId, string $merchantReference)
     {
         $this->notificationService->changeNotificationState($notificationId, 'processing', true);
         $this->logger->debug("Payment notification for order {$merchantReference} marked as processing.");
     }
 
+    /**
+     * @param string $notificationId
+     * @param string $merchantReference
+     * @return void
+     */
     private function markAsDone(string $notificationId, string $merchantReference)
     {
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
@@ -293,6 +336,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->logger->debug("Payment notification for order {$merchantReference} marked as done.");
     }
 
+    /**
+     * @param string $notificationId
+     * @param string $merchantReference
+     * @param \DateTime|null $dateTime
+     * @return void
+     */
     private function rescheduleNotification(
         string $notificationId,
         string $merchantReference,

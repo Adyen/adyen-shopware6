@@ -28,12 +28,15 @@ use Adyen\AdyenException;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Webhook\EventCodes;
-use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 
 class WebhookHandlerFactory
 {
-    use LoggerAwareTrait;
+    /**
+     * @var LoggerInterface
+     */
+    private static $logger;
 
     /**
      * @var CaptureService
@@ -52,32 +55,40 @@ class WebhookHandlerFactory
 
     /**
      * @param CaptureService $captureService
+     * @param RefundService $refundService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
-     * @return void
+     * @param LoggerInterface $logger
      */
     public function __construct(
         CaptureService $captureService,
         RefundService $refundService,
-        OrderTransactionStateHandler $orderTransactionStateHandler
+        OrderTransactionStateHandler $orderTransactionStateHandler,
+        LoggerInterface $logger
     ) {
         self::$captureService = $captureService;
         self::$orderTransactionStateHandler = $orderTransactionStateHandler;
         self::$refundService = $refundService;
+        self::$logger = $logger;
     }
 
+    /**
+     * @throws AdyenException
+     */
     public static function create(string $eventCode)
     {
         switch ($eventCode) {
             case EventCodes::AUTHORISATION:
                 $handler = new AuthorisationWebhookHandler(
                     self::$captureService,
-                    self::$orderTransactionStateHandler
+                    self::$orderTransactionStateHandler,
+                    self::$logger
                 );
                 break;
             case EventCodes::CAPTURE:
                 $handler = new CaptureWebhookHandler(
                     self::$captureService,
-                    self::$orderTransactionStateHandler
+                    self::$orderTransactionStateHandler,
+                    self::$logger
                 );
                 break;
             case EventCodes::CANCEL_OR_REFUND:
@@ -99,8 +110,11 @@ class WebhookHandlerFactory
             case EventCodes::MANUAL_REVIEW_ACCEPT:
             case EventCodes::MANUAL_REVIEW_REJECT:
             case EventCodes::OFFER_CLOSED:
+            case EventCodes::CANCELLED:
             case EventCodes::PENDING:
-                $handler = new DefaultWebhookHandler();
+                $handler = new DefaultWebhookHandler(
+                    self::$logger
+                );
                 break;
             default:
                 $exceptionMessage = sprintf(
