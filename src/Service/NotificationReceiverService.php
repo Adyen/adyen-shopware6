@@ -177,11 +177,13 @@ class NotificationReceiverService
                     $this->notificationService->insertNotification($notificationItem);
                     return true;
                 } catch (\Exception $exception) {
-                    $this->logger->error('Error occurred while saving notification to database',
+                    $this->logger->error(
+                        'Error occurred while saving notification to database',
                         [
                             'pspReference' => $notificationItem['pspReference'],
                             'merchantReference' => $notificationItem['merchantReference']
-                        ]);
+                        ]
+                    );
                     return false;
                 }
             } else {
