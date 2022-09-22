@@ -109,11 +109,6 @@
         <service id="Adyen\Shopware\Service\PaymentMethodsFilterService">
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService" />
         </service>
-        <!--Shopware Services wiring-->
-        <service id="Shopware\Core\Checkout\Payment\Cart\PaymentHandler\DefaultPayment">
-            <argument type="service"
-                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-        </service>
         <!--Service decorators-->
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"
                  decorates="Shopware\Storefront\Framework\Cookie\CookieProviderInterface">
