@@ -173,8 +173,19 @@ class NotificationReceiverService
 
             // check if notification already exists
             if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
-                $this->notificationService->insertNotification($notificationItem);
-                return true;
+                try {
+                    $this->notificationService->insertNotification($notificationItem);
+                    return true;
+                } catch (\Exception $exception) {
+                    $this->logger->error(
+                        'Error occurred while saving notification to database',
+                        [
+                            'pspReference' => $notificationItem['pspReference'],
+                            'merchantReference' => $notificationItem['merchantReference']
+                        ]
+                    );
+                    return false;
+                }
             } else {
                 // duplicated so do nothing but return accepted to Adyen
                 $this->logger->info('Duplicated notification received, skipped.');
