@@ -69,7 +69,8 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
-     * @return mixed|void
+     * @return OrderTransactionEntity
+     * @throws \Adyen\Shopware\Exception\CaptureException
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -77,23 +78,28 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         string $state,
         string $currentTransactionState,
         Context $context
-    ) {
+    ): OrderTransactionEntity {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
         } else {
             $this->handleFailedNotification($orderTransactionEntity, $context);
         }
+
+        return $orderTransactionEntity;
     }
 
     /**
-     * @param $orderTransaction
-     * @param $notification
-     * @param $context
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     * @param Context $context
      * @return void
      * @throws \Adyen\Shopware\Exception\CaptureException
      */
-    private function handleSuccessfulNotification($orderTransaction, $notification, $context)
-    {
+    private function handleSuccessfulNotification(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification,
+        Context $context
+    ) {
         $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
 
         if ($this->captureService->requiresManualCapture($paymentMethodHandler)) {
@@ -118,11 +124,11 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
     }
 
     /**
-     * @param $orderTransactionEntity
-     * @param $context
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param Context $context
      * @return void
      */
-    private function handleFailedNotification($orderTransactionEntity, $context)
+    private function handleFailedNotification(OrderTransactionEntity $orderTransactionEntity, Context $context)
     {
         $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
     }

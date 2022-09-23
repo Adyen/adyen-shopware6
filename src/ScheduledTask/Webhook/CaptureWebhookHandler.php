@@ -70,7 +70,7 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
-     * @return mixed|void
+     * @return OrderTransactionEntity
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -78,22 +78,27 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
         string $state,
         string $currentTransactionState,
         Context $context
-    ) {
+    ): OrderTransactionEntity {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
         } else {
             $this->handleFailedNotification($orderTransactionEntity, $notificationEntity, $context);
         }
+
+        return $orderTransactionEntity;
     }
 
     /**
-     * @param $orderTransaction
-     * @param $notification
-     * @param $context
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     * @param Context $context
      * @return void
      */
-    private function handleSuccessfulNotification($orderTransaction, $notification, $context)
-    {
+    private function handleSuccessfulNotification(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification,
+        Context $context
+    ) {
         $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
 
         $this->logger->info(
@@ -110,13 +115,16 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
     }
 
     /**
-     * @param $orderTransactionEntity
-     * @param $notificationEntity
-     * @param $context
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param NotificationEntity $notificationEntity
+     * @param Context $context
      * @return void
      */
-    private function handleFailedNotification($orderTransactionEntity, $notificationEntity, $context)
-    {
+    private function handleFailedNotification(
+        OrderTransactionEntity $orderTransactionEntity,
+        NotificationEntity $notificationEntity,
+        Context $context
+    ) {
         $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
 
         $this->captureService->handleCaptureNotification(

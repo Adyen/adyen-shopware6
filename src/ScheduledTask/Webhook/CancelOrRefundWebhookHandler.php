@@ -55,8 +55,8 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
-     * @return void
-     * @throws \Exception
+     * @return OrderTransactionEntity
+     * @throws \Adyen\AdyenException
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -64,7 +64,7 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
         string $state,
         string $currentTransactionState,
         Context $context
-    ) {
+    ): OrderTransactionEntity {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             // Process refund notification
             if ($state === PaymentStates::STATE_REFUNDED) {
@@ -78,17 +78,22 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
                 $this->handleFailedRefundNotification($orderTransactionEntity, $notificationEntity);
             }
         }
+
+        return $orderTransactionEntity;
     }
 
     /**
-     * @param $orderTransactionEntity
-     * @param $notificationEntity
-     * @param $context
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param NotificationEntity $notificationEntity
+     * @param Context $context
      * @return void
      * @throws \Adyen\AdyenException
      */
-    private function handleSuccessfulRefund($orderTransactionEntity, $notificationEntity, $context)
-    {
+    private function handleSuccessfulRefund(
+        OrderTransactionEntity $orderTransactionEntity,
+        NotificationEntity $notificationEntity,
+        Context $context
+    ) {
         // Determine whether refund was full or partial.
         $refundedAmount = (int) $notificationEntity->getAmountValue();
 
@@ -114,13 +119,15 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
     }
 
     /**
-     * @param $orderTransactionEntity
-     * @param $notificationEntity
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param NotificationEntity $notificationEntity
      * @return void
      * @throws \Adyen\AdyenException
      */
-    private function handleFailedRefundNotification($orderTransactionEntity, $notificationEntity)
-    {
+    private function handleFailedRefundNotification(
+        OrderTransactionEntity $orderTransactionEntity,
+        NotificationEntity $notificationEntity
+    ) {
         $this->refundService->handleRefundNotification(
             $orderTransactionEntity->getOrder(),
             $notificationEntity,

@@ -54,8 +54,8 @@ class RefundWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
-     * @return void
-     * @throws \Exception
+     * @return OrderTransactionEntity
+     * @throws \Adyen\AdyenException
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -63,12 +63,14 @@ class RefundWebhookHandler implements WebhookHandlerInterface
         string $state,
         string $currentTransactionState,
         Context $context
-    ) {
+    ): OrderTransactionEntity {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
         } else {
             $this->handleFailedNotification($orderTransactionEntity, $notificationEntity);
         }
+
+        return $orderTransactionEntity;
     }
 
     /**

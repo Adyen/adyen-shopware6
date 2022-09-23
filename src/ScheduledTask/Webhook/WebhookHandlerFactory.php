@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\ScheduledTask\Webhook;
 
-use Adyen\AdyenException;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Webhook\EventCodes;
@@ -72,7 +71,7 @@ class WebhookHandlerFactory
     }
 
     /**
-     * @throws AdyenException
+     * @param string $eventCode
      */
     public static function create(string $eventCode)
     {

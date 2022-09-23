@@ -44,16 +44,26 @@ class DefaultWebhookHandler implements WebhookHandlerInterface
         $this->logger = $logger;
     }
 
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param NotificationEntity $notificationEntity
+     * @param string $state
+     * @param string $currentTransactionState
+     * @param Context $context
+     * @return OrderTransactionEntity
+     */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity,
         string $state,
         string $currentTransactionState,
         Context $context
-    ) {
+    ): OrderTransactionEntity {
         $this->logger->info(
             sprintf('Notification %s cannot be handled by the plugin.', $notificationEntity->getEventCode()),
             ['notification' => $notificationEntity->getVars()]
         );
+
+        return $orderTransactionEntity;
     }
 }
