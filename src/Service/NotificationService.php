@@ -216,7 +216,7 @@ class NotificationService
                                 new RangeFilter(
                                     'errorCount',
                                     [
-                                        RangeFilter::LTE => ProcessNotificationsHandler::MAX_ERROR_COUNT
+                                        RangeFilter::LT => ProcessNotificationsHandler::MAX_ERROR_COUNT
                                     ]
                                 ),
                                 new EqualsFilter('errorCount', null)
