@@ -32,6 +32,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
@@ -200,16 +201,27 @@ class NotificationService
                     NotFilter::CONNECTION_AND,
                     [ new EqualsFilter('scheduledProcessingTime', null) ]
                 ),
-                new RangeFilter(
-                    'scheduledProcessingTime',
+                new MultiFilter(
+                    MultiFilter::CONNECTION_AND,
                     [
-                        RangeFilter::LTE => $oneDayAgo->format('Y-m-d H:i:s')
-                    ]
-                ),
-                new RangeFilter(
-                    'error_count',
-                    [
-                        RangeFilter::LTE => ProcessNotificationsHandler::MAX_ERROR_COUNT
+                        new RangeFilter(
+                            'scheduledProcessingTime',
+                            [
+                                RangeFilter::LTE => $oneDayAgo->format('Y-m-d H:i:s')
+                            ]
+                        ),
+                        new MultiFilter(
+                            MultiFilter::CONNECTION_OR,
+                            [
+                                new RangeFilter(
+                                    'errorCount',
+                                    [
+                                        RangeFilter::LTE => ProcessNotificationsHandler::MAX_ERROR_COUNT
+                                    ]
+                                ),
+                                new EqualsFilter('errorCount', null)
+                            ]
+                        )
                     ]
                 )
             )
@@ -283,12 +295,15 @@ class NotificationService
      */
     public function canBeRescheduled(NotificationEntity $notification): bool
     {
-        $timeDifferenceInDays = $notification->getScheduledProcessingTime()->diff(new \DateTime())->format('%a');
+        if (!is_null($notification->getScheduledProcessingTime())) {
+            $timeDifferenceInDays = $notification->getScheduledProcessingTime()
+                ->diff(new \DateTime())->format('%a');
 
-        if (!$notification->isDone() && $timeDifferenceInDays >= 1) {
-            return true;
-        } else {
-            return false;
+            if (!$notification->isDone() && $timeDifferenceInDays >= 1) {
+                return true;
+            }
         }
+
+        return false;
     }
 }
