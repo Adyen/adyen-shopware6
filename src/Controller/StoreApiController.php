@@ -37,6 +37,7 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\OrdersService;
+use Adyen\Shopware\Service\OrdersCancelService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use OpenApi\Annotations as OA;
@@ -130,6 +131,10 @@ class StoreApiController
      * @var OrdersService
      */
     private $ordersService;
+    /**
+     * @var OrdersService
+     */
+    private $ordersCancelService;
 
     /**
      * StoreApiController constructor.
@@ -148,7 +153,8 @@ class StoreApiController
      * @param EntityRepositoryInterface $orderTransactionRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsBalanceService $paymentMethodsBalanceService
-     * @param OrdersService $ordersService
+     * @param OrdersService $orderService
+     * @param OrdersCancelService $orderCancelService
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -166,7 +172,8 @@ class StoreApiController
         ConfigurationService $configurationService,
         OrderTransactionRepository $adyenOrderTransactionRepository,
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
-        OrdersService $ordersService
+        OrdersService $ordersService,
+        OrdersCancelService $ordersCancelService
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -184,6 +191,7 @@ class StoreApiController
         $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
+        $this->ordersCancelService = $ordersCancelService;
     }
 
     /**
@@ -233,10 +241,28 @@ class StoreApiController
      */
     public function getOrders(SalesChannelContext $context, Request $request): JsonResponse
     {
+        $orderId = $request->request->get('orderId');
+
+        return new JsonResponse($this->ordersService->getOrders($context, $orderId));
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/orders/cancel",
+     *     name="store-api.action.adyen.orders.cancel",
+     *     methods={"POST"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function getOrdersCancel(SalesChannelContext $context, Request $request): JsonResponse
+    {
         $pspReference = $request->request->get('pspReference');
         $orderData = $request->request->get('orderData');
 
-        return new JsonResponse($this->ordersService->getOrders($context, $pspReference, $orderData));
+
+        return new JsonResponse($this->ordersCancelService->getOrdersCancel($context, $pspReference, $orderData));
     }
 
     /**
