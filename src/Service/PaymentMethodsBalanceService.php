@@ -54,8 +54,12 @@ class PaymentMethodsBalanceService
     }
 
 
-    public function getPaymentMethodsBalance(SalesChannelContext $context, string $type, string $number, string $cvc): array
-    {
+    public function getPaymentMethodsBalance(
+        SalesChannelContext $context,
+        string $type,
+        string $number,
+        string $cvc
+    ): array {
         $responseData = [];
 
         try {
@@ -71,8 +75,12 @@ class PaymentMethodsBalanceService
         return $responseData;
     }
 
-    private function buildPaymentMethodsBalanceRequestData(SalesChannelContext $context, string $type, string $number, string $cvc): array
-    {
+    private function buildPaymentMethodsBalanceRequestData(
+        SalesChannelContext $context,
+        string $type,
+        string $number,
+        string $cvc
+    ): array {
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
