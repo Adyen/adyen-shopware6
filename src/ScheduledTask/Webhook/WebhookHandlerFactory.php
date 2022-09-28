@@ -27,6 +27,7 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Webhook\EventCodes;
+use Adyen\Webhook\Exception\InvalidDataException;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 
@@ -72,6 +73,7 @@ class WebhookHandlerFactory
 
     /**
      * @param string $eventCode
+     * @throws InvalidDataException
      */
     public static function create(string $eventCode)
     {
@@ -106,10 +108,8 @@ class WebhookHandlerFactory
                 );
                 break;
             default:
-                $handler = new DefaultWebhookHandler(
-                    self::$logger
-                );
-                break;
+                $errorMessage = sprintf('Notification %s is not supported by the plugin.', $eventCode);
+                throw new InvalidDataException($errorMessage);
         }
 
         return $handler;

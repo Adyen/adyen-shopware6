@@ -195,6 +195,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 }
 
                 continue;
+            } catch (InvalidDataException $exception) {
+                /*
+                 * This notification can't be recognised and handled by the plugin.
+                 * It will be marked as done.
+                 */
+                $this->logger->info($exception->getMessage(), $logContext);
             } catch (\Exception $exception) {
                 $logContext['errorMessage'] = $exception->getMessage();
                 $this->logger->error('Notification processing failed.', $logContext);
