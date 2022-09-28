@@ -77,7 +77,6 @@ class OrdersService
 
         try {
             $requestData = $this->buildOrdersRequestData($context, $orderId);
-
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
@@ -96,6 +95,12 @@ class OrdersService
         $currency = $order->getCurrency()->getIsoCode();
 //        $amount = $this->currency->sanitize($order->getPrice()->getTotalPrice(), $currency);
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
+
+        if (!$merchantAccount) {
+            $this->logger->error('No Merchant Account has been configured. ' .
+                'Go to the Adyen plugin configuration panel and finish the required setup.');
+            return [];
+        }
 
         $requestData = array(
             "reference" => $orderId,

@@ -49,7 +49,6 @@ class OrdersCancelService
 
         try {
             $requestData = $this->buildOrdersCancelRequestData($context, $orderId);
-
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
@@ -67,6 +66,12 @@ class OrdersCancelService
         $pspReference = $order->getCustomFields()['pspReference'];
         $orderData = $order->getCustomFields()['orderData'];
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
+
+        if (!$merchantAccount) {
+            $this->logger->error('No Merchant Account has been configured. ' .
+                'Go to the Adyen plugin configuration panel and finish the required setup.');
+            return [];
+        }
 
         $requestData = array(
             "order" => [

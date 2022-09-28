@@ -61,7 +61,6 @@ class PaymentMethodsBalanceService
 
         try {
             $requestData = $this->buildPaymentMethodsBalanceRequestData($context, $type, $number, $cvc);
-
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
@@ -76,6 +75,12 @@ class PaymentMethodsBalanceService
     private function buildPaymentMethodsBalanceRequestData(SalesChannelContext $context, string $type, string $number, string $cvc): array
     {
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
+
+        if (!$merchantAccount) {
+            $this->logger->error('No Merchant Account has been configured. ' .
+                'Go to the Adyen plugin configuration panel and finish the required setup.');
+            return [];
+        }
 
         $requestData = array(
             "paymentMethod" => [
