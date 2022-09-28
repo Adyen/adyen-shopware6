@@ -47,7 +47,6 @@ class PaymentMethodsBalanceService
         ConfigurationService $configurationService,
         ClientService $clientService,
         LoggerInterface $logger
-
     ) {
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;

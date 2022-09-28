@@ -54,7 +54,6 @@ class OrdersCancelService
         ClientService $clientService,
         OrderRepository $orderRepository,
         LoggerInterface $logger
-
     ) {
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
