@@ -55,7 +55,7 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
-     * @return OrderTransactionEntity
+     * @return void
      * @throws \Adyen\AdyenException
      */
     public function handleWebhook(
@@ -64,7 +64,7 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
         string $state,
         string $currentTransactionState,
         Context $context
-    ): OrderTransactionEntity {
+    ): void {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             // Process refund notification
             if ($state === PaymentStates::STATE_REFUNDED) {
@@ -78,8 +78,6 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
                 $this->handleFailedRefundNotification($orderTransactionEntity, $notificationEntity);
             }
         }
-
-        return $orderTransactionEntity;
     }
 
     /**

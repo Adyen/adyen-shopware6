@@ -70,7 +70,7 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
-     * @return OrderTransactionEntity
+     * @return void
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -78,14 +78,12 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
         string $state,
         string $currentTransactionState,
         Context $context
-    ): OrderTransactionEntity {
+    ): void {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
         } else {
             $this->handleFailedNotification($orderTransactionEntity, $notificationEntity, $context);
         }
-
-        return $orderTransactionEntity;
     }
 
     /**

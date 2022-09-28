@@ -36,7 +36,7 @@ interface WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
-     * @return OrderTransactionEntity
+     * @return void
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -44,5 +44,5 @@ interface WebhookHandlerInterface
         string $state,
         string $currentTransactionState,
         Context $context
-    ): OrderTransactionEntity;
+    ): void;
 }
