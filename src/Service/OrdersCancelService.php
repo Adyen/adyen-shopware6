@@ -53,7 +53,7 @@ class OrdersCancelService
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
             $responseData = $checkoutService->ordersCancel($requestData);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }
 
