@@ -23,7 +23,6 @@
 
 namespace Adyen\Shopware\Service;
 
-
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
