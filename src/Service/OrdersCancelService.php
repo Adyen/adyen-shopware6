@@ -30,6 +30,26 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class OrdersCancelService
 {
+    /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
+     * @var ClientService
+     */
+    private $clientService;
+
+    /**
+     * @var OrderRepository
+     */
+    private $orderRepository;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     public function __construct(
         ConfigurationService $configurationService,
         ClientService $clientService,
