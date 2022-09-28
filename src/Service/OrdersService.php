@@ -82,7 +82,7 @@ class OrdersService
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
             $responseData = $checkoutService->orders($requestData);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }
 
@@ -92,14 +92,15 @@ class OrdersService
     private function buildOrdersRequestData(SalesChannelContext $context, $orderId): array
     {
         $order = $this->orderRepository->getOrder($orderId, $context->getContext(), ['currency']);
+        $orderAmount = $order->getAmountTotal();
         $currency = $order->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize($order->getPrice()->getTotalPrice(), $currency);
+//        $amount = $this->currency->sanitize($order->getPrice()->getTotalPrice(), $currency);
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         $requestData = array(
             "reference" => $orderId,
             "amount" => [
-                "value" => $amount,
+                "value" => $orderAmount,
                 "currency" => $currency
             ],
             "merchantAccount" => $merchantAccount

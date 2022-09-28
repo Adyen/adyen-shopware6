@@ -66,7 +66,7 @@ class PaymentMethodsBalanceService
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
             $responseData = $checkoutService->paymentMethodsBalance($requestData);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }
 

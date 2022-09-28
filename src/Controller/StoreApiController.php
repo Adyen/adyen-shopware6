@@ -226,7 +226,9 @@ class StoreApiController
         $type = $request->request->get('type');
         $cvc = $request->request->get('cvc');
 
-        return new JsonResponse($this->paymentMethodsBalanceService->getPaymentMethodsBalance($context, $type, $number, $cvc));
+        return new JsonResponse(
+            $this->paymentMethodsBalanceService->getPaymentMethodsBalance($context, $type, $number, $cvc)
+        );
     }
 
     /**
