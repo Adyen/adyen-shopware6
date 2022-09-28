@@ -24,12 +24,15 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler;
 use DateTimeInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
@@ -131,6 +134,14 @@ class NotificationService
         );
     }
 
+    public function getNotificationById($notificationId)
+    {
+        return $this->notificationRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('id', $notificationId)),
+            Context::createDefaultContext()
+        )->first();
+    }
+
     public function getAllNotificationsByOrderNumber(string $orderNumber): EntityCollection
     {
         return $this->notificationRepository->search(
@@ -179,6 +190,47 @@ class NotificationService
         )->getEntities();
     }
 
+    public function getSkippedUnprocessedNotifications(): EntityCollection
+    {
+        $oneDayAgo = (new \DateTime())->sub(new \DateInterval('P1D'));
+
+        return $this->notificationRepository->search(
+            (new Criteria())->addFilter(
+                new EqualsFilter('done', 0),
+                new NotFilter(
+                    NotFilter::CONNECTION_AND,
+                    [ new EqualsFilter('scheduledProcessingTime', null) ]
+                ),
+                new MultiFilter(
+                    MultiFilter::CONNECTION_AND,
+                    [
+                        new RangeFilter(
+                            'scheduledProcessingTime',
+                            [
+                                RangeFilter::LTE => $oneDayAgo->format('Y-m-d H:i:s')
+                            ]
+                        ),
+                        new MultiFilter(
+                            MultiFilter::CONNECTION_OR,
+                            [
+                                new RangeFilter(
+                                    'errorCount',
+                                    [
+                                        RangeFilter::LT => ProcessNotificationsHandler::MAX_ERROR_COUNT
+                                    ]
+                                ),
+                                new EqualsFilter('errorCount', null)
+                            ]
+                        )
+                    ]
+                )
+            )
+                ->addSorting(new FieldSorting('scheduledProcessingTime', FieldSorting::ASCENDING))
+                ->setLimit(100),
+            Context::createDefaultContext()
+        )->getEntities();
+    }
+
     public function changeNotificationState(string $notificationId, string $property, bool $state): void
     {
         $this->notificationRepository->update(
@@ -204,5 +256,54 @@ class NotificationService
             ],
             Context::createDefaultContext()
         );
+    }
+
+    /**
+     * Calculates the scheduled processing time according to notification type.
+     *
+     * @param NotificationEntity $notification
+     * @param bool $reschedule
+     * @return \DateTimeInterface|null
+     */
+    public function calculateScheduledProcessingTime(NotificationEntity $notification, bool $reschedule = false)
+    {
+        if ($reschedule) {
+            $scheduledProcessingTime = new \DateTime();
+        } else {
+            $scheduledProcessingTime = $notification->getCreatedAt();
+        }
+
+        switch ($notification->getEventCode()) {
+            case 'AUTHORISATION':
+                if (!$notification->isSuccess()) {
+                    $scheduledProcessingTime = $scheduledProcessingTime->add(new \DateInterval('PT30M'));
+                }
+                break;
+            case 'OFFER_CLOSED':
+                $scheduledProcessingTime = $scheduledProcessingTime->add(new \DateInterval('PT30M'));
+                break;
+            default:
+                break;
+        }
+
+        return $scheduledProcessingTime;
+    }
+
+    /**
+     * @param NotificationEntity $notification
+     * @return bool
+     */
+    public function canBeRescheduled(NotificationEntity $notification): bool
+    {
+        if (!is_null($notification->getScheduledProcessingTime())) {
+            $timeDifferenceInDays = $notification->getScheduledProcessingTime()
+                ->diff(new \DateTime())->format('%a');
+
+            if (!$notification->isDone() && $timeDifferenceInDays >= 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
