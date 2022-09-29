@@ -1,12 +1,28 @@
 <div v-if="showWidget">
     <sw-card :title="$tc('adyen.notificationsTitle')">
         <sw-data-grid
-                v-if="notifications.length"
-                :dataSource="notifications"
-                :columns="columns"
-                :showActions="false"
-                :showSelection="false"
-        ></sw-data-grid>
+            v-if="notifications.length"
+            :dataSource="notifications"
+            :columns="columns"
+            :showActions="true"
+            :showSelection="false"
+            :showSettings="true"
+        >
+            {% block sw_data_grid_body_columns %}
+                {% block sw_data_grid_column_actions %}
+                    <template #actions="{ item }">
+                        {% block sw_data_grid_column_actions_reschedule %}
+                            <sw-context-menu-item
+                                v-if="item.canBeRescheduled"
+                                @click="onReschedule(item)"
+                            >
+                                {{ $tc('adyen.reprocessNotification') }}
+                            </sw-context-menu-item>
+                        {% endblock %}
+                    </template>
+                {%  endblock %}
+            {%  endblock %}
+        </sw-data-grid>
         <p v-if="!notifications.length">{{ $tc('adyen.noNotificationsReceived') }}</p>
     </sw-card>
 </div>

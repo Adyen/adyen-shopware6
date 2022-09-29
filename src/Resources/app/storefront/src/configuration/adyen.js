@@ -24,7 +24,8 @@ export default {
     updatablePaymentMethods: [
         'scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'bcmc_mobile', 'blik', 'eps', 'facilypay_3x',
         'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay',
-        'ratepay_directdebit', 'giftcard'
+        'ratepay_directdebit', 'giftcard', 'paybright', 'affirm', 'multibanco', 'mbway', 'vipps', 'mobilepay',
+        'wechatpayQR', 'wechatpayWeb'
     ],
     componentsWithPayButton: {
         'applepay': {
@@ -158,6 +159,14 @@ export default {
         'beautycadeaukaart': 'handler_adyen_beautygiftcardpaymentmethodhandler',
         'svs': 'handler_adyen_svsgiftcardpaymentmethodhandler',
         'fashioncheque': 'handler_adyen_fashionchequegiftcardpaymentmethodhandler',
-        'decadeaukaart': 'handler_adyen_decadeaukaartgiftcardpaymentmethodhandler'
+        'decadeaukaart': 'handler_adyen_decadeaukaartgiftcardpaymentmethodhandler',
+        'mbway': 'handler_adyen_mbwaypaymentmethodhandler',
+        'multibanco': 'handler_adyen_multibancopaymentmethodhandler',
+        'wechatpayQR': 'handler_adyen_wechatpayqrpaymentmethodhandler',
+        'wechatpayWeb': 'handler_adyen_wechatpaywebpaymentmethodhandler',
+        'mobilepay': 'handler_adyen_mobilepaypaymentmethodhandler',
+        'vipps': 'handler_adyen_vippspaymentmethodhandler',
+        'affirm': 'handler_adyen_affirmpaymentmethodhandler',
+        'paybright': 'handler_adyen_paybrightpaymentmethodhandler'
     }
 }

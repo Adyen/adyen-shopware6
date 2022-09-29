@@ -19,8 +19,12 @@
             "event": "Event",
             "success": "Success",
             "created": "Created",
-            "updated": "Updated"
+            "updated": "Updated",
+            "errorCount": "Error Count",
+            "errorMessage": "Error Message"
         },
+        "reprocessNotification": "Reprocess Notification",
+        "notificationRescheduleSuccess": "Notification will be processed again.",
         "notificationsTitle": "Adyen Webhook Notifications",
         "noNotificationsReceived": "No webhook notifications received.",
         "adyenPaymentCaptureTitle": "Adyen Capture Requests",

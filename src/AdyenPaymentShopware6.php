@@ -127,6 +127,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.5.0', '<')) {
             $this->updateTo350($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.7.0', '<')) {
+            $this->updateTo370($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -457,6 +461,34 @@ class AdyenPaymentShopware6 extends Plugin
         foreach ([
                      new PaymentMethods\BancontactMobilePaymentMethod()
                  ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
+    }
+
+    private function updateTo370(UpdateContext $updateContext): void
+    {
+        /*
+         * Version 3.7.0 introduces following payment methods.
+         * MB Way, Multibanco, WeChat Pay, MobilePay, Vipps, Affirm & PayBright
+         */
+        foreach ([
+            new PaymentMethods\MbwayPaymentMethod(),
+            new PaymentMethods\MultibancoPaymentMethod(),
+            new PaymentMethods\WechatpayqrPaymentMethod(),
+            new PaymentMethods\WechatpaywebPaymentMethod(),
+            new PaymentMethods\MobilePayPaymentMethod(),
+            new PaymentMethods\VippsPaymentMethod(),
+            new PaymentMethods\AffirmPaymentMethod(),
+            new PaymentMethods\PayBrightPaymentMethod()
+        ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()

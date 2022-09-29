@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\ScheduledTask;
 
-use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\NotificationService;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -58,28 +57,34 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
 
         if ($unscheduledNotifications->count() == 0) {
             $this->logger->debug("No unscheduled notifications found.");
-            return;
         }
 
         foreach ($unscheduledNotifications->getElements() as $notification) {
-            /** @var NotificationEntity $notification */
-
-            $scheduledProcessingTime = $notification->getCreatedAt();
-            switch ($notification->getEventCode()) {
-                case 'AUTHORISATION':
-                    if (!$notification->isSuccess()) {
-                        $scheduledProcessingTime = $scheduledProcessingTime->add(new \DateInterval('PT30M'));
-                    }
-                    break;
-                case 'OFFER_CLOSED':
-                    $scheduledProcessingTime = $scheduledProcessingTime->add(new \DateInterval('PT30M'));
-                    break;
-                default:
-                    break;
-            }
-
+            $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime($notification);
             $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
         }
-        $this->logger->info('Scheduled ' . $unscheduledNotifications->count() . ' notifications.');
+
+        if ($unscheduledNotifications->count() > 0) {
+            $this->logger->info('Scheduled ' . $unscheduledNotifications->count() . ' notifications.');
+        }
+
+        // Reschedule the unprocessed notifications older than 24 hours
+        $skippedNotifications = $this->notificationService->getSkippedUnprocessedNotifications();
+
+        foreach ($skippedNotifications->getElements() as $notification) {
+            $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime(
+                $notification,
+                true
+            );
+            // If notification was stuck in state Processing=true, reset the state and reschedule.
+            if ($notification->getProcessing()) {
+                $this->notificationService->changeNotificationState($notification->getId(), 'processing', false);
+            }
+            $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
+        }
+
+        if ($skippedNotifications->count() > 0) {
+            $this->logger->info('Re-scheduled ' . $skippedNotifications->count() . ' skipped notifications.');
+        }
     }
 }

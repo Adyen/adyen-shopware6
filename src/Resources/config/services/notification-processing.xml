@@ -48,12 +48,10 @@
             <argument type="service" id="scheduled_task.repository"/>
             <argument type="service" id="Adyen\Shopware\Service\NotificationService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="payment_method.repository"/>
-            <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
-            <argument type="service" id="Adyen\Shopware\Service\RefundService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
+            <argument type="service" id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory"/>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>

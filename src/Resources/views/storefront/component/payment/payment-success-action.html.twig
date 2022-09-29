@@ -1,0 +1,18 @@
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PostPaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+
+{% if adyenFrontendData and adyenFrontendData.locale and adyenFrontendData.clientKey and adyenFrontendData.environment and adyenFrontendData.action %}
+    <div id="adyen-success-action-container">
+        <div id="adyen-success-action-configuration"
+             data-locale="{{ adyenFrontendData.locale }}"
+             data-client-key="{{ adyenFrontendData.clientKey }}"
+             data-environment="{{ adyenFrontendData.environment }}"
+             data-action="{{ adyenFrontendData.action }}"
+        ></div>
+
+        <div id='success-action-container'></div>
+
+        <script>
+            var adyenSuccessActionConfiguration = document.querySelector('#adyen-success-action-configuration').dataset;
+        </script>
+    </div>
+{% endif %}

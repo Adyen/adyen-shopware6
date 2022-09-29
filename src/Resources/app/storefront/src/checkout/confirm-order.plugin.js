@@ -249,7 +249,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     handlePaymentAction(response) {
         try {
             const paymentResponse = JSON.parse(response);
-            if (paymentResponse.isFinal) {
+            if (paymentResponse.isFinal || paymentResponse.action.type === 'voucher') {
                 location.href = this.returnUrl;
             }
             if (!!paymentResponse.action) {

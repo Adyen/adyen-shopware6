@@ -73,6 +73,14 @@ class PaymentMethods
         BeautyGiftCardPaymentMethod::class,
         SVSGiftCardPaymentMethod::class,
         FashionChequeGiftCardPaymentMethod::class,
-        DeCadeaukaartGiftCardPaymentMethod::class
+        DeCadeaukaartGiftCardPaymentMethod::class,
+        PayBrightPaymentMethod::class,
+        AffirmPaymentMethod::class,
+        WechatpaywebPaymentMethod::class,
+        WechatpayqrPaymentMethod::class,
+        MultibancoPaymentMethod::class,
+        MbwayPaymentMethod::class,
+        VippsPaymentMethod::class,
+        MobilePayPaymentMethod::class
     ];
 }

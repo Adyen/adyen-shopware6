@@ -27,7 +27,6 @@ use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
-use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Service\CaptureService;
@@ -48,6 +47,7 @@ use Shopware\Core\System\Currency\CurrencyFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\RouterInterface;
 
 /**
  * @RouteScope(scopes={"administration"})
@@ -357,6 +357,10 @@ class AdminController
                     : NotificationEntity::NOTIFICATION_STATUS_PENDING,
                 'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
                 'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'notificationId' => $notification->getId(),
+                'canBeRescheduled' => $this->notificationService->canBeRescheduled($notification),
+                'errorCount' => $notification->getErrorCount(),
+                'errorMessage' => $notification->getErrorMessage()
             ];
         }
 
@@ -394,5 +398,34 @@ class AdminController
         }
 
         return $result;
+    }
+
+    /**
+     * @Route(
+     *     "/api/adyen/reschedule-notification/{notificationId}",
+     *     name="admin.action.adyen.reschedule-notification",
+     *     methods={"GET"}
+     * )
+     *
+     * @param string $notificationId
+     * @return JsonResponse
+     */
+    public function rescheduleNotification(string $notificationId): JsonResponse
+    {
+        $notification = $this->notificationService->getNotificationById($notificationId);
+
+        if ($this->notificationService->canBeRescheduled($notification)) {
+            $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime(
+                $notification,
+                true
+            );
+            // If notification was stuck in state Processing=true, reset the state and reschedule.
+            if ($notification->getProcessing()) {
+                $this->notificationService->changeNotificationState($notification->getId(), 'processing', false);
+            }
+            $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
+        }
+
+        return new JsonResponse($notificationId);
     }
 }

@@ -114,6 +114,21 @@ class ApiClient extends ApiService {
             });
     }
 
+    rescheduleNotification(notificationId) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .get(this.getApiBasePath() + '/reschedule-notification/' + notificationId , {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred: ' + error.message);
+                throw error;
+            });
+    }
+
     isAdyenOrder(order) {
         const orderTransactions = order.transactions;
         let isAdyen = false;

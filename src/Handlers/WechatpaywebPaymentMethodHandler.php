@@ -1,4 +1,6 @@
-/*!
+<?php declare(strict_types=1);
+
+/**
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -12,30 +14,21 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
+ * Author: Adyen <shopware@adyen.com>
  */
 
-@import "modal";
+namespace Adyen\Shopware\Handlers;
 
-.adyen-payment-method-container-div, .adyen-update-payment-details{
-    display: none;
-}
-
-.paypal-checkout-sandbox{
-    pointer-events: auto;
-}
-
-.adyen-checkout__card__brands img {
-    vertical-align: top;
-}
-
-#donation-container,
-#success-action-container {
-    margin-top: -50px;
-    margin-bottom: 50px;
+class WechatpaywebPaymentMethodHandler extends AbstractPaymentMethodHandler
+{
+    public static function getPaymentMethodCode()
+    {
+        return 'wechatpayWeb';
+    }
 }

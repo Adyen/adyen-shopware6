@@ -61,6 +61,7 @@ use Shopware\Core\System\Currency\CurrencyCollection;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Framework\Routing\Router;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -318,7 +319,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction));
+        return new RedirectResponse($this->getAdyenReturnUrl($transaction, $salesChannelContext));
     }
 
     /**
@@ -416,7 +417,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $shippingState = $salesChannelContext->getShippingLocation()
                     ->getAddress()->getCountryState()->getShortCode();
             } else {
-                $shippingState = '';
+                $shippingState = 'n/a';
             }
 
             $shippingStreetAddress = $this->getSplitStreetAddressHouseNumber(
@@ -439,7 +440,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $billingState = $salesChannelContext->getCustomer()
                     ->getActiveBillingAddress()->getCountryState()->getShortCode();
             } else {
-                $billingState = '';
+                $billingState = 'n/a';
             }
 
             $billingStreetAddress = $this->getSplitStreetAddressHouseNumber(
@@ -548,7 +549,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             ),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $this->getAdyenReturnUrl($transaction),
+            $this->getAdyenReturnUrl($transaction, $salesChannelContext),
             $request
         );
 
@@ -564,7 +565,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             foreach ($orderLines->getElements() as $orderLine) {
                 //Getting line price
                 $price = $orderLine->getPrice();
-
 
                 if (empty($orderLine->getProductId()) || $orderLine->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
                     continue;
@@ -587,6 +587,15 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $transaction->getOrder()->getCurrencyId(),
                     $salesChannelContext->getContext()
                 );
+
+                if (!is_null($product->getSeoUrls())) {
+                    $hostname = $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl();
+                    $productPath = $product->getSeoUrls()->first()->getPathInfo();
+                    $productUrl = str_replace('//', '/', $hostname . $productPath);
+                } else {
+                    $productUrl = null;
+                }
+
                 //Building open invoice line
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
@@ -602,7 +611,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $taxRate * 100,
                     $orderLine->getQuantity(),
                     '',
-                    $productNumber
+                    $productNumber,
+                    $productUrl,
+                    $product->getCover() ? $product->getCover()->getMedia()->getUrl() : null,
+                    $this->currency->sanitize(
+                        $price->getUnitPrice(),
+                        $currency
+                    ),
+                    $product->getCategories() ? $product->getCategories()->first()->getName() : null
                 );
             }
 
@@ -613,7 +629,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         if (!empty($stateDataAdditionalData['origin'])) {
             $request['origin'] = $stateDataAdditionalData['origin'];
         } else {
-            $request['origin'] = $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext);
+            $origin = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
+            $request['origin'] = $origin;
         }
 
         $request['additionalData']['allow3DS2'] = true;
@@ -636,7 +653,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @return string
      * @throws AsyncPaymentProcessException
      */
-    private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction, SalesChannelContext $context): string
     {
         // Parse the original return URL to retrieve the query parameters
         $returnUrlQuery = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
@@ -649,19 +666,21 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
         }
 
+        $baseUrl = $this->salesChannelRepository->getCurrentDomainUrl($context);
+
         // Generate the custom Adyen endpoint to receive the redirect from the issuer page
-        $adyenReturnUrl = $this->router->generate(
+        $adyenReturnPath = $this->router->generate(
             'payment.adyen.redirect_result',
             [
                 RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
                     'payment.finalize.transaction'
                 )->getValue()
             ],
-            RouterInterface::ABSOLUTE_URL
+            RouterInterface::ABSOLUTE_PATH
         );
 
         // Create the adyen redirect result URL with the same query as the original return URL
-        return $adyenReturnUrl . '&' . $returnUrlQuery;
+        return $baseUrl . $adyenReturnPath . '&' . $returnUrlQuery;
     }
 
     /**
@@ -692,6 +711,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     private function getProduct(string $productId, Context $context): ProductEntity
     {
         $criteria = new Criteria([$productId]);
+
+        $criteria->addAssociation('seoUrls');
+        $criteria->addAssociation('cover');
+        $criteria->addAssociation('categories');
 
         /** @var ProductCollection $productCollection */
         $productCollection = $this->productRepository->search($criteria, $context);
