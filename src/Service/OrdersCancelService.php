@@ -61,12 +61,12 @@ class OrdersCancelService
         $this->logger = $logger;
     }
 
-    public function getOrdersCancel(SalesChannelContext $context, $orderId): array
+    public function getOrdersCancel(SalesChannelContext $context, $orderData, $pspReference): array
     {
         $responseData = [];
 
         try {
-            $requestData = $this->buildOrdersCancelRequestData($context, $orderId);
+            $requestData = $this->buildOrdersCancelRequestData($context, $orderData, $pspReference);
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
@@ -78,11 +78,8 @@ class OrdersCancelService
         return $responseData;
     }
 
-    private function buildOrdersCancelRequestData(SalesChannelContext $context, $orderId): array
+    private function buildOrdersCancelRequestData(SalesChannelContext $context, $orderData, $pspReference): array
     {
-        $order = $this->orderRepository->getOrder($orderId, $context->getContext(), ['currency']);
-        $pspReference = $order->getCustomFields()['pspReference'];
-        $orderData = $order->getCustomFields()['orderData'];
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {

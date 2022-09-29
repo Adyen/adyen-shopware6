@@ -83,7 +83,6 @@ class OrdersService
         $order = $this->orderRepository->getOrder($orderId, $context->getContext(), ['currency']);
         $orderAmount = $order->getAmountTotal();
         $currency = $order->getCurrency()->getIsoCode();
-//        $amount = $this->currency->sanitize($order->getPrice()->getTotalPrice(), $currency);
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {

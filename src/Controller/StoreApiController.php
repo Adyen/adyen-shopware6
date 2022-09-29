@@ -260,9 +260,10 @@ class StoreApiController
      */
     public function getOrdersCancel(SalesChannelContext $context, Request $request): JsonResponse
     {
-        $orderId = $request->request->get('orderId');
+        $orderData = $request->request->get('orderData');
+        $pspReference = $request->request->get('pspReference');
 
-        return new JsonResponse($this->ordersCancelService->getOrdersCancel($context, $orderId));
+        return new JsonResponse($this->ordersCancelService->getOrdersCancel($context, $orderData, $pspReference));
     }
 
     /**
