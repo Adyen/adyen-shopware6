@@ -53,12 +53,12 @@ class OrdersService
         $this->logger = $logger;
     }
 
-    public function createOrder(SalesChannelContext $context, $uuid, $cartId, $orderAmount, $currency): array
+    public function createOrder(SalesChannelContext $context, $uuid, $orderAmount, $currency): array
     {
         $responseData = [];
 
         try {
-            $requestData = $this->buildOrdersRequestData($context, $uuid, $cartId, $orderAmount, $currency);
+            $requestData = $this->buildOrdersRequestData($context, $uuid, $orderAmount, $currency);
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
@@ -75,7 +75,7 @@ class OrdersService
         $uuid,
         $orderAmount,
         $currency
-    ): array{
+    ): array {
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {

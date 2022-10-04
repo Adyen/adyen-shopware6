@@ -252,12 +252,10 @@ class StoreApiController
     public function createOrder(SalesChannelContext $context, Request $request): JsonResponse
     {
         $uuid = Uuid::randomHex();
-        $cart = $this->cartService->getCart($context->getToken(), $context);
-        $cartId = $cart->getToken();
         $orderAmount = $request->request->get('orderAmount');
         $currency = $request->request->get('currency');
 
-        return new JsonResponse($this->ordersService->createOrder($context, $uuid, $cartId, $orderAmount, $currency));
+        return new JsonResponse($this->ordersService->createOrder($context, $uuid, $orderAmount, $currency));
     }
 
     /**
