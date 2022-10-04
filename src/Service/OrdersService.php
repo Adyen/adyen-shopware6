@@ -23,7 +23,6 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Shopware\Service\Repository\OrderRepository;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -40,11 +39,6 @@ class OrdersService
     private $clientService;
 
     /**
-     * @var OrderRepository
-     */
-    private $orderRepository;
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -52,21 +46,19 @@ class OrdersService
     public function __construct(
         ConfigurationService $configurationService,
         ClientService $clientService,
-        OrderRepository $orderRepository,
         LoggerInterface $logger
     ) {
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
-        $this->orderRepository = $orderRepository;
         $this->logger = $logger;
     }
 
-    public function createOrder(SalesChannelContext $context, $uuid): array
+    public function createOrder(SalesChannelContext $context, $uuid, $cartId, $orderAmount, $currency): array
     {
         $responseData = [];
 
         try {
-            $requestData = $this->buildOrdersRequestData($context, $uuid);
+            $requestData = $this->buildOrdersRequestData($context, $uuid, $cartId, $orderAmount, $currency);
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
@@ -78,11 +70,8 @@ class OrdersService
         return $responseData;
     }
 
-    private function buildOrdersRequestData(SalesChannelContext $context, $uuid): array
+    private function buildOrdersRequestData(SalesChannelContext $context, $uuid, $cartId, $orderAmount, $currency): array
     {
-        $order = $this->orderRepository->getOrder($uuid, $context->getContext(), ['currency']);
-        $orderAmount = $order->getAmountTotal();
-        $currency = $order->getCurrency()->getIsoCode();
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {

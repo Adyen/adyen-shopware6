@@ -43,6 +43,7 @@ use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -135,6 +136,10 @@ class StoreApiController
      * @var OrdersService
      */
     private $ordersCancelService;
+    /**
+     * @var CartService
+     */
+    private $cartService;
 
     /**
      * StoreApiController constructor.
@@ -155,6 +160,7 @@ class StoreApiController
      * @param PaymentMethodsBalanceService $paymentMethodsBalanceService
      * @param OrdersService $orderService
      * @param OrdersCancelService $orderCancelService
+     * @param CartService $cartService
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -173,7 +179,8 @@ class StoreApiController
         OrderTransactionRepository $adyenOrderTransactionRepository,
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
         OrdersService $ordersService,
-        OrdersCancelService $ordersCancelService
+        OrdersCancelService $ordersCancelService,
+        CartService $cartService
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -192,6 +199,7 @@ class StoreApiController
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
+        $this->cartService = $cartService;
     }
 
     /**
@@ -244,8 +252,12 @@ class StoreApiController
     public function createOrder(SalesChannelContext $context, Request $request): JsonResponse
     {
         $uuid = Uuid::randomHex();
+        $cart = $this->cartService->getCart($context->getToken(), $context);
+        $cartId = $cart->getToken();
+        $orderAmount = $request->request->get('orderAmount');
+        $currency = $request->request->get('currency');
 
-        return new JsonResponse($this->ordersService->createOrder($context, $uuid));
+        return new JsonResponse($this->ordersService->createOrder($context, $uuid, $cartId, $orderAmount, $currency));
     }
 
     /**
