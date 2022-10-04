@@ -70,8 +70,12 @@ class OrdersService
         return $responseData;
     }
 
-    private function buildOrdersRequestData(SalesChannelContext $context, $uuid, $cartId, $orderAmount, $currency): array
-    {
+    private function buildOrdersRequestData(
+        SalesChannelContext $context,
+        $uuid,
+        $orderAmount,
+        $currency
+    ): array{
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
