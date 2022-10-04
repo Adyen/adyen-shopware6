@@ -61,7 +61,7 @@ class OrdersCancelService
         $this->logger = $logger;
     }
 
-    public function getOrdersCancel(SalesChannelContext $context, $orderData, $pspReference): array
+    public function cancelOrder(SalesChannelContext $context, $orderData, $pspReference): array
     {
         $responseData = [];
 

@@ -241,11 +241,11 @@ class StoreApiController
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
-    public function getOrders(SalesChannelContext $context, Request $request): JsonResponse
+    public function createOrder(SalesChannelContext $context, Request $request): JsonResponse
     {
-        $orderId = $request->request->get('orderId');
+        $uuid = Uuid::randomHex();
 
-        return new JsonResponse($this->ordersService->getOrders($context, $orderId));
+        return new JsonResponse($this->ordersService->createOrder($context, $uuid));
     }
 
     /**
@@ -258,12 +258,12 @@ class StoreApiController
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
-    public function getOrdersCancel(SalesChannelContext $context, Request $request): JsonResponse
+    public function cancelOrder(SalesChannelContext $context, Request $request): JsonResponse
     {
         $orderData = $request->request->get('orderData');
         $pspReference = $request->request->get('pspReference');
 
-        return new JsonResponse($this->ordersCancelService->getOrdersCancel($context, $orderData, $pspReference));
+        return new JsonResponse($this->ordersCancelService->cancelOrder($context, $orderData, $pspReference));
     }
 
     /**
