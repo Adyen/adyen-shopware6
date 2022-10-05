@@ -117,8 +117,17 @@
             <tag name="kernel.event_subscriber"/>
             <tag name="kernel.reset" method="reset" />
         </service>
+        <service id="Adyen\Shopware\Service\PaymentMethodsBalanceService">
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+        </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsFilterService">
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService" />
+        </service>
+        <service id="Adyen\Shopware\Service\OrdersService" autowire="true">
+        </service>
+        <service id="Adyen\Shopware\Service\OrdersCancelService" autowire="true">
         </service>
         <!--Service decorators-->
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"

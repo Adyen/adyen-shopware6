@@ -32,14 +32,18 @@ use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\PaymentDetailsService;
+use Adyen\Shopware\Service\PaymentMethodsBalanceService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
+use Adyen\Shopware\Service\OrdersService;
+use Adyen\Shopware\Service\OrdersCancelService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -120,6 +124,22 @@ class StoreApiController
      * @var ConfigurationService
      */
     private $configurationService;
+    /**
+     * @var PaymentMethodsBalanceService
+     */
+    private $paymentMethodsBalanceService;
+    /**
+     * @var OrdersService
+     */
+    private $ordersService;
+    /**
+     * @var OrdersService
+     */
+    private $ordersCancelService;
+    /**
+     * @var CartService
+     */
+    private $cartService;
 
     /**
      * StoreApiController constructor.
@@ -137,6 +157,10 @@ class StoreApiController
      * @param LoggerInterface $logger
      * @param EntityRepositoryInterface $orderTransactionRepository
      * @param ConfigurationService $configurationService
+     * @param PaymentMethodsBalanceService $paymentMethodsBalanceService
+     * @param OrdersService $orderService
+     * @param OrdersCancelService $orderCancelService
+     * @param CartService $cartService
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -152,7 +176,11 @@ class StoreApiController
         LoggerInterface $logger,
         EntityRepositoryInterface $orderTransactionRepository,
         ConfigurationService $configurationService,
-        OrderTransactionRepository $adyenOrderTransactionRepository
+        OrderTransactionRepository $adyenOrderTransactionRepository,
+        PaymentMethodsBalanceService $paymentMethodsBalanceService,
+        OrdersService $ordersService,
+        OrdersCancelService $ordersCancelService,
+        CartService $cartService
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -168,6 +196,10 @@ class StoreApiController
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
         $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
+        $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
+        $this->ordersService = $ordersService;
+        $this->ordersCancelService = $ordersCancelService;
+        $this->cartService = $cartService;
     }
 
     /**
@@ -183,6 +215,65 @@ class StoreApiController
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
         return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/payment-methods/balance",
+     *     name="store-api.action.adyen.payment-methods.balance",
+     *     methods={"POST"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getPaymentMethodsBalance(SalesChannelContext $context, Request $request): JsonResponse
+    {
+        $number = $request->request->get('number');
+        $type = $request->request->get('type');
+        $cvc = $request->request->get('cvc');
+
+        return new JsonResponse(
+            $this->paymentMethodsBalanceService->getPaymentMethodsBalance($context, $type, $number, $cvc)
+        );
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/orders",
+     *     name="store-api.action.adyen.orders",
+     *     methods={"POST"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function createOrder(SalesChannelContext $context, Request $request): JsonResponse
+    {
+        $uuid = Uuid::randomHex();
+        $orderAmount = $request->request->get('orderAmount');
+        $currency = $request->request->get('currency');
+
+        return new JsonResponse($this->ordersService->createOrder($context, $uuid, $orderAmount, $currency));
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/orders/cancel",
+     *     name="store-api.action.adyen.orders.cancel",
+     *     methods={"POST"}
+     * )
+     *
+     * @param SalesChannelContext $context
+     * @return JsonResponse
+     */
+    public function cancelOrder(SalesChannelContext $context, Request $request): JsonResponse
+    {
+        $orderData = $request->request->get('orderData');
+        $pspReference = $request->request->get('pspReference');
+
+        return new JsonResponse($this->ordersCancelService->cancelOrder($context, $orderData, $pspReference));
     }
 
     /**
