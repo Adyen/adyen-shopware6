@@ -53,7 +53,6 @@ class PaymentMethodsBalanceService
         $this->logger = $logger;
     }
 
-
     public function getPaymentMethodsBalance(
         SalesChannelContext $context,
         string $type,
