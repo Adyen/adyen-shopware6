@@ -30,6 +30,18 @@
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\Controller\StoreApi\Payment\PaymentController" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController" autowire="true">
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <tag name="controller.service_arguments"/>
+        </service>
         <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController" autowire="true">
             <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <tag name="controller.service_arguments"/>
