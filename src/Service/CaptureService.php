@@ -35,6 +35,7 @@ use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Psr\Log\LoggerAwareTrait;
+use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -204,6 +205,11 @@ class CaptureService
     ): array {
         $lineItemsArray = [];
         foreach ($lineItems as $lineItem) {
+            // Skip non-product line items.
+            if (empty($lineItem->getProductId()) || $lineItem->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
+                continue;
+            }
+
             $position = $lineItem->getPosition();
             $key = 'openinvoicedata.line' . $position;
             $lineItemsArray[$key . '.itemAmount'] = ceil($lineItem->getPrice()->getTotalPrice() * 100);
