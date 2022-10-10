@@ -30,6 +30,8 @@ use Adyen\Shopware\Service\OrdersCancelService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Shopware\Core\Framework\Uuid\Uuid;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class OrderApiController
@@ -50,6 +52,10 @@ class OrderApiController
      * @var OrdersService
      */
     private $ordersCancelService;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * StoreApiController constructor.
@@ -61,11 +67,13 @@ class OrderApiController
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
         OrdersService $ordersService,
-        OrdersCancelService $ordersCancelService
+        OrdersCancelService $ordersCancelService,
+        LoggerInterface $logger
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
+        $this->logger = $logger;
     }
 
     /**

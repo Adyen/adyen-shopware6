@@ -51,7 +51,7 @@ class DonateController
     /**
      * @var EntityRepositoryInterface
      */
-    private $entityRepositoryInterface;
+    private $orderTransactionRepository;
     /**
      * @var DonationService
      */
@@ -66,18 +66,18 @@ class DonateController
      *
      * @param DonationService $donationService
      * @param OrderTransactionRepository $adyenOrderTransactionRepository
-     * @param EntityRepositoryInterface $entityRepositoryInterface
+     * @param EntityRepositoryInterface $orderTransactionRepository
      * @param LoggerInterface $logger
      */
     public function __construct(
         DonationService $donationService,
         OrderTransactionRepository $adyenOrderTransactionRepository,
-        EntityRepositoryInterface $entityRepositoryInterface,
+        EntityRepositoryInterface $orderTransactionRepository,
         LoggerInterface $logger
     ) {
         $this->donationService = $donationService;
         $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
-        $this->entityRepositoryInterface = $entityRepositoryInterface;
+        $this->orderTransactionRepository = $orderTransactionRepository;
         $this->logger = $logger;
     }
 
@@ -121,7 +121,7 @@ class DonateController
         $salesChannelContext->getContext()->scope(
             Context::SYSTEM_SCOPE,
             function (Context $salesChannelContext) use ($orderTransactionId, $storedTransactionCustomFields) {
-                $this->entityRepositoryInterface->update([
+                $this->orderTransactionRepository->update([
                     [
                         'id' => $orderTransactionId,
                         'customFields' => $storedTransactionCustomFields,
