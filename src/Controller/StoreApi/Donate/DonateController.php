@@ -36,6 +36,9 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Symfony\Component\Routing\Annotation\Route;
+use OpenApi\Annotations as OA;
+use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 
 /**
  * Class DonateController

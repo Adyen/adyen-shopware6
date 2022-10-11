@@ -49,6 +49,9 @@ use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
+use OpenApi\Annotations as OA;
+use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 
 /**
  * Class PaymentController
