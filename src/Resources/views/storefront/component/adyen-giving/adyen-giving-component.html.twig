@@ -1,11 +1,6 @@
-{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PostPaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
-
-{% if adyenFrontendData and adyenFrontendData.locale and adyenFrontendData.clientKey and adyenFrontendData.environment and adyenFrontendData.givingEnabled %}
+{% if adyenFrontendData and adyenFrontendData.givingEnabled %}
     <div id="adyen-giving-container">
         <div id="adyen-giving-configuration"
-             data-locale="{{ adyenFrontendData.locale }}"
-             data-client-key="{{ adyenFrontendData.clientKey }}"
-             data-environment="{{ adyenFrontendData.environment }}"
              data-currency="{{ adyenFrontendData.currency }}"
              data-values="{{ adyenFrontendData.values }}"
              data-background-url="{{ adyenFrontendData.backgroundUrl }}"

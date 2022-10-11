@@ -69,7 +69,8 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     async initializeCheckoutComponent () {
-        const { locale, clientKey, environment, paymentMethodsResponse } = adyenCheckoutConfiguration;
+        const { locale, clientKey, environment } = adyenCheckoutConfiguration;
+        const paymentMethodsResponse = adyenCheckoutOptions.paymentMethodsResponse;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
             clientKey,
