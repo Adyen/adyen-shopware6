@@ -52,6 +52,7 @@
             <argument type="service" id="cache.tags"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
+            <argument key="$cache" type="service" id="cache.object"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentDetailsService" autowire="true">
