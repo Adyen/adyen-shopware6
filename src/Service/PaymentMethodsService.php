@@ -177,10 +177,6 @@ class PaymentMethodsService
      */
     private function buildPaymentMethodsRequestData(SalesChannelContext $context, $orderId = '')
     {
-        if (is_null($context->getCustomer())) {
-            return [];
-        }
-
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
@@ -200,7 +196,8 @@ class PaymentMethodsService
             $amount = $this->currency->sanitize($order->getPrice()->getTotalPrice(), $currency);
         }
 
-        $salesChannelAssocLocale = $this->salesChannelRepository->getSalesChannelAssocLocale($context);
+        $salesChannelAssocLocale = $this->salesChannelRepository
+            ->getSalesChannelAssoc($context, ['language.locale', 'country']);
         $shopperLocale = $salesChannelAssocLocale->getLanguage()->getLocale()->getCode();
 
         if (!is_null($context->getCustomer())) {
@@ -211,7 +208,9 @@ class PaymentMethodsService
             }
             $shopperReference = $context->getCustomer()->getId();
         } else {
-            // todo find alternative way to get countrycode and shopperreference for shopping cart views.
+            // Use sales channel default country and generic shopper reference in shopping cart view
+            $countryCode = $salesChannelAssocLocale->getCountry()->getIso();
+            $shopperReference = 'shopping-cart-user-' . time();
         }
 
         return [

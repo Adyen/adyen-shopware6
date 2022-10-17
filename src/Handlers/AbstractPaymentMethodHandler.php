@@ -489,7 +489,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         if (empty($request['shopperLocale'])) {
-            $shopperLocale = $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
+            $shopperLocale = $this->salesChannelRepository
+                ->getSalesChannelAssoc($salesChannelContext, ['language.locale'])
                 ->getLanguage()->getLocale()->getCode();
         } else {
             $shopperLocale = $request['shopperLocale'];

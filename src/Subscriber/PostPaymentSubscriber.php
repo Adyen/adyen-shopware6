@@ -34,9 +34,8 @@ use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Routing\RouterInterface;
 
-class PostPaymentSubscriber implements EventSubscriberInterface
+class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscriberInterface
 {
-    const ADYEN_DATA_EXTENSION_ID = 'adyenFrontendData';
     const ACTION_TYPE_VOUCHER = 'voucher';
 
     /**
@@ -108,7 +107,8 @@ class PostPaymentSubscriber implements EventSubscriberInterface
 
         $frontendData = [
             'clientKey' => $this->configurationService->getClientKey($salesChannelId),
-            'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
+            'locale' => $this->salesChannelRepository
+                ->getSalesChannelAssoc($salesChannelContext, ['language.locale'])
                 ->getLanguage()->getLocale()->getCode(),
             'environment' => $this->configurationService->getEnvironment($salesChannelId),
             'orderId' => $order->getId(),

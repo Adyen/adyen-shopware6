@@ -51,7 +51,9 @@ use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
+use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
+use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -59,11 +61,8 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Routing\RouterInterface;
 
-class PaymentSubscriber implements EventSubscriberInterface
+class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberInterface
 {
-
-    const ADYEN_DATA_EXTENSION_ID = 'adyenFrontendData';
-
     /**
      * @var PaymentStateDataService
      */
@@ -206,11 +205,45 @@ class PaymentSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
+            CheckoutCartPageLoadedEvent::class => 'onShoppingCartLoaded',
+            OffcanvasCartPageLoadedEvent::class => 'onShoppingCartLoaded',
             SalesChannelContextSwitchEvent::class => 'onContextTokenUpdate',
             CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             AccountEditOrderPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             RequestEvent::class => 'onKernelRequest',
         ];
+    }
+
+    private function getComponentData(SalesChannelContext $salesChannelContext): array
+    {
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+
+        return [
+            'clientKey' => $this->configurationService->getClientKey($salesChannelId),
+            'locale' => $this->salesChannelRepository
+                ->getSalesChannelAssoc($salesChannelContext, ['language.locale'])
+                ->getLanguage()->getLocale()->getCode(),
+            'environment' => $this->configurationService->getEnvironment($salesChannelId),
+        ];
+    }
+
+    /**
+     * @param PageLoadedEvent $event
+     */
+    public function onShoppingCartLoaded(PageLoadedEvent $event)
+    {
+        $page = $event->getPage();
+        $salesChannelContext = $event->getSalesChannelContext();
+
+        $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+        $giftcards = $this->paymentMethodsFilterService->filterAdyenPaymentMethodsByType($paymentMethods, 'giftcard');
+
+        $page->addExtension(
+            self::ADYEN_DATA_EXTENSION_ID,
+            new ArrayEntity(
+                array_merge($this->getComponentData($salesChannelContext), ['giftcards' => $giftcards])
+            )
+        );
     }
 
     /**
@@ -293,64 +326,61 @@ class PaymentSubscriber implements EventSubscriberInterface
             $salesChannelContext->getToken()
         );
 
-        $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
-
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
-                [
-                    'paymentStatusUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-status'
-                    ),
-                    'checkoutOrderUrl' => $this->router->generate(
-                        'store-api.checkout.cart.order'
-                    ),
-                    'paymentHandleUrl' => $this->router->generate(
-                        'store-api.payment.handle'
-                    ),
-                    'paymentDetailsUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-details'
-                    ),
-                    'paymentFinishUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        ['orderId' => '']
-                    ),
-                    'paymentErrorUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        [
-                            'orderId' => '',
-                            'changedPayment' => false,
-                            'paymentFailed' => true,
-                        ]
-                    ),
-                    'updatePaymentUrl' => $this->router->generate(
-                        'store-api.action.adyen.set-payment'
-                    ),
-                    'cancelOrderTransactionUrl' => $this->router->generate(
-                        'store-api.action.adyen.cancel-order-transaction',
-                    ),
-                    'languageId' => $salesChannelContext->getContext()->getLanguageId(),
-                    'clientKey' => $this->configurationService->getClientKey($salesChannelId),
-                    'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
-                        ->getLanguage()->getLocale()->getCode(),
-                    'currency' => $currency,
-                    'amount' => $amount,
-                    'environment' => $this->configurationService->getEnvironment($salesChannelId),
-                    'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
-                    'orderId' => $orderId,
-                    'pluginId' => $this->adyenPluginProvider->getAdyenPluginId(),
-                    'stateDataIsStored' => $stateDataIsStored,
-                    'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
-                    'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
-                    'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
-                    'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
-                    'billingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
-                        $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
-                    ),
-                    'shippingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
-                        $salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()
-                    ),
-                ]
+                array_merge(
+                    $this->getComponentData($salesChannelContext),
+                    [
+                        'paymentStatusUrl' => $this->router->generate(
+                            'store-api.action.adyen.payment-status'
+                        ),
+                        'checkoutOrderUrl' => $this->router->generate(
+                            'store-api.checkout.cart.order'
+                        ),
+                        'paymentHandleUrl' => $this->router->generate(
+                            'store-api.payment.handle'
+                        ),
+                        'paymentDetailsUrl' => $this->router->generate(
+                            'store-api.action.adyen.payment-details'
+                        ),
+                        'paymentFinishUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            ['orderId' => '']
+                        ),
+                        'paymentErrorUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            [
+                                'orderId' => '',
+                                'changedPayment' => false,
+                                'paymentFailed' => true,
+                            ]
+                        ),
+                        'updatePaymentUrl' => $this->router->generate(
+                            'store-api.action.adyen.set-payment'
+                        ),
+                        'cancelOrderTransactionUrl' => $this->router->generate(
+                            'store-api.action.adyen.cancel-order-transaction',
+                        ),
+                        'languageId' => $salesChannelContext->getContext()->getLanguageId(),
+                        'currency' => $currency,
+                        'amount' => $amount,
+                        'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
+                        'orderId' => $orderId,
+                        'pluginId' => $this->adyenPluginProvider->getAdyenPluginId(),
+                        'stateDataIsStored' => $stateDataIsStored,
+                        'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
+                        'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
+                        'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
+                        'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
+                        'billingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
+                            $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
+                        ),
+                        'shippingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
+                            $salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()
+                        ),
+                    ]
+                )
             )
         );
     }
