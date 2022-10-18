@@ -9,9 +9,15 @@
             <h5>Select gift card</h5>
             {# loop through giftcards and mount component #}
             {% for giftcard in adyenFrontendData.giftcards %}
-                <img src="https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/{{ giftcard.brand }}.png" alt="{{ giftcard.name }}">
+                <span style="cursor: pointer"
+                      class="adyen-giftcard" data-payload="{{ giftcard|json_encode }}">
+                    <img src="https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/{{ giftcard.brand }}.png"
+                         alt="{{ giftcard.name }}"
+                    >
+                </span>
             {% endfor %}
             <div id="adyen-giftcard-component"></div>
+            <hr>
         </div>
 
     {% endif %}
