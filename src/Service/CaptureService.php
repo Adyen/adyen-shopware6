@@ -35,6 +35,7 @@ use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Psr\Log\LoggerAwareTrait;
+use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -78,6 +79,8 @@ class CaptureService
         'valuelink',
         'twint',
     ];
+
+    const REASON_DELIVERY_STATE_MISMATCH = 'DELIVERY_STATE_MISMATCH';
 
     private OrderRepository $orderRepository;
     private OrderTransactionRepository $orderTransactionRepository;
@@ -173,7 +176,9 @@ class CaptureService
                     }
                     $results[] = $response;
                 } else {
-                    throw new CaptureException('Order delivery status does not match configuration');
+                    $exception = new CaptureException('Order delivery status does not match configuration');
+                    $exception->reason = self::REASON_DELIVERY_STATE_MISMATCH;
+                    throw $exception;
                 }
             }
             $this->logger->info('Capture for order_number ' . $order->getOrderNumber() . ' end.');
@@ -203,9 +208,14 @@ class CaptureService
         $currencyCode
     ): array {
         $lineItemsArray = [];
+        $lineIndex = 0;
         foreach ($lineItems as $lineItem) {
-            $position = $lineItem->getPosition();
-            $key = 'openinvoicedata.line' . $position;
+            // Skip non-product line items.
+            if (empty($lineItem->getProductId()) || $lineItem->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
+                continue;
+            }
+
+            $key = 'openinvoicedata.line' . ++$lineIndex;
             $lineItemsArray[$key . '.itemAmount'] = ceil($lineItem->getPrice()->getTotalPrice() * 100);
             $lineItemsArray[$key . '.itemVatPercentage'] = $lineItem->getPrice()->getTaxRules()
                     ->highestRate()->getPercentage() * 10;
@@ -214,7 +224,7 @@ class CaptureService
             $lineItemsArray[$key . '.currencyCode'] = $currencyCode;
             $lineItemsArray[$key . '.numberOfItems'] = $lineItem->getQuantity();
         }
-        $lineItemsArray['openinvoicedata.numberOfLines'] = count($lineItems);
+        $lineItemsArray['openinvoicedata.numberOfLines'] = $lineIndex;
         return $lineItemsArray;
     }
 

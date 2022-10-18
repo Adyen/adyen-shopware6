@@ -183,17 +183,20 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 );
             } catch (CaptureException $exception) {
                 $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
-                $this->logNotificationFailure($notification, $exception->getMessage());
-
                 $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
-                if ($notification->getErrorCount() < self::MAX_ERROR_COUNT) {
+                if (CaptureService::REASON_DELIVERY_STATE_MISMATCH === $exception->reason) {
                     $this->rescheduleNotification(
                         $notification->getId(),
                         $notification->getMerchantReference(),
                         $scheduledProcessingTime
                     );
                 } else {
-                    $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+                    $this->logNotificationFailure($notification, $exception->getMessage());
+                    if ($notification->getErrorCount() < self::MAX_ERROR_COUNT) {
+                        $this->rescheduleNotification($notification->getId(), $notification->getMerchantReference());
+                    } else {
+                        $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+                    }
                 }
 
                 continue;

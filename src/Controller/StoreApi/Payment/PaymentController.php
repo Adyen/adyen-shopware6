@@ -15,35 +15,26 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2021 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Controller;
+namespace Adyen\Shopware\Controller\StoreApi\Payment;
 
-use Adyen\AdyenException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
-use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\ConfigurationService;
-use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\PaymentDetailsService;
-use Adyen\Shopware\Service\PaymentMethodsBalanceService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
-use Adyen\Shopware\Service\OrdersService;
-use Adyen\Shopware\Service\OrdersCancelService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
-use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
-use OpenApi\Annotations as OA;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
-use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -51,7 +42,6 @@ use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
@@ -60,13 +50,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use OpenApi\Annotations as OA;
+use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 
 /**
- * Class StoreApiController
- * @package Adyen\Shopware\Controller
+ * Class PaymentController
+ * @package Adyen\Shopware\Controller\StoreApi\Payment
  * @RouteScope(scopes={"store-api"})
  */
-class StoreApiController
+class PaymentController
 {
     /**
      * @var PaymentMethodsService
@@ -105,10 +97,6 @@ class StoreApiController
      */
     private $orderTransactionRepository;
     /**
-     * @var OrderTransactionRepository
-     */
-    private $adyenOrderTransactionRepository;
-    /**
      * @var StateMachineRegistry
      */
     private $stateMachineRegistry;
@@ -117,36 +105,15 @@ class StoreApiController
      */
     private $logger;
     /**
-     * @var DonationService
-     */
-    private $donationService;
-    /**
      * @var ConfigurationService
      */
     private $configurationService;
-    /**
-     * @var PaymentMethodsBalanceService
-     */
-    private $paymentMethodsBalanceService;
-    /**
-     * @var OrdersService
-     */
-    private $ordersService;
-    /**
-     * @var OrdersService
-     */
-    private $ordersCancelService;
-    /**
-     * @var CartService
-     */
-    private $cartService;
 
     /**
      * StoreApiController constructor.
      *
      * @param PaymentMethodsService $paymentMethodsService
      * @param PaymentDetailsService $paymentDetailsService
-     * @param DonationService $donationService
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStatusService $paymentStatusService
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -157,15 +124,10 @@ class StoreApiController
      * @param LoggerInterface $logger
      * @param EntityRepositoryInterface $orderTransactionRepository
      * @param ConfigurationService $configurationService
-     * @param PaymentMethodsBalanceService $paymentMethodsBalanceService
-     * @param OrdersService $orderService
-     * @param OrdersCancelService $orderCancelService
-     * @param CartService $cartService
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
         PaymentDetailsService $paymentDetailsService,
-        DonationService $donationService,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStatusService $paymentStatusService,
         PaymentResponseHandler $paymentResponseHandler,
@@ -175,12 +137,7 @@ class StoreApiController
         StateMachineRegistry $stateMachineRegistry,
         LoggerInterface $logger,
         EntityRepositoryInterface $orderTransactionRepository,
-        ConfigurationService $configurationService,
-        OrderTransactionRepository $adyenOrderTransactionRepository,
-        PaymentMethodsBalanceService $paymentMethodsBalanceService,
-        OrdersService $ordersService,
-        OrdersCancelService $ordersCancelService,
-        CartService $cartService
+        ConfigurationService $configurationService
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -192,14 +149,8 @@ class StoreApiController
         $this->orderService = $orderService;
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->logger = $logger;
-        $this->donationService = $donationService;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
-        $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
-        $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
-        $this->ordersService = $ordersService;
-        $this->ordersCancelService = $ordersCancelService;
-        $this->cartService = $cartService;
     }
 
     /**
@@ -215,65 +166,6 @@ class StoreApiController
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
         return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
-    }
-
-    /**
-     * @Route(
-     *     "/store-api/adyen/payment-methods/balance",
-     *     name="store-api.action.adyen.payment-methods.balance",
-     *     methods={"POST"}
-     * )
-     *
-     * @param SalesChannelContext $context
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function getPaymentMethodsBalance(SalesChannelContext $context, Request $request): JsonResponse
-    {
-        $number = $request->request->get('number');
-        $type = $request->request->get('type');
-        $cvc = $request->request->get('cvc');
-
-        return new JsonResponse(
-            $this->paymentMethodsBalanceService->getPaymentMethodsBalance($context, $type, $number, $cvc)
-        );
-    }
-
-    /**
-     * @Route(
-     *     "/store-api/adyen/orders",
-     *     name="store-api.action.adyen.orders",
-     *     methods={"POST"}
-     * )
-     *
-     * @param SalesChannelContext $context
-     * @return JsonResponse
-     */
-    public function createOrder(SalesChannelContext $context, Request $request): JsonResponse
-    {
-        $uuid = Uuid::randomHex();
-        $orderAmount = $request->request->get('orderAmount');
-        $currency = $request->request->get('currency');
-
-        return new JsonResponse($this->ordersService->createOrder($context, $uuid, $orderAmount, $currency));
-    }
-
-    /**
-     * @Route(
-     *     "/store-api/adyen/orders/cancel",
-     *     name="store-api.action.adyen.orders.cancel",
-     *     methods={"POST"}
-     * )
-     *
-     * @param SalesChannelContext $context
-     * @return JsonResponse
-     */
-    public function cancelOrder(SalesChannelContext $context, Request $request): JsonResponse
-    {
-        $orderData = $request->request->get('orderData');
-        $pspReference = $request->request->get('pspReference');
-
-        return new JsonResponse($this->ordersCancelService->cancelOrder($context, $orderData, $pspReference));
     }
 
     /**
@@ -504,72 +396,5 @@ class StoreApiController
         );
 
         return new JsonResponse($this->paymentStatusService->getWithOrderId($orderId));
-    }
-
-    /**
-     * @Route(
-     *     "/store-api/adyen/donate",
-     *     name="store-api.action.adyen.donate",
-     *     methods={"POST"}
-     * )
-     *
-     * @param Request $request
-     * @param SalesChannelContext $salesChannelContext
-     * @return JsonResponse
-     */
-    public function donate(
-        Request $request,
-        SalesChannelContext $salesChannelContext
-    ): JsonResponse {
-        $payload = $request->get('payload');
-
-        $orderId = $payload['orderId'];
-        $currency = $payload['amount']['currency'];
-        $value = $payload['amount']['value'];
-        $returnUrl = $payload['returnUrl'];
-
-        $transaction = $this->adyenOrderTransactionRepository
-            ->getFirstAdyenOrderTransactionByStates($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
-
-        /** @var AbstractPaymentMethodHandler $paymentMethodIdentifier */
-        $paymentMethodIdentifier = $transaction->getPaymentMethod()->getHandlerIdentifier();
-        $paymentMethodCode = $paymentMethodIdentifier::getPaymentMethodCode();
-
-        $donationToken = $transaction->getCustomFields()['donationToken'];
-        $pspReference = $transaction->getCustomFields()['originalPspReference'];
-
-        // Set donation token as null after first call.
-        $storedTransactionCustomFields = $transaction->getCustomFields();
-        $storedTransactionCustomFields[PaymentResponseHandler::DONATION_TOKEN] = null;
-
-        $orderTransactionId = $transaction->getId();
-        $salesChannelContext->getContext()->scope(
-            Context::SYSTEM_SCOPE,
-            function (Context $salesChannelContext) use ($orderTransactionId, $storedTransactionCustomFields) {
-                $this->orderTransactionRepository->update([
-                    [
-                        'id' => $orderTransactionId,
-                        'customFields' => $storedTransactionCustomFields,
-                    ]
-                ], $salesChannelContext);
-            }
-        );
-
-        try {
-            $this->donationService->donate(
-                $salesChannelContext,
-                $donationToken,
-                $currency,
-                $value,
-                $returnUrl,
-                $pspReference,
-                $paymentMethodCode
-            );
-        } catch (AdyenException $e) {
-            $this->logger->error($e->getMessage());
-            return new JsonResponse('An unknown error occurred', $e->getCode());
-        }
-
-        return new JsonResponse('Donation completed successfully.');
     }
 }

@@ -4,5 +4,5 @@ namespace Adyen\Shopware\Exception;
 
 class CaptureException extends \Exception
 {
-
+    public $reason = null;
 }
