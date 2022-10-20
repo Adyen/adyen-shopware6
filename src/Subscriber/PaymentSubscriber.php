@@ -51,8 +51,10 @@ use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
+use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPage;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
+use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPage;
 use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -232,16 +234,25 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      */
     public function onShoppingCartLoaded(PageLoadedEvent $event)
     {
+        /** @var CheckoutCartPage|OffcanvasCartPage $page */
         $page = $event->getPage();
         $salesChannelContext = $event->getSalesChannelContext();
 
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
         $giftcards = $this->paymentMethodsFilterService->filterAdyenPaymentMethodsByType($paymentMethods, 'giftcard');
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
-                array_merge($this->getComponentData($salesChannelContext), ['giftcards' => $giftcards])
+                array_merge($this->getComponentData($salesChannelContext), [
+                    'giftcards' => $giftcards,
+                    'totalPrice' => $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency),
+                    'currency' => $currency,
+                    'checkBalanceUrl' => $this->router->generate('store-api.action.adyen.payment-methods.balance'),
+                    'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
+                    'cancelOrderUrl' => $this->router->generate('store-api.action.adyen.orders.cancel'),
+                ])
             )
         );
     }

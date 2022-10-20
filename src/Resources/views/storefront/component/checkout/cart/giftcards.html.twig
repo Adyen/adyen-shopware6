@@ -3,19 +3,28 @@
         <div id="adyen-giftcards-container">
             <div id="adyen-giftcards-configuration"
                  data-giftcards="{{ adyenFrontendData.giftcards|json_encode }}"
+                 data-total-price="{{ adyenFrontendData.totalPrice }}"
+                 data-currency="{{ adyenFrontendData.currency }}"
+                 data-check-balance-url="{{ adyenFrontendData.checkBalanceUrl }}"
+                 data-create-order-url="{{ adyenFrontendData.createOrderUrl }}"
+                 data-cancel-order-url="{{ adyenFrontendData.cancelOrderUrl }}"
             ></div>
             <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
             <hr>
-            <h5>Select gift card</h5>
-            {# loop through giftcards and mount component #}
+            {# loop through giftcards and display logo #}
             {% for giftcard in adyenFrontendData.giftcards %}
                 <span style="cursor: pointer"
-                      class="adyen-giftcard" data-payload="{{ giftcard|json_encode }}">
+                    class="adyen-giftcard" data-giftcard="{{ giftcard|json_encode }}">
                     <img src="https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/{{ giftcard.brand }}.png"
                          alt="{{ giftcard.name }}"
                     >
                 </span>
             {% endfor %}
+            <div class="clearfix"></div>
+            <span
+                class="adyen-close-giftcard-component"
+                title="Close giftcard">&times;</span>
+            <h6 class="adyen-giftcard-header">&nbsp;</h6>
             <div id="adyen-giftcard-component"></div>
             <hr>
         </div>

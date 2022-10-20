@@ -29,8 +29,19 @@ export default class CartPlugin extends Plugin {
     init() {
         this._client = new StoreApiClient();
         this.adyenCheckout = Promise;
+        this.paymentMethodInstance = null;
         this.initializeCheckoutComponent().then(function () {
-            this.listenForGiftcardSelection();
+            this.observeGiftcardSelection();
+        }.bind(this));
+        this.giftcards = adyenGiftcardsConfiguration.giftcards;
+        this.giftcardHeader = $('.adyen-giftcard-header');
+        this.giftcardComponentClose = $('.adyen-close-giftcard-component');
+        this.giftcardComponentClose.on('click', function (event) {
+            $(event.currentTarget).hide();
+            this.giftcardHeader.html(' ');
+            if (this.paymentMethodInstance) {
+                this.paymentMethodInstance.unmount();
+            }
         }.bind(this));
     }
 
@@ -41,28 +52,81 @@ export default class CartPlugin extends Plugin {
             locale,
             clientKey,
             environment,
-            showPayButton: true
+            amount: {
+                currency: adyenGiftcardsConfiguration.currency,
+                value: adyenGiftcardsConfiguration.totalPrice,
+            }
         };
 
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
-    listenForGiftcardSelection() {
+    observeGiftcardSelection() {
         $('.adyen-giftcard').on('click', function (event) {
+            if (this.paymentMethodInstance) {
+                this.paymentMethodInstance.unmount();
+            }
             ElementLoadingIndicatorUtil.create(DomAccess.querySelector(document, '#adyen-giftcard-component'));
-            let payload = JSON.parse(event.currentTarget.dataset.payload);
-            this.mountGiftcardComponent(payload);
+            let giftcard = JSON.parse(event.currentTarget.dataset.giftcard);
+            this.giftcardHeader.html(giftcard.name);
+            this.giftcardComponentClose.show();
+            this.mountGiftcardComponent(giftcard);
         }.bind(this));
     }
 
-    mountGiftcardComponent(payload) {
+    mountGiftcardComponent(giftcard) {
+        const giftcardConfiguration = Object.assign({}, giftcard, {
+            showPayButton: true,
+            onBalanceCheck: this.handleBalanceCheck.bind(this),
+            onSubmit: this.onGiftcardSubmit.bind(this)
+        });
         try {
-            const paymentMethodInstance = this.adyenCheckout.create('giftcard', payload);
-            paymentMethodInstance.mount('#adyen-giftcard-component');
+            this.paymentMethodInstance = this.adyenCheckout.create('giftcard', giftcardConfiguration);
+            this.paymentMethodInstance.mount('#adyen-giftcard-component');
 
         } catch (e) {
             console.log('giftcard not available');
         }
         ElementLoadingIndicatorUtil.remove(DomAccess.querySelector(document, '#adyen-giftcard-component'));
+    }
+
+    handleBalanceCheck(resolve, reject, data) {
+        this._client.post(
+            `${adyenGiftcardsConfiguration.checkBalanceUrl}`,
+            JSON.stringify({paymentMethod: data.paymentMethod}),
+            function (response) {
+                response = JSON.parse(response);
+                if ('Success' !== response.resultCode) {
+                    console.error(response.resultCode);
+                    reject(response.resultCode);
+                } else {
+                    // 0. compare balance to total amount to be paid
+                    const balance = parseFloat(response.balance.value);
+                    if (balance >= adyenGiftcardsConfiguration.totalPrice) {
+                        // Render pay button for customer to complete order directly with this giftcard
+                        resolve(response);
+                    } else {
+                        // 1. create order
+                        // 2. make payment request with orderData
+                    }
+                }
+            }.bind(this)
+        );
+    }
+
+    onGiftcardSubmit(data) {
+        debugger;
+    }
+
+    createAdyenOrder () {
+
+    }
+
+    makePaymentWithGiftcard() {
+
+    }
+
+    cancelOrder() {
+
     }
 }
