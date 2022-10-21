@@ -75,6 +75,7 @@
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsFilterService">
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService" />
+            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute" />
         </service>
         <service id="Adyen\Shopware\Service\OrdersService" autowire="true">
         </service>

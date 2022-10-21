@@ -28,7 +28,11 @@ use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
 
 class PaymentMethodsFilterService
 {
@@ -37,9 +41,17 @@ class PaymentMethodsFilterService
      */
     private $paymentMethodsService;
 
-    public function __construct(PaymentMethodsService $paymentMethodsService)
-    {
+    /**
+     * @var AbstractPaymentMethodRoute
+     */
+    private $paymentMethodRoute;
+
+    public function __construct(
+        PaymentMethodsService $paymentMethodsService,
+        AbstractPaymentMethodRoute $paymentMethodRoute
+    ) {
         $this->paymentMethodsService = $paymentMethodsService;
+        $this->paymentMethodRoute = $paymentMethodRoute;
     }
 
     /**
@@ -140,10 +152,54 @@ class PaymentMethodsFilterService
         return isset($filteredPaymentMethod);
     }
 
+    public function getAvailableGiftcards(
+        SalesChannelContext $context,
+        array $adyenPaymentMethods,
+        string $adyenPluginId,
+        ?PaymentMethodCollection $paymentMethods = null
+    ): PaymentMethodCollection
+    {
+        if (is_null($paymentMethods)) {
+            $paymentMethods = $this->getShopwarePaymentMethods($context);
+        }
+
+        $giftcards = $this->filterAdyenPaymentMethodsByType($adyenPaymentMethods, 'giftcard');
+        $brands = array_column($giftcards, 'brand');
+
+        foreach ($paymentMethods as $entity) {
+            $methodHandler = $entity->getHandlerIdentifier();
+            /** @var AbstractPaymentMethodHandler $methodHandler */
+            if ($entity->getPluginId() !== $adyenPluginId) {
+                // Remove non-Adyen payment methods
+                $paymentMethods->remove($entity->getId());
+            } elseif (!$methodHandler::$isGiftCard || !in_array($methodHandler::getBrand(), $brands)) {
+                // Remove non-giftcards and giftcards that are not in /paymentMethods response
+                $paymentMethods->remove($entity->getId());
+            } else {
+                $brand = $methodHandler::getBrand();
+                $entity->addExtension('adyenGiftcardData', new ArrayStruct(
+                    array_filter($giftcards, function ($method) use ($brand) {
+                        return $method['brand'] === $brand;
+                    })
+                ));
+            }
+        }
+
+        return $paymentMethods;
+    }
+
     public function filterAdyenPaymentMethodsByType(array $paymentMethodsResponse, string $type): array
     {
         return array_filter($paymentMethodsResponse['paymentMethods'], function ($item) use ($type) {
             return $item['type'] === $type;
         });
+    }
+
+    private function getShopwarePaymentMethods(SalesChannelContext $context): PaymentMethodCollection
+    {
+        $request = new Request();
+        $request->query->set('onlyAvailable', '1');
+
+        return $this->paymentMethodRoute->load($request, $context, new Criteria())->getPaymentMethods();
     }
 }

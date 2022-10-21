@@ -67,7 +67,7 @@ export default class CartPlugin extends Plugin {
                 this.paymentMethodInstance.unmount();
             }
             ElementLoadingIndicatorUtil.create(DomAccess.querySelector(document, '#adyen-giftcard-component'));
-            let giftcard = JSON.parse(event.currentTarget.dataset.giftcard);
+            let giftcard = JSON.parse(event.currentTarget.dataset.giftcard)[0];
             this.giftcardHeader.html(giftcard.name);
             this.giftcardComponentClose.show();
             this.mountGiftcardComponent(giftcard);
@@ -103,7 +103,7 @@ export default class CartPlugin extends Plugin {
                     // 0. compare balance to total amount to be paid
                     const balance = parseFloat(response.balance.value);
                     if (balance >= adyenGiftcardsConfiguration.totalPrice) {
-                        // Render pay button for customer to complete order directly with this giftcard
+                        // Render pay button for giftcard
                         resolve(response);
                     } else {
                         // 1. create order
@@ -115,7 +115,12 @@ export default class CartPlugin extends Plugin {
     }
 
     onGiftcardSubmit(data) {
-        debugger;
+        ElementLoadingIndicatorUtil.create(document.body);
+        this._client.post(
+            adyenGiftcardsConfiguration.checkoutOrderUrl,
+            new FormData(),
+            this.afterCreateOrder.bind(this)
+        )
     }
 
     createAdyenOrder () {

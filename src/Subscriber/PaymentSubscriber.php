@@ -238,15 +238,24 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $page = $event->getPage();
         $salesChannelContext = $event->getSalesChannelContext();
 
+        $shopwarePaymentMethods = null;
+        if ($page instanceof CheckoutCartPage) {
+            $shopwarePaymentMethods = $page->getPaymentMethods();
+        }
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
-        $giftcards = $this->paymentMethodsFilterService->filterAdyenPaymentMethodsByType($paymentMethods, 'giftcard');
+        $giftcards = $this->paymentMethodsFilterService->getAvailableGiftcards(
+            $salesChannelContext,
+            $paymentMethods,
+            $this->adyenPluginProvider->getAdyenPluginId(),
+            $shopwarePaymentMethods
+        );
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
                 array_merge($this->getComponentData($salesChannelContext), [
-                    'giftcards' => $giftcards,
+                    'giftcards' => $giftcards->getElements(),
                     'totalPrice' => $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency),
                     'currency' => $currency,
                     'checkBalanceUrl' => $this->router->generate('store-api.action.adyen.payment-methods.balance'),
