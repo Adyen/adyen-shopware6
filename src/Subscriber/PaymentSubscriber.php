@@ -261,6 +261,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'checkBalanceUrl' => $this->router->generate('store-api.action.adyen.payment-methods.balance'),
                     'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
                     'cancelOrderUrl' => $this->router->generate('store-api.action.adyen.orders.cancel'),
+                    'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
                 ])
             )
         );
@@ -273,7 +274,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     {
         // Clear state.data if payment method is updated
         if ($event->getRequestDataBag()->has('paymentMethodId')) {
-            $this->removeCurrentStateData($event);
+            $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
+                $event->getSalesChannelContext()->getToken()
+            );
         }
 
         // Save state data, only if Adyen payment method is selected
@@ -483,14 +486,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             }
         } else {
             //PM selected and state.data don't match, clear previous state.data
-            $this->removeCurrentStateData($event);
+            $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
+                $event->getSalesChannelContext()->getToken()
+            );
         }
-    }
-
-    private function removeCurrentStateData(SalesChannelContextSwitchEvent $event)
-    {
-        $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
-            $event->getSalesChannelContext()->getToken()
-        );
     }
 }
