@@ -249,55 +249,36 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $this->adyenPluginProvider->getAdyenPluginId(),
             $shopwarePaymentMethods
         );
+        xdebug_break();
+        $giftcardStateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
+        $amountCovered = 0;
+        $giftCardIsSet = (bool) $giftcardStateData;
+        if ($giftCardIsSet) {
+            $amountCovered = json_decode($giftcardStateData->getStateData(), true)['additionalData']['amount'] ?? 0;
+        }
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
+        $amountInMinorUnits = $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency);
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
                 array_merge($this->getComponentData($salesChannelContext), [
                     'giftcards' => $giftcards->getElements(),
-                    'totalPrice' => $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency),
+                    'total' => $page->getCart()->getPrice()->getTotalPrice(),
+                    'totalInMinorUnits' => $amountInMinorUnits,
                     'currency' => $currency,
+                    'currencySymbol' => $currencySymbol,
+                    'giftcardIsSet' => $giftCardIsSet,
+                    'amountCovered' => $amountCovered,
                     'checkBalanceUrl' => $this->router->generate('store-api.action.adyen.payment-methods.balance'),
                     'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
                     'cancelOrderUrl' => $this->router->generate('store-api.action.adyen.orders.cancel'),
                     'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
+                    'removeGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard.remove'),
                 ])
             )
         );
-    }
-
-    /**
-     * @param SalesChannelContextSwitchEvent $event
-     */
-    public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
-    {
-        // Clear state.data if payment method is updated
-        if ($event->getRequestDataBag()->has('paymentMethodId')) {
-            $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
-                $event->getSalesChannelContext()->getToken()
-            );
-        }
-
-        // Save state data, only if Adyen payment method is selected
-        if ($event->getRequestDataBag()->get('adyenStateData')) {
-            // Use payment method selected in the same request if available, otherwise get payment method from context
-            $paymentMethodId = $event->getRequestDataBag()->get('paymentMethodId')
-                ?? $event->getSalesChannelContext()->getPaymentMethod()->getId();
-            /** @var PaymentMethodEntity $paymentMethod */
-            $paymentMethod = $this->paymentMethodRepository->search(
-                (new Criteria())
-                    ->addFilter(new EqualsFilter('id', $paymentMethodId)),
-                $event->getContext()
-            )->first();
-            if ($paymentMethod->getPluginId() === $this->adyenPluginProvider->getAdyenPluginId()) {
-                $this->saveStateData($event, $paymentMethod);
-            } else {
-                $this->logger->error('No Adyen payment method selected, skipping state data save.');
-                $this->session->getFlashBag()
-                    ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
-            }
-        }
     }
 
     /**
@@ -442,53 +423,5 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         return $this->container
             ->get('translator')
             ->trans($snippet, $parameters);
-    }
-
-    /**
-     * Persists the Adyen payment state data on payment method confirmation/update
-     *
-     * @param SalesChannelContextSwitchEvent $event
-     */
-    private function saveStateData(SalesChannelContextSwitchEvent $event, PaymentMethodEntity $selectedPaymentMethod)
-    {
-        //State data from the frontend
-        $stateData = $event->getRequestDataBag()->get('adyenStateData');
-
-        //Convert the state data into an array
-        $stateDataArray = json_decode($stateData, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->logger->error('Payment state data is an invalid JSON: ' . json_last_error_msg());
-            $this->session->getFlashBag()
-                ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
-
-            return;
-        }
-
-        $selectedPaymentMethodIsStoredPM =
-            $selectedPaymentMethod->getFormattedHandlerIdentifier() == 'handler_adyen_oneclickpaymentmethodhandler';
-
-        $stateDataIsStoredPM = !empty($stateDataArray["paymentMethod"]["storedPaymentMethodId"]);
-
-        //Only store the state data if it matches the selected PM
-        if ($stateDataIsStoredPM === $selectedPaymentMethodIsStoredPM) {
-            try {
-                $this->paymentStateDataService->insertPaymentStateData(
-                    $event->getSalesChannelContext()->getToken(),
-                    $event->getRequestDataBag()->get('adyenStateData'),
-                    $event->getRequestDataBag()->get('adyenOrigin')
-                );
-            } catch (AdyenException $exception) {
-                $this->session->getFlashBag()
-                    ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
-
-                return;
-            }
-        } else {
-            //PM selected and state.data don't match, clear previous state.data
-            $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
-                $event->getSalesChannelContext()->getToken()
-            );
-        }
     }
 }

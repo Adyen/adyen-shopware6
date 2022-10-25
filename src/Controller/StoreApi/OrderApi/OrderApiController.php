@@ -157,19 +157,21 @@ class OrderApiController
      * @param SalesChannelContext $context
      * @param Request $request
      * @return JsonResponse
+     * @throws ValidationException
+     * @throws \Adyen\AdyenException
      */
     public function giftcardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
         if ('POST' === $request->getMethod()) {
             // store giftcard state data for context
-            $stateData = $request->request->get('giftcardStateData');
+            $stateData = $request->request->get('stateData');
             if ('giftcard' !== $stateData['paymentMethod']['type']) {
                 throw new ValidationException('Only giftcard state data is allowed to be stored.');
             }
             $this->paymentStateDataService->insertPaymentStateData(
                 $context->getToken(),
                 json_encode($stateData),
-                $request->server->get('HTTP_ORIGIN')
+                $request->request->get('amount')
             );
 
             return new JsonResponse([]);
@@ -178,5 +180,22 @@ class OrderApiController
 
             return new JsonResponse([]);
         }
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/giftcard/remove",
+     *     name="store-api.action.adyen.giftcard.remove",
+     *     methods={"POST"}
+     * )
+     * @param SalesChannelContext $context
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteGiftCardStateData(SalesChannelContext $context, Request $request): JsonResponse
+    {
+        $this->paymentStateDataService->deletePaymentStateDataFromContextToken($context->getToken());
+
+        return new JsonResponse([]);
     }
 }

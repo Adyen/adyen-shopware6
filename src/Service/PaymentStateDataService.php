@@ -32,6 +32,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentStateDataService
 {
@@ -61,12 +62,11 @@ class PaymentStateDataService
     /**
      * @param string $contextToken
      * @param string $stateData
-     * @param string $origin
+     * @param string $amount
      * @throws AdyenException
      */
-    public function insertPaymentStateData(string $contextToken, string $stateData, string $origin): void
+    public function insertPaymentStateData(string $contextToken, string $stateData, string $amount): void
     {
-
         if (empty($contextToken) || empty($stateData)) {
             $message = 'No context token or state.data found, unable to save payment state.data';
             $this->logger->error($message);
@@ -76,10 +76,7 @@ class PaymentStateDataService
         $stateDataArray = json_decode($stateData, true);
 
         //Set additional data to persist along with the state.data
-        $additionalData = [
-            'origin' => $origin
-        ];
-        $stateDataArray['additionalData'] = $additionalData;
+        $stateDataArray['additionalData'] = ['amount' => $amount];
 
         $fields['token'] = $contextToken;
         $fields['statedata'] = json_encode($stateDataArray);

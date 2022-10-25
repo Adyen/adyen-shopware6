@@ -33,9 +33,17 @@ export default class CartPlugin extends Plugin {
         this.initializeCheckoutComponent().then(function () {
             this.observeGiftcardSelection();
         }.bind(this));
-        this.giftcards = adyenGiftcardsConfiguration.giftcards;
         this.giftcardHeader = $('.adyen-giftcard-header');
         this.giftcardComponentClose = $('.adyen-close-giftcard-component');
+        this.removeGiftcardButton = $('.adyen-remove-giftcard');
+        this.minorUnitsQuotient = adyenGiftcardsConfiguration.totalInMinorUnits/adyenGiftcardsConfiguration.total;
+        this.amountCoveredByGiftcard = adyenGiftcardsConfiguration.amountCovered / this.minorUnitsQuotient;
+        this.remainingAmount = adyenGiftcardsConfiguration.total - this.amountCoveredByGiftcard;
+        this.offCanvasCartSummaryBlock = $('.offcanvas-summary-list');
+        this.shoppingCartSummaryBlock = $('.checkout-aside-summary-list');
+        this.offCanvasSummaryDetails = null;
+        this.shoppingCartSummaryDetails = null;
+
         this.giftcardComponentClose.on('click', function (event) {
             $(event.currentTarget).hide();
             this.giftcardHeader.html(' ');
@@ -43,8 +51,13 @@ export default class CartPlugin extends Plugin {
                 this.paymentMethodInstance.unmount();
             }
         }.bind(this));
-        this.giftCardAmountPaid = 0;
-        this.remainingAmount = 0;
+        this.removeGiftcardButton.on('click', function (event) {
+            this.removeGiftcard();
+        }.bind(this));
+
+        if (adyenGiftcardsConfiguration.giftcardIsSet) {
+            this.onGiftcardSelected();
+        }
     }
 
     async initializeCheckoutComponent() {
@@ -56,7 +69,7 @@ export default class CartPlugin extends Plugin {
             environment,
             amount: {
                 currency: adyenGiftcardsConfiguration.currency,
-                value: adyenGiftcardsConfiguration.totalPrice,
+                value: adyenGiftcardsConfiguration.totalInMinorUnits,
             }
         };
 
@@ -71,7 +84,7 @@ export default class CartPlugin extends Plugin {
     }
 
     mountGiftcardComponent(giftcard) {
-        if (this.giftCardAmountPaid) {
+        if (this.amountCoveredByGiftcard) {
             return;
         }
         if (this.paymentMethodInstance) {
@@ -107,12 +120,12 @@ export default class CartPlugin extends Plugin {
                 } else {
                     // 0. compare balance to total amount to be paid
                     const balance = parseFloat(response.balance.value);
-                    if (balance >= adyenGiftcardsConfiguration.totalPrice) {
+                    if (balance >= adyenGiftcardsConfiguration.totalInMinorUnits) {
                         // Render pay button for giftcard
                         resolve(response);
                     } else {
                         // 1. create order
-                        this.remainingAmount = adyenGiftcardsConfiguration.totalPrice - balance;
+                        this.remainingAmount = (adyenGiftcardsConfiguration.totalInMinorUnits - balance) / this.minorUnitsQuotient;
 
                         // 2. make payment request with orderData
                     }
@@ -125,46 +138,68 @@ export default class CartPlugin extends Plugin {
         ElementLoadingIndicatorUtil.create(document.body);
         if (state.isValid) {
             // save state data to database, set giftcard as payment method and proceed to checkout
-            this._client.post(adyenGiftcardsConfiguration.setGiftcardUrl, JSON.stringify({ giftcardStateData: state.data }), function (response) {
+            this._client.post(adyenGiftcardsConfiguration.setGiftcardUrl, JSON.stringify({ stateData: state.data, amount: adyenGiftcardsConfiguration.totalInMinorUnits }), function (response) {
                 if (JSON.parse(response).length === 0) {
                     // giftcard is applied
-                    this.giftCardAmountPaid = adyenGiftcardsConfiguration.totalPrice;
-
-                    const offCanvasCartSummaryBlock = $('.offcanvas-summary-list');
-                    const shoppingCartSummaryBlock = $('.checkout-aside-summary-list');
-                    let offCanvasSummaryDetails;
-                    let shoppingCartSummaryDetails;
-                    if (offCanvasCartSummaryBlock.length) {
-                        offCanvasSummaryDetails = '<dt class="col-7 summary-label summary-total">Amount to be paid by giftcard</dt>' +
-                            '<dd class="col-5 summary-value summary-total">' + this.giftCardAmountPaid + '</dd>' +
-                            '<dt class="col-7 summary-label summary-total">Remaining amount</dt>' +
-                            '<dd class="col-5 summary-total summary-total">' + this.remainingAmount + '</dd>';
-                        $(offCanvasSummaryDetails).appendTo(offCanvasCartSummaryBlock[0]);
-                    }
-                    if(shoppingCartSummaryBlock.length) {
-                        shoppingCartSummaryDetails = '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total">Amount to be paid by giftcard</dt>' +
-                            '<dd class="col-5 checkout-aside-summary-total checkout-aside-summary-total">' + this.giftCardAmountPaid + '</dd>' +
-                            '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total">Remaining amount</dt>' +
-                            '<dd class="col-5 checkout-aside-summary-total checkout-aside-summary-total">' + this.remainingAmount + '</dd>';
-                        $(shoppingCartSummaryDetails).appendTo(shoppingCartSummaryBlock[0]);
-                    }
-                    if (this.paymentMethodInstance) {
-                        this.paymentMethodInstance.unmount();
-                    }
-                    $('<a href="#">Remove giftcard</a>').appendTo($('#adyen-giftcard-component'));
-                    this.giftcardComponentClose.hide();
+                    this.amountCoveredByGiftcard = adyenGiftcardsConfiguration.total;
+                    this.remainingAmount = adyenGiftcardsConfiguration.total - this.amountCoveredByGiftcard;
+                    this.onGiftcardSelected();
                     ElementLoadingIndicatorUtil.remove(document.body);
                 }
             }.bind(this))
         }
     }
 
-    createAdyenOrder () {
-
+    removeGiftcard () {
+        ElementLoadingIndicatorUtil.create(document.body);
+        this._client.post(adyenGiftcardsConfiguration.removeGiftcardUrl, new FormData, function(response) {
+            if (JSON.parse(response).length === 0) {
+                this.amountCoveredByGiftcard = 0;
+                this.remainingAmount = adyenGiftcardsConfiguration.total - this.amountCoveredByGiftcard;
+                if (this.offCanvasCartSummaryBlock.length) {
+                    this.offCanvasCartSummaryBlock.children('.adyen-giftcard-summary').remove();
+                }
+                if (this.shoppingCartSummaryBlock.length) {
+                    this.shoppingCartSummaryBlock.children('.adyen-giftcard-summary').remove();
+                }
+                this.removeGiftcardButton.hide();
+                // Show giftcards
+                $('.adyen-giftcard').show();
+                ElementLoadingIndicatorUtil.remove(document.body);
+            }
+        }.bind(this));
     }
 
-    makePaymentWithGiftcard() {
+    appendGiftcardSummary() {
+        if (this.offCanvasCartSummaryBlock.length) {
+            this.offCanvasSummaryDetails = $('<dt class="col-7 summary-label summary-total adyen-giftcard-summary">Giftcard discount</dt>' +
+                '<dd class="col-5 summary-value summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.amountCoveredByGiftcard + '</dd>' +
+                '<dt class="col-7 summary-label summary-total adyen-giftcard-summary">Remaining amount</dt>' +
+                '<dd class="col-5 summary-value summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.remainingAmount + '</dd>');
+            this.offCanvasSummaryDetails.appendTo(this.offCanvasCartSummaryBlock[0]);
+        }
+        if(this.shoppingCartSummaryBlock.length) {
+            this.shoppingCartSummaryDetails = $('<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Giftcard discount</dt>' +
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.amountCoveredByGiftcard + '</dd>' +
+                '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Remaining amount</dt>' +
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.remainingAmount + '</dd>');
+            this.shoppingCartSummaryDetails.appendTo(this.shoppingCartSummaryBlock[0]);
+        }
+    }
 
+    onGiftcardSelected() {
+        // Remove component
+        if (this.paymentMethodInstance) {
+            this.paymentMethodInstance.unmount();
+        }
+        this.giftcardComponentClose.hide();
+        // Hide giftcards
+        $('.adyen-giftcard').hide();
+        this.giftcardHeader.html(' ');
+
+        this.appendGiftcardSummary();
+        // Show Remove button
+        this.removeGiftcardButton.show();
     }
 
     cancelOrder() {
