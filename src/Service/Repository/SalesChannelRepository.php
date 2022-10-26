@@ -46,7 +46,12 @@ class SalesChannelRepository
         $criteria = new Criteria();
 
         $domainId = $context->getSalesChannel()->getHreflangDefaultDomainId() ?: $context->getDomainId();
-        $criteria->addFilter(new EqualsFilter('id', $domainId));
+        if ($domainId) {
+            $criteria->addFilter(new EqualsFilter('id', $domainId));
+        } else {
+            $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
+            $criteria->setLimit(1);
+        }
 
         $domainEntity = $this->domainRepository
             ->search($criteria, $context->getContext())
