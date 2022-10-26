@@ -209,7 +209,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         return [
             CheckoutCartPageLoadedEvent::class => 'onShoppingCartLoaded',
             OffcanvasCartPageLoadedEvent::class => 'onShoppingCartLoaded',
-            SalesChannelContextSwitchEvent::class => 'onContextTokenUpdate',
             CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             AccountEditOrderPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             RequestEvent::class => 'onKernelRequest',
@@ -249,7 +248,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $this->adyenPluginProvider->getAdyenPluginId(),
             $shopwarePaymentMethods
         );
-        xdebug_break();
         $giftcardStateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $amountCovered = 0;
         $giftCardIsSet = (bool) $giftcardStateData;
@@ -272,10 +270,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'giftcardIsSet' => $giftCardIsSet,
                     'amountCovered' => $amountCovered,
                     'checkBalanceUrl' => $this->router->generate('store-api.action.adyen.payment-methods.balance'),
-                    'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
-                    'cancelOrderUrl' => $this->router->generate('store-api.action.adyen.orders.cancel'),
                     'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
                     'removeGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard.remove'),
+                    'switchContextUrl' => $this->router->generate('store-api.switch-context'),
                 ])
             )
         );
@@ -324,11 +321,18 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $paymentMethodsResponse
         );
 
-        $page->setPaymentMethods($filteredPaymentMethods);
+        $stateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
+        $giftcardDiscount = 0;
+        $payInFullWithGiftcard = false;
+        if ($stateData) {
+            $giftcardDiscount = json_decode($stateData->getStateData(), true)['additionalData']['amount'] ?? 0;
 
-        $stateDataIsStored = (bool)$this->paymentStateDataService->getPaymentStateDataFromContextToken(
-            $salesChannelContext->getToken()
-        );
+            if ($giftcardDiscount >= $amount) {
+                $payInFullWithGiftcard = true;
+            }
+        }
+
+        $page->setPaymentMethods($filteredPaymentMethods);
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -336,18 +340,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 array_merge(
                     $this->getComponentData($salesChannelContext),
                     [
-                        'paymentStatusUrl' => $this->router->generate(
-                            'store-api.action.adyen.payment-status'
-                        ),
-                        'checkoutOrderUrl' => $this->router->generate(
-                            'store-api.checkout.cart.order'
-                        ),
-                        'paymentHandleUrl' => $this->router->generate(
-                            'store-api.payment.handle'
-                        ),
-                        'paymentDetailsUrl' => $this->router->generate(
-                            'store-api.action.adyen.payment-details'
-                        ),
+                        'paymentStatusUrl' => $this->router->generate('store-api.action.adyen.payment-status'),
+                        'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
+                        'checkoutOrderUrl' => $this->router->generate('store-api.checkout.cart.order'),
+                        'paymentHandleUrl' => $this->router->generate('store-api.payment.handle'),
+                        'paymentDetailsUrl' => $this->router->generate('store-api.action.adyen.payment-details'),
                         'paymentFinishUrl' => $this->router->generate(
                             'frontend.checkout.finish.page',
                             ['orderId' => '']
@@ -372,7 +369,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
                         'orderId' => $orderId,
                         'pluginId' => $this->adyenPluginProvider->getAdyenPluginId(),
-                        'stateDataIsStored' => $stateDataIsStored,
+                        'stateDataIsStored' => !empty($stateData),
+                        'giftcardDiscount' => $giftcardDiscount,
+                        'payInFullWithGiftcard' => $payInFullWithGiftcard,
                         'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
                         'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),

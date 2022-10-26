@@ -94,41 +94,14 @@ class PaymentStateDataService
 
     /**
      * @param string $contextToken
-     * @return string
+     * @return PaymentStateDataEntity|null
      */
     public function getPaymentStateDataFromContextToken(string $contextToken): ?PaymentStateDataEntity
     {
-        $stateDataRow = $this->paymentStateDataRepository->search(
+        return $this->paymentStateDataRepository->search(
             (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
             Context::createDefaultContext()
         )->first();
-
-        return $stateDataRow;
-    }
-
-    /**
-     * @deprecated will be removed in v2.0
-     * @param string $contextToken
-     * @return string|null
-     */
-    public function getPaymentMethodType(string $contextToken): ?string
-    {
-        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
-        if (empty($stateData)) {
-            return null;
-        }
-
-        $stateDataArray = json_decode($stateData->getStateData(), true);
-        if (empty($stateDataArray['paymentMethod']['type'])) {
-            return null;
-        }
-
-        //storedPaymentMethods are type=scheme. If storedPaymentMethodId is present we return storedPaymentMethods
-        if (!empty($stateDataArray['paymentMethod']['storedPaymentMethodId'])) {
-            return OneClickPaymentMethodHandler::getPaymentMethodCode();
-        }
-
-        return $stateDataArray['paymentMethod']['type'];
     }
 
     /**

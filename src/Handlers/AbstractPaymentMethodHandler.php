@@ -272,9 +272,95 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );
         $stateData = $dataBag->get('stateData');
+        if ($stateData) {
+            $stateData = json_decode($stateData, true);
+        }
+
+        // Check for state.data in db using the context token
+        $storedStateData = null;
+        $stateDataEntity = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
+            $salesChannelContext->getToken()
+        );
+        if ($stateDataEntity) {
+            $storedStateData = json_decode($stateDataEntity->getStateData(), true);
+        }
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new AsyncPaymentProcessException(
+                $transaction->getOrderTransaction()->getId(),
+                'Invalid payment state data.'
+            );
+        }
+
+        $orderRequestData = null;
+        $remainingAmount = null;
+        $adyenOrder = $dataBag->get('order');
+        if ($adyenOrder) {
+            // order has been created, use state data from db as the first payment
+            if ($storedStateData) {
+                $orderRequestData = [
+                    'orderData' => $adyenOrder->get('orderData'),
+                    'pspReference' => $adyenOrder->get('pspReference')
+                ];
+                $partialAmount = (int) $storedStateData['additionalData']['amount'];
+                $remainingAmount = $this->currency->sanitize(
+                    $transaction->getOrder()->getPrice()->getTotalPrice(),
+                    $salesChannelContext->getCurrency()->getIsoCode()
+                ) - $partialAmount;
+                try {
+                    $giftcardPaymentRequest = $this->preparePaymentsRequest($salesChannelContext, $transaction, $storedStateData, $partialAmount);
+                    $giftcardPaymentRequest['order'] = $orderRequestData;
+                } catch (AsyncPaymentProcessException $exception) {
+                    $this->logger->error($exception->getMessage());
+                    throw $exception;
+                } catch (\Exception $exception) {
+                    $message = sprintf(
+                        "There was an error with the giftcard payment. Order number: %s Missing data: %s",
+                        $transaction->getOrder()->getOrderNumber(),
+                        $exception->getMessage()
+                    );
+                    $this->logger->error($message);
+                    throw new AsyncPaymentProcessException($transactionId, $message);
+                }
+
+                try {
+                    $giftcardPaymentResponse = $checkoutService->payments($giftcardPaymentRequest);
+                } catch (AdyenException $exception) {
+                    $message = sprintf(
+                        "There was an error with the giftcard payment request. Order number %s: %s",
+                        $transaction->getOrder()->getOrderNumber(),
+                        $exception->getMessage()
+                    );
+                    $this->displaySafeErrorMessages($exception);
+                    $this->logger->error($message);
+                    throw new AsyncPaymentProcessException($transactionId, $message);
+                }
+
+                // add order data to the request for the next payment
+                $orderRequestData = [
+                    'orderData' => $adyenOrder->get('orderData'),
+                    'pspReference' => $adyenOrder->get('pspReference')
+                ];
+            } else {
+                $message = sprintf(
+                    "There was an error with the giftcard payment. Order number: %s; Missing: giftcard data",
+                    $transaction->getOrder()->getOrderNumber()
+                );
+                $this->logger->error($message);
+                throw new AsyncPaymentProcessException($transactionId, $message);
+            }
+        }
+
+        // Remove the used state.data
+        if (isset($stateDataEntity)) {
+            $this->paymentStateDataService->deletePaymentStateData($stateDataEntity);
+        }
 
         try {
-            $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $stateData);
+            $request = $this->preparePaymentsRequest($salesChannelContext, $transaction, $stateData, $remainingAmount);
+            if ($orderRequestData) {
+                $request['order'] = $orderRequestData;
+            }
         } catch (AsyncPaymentProcessException $exception) {
             $this->logger->error($exception->getMessage());
             throw $exception;
@@ -347,35 +433,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param AsyncPaymentTransactionStruct $transaction
-     * @param string|null $stateData
+     * @param array $request
+     * @param int|null $partialAmount
      * @return array
      */
     protected function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
-        ?string $stateData = null
+        array $request,
+        ?int $partialAmount = null
     ): array {
-        $request = [];
-
-        if ($stateData) {
-            $request = json_decode($stateData, true);
-        } else {
-            // Get state.data using the context token
-            $stateDataEntity = $this->paymentStateDataService->getPaymentStateDataFromContextToken(
-                $salesChannelContext->getToken()
-            );
-            if ($stateDataEntity) {
-                $request = json_decode($stateDataEntity->getStateData(), true);
-            }
-        }
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                'Invalid payment state data.'
-            );
-        }
-
         if (!empty($request['additionalData'])) {
             $stateDataAdditionalData = $request['additionalData'];
         }
@@ -542,12 +609,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
 
         //Building payment data
+        $amount = $partialAmount ?: $this->currency->sanitize(
+            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $salesChannelContext->getCurrency()->getIsoCode()
+        );
         $request = $this->paymentBuilder->buildPaymentData(
             $salesChannelContext->getCurrency()->getIsoCode(),
-            $this->currency->sanitize(
-                $transaction->getOrder()->getPrice()->getTotalPrice(),
-                $salesChannelContext->getCurrency()->getIsoCode()
-            ),
+            $amount,
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
             $this->getAdyenReturnUrl($transaction, $salesChannelContext),
@@ -637,11 +705,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $request['additionalData']['allow3DS2'] = true;
 
         $request['channel'] = 'web';
-
-        // Remove the used state.data
-        if (isset($stateDataEntity)) {
-            $this->paymentStateDataService->deletePaymentStateData($stateDataEntity);
-        }
 
         return $request;
     }

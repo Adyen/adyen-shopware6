@@ -96,19 +96,13 @@ class PaymentMethodsFilterService
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                 } elseif ($pmHandlerIdentifier::$isGiftCard) {
-                    $paymentMethodFoundInResponse = array_filter(
-                        $adyenPaymentMethods['paymentMethods'],
-                        function ($value) use ($pmHandlerIdentifier) {
-                            return isset($value['brand']) && $value['brand'] === $pmHandlerIdentifier::getBrand();
-                        }
-                    );
-                    // Remove the PM if it isn't in the paymentMethods response
-                    if (empty($paymentMethodFoundInResponse)) {
+                    // Remove giftcards from checkout list, except the selected giftcard
+                    if ($salesChannelContext->getPaymentMethod()->getId() !== $paymentMethodEntity->getId()) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                     // Remove ApplePay PM if the browser is not Safari
                 } elseif ($pmCode == ApplePayPaymentMethodHandler::getPaymentMethodCode() && $isSafari !== 1) {
-                        $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                    $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 } else {
                     // For all other PMs, search in /paymentMethods response for payment method with matching `type`
                     $paymentMethodFoundInResponse = array_filter(
@@ -150,6 +144,19 @@ class PaymentMethodsFilterService
         )->first();
 
         return isset($filteredPaymentMethod);
+    }
+
+    public function getPaymentMethodInCollectionByBrand(
+        PaymentMethodCollection $collection,
+        string $brand,
+        string $adyenPluginId
+    ): ?PaymentMethodEntity {
+        return $collection->filter(
+            function (PaymentMethodEntity $paymentMethod) use ($brand, $adyenPluginId) {
+                return $paymentMethod->getPluginId() === $adyenPluginId &&
+                    $paymentMethod->getHandlerIdentifier()::getBrand() === $brand;
+            }
+        )->first();
     }
 
     public function getAvailableGiftcards(

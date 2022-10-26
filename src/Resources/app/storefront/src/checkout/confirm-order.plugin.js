@@ -159,17 +159,50 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     confirmOrder(formData, extraParams= {}) {
         const orderId = adyenCheckoutOptions.orderId;
-        let url = null;
-        let callback = null;
         if (!!orderId) { //Only used if the order is being edited
-            formData.set('orderId', orderId);
-            url = adyenCheckoutOptions.updatePaymentUrl;
-            callback = this.afterSetPayment.bind(this, extraParams);
+            this.updatePayment(formData, orderId, extraParams)
         } else {
-            url = adyenCheckoutOptions.checkoutOrderUrl;
-            callback = this.afterCreateOrder.bind(this, extraParams);
+            this.createOrder(formData, extraParams);
         }
-        this._client.post(url, formData, callback);
+    }
+
+    updatePayment(formData, orderId, extraParams) {
+        formData.set('orderId', orderId);
+
+        this._client.post(
+            adyenCheckoutOptions.updatePaymentUrl,
+            formData,
+            this.afterSetPayment.bind(this, extraParams)
+        );
+    }
+
+    createOrder(formData, extraParams) {
+        if (!adyenCheckoutOptions.payInFullWithGiftcard) {
+            this._client.post(
+                adyenCheckoutOptions.createOrderUrl,
+                JSON.stringify({orderAmount: adyenCheckoutOptions.amount, currency: adyenCheckoutOptions.currency}),
+                function (response) {
+                    const adyenOrder = JSON.parse(response);
+                    if (adyenOrder.resultCode === 'Success') {
+                        extraParams = Object.assign(extraParams, {
+                            order: adyenOrder
+                        });
+                    }
+
+                    this._client.post(
+                        adyenCheckoutOptions.checkoutOrderUrl,
+                        formData,
+                        this.afterCreateOrder.bind(this, extraParams)
+                    );
+                }.bind(this)
+            )
+        } else {
+            this._client.post(
+                adyenCheckoutOptions.checkoutOrderUrl,
+                formData,
+                this.afterCreateOrder.bind(this, extraParams)
+            );
+        }
     }
 
     afterCreateOrder(extraParams={}, response) {
