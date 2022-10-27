@@ -248,7 +248,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $this->adyenPluginProvider->getAdyenPluginId(),
             $shopwarePaymentMethods
         );
-        $giftcardStateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
+        $giftcardStateData = $this->paymentStateDataService
+            ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $amountCovered = 0;
         $giftCardIsSet = (bool) $giftcardStateData;
         if ($giftCardIsSet) {
@@ -269,7 +270,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'currencySymbol' => $currencySymbol,
                     'giftcardIsSet' => $giftCardIsSet,
                     'amountCovered' => $amountCovered,
-                    'checkBalanceUrl' => $this->router->generate('store-api.action.adyen.payment-methods.balance'),
+                    'checkBalanceUrl' => $this->router
+                        ->generate('store-api.action.adyen.payment-methods.balance'),
                     'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
                     'removeGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard.remove'),
                     'switchContextUrl' => $this->router->generate('store-api.switch-context'),
@@ -321,7 +323,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $paymentMethodsResponse
         );
 
-        $stateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
+        $stateData = $this->paymentStateDataService
+            ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
         $payInFullWithGiftcard = false;
         if ($stateData) {

@@ -164,8 +164,7 @@ class PaymentMethodsFilterService
         array $adyenPaymentMethods,
         string $adyenPluginId,
         ?PaymentMethodCollection $paymentMethods = null
-    ): PaymentMethodCollection
-    {
+    ): PaymentMethodCollection {
         if (is_null($paymentMethods)) {
             $paymentMethods = $this->getShopwarePaymentMethods($context);
         }

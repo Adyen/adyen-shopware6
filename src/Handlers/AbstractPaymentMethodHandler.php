@@ -292,6 +292,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
         }
 
+        $paymentResults = [];
+
         $orderRequestData = null;
         $remainingAmount = null;
         $adyenOrder = $dataBag->get('order');
@@ -308,7 +310,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $salesChannelContext->getCurrency()->getIsoCode()
                 ) - $partialAmount;
                 try {
-                    $giftcardPaymentRequest = $this->preparePaymentsRequest($salesChannelContext, $transaction, $storedStateData, $partialAmount);
+                    $giftcardPaymentRequest = $this->preparePaymentsRequest(
+                        $salesChannelContext,
+                        $transaction,
+                        $storedStateData,
+                        $partialAmount
+                    );
                     $giftcardPaymentRequest['order'] = $orderRequestData;
                 } catch (AsyncPaymentProcessException $exception) {
                     $this->logger->error($exception->getMessage());
@@ -335,6 +342,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $this->logger->error($message);
                     throw new AsyncPaymentProcessException($transactionId, $message);
                 }
+
+                $paymentResults[] = $this->paymentResponseHandler
+                    ->handlePaymentResponse($giftcardPaymentResponse, $transaction->getOrderTransaction());
 
                 // add order data to the request for the next payment
                 $orderRequestData = [
@@ -394,10 +404,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
 
-        $result = $this->paymentResponseHandler->handlePaymentResponse($response, $transaction->getOrderTransaction());
+        $paymentResults[] = $this->paymentResponseHandler
+            ->handlePaymentResponse($response, $transaction->getOrderTransaction());
 
         try {
-            $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $result);
+            $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $paymentResults);
         } catch (PaymentCancelledException $exception) {
             throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
         } catch (PaymentFailedException $exception) {
@@ -714,8 +725,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
      *
      * @param AsyncPaymentTransactionStruct $transaction
+     * @param SalesChannelContext $context
      * @return string
-     * @throws AsyncPaymentProcessException
      */
     private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction, SalesChannelContext $context): string
     {

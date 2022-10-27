@@ -135,36 +135,41 @@ class PaymentResponseHandler
         array $response,
         OrderTransactionEntity $orderTransaction
     ): PaymentResponseHandlerResult {
+        $paymentResponseHandlerResult = new PaymentResponseHandlerResult();
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
         if (array_key_exists('refusalReason', $response)) {
-            $this->paymentResponseHandlerResult->setRefusalReason($response['refusalReason']);
+            $paymentResponseHandlerResult->setRefusalReason($response['refusalReason']);
         }
 
         if (array_key_exists('refusalReasonCode', $response)) {
-            $this->paymentResponseHandlerResult->setRefusalReasonCode($response['refusalReasonCode']);
+            $paymentResponseHandlerResult->setRefusalReasonCode($response['refusalReasonCode']);
         }
 
-        $this->paymentResponseHandlerResult->setResultCode($resultCode);
+        $paymentResponseHandlerResult->setResultCode($resultCode);
 
         // Retrieve PSP reference from response array if available
         if (!empty($response[self::PSP_REFERENCE])) {
-            $this->paymentResponseHandlerResult->setPspReference($response[self::PSP_REFERENCE]);
+            $paymentResponseHandlerResult->setPspReference($response[self::PSP_REFERENCE]);
         }
 
         // Set action in result object if available
         if (!empty($response[self::ACTION])) {
-            $this->paymentResponseHandlerResult->setAction($response[self::ACTION]);
+            $paymentResponseHandlerResult->setAction($response[self::ACTION]);
         }
 
         // Set additionalData in result object if available
         if (!empty($response[self::ADDITIONAL_DATA])) {
-            $this->paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
+            $paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
         }
 
-        // Set Donation Token if response contains it
-        if (isset($response[self::DONATION_TOKEN])) {
-            $this->paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
+        // Set Donation Token if response contains it, except for giftcards
+        if (isset($response[self::DONATION_TOKEN]) && 'giftcard' !== $response['paymentMethod']['type'] ?? '') {
+            $paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
+        }
+
+        if ('giftcard' === $response['paymentMethod']['type'] ?? null) {
+            $paymentResponseHandlerResult->setIsGiftcard(true);
         }
 
         // Store response for cart until the payment is finalised
@@ -209,32 +214,26 @@ class PaymentResponseHandler
                 );
         }
 
-        return $this->paymentResponseHandlerResult;
+        return $paymentResponseHandlerResult;
     }
 
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
-     * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
+     * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResult
      * @throws PaymentCancelledException
      * @throws PaymentFailedException
      */
     public function handleShopwareApis(
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult
+        array $paymentResponseHandlerResult
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $context = $salesChannelContext->getContext();
         $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
-        $resultCode = $paymentResponseHandlerResult->getResultCode();
         $requiresManualCapture = $this->captureService
             ->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
-
-        // Check if result is already handled
-        if ($this->isTransactionHandled($stateTechnicalName, $resultCode, $requiresManualCapture)) {
-            return;
-        }
 
         // Get already stored transaction custom fields
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
@@ -242,28 +241,48 @@ class PaymentResponseHandler
         // Store action, additionalData and originalPspReference in the transaction
         $transactionCustomFields = [];
 
-        // Only store psp reference for the transaction if this is the first/original pspreference
-        $pspReference = $this->paymentResponseHandlerResult->getPspReference();
-        if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE]) && !empty($pspReference)) {
-            $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
+        $resultCode = self::AUTHORISED;
+
+        foreach ($paymentResponseHandlerResult as $result) {
+            if (self::AUTHORISED !== $result->getResultCode()) {
+                $resultCode = $result->getResultCode();
+            }
+            if ($result->getDonationToken()) {
+                $donationToken = $result->getDonationToken();
+            }
+            // Only store psp reference for the transaction if this is the first/original pspreference and not giftcard
+            $pspReference = $result->getPspReference();
+            if (
+                empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE])
+                && !empty($pspReference)
+                && !$result->isGiftcard()
+            ) {
+                $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
+            }
+
+            if ($result->getAction() && empty($storedTransactionCustomFields[self::ACTION])) {
+                $transactionCustomFields[self::ACTION] = $result->getAction();
+            }
+
+            // Only store additional data for the transaction if this is the first additional data
+            $additionalData = $result->getAdditionalData();
+            if (
+                empty($storedTransactionCustomFields[self::ADDITIONAL_DATA])
+                && !empty($additionalData)
+                && !$result->isGiftcard()
+            ) {
+                $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
+            }
         }
 
-        $donationToken = $paymentResponseHandlerResult->getDonationToken();
+        // Check if result is already handled
+        if ($this->isTransactionHandled($stateTechnicalName, $resultCode, $requiresManualCapture)) {
+            return;
+        }
+
         if (isset($donationToken) &&
             $this->configurationService->isAdyenGivingEnabled($salesChannelContext->getSalesChannelId())) {
             $transactionCustomFields[self::DONATION_TOKEN] = $donationToken;
-        }
-
-        // Only store action for the transaction if this is the first action
-        $action = $this->paymentResponseHandlerResult->getAction();
-        if (empty($storedTransactionCustomFields[self::ACTION]) && !empty($action)) {
-            $transactionCustomFields[self::ACTION] = $action;
-        }
-
-        // Only store additional data for the transaction if this is the first additional data
-        $additionalData = $this->paymentResponseHandlerResult->getAdditionalData();
-        if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA]) && !empty($additionalData)) {
-            $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
         }
 
         // read custom fields before writing to it so we don't mess with other plugins
