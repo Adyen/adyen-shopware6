@@ -80,11 +80,6 @@ class PaymentResponseHandler
     private $transactionStateHandler;
 
     /**
-     * @var PaymentResponseHandlerResult
-     */
-    private $paymentResponseHandlerResult;
-
-    /**
      * @var EntityRepositoryInterface
      */
     private $orderTransactionRepository;
@@ -103,7 +98,6 @@ class PaymentResponseHandler
      * @param LoggerInterface $logger
      * @param PaymentResponseService $paymentResponseService
      * @param OrderTransactionStateHandler $transactionStateHandler
-     * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
      * @param EntityRepositoryInterface $orderTransactionRepository
      * @param CaptureService $captureService
      * @param ConfigurationService $configurationService
@@ -112,7 +106,6 @@ class PaymentResponseHandler
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult,
         EntityRepositoryInterface $orderTransactionRepository,
         CaptureService $captureService,
         ConfigurationService $configurationService
@@ -120,7 +113,6 @@ class PaymentResponseHandler
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
-        $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->captureService = $captureService;
         $this->configurationService = $configurationService;
@@ -133,7 +125,8 @@ class PaymentResponseHandler
      */
     public function handlePaymentResponse(
         array $response,
-        OrderTransactionEntity $orderTransaction
+        OrderTransactionEntity $orderTransaction,
+        bool $upsertResponse = true
     ): PaymentResponseHandlerResult {
         $paymentResponseHandlerResult = new PaymentResponseHandlerResult();
         // Retrieve result code from response array
@@ -175,7 +168,8 @@ class PaymentResponseHandler
         // Store response for cart until the payment is finalised
         $this->paymentResponseService->insertPaymentResponse(
             $response,
-            $orderTransaction
+            $orderTransaction,
+            $upsertResponse
         );
 
         // Based on the result code start different payment flows
@@ -220,14 +214,14 @@ class PaymentResponseHandler
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
-     * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResult
+     * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResults
      * @throws PaymentCancelledException
      * @throws PaymentFailedException
      */
     public function handleShopwareApis(
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext,
-        array $paymentResponseHandlerResult
+        array $paymentResponseHandlerResults
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $context = $salesChannelContext->getContext();
@@ -243,7 +237,7 @@ class PaymentResponseHandler
 
         $resultCode = self::AUTHORISED;
 
-        foreach ($paymentResponseHandlerResult as $result) {
+        foreach ($paymentResponseHandlerResults as $result) {
             if (self::AUTHORISED !== $result->getResultCode()) {
                 $resultCode = $result->getResultCode();
             }
@@ -382,14 +376,12 @@ class PaymentResponseHandler
                     "resultCode" => $resultCode,
                     "action" => $action
                 ];
-                break;
             case self::RECEIVED:
                 return [
                     "isFinal" => true,
                     "resultCode" => $resultCode,
                     "additionalData" => $additionalData
                 ];
-                break;
             default:
                 return [
                     "isFinal" => true,

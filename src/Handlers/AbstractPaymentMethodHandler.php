@@ -344,7 +344,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 }
 
                 $paymentResults[] = $this->paymentResponseHandler
-                    ->handlePaymentResponse($giftcardPaymentResponse, $transaction->getOrderTransaction());
+                    ->handlePaymentResponse($giftcardPaymentResponse, $transaction->getOrderTransaction(), false);
 
                 // add order data to the request for the next payment
                 $orderRequestData = [
@@ -405,7 +405,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         $paymentResults[] = $this->paymentResponseHandler
-            ->handlePaymentResponse($response, $transaction->getOrderTransaction());
+            ->handlePaymentResponse($response, $transaction->getOrderTransaction(), false);
 
         try {
             $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $paymentResults);
