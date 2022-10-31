@@ -246,11 +246,10 @@ class PaymentResponseHandler
             }
             // Only store psp reference for the transaction if this is the first/original pspreference and not giftcard
             $pspReference = $result->getPspReference();
-            if (
-                empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE])
+            if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE])
                 && !empty($pspReference)
-                && !$result->isGiftcard()
-            ) {
+                && !$result->isGiftcard())
+            {
                 $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
             }
 
@@ -260,11 +259,10 @@ class PaymentResponseHandler
 
             // Only store additional data for the transaction if this is the first additional data
             $additionalData = $result->getAdditionalData();
-            if (
-                empty($storedTransactionCustomFields[self::ADDITIONAL_DATA])
+            if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA])
                 && !empty($additionalData)
-                && !$result->isGiftcard()
-            ) {
+                && !$result->isGiftcard())
+            {
                 $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
             }
         }

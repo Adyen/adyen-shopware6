@@ -88,7 +88,7 @@ class PaymentStateDataService
 
         $this->paymentStateDataRepository->upsert(
             [$fields],
-            \Shopware\Core\Framework\Context::createDefaultContext()
+            Context::createDefaultContext()
         );
     }
 
@@ -102,6 +102,16 @@ class PaymentStateDataService
             (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
             Context::createDefaultContext()
         )->first();
+    }
+
+    public function updateStateDataContextToken(PaymentStateDataEntity $stateData, $newToken): void
+    {
+        $this->paymentStateDataRepository->update([
+            [
+                'id' => $stateData->getId(),
+                'token' => $newToken
+            ]
+        ], Context::createDefaultContext());
     }
 
     /**

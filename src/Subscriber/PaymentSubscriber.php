@@ -41,14 +41,12 @@ use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
-use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
-use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
+use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenChangeEvent;
+use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPage;
@@ -106,11 +104,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $session;
 
     /**
-     * @var ContainerInterface $container
-     */
-    private $container;
-
-    /**
      * @var CartPersisterInterface
      */
     private $cartPersister;
@@ -126,17 +119,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $currency;
 
     /**
-     * @var LoggerInterface $logger
-     */
-    private $logger;
-
-    /**
      * @var AdyenPluginProvider
      */
     private $adyenPluginProvider;
 
     /**
-     * @var ContextSwitchRoute
+     * @var AbstractContextSwitchRoute
      */
     private $contextSwitchRoute;
 
@@ -157,13 +145,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param PaymentMethodsService $paymentMethodsService
      * @param EntityRepositoryInterface $paymentMethodRepository
      * @param SessionInterface $session
-     * @param ContainerInterface $container
      * @param CartPersisterInterface $cartPersister
      * @param CartCalculator $cartCalculator
-     * @param ContextSwitchRoute $contextSwitchRoute
+     * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
      * @param Currency $currency
-     * @param LoggerInterface $logger
      */
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
@@ -175,13 +161,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         PaymentMethodsService $paymentMethodsService,
         EntityRepositoryInterface $paymentMethodRepository,
         SessionInterface $session,
-        ContainerInterface $container,
         CartPersisterInterface $cartPersister,
         CartCalculator $cartCalculator,
-        ContextSwitchRoute $contextSwitchRoute,
+        AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,
-        Currency $currency,
-        LoggerInterface $logger
+        Currency $currency
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
@@ -191,13 +175,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->session = $session;
-        $this->container = $container;
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
         $this->contextSwitchRoute = $contextSwitchRoute;
         $this->salesChannelContextFactory = $salesChannelContextFactory;
         $this->currency = $currency;
-        $this->logger = $logger;
         $this->adyenPluginProvider = $adyenPluginProvider;
     }
 
@@ -418,12 +400,5 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 )
             );
         }
-    }
-
-    private function trans(string $snippet, array $parameters = []): string
-    {
-        return $this->container
-            ->get('translator')
-            ->trans($snippet, $parameters);
     }
 }
