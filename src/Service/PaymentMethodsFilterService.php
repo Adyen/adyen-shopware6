@@ -98,7 +98,8 @@ class PaymentMethodsFilterService
                     }
                 } elseif ($pmHandlerIdentifier::$isGiftCard) {
                     // Remove giftcards from checkout list, except the selected giftcard
-                    if (!$giftcardSelected || $salesChannelContext->getPaymentMethod()->getId() !== $paymentMethodEntity->getId()) {
+                    if (!$giftcardSelected ||
+                        $salesChannelContext->getPaymentMethod()->getId() !== $paymentMethodEntity->getId()) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                     // Remove ApplePay PM if the browser is not Safari
