@@ -4,6 +4,8 @@
 {% block component_offcanvas_cart_actions_promotion_form %}
     {{ parent() }}
 
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
+    {% if adyenFrontendData and adyenFrontendData.giftcards %}
+        <a href="{{ adyenFrontendData.shoppingCartPageUrl }}" class="btn btn-xs btn-outline-info float-right mb-3">&plus; Add Giftcards</a>
+        <div class="clearfix"></div>
+    {% endif %}
 {% endblock %}

@@ -2,12 +2,11 @@
     {% if adyenFrontendData and adyenFrontendData.giftcards %}
         <div id="adyen-giftcards-container">
             <div id="adyen-giftcards-configuration"
-                 data-total="{{ adyenFrontendData.total }}"
+                 data-total-price="{{ adyenFrontendData.totalPrice }}"
                  data-total-in-minor-units="{{ adyenFrontendData.totalInMinorUnits }}"
                  data-currency="{{ adyenFrontendData.currency }}"
                  data-currency-symbol="{{ adyenFrontendData.currencySymbol }}"
-                 data-giftcard-is-set="{{ adyenFrontendData.giftcardIsSet }}"
-                 data-amount-covered="{{ adyenFrontendData.amountCovered }}"
+                 data-giftcard-discount="{{ adyenFrontendData.giftcardDiscount }}"
                  data-check-balance-url="{{ adyenFrontendData.checkBalanceUrl }}"
                  data-set-giftcard-url="{{ adyenFrontendData.setGiftcardUrl }}"
                  data-remove-giftcard-url="{{ adyenFrontendData.removeGiftcardUrl }}"
@@ -34,7 +33,7 @@
             <div class="clearfix"></div>
             <a href="javascript:void(0)" class="btn btn-xs adyen-remove-giftcard btn-outline-dark">Remove giftcard</a>
             <span class="adyen-close-giftcard-component" title="Close giftcard">&times;</span>
-            <h6 class="adyen-giftcard-header">&nbsp;</h6>
+            <h6 class="adyen-giftcard-header"></h6>
             <div id="adyen-giftcard-component"></div>
             <hr>
         </div>

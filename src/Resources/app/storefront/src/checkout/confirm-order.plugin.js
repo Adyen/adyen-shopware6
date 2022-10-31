@@ -36,6 +36,11 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
+        this.shoppingCartSummaryBlock = $('.checkout-aside-summary-list');
+        this.shoppingCartSummaryDetails = null;
+        this.minorUnitsQuotient = adyenCheckoutOptions.amount/adyenCheckoutOptions.totalPrice;
+        this.giftcardDiscount = (adyenCheckoutOptions.giftcardDiscount / this.minorUnitsQuotient).toFixed(2);
+        this.remainingAmount = (adyenCheckoutOptions.totalPrice - this.giftcardDiscount).toFixed(2);
         this.responseHandler = this.handlePaymentAction;
         this.adyenCheckout = Promise;
         this.initializeCheckoutComponent().then(function () {
@@ -66,6 +71,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                 this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
             }
         }.bind(this));
+        if (parseInt(adyenCheckoutOptions.giftcardDiscount)) {
+            this.appendGiftcardSummary();
+        }
     }
 
     async initializeCheckoutComponent () {
@@ -516,6 +524,16 @@ export default class ConfirmOrderPlugin extends Plugin {
         } catch (err) {
             console.error(paymentMethod.type, err);
             return false;
+        }
+    }
+
+    appendGiftcardSummary() {
+        if(this.shoppingCartSummaryBlock.length) {
+            this.shoppingCartSummaryDetails = $('<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Giftcard discount</dt>' +
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.currencySymbol + this.giftcardDiscount + '</dd>' +
+                '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Remaining amount</dt>' +
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.currencySymbol + this.remainingAmount + '</dd>');
+            this.shoppingCartSummaryDetails.appendTo(this.shoppingCartSummaryBlock[0]);
         }
     }
 

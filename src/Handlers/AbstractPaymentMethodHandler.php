@@ -351,6 +351,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     'orderData' => $adyenOrder->get('orderData'),
                     'pspReference' => $adyenOrder->get('pspReference')
                 ];
+
+                // Remove the used state.data
+                $this->paymentStateDataService->deletePaymentStateData($stateDataEntity);
             } else {
                 $message = sprintf(
                     "There was an error with the giftcard payment. Order number: %s; Missing: giftcard data",
@@ -359,11 +362,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $this->logger->error($message);
                 throw new AsyncPaymentProcessException($transactionId, $message);
             }
-        }
-
-        // Remove the used state.data
-        if (isset($stateDataEntity)) {
-            $this->paymentStateDataService->deletePaymentStateData($stateDataEntity);
+        } else {
+            // When there is no Adyen order created, we only need one state data
+            $stateData = $stateData ?? $storedStateData;
         }
 
         try {
@@ -382,6 +383,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
             $this->logger->error($message);
             throw new AsyncPaymentProcessException($transactionId, $message);
+        }
+
+        if ($storedStateData) {
+            // Remove the used state.data
+            $this->paymentStateDataService->deletePaymentStateData($stateDataEntity);
         }
 
         try {

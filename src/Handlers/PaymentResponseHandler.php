@@ -156,13 +156,16 @@ class PaymentResponseHandler
             $paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
         }
 
-        // Set Donation Token if response contains it, except for giftcards
-        if (isset($response[self::DONATION_TOKEN]) && 'giftcard' !== $response['paymentMethod']['type'] ?? '') {
-            $paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
+        $isGiftcardResponse = false;
+        if (!empty($response['paymentMethod']) && !empty($response['paymentMethod']['type'])) {
+            $isGiftcardResponse = 'giftcard' === $response['paymentMethod']['type'];
         }
 
-        if ('giftcard' === $response['paymentMethod']['type'] ?? null) {
-            $paymentResponseHandlerResult->setIsGiftcard(true);
+        $paymentResponseHandlerResult->setIsGiftcard($isGiftcardResponse);
+
+        // Set Donation Token if response contains it, except for giftcards
+        if (!empty($response[self::DONATION_TOKEN]) && !$isGiftcardResponse) {
+            $paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
         }
 
         // Store response for cart until the payment is finalised
@@ -248,8 +251,7 @@ class PaymentResponseHandler
             $pspReference = $result->getPspReference();
             if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE])
                 && !empty($pspReference)
-                && !$result->isGiftcard())
-            {
+                && !$result->isGiftcard()) {
                 $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
             }
 
@@ -261,8 +263,7 @@ class PaymentResponseHandler
             $additionalData = $result->getAdditionalData();
             if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA])
                 && !empty($additionalData)
-                && !$result->isGiftcard())
-            {
+                && !$result->isGiftcard()) {
                 $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
             }
         }
