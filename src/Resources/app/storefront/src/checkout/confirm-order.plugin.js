@@ -185,7 +185,8 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     createOrder(formData, extraParams) {
-        if (!adyenCheckoutOptions.payInFullWithGiftcard) {
+        if (parseInt(adyenCheckoutOptions.giftcardDiscount) && !adyenCheckoutOptions.payInFullWithGiftcard) {
+            // create Adyen order for partial payments
             this._client.post(
                 adyenCheckoutOptions.createOrderUrl,
                 JSON.stringify({orderAmount: adyenCheckoutOptions.amount, currency: adyenCheckoutOptions.currency}),
@@ -197,6 +198,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                         });
                     }
 
+                    // create shopware order
                     this._client.post(
                         adyenCheckoutOptions.checkoutOrderUrl,
                         formData,

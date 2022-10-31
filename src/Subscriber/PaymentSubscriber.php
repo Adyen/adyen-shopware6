@@ -269,7 +269,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     public function onCheckoutConfirmLoaded(PageLoadedEvent $event)
     {
         $salesChannelContext = $event->getSalesChannelContext();
-        $paymentMethod = $salesChannelContext->getPaymentMethod();
+        $selectedPaymentMethod = $salesChannelContext->getPaymentMethod();
         $page = $event->getPage();
         $orderId = '';
         if (method_exists($page, 'getOrder')) {
@@ -291,20 +291,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         }
         $amount = $this->currency->sanitize($totalPrice, $currency);
 
+        $adyenPluginId = $this->adyenPluginProvider->getAdyenPluginId();
         $displaySaveCreditCardOption = $this->paymentMethodsFilterService->isPaymentMethodInCollection(
             $page->getPaymentMethods(),
             OneClickPaymentMethodHandler::getPaymentMethodCode(),
-            $this->adyenPluginProvider->getAdyenPluginId(),
+            $adyenPluginId,
         );
-
         $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, $orderId);
-        $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
-            $page->getPaymentMethods(),
-            $salesChannelContext,
-            $this->adyenPluginProvider->getAdyenPluginId(),
-            $paymentMethodsResponse
-        );
-
         $giftcardStateData = $this->paymentStateDataService
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
@@ -315,6 +308,28 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 $payInFullWithGiftcard = true;
             }
         }
+        $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
+            $page->getPaymentMethods(),
+            $salesChannelContext,
+            $adyenPluginId,
+            $paymentMethodsResponse,
+            $payInFullWithGiftcard
+        );
+
+        if (!$payInFullWithGiftcard
+            && $selectedPaymentMethod->getPluginId() === $adyenPluginId
+            && $selectedPaymentMethod->getHandlerIdentifier()::$isGiftCard) {
+            $selectedPaymentMethod = $filteredPaymentMethods->first();
+            $this->contextSwitchRoute->switchContext(
+                new RequestDataBag(
+                    [
+                        SalesChannelContextService::PAYMENT_METHOD_ID => $selectedPaymentMethod->getId()
+                    ]
+                ),
+                $salesChannelContext
+            );
+        }
+
         $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
 
         $page->setPaymentMethods($filteredPaymentMethods);
@@ -359,8 +374,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'currencySymbol' => $currencySymbol,
                         'payInFullWithGiftcard' => $payInFullWithGiftcard,
                         'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
-                        'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
-                        'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
+                        'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
+                        'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),
                         'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
                         'billingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
                             $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()

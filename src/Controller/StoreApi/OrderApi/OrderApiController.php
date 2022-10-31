@@ -143,8 +143,6 @@ class OrderApiController
         $orderData = $request->request->get('orderData');
         $pspReference = $request->request->get('pspReference');
 
-        // todo , also delete giftcard state data from context if exists
-
         return new JsonResponse($this->ordersCancelService->cancelOrder($context, $orderData, $pspReference));
     }
 
@@ -152,7 +150,7 @@ class OrderApiController
      * @Route(
      *     "/store-api/adyen/giftcard",
      *     name="store-api.action.adyen.giftcard",
-     *     methods={"POST", "GET"}
+     *     methods={"POST"}
      * )
      * @param SalesChannelContext $context
      * @param Request $request
@@ -162,24 +160,18 @@ class OrderApiController
      */
     public function giftcardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
-        if ('POST' === $request->getMethod()) {
-            // store giftcard state data for context
-            $stateData = $request->request->get('stateData');
-            if ('giftcard' !== $stateData['paymentMethod']['type']) {
-                throw new ValidationException('Only giftcard state data is allowed to be stored.');
-            }
-            $this->paymentStateDataService->insertPaymentStateData(
-                $context->getToken(),
-                json_encode($stateData),
-                $request->request->get('amount')
-            );
-
-            return new JsonResponse([]);
-        } else {
-            // fetch giftcard data
-
-            return new JsonResponse([]);
+        // store giftcard state data for context
+        $stateData = $request->request->get('stateData');
+        if ('giftcard' !== $stateData['paymentMethod']['type']) {
+            throw new ValidationException('Only giftcard state data is allowed to be stored.');
         }
+        $this->paymentStateDataService->insertPaymentStateData(
+            $context->getToken(),
+            json_encode($stateData),
+            $request->request->get('amount')
+        );
+
+        return new JsonResponse([]);
     }
 
     /**
