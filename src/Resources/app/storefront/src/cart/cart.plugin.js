@@ -37,9 +37,11 @@ export default class CartPlugin extends Plugin {
         this.giftcardHeader = $('.adyen-giftcard-header');
         this.giftcardComponentClose = $('.adyen-close-giftcard-component');
         this.removeGiftcardButton = $('.adyen-remove-giftcard');
+        this.remainingBalanceField = $('.adyen-remaining-balance');
         this.minorUnitsQuotient = adyenGiftcardsConfiguration.totalInMinorUnits/adyenGiftcardsConfiguration.totalPrice;
         this.giftcardDiscount = (adyenGiftcardsConfiguration.giftcardDiscount / this.minorUnitsQuotient).toFixed(2);
         this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
+        this.remainingGiftcardBalance = (adyenGiftcardsConfiguration.giftcardBalance / this.minorUnitsQuotient).toFixed(2);
         this.offCanvasCartSummaryBlock = $('.offcanvas-summary-list');
         this.shoppingCartSummaryBlock = $('.checkout-aside-summary-list');
         this.offCanvasSummaryDetails = null;
@@ -98,7 +100,6 @@ export default class CartPlugin extends Plugin {
         const giftcardConfiguration = Object.assign({}, giftcard, {
             showPayButton: true,
             onBalanceCheck: this.handleBalanceCheck.bind(this),
-            onSubmit: this.onGiftcardSubmit.bind(this)
         });
         try {
             this.paymentMethodInstance = this.adyenCheckout.create('giftcard', giftcardConfiguration);
@@ -121,30 +122,28 @@ export default class CartPlugin extends Plugin {
                 } else {
                     // 0. compare balance to total amount to be paid
                     const balance = parseFloat(response.balance.value);
+                    let remainingGiftcardBalanceMinorUnits = (balance - adyenGiftcardsConfiguration.totalInMinorUnits);
                     if (balance >= adyenGiftcardsConfiguration.totalInMinorUnits) {
-                        // Render pay button for giftcard
-                        resolve(response);
+                        this.remainingGiftcardBalance = (remainingGiftcardBalanceMinorUnits / this.minorUnitsQuotient).toFixed(2);
+                        this.setGiftcardAsPaymentMethod(data, remainingGiftcardBalanceMinorUnits);
                     } else {
                         this.remainingAmount = ((adyenGiftcardsConfiguration.totalInMinorUnits - balance) / this.minorUnitsQuotient).toFixed(2);
                         resolve(response);
-                        this.saveGiftcardStateData(data, balance.toString(), this.selectedGiftcard.id);
+                        this.saveGiftcardStateData(data, balance.toString(), 0, this.selectedGiftcard.id);
                     }
+
+                    this.remainingBalanceField.show();
+                    this.remainingBalanceField.html('Remaining giftcard balance: ' + adyenGiftcardsConfiguration.currencySymbol + this.remainingGiftcardBalance);
                 }
             }.bind(this)
         );
     }
 
-    onGiftcardSubmit(state) {
-        ElementLoadingIndicatorUtil.create(document.body);
-        if (state.isValid) {
-            this.setGiftcardAsPaymentMethod(state.data);
-        }
-    }
-
-    saveGiftcardStateData(stateData, amountInMinorUnits, paymentMethodId) {
+    saveGiftcardStateData(stateData, amountInMinorUnits, balance, paymentMethodId) {
         // save state data to database, set giftcard as payment method and proceed to checkout
-        this._client.post(adyenGiftcardsConfiguration.setGiftcardUrl, JSON.stringify({ stateData, amount: amountInMinorUnits, paymentMethodId }), function (response) {
-            if (JSON.parse(response).length === 0) {
+        this._client.post(adyenGiftcardsConfiguration.setGiftcardUrl, JSON.stringify({ stateData, amount: amountInMinorUnits, balance, paymentMethodId }), function (response) {
+            response = JSON.parse(response);
+            if ('paymentMethodId' in response) {
                 this.giftcardDiscount = (amountInMinorUnits / this.minorUnitsQuotient).toFixed(2);
                 this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
                 this.onGiftcardSelected();
@@ -153,16 +152,17 @@ export default class CartPlugin extends Plugin {
         }.bind(this));
     }
 
-    setGiftcardAsPaymentMethod(stateData) {
+    setGiftcardAsPaymentMethod(stateData, balance) {
         this._client.patch(adyenGiftcardsConfiguration.switchContextUrl, JSON.stringify({paymentMethodId: this.selectedGiftcard.id}), function (response) {
-            this.saveGiftcardStateData(stateData, adyenGiftcardsConfiguration.totalInMinorUnits, this.selectedGiftcard.id)
+            this.saveGiftcardStateData(stateData, adyenGiftcardsConfiguration.totalInMinorUnits, balance, this.selectedGiftcard.id)
         }.bind(this));
     }
 
     removeGiftcard() {
         ElementLoadingIndicatorUtil.create(document.body);
         this._client.post(adyenGiftcardsConfiguration.removeGiftcardUrl, new FormData, function(response) {
-            if (JSON.parse(response).length === 0) {
+            response = JSON.parse(response);
+            if ('token' in response) {
                 this.giftcardDiscount = 0;
                 this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
                 if (this.offCanvasCartSummaryBlock.length) {
@@ -172,6 +172,7 @@ export default class CartPlugin extends Plugin {
                     this.shoppingCartSummaryBlock.children('.adyen-giftcard-summary').remove();
                 }
                 this.removeGiftcardButton.hide();
+                this.remainingBalanceField.hide();
                 // Show giftcards
                 $('.adyen-giftcard').show();
                 ElementLoadingIndicatorUtil.remove(document.body);
@@ -209,5 +210,7 @@ export default class CartPlugin extends Plugin {
         this.appendGiftcardSummary();
         // Show Remove button
         this.removeGiftcardButton.show();
+        this.remainingBalanceField.show();
+        this.remainingBalanceField.html('Remaining giftcard balance: ' + adyenGiftcardsConfiguration.currencySymbol + this.remainingGiftcardBalance);
     }
 }

@@ -7,6 +7,7 @@
                  data-currency="{{ adyenFrontendData.currency }}"
                  data-currency-symbol="{{ adyenFrontendData.currencySymbol }}"
                  data-giftcard-discount="{{ adyenFrontendData.giftcardDiscount }}"
+                 data-giftcard-balance="{{ adyenFrontendData.giftcardBalance }}"
                  data-check-balance-url="{{ adyenFrontendData.checkBalanceUrl }}"
                  data-set-giftcard-url="{{ adyenFrontendData.setGiftcardUrl }}"
                  data-remove-giftcard-url="{{ adyenFrontendData.removeGiftcardUrl }}"
@@ -35,6 +36,7 @@
             <a href="javascript:void(0)" class="btn btn-xs adyen-remove-giftcard btn-outline-dark">Remove giftcard</a>
             <span class="adyen-close-giftcard-component" title="Close giftcard">&times;</span>
             <h6 class="adyen-giftcard-header"></h6>
+            <p class="adyen-remaining-balance"></p>
             <div id="adyen-giftcard-component"></div>
             <hr>
         </div>

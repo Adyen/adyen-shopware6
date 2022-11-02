@@ -169,12 +169,13 @@ class OrderApiController
             $context->getToken(),
             json_encode($stateData),
             [
-                'amount' => $request->request->get('amount'),
+                'amount' => (int) $request->request->get('amount'),
                 'paymentMethodId' => $request->request->get('paymentMethodId'),
+                'balance' => (int) $request->request->get('balance'),
             ]
         );
 
-        return new JsonResponse([]);
+        return new JsonResponse(['paymentMethodId' => $request->request->get('paymentMethodId')]);
     }
 
     /**
@@ -191,6 +192,6 @@ class OrderApiController
     {
         $this->paymentStateDataService->deletePaymentStateDataFromContextToken($context->getToken());
 
-        return new JsonResponse([]);
+        return new JsonResponse(['token' => $context->getToken()]);
     }
 }

@@ -62,7 +62,7 @@ class PaymentStateDataService
     /**
      * @param string $contextToken
      * @param string $stateData
-     * @param string $amount
+     * @param array $additionalData
      * @throws AdyenException
      */
     public function insertPaymentStateData(string $contextToken, string $stateData, array $additionalData = []): void

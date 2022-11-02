@@ -241,22 +241,26 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $giftcardData = $this->paymentStateDataService
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
+        $giftcardBalance = 0;
         if ($giftcardData) {
             $stateData = $giftcardData->getStateData();
             $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
             $selectedPaymentMethodId = json_decode($stateData, true)['additionalData']['paymentMethodId'] ?? 0;
+            $giftcardBalance = json_decode($stateData, true)['additionalData']['balance'] ?? 0;
 
             // update discount amount if total becomes less than discount
             if ((int) $giftcardDiscount > $amountInMinorUnits) {
+                $newBalance = ($giftcardDiscount - $amountInMinorUnits) + $giftcardBalance;
                 $this->paymentStateDataService->insertPaymentStateData(
                     $salesChannelContext->getToken(),
                     $stateData,
                     [
-                        'amount' => (string) $amountInMinorUnits,
+                        'amount' => $amountInMinorUnits,
                         'paymentMethodId' => $selectedPaymentMethodId,
+                        'balance' => $newBalance,
                     ]
                 );
-                $giftcardDiscount = (string) $amountInMinorUnits;
+                $giftcardDiscount = $amountInMinorUnits;
                 $this->contextSwitchRoute->switchContext(
                     new RequestDataBag(
                         [
@@ -278,6 +282,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'currency' => $currency,
                     'currencySymbol' => $currencySymbol,
                     'giftcardDiscount' => $giftcardDiscount,
+                    'giftcardBalance' => $giftcardBalance,
                     'selectedPaymentMethodId' => $selectedPaymentMethodId,
                     'checkBalanceUrl' => $this->router
                         ->generate('store-api.action.adyen.payment-methods.balance'),
