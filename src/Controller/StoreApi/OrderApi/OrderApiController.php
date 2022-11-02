@@ -168,7 +168,10 @@ class OrderApiController
         $this->paymentStateDataService->insertPaymentStateData(
             $context->getToken(),
             json_encode($stateData),
-            $request->request->get('amount')
+            [
+                'amount' => $request->request->get('amount'),
+                'paymentMethodId' => $request->request->get('paymentMethodId'),
+            ]
         );
 
         return new JsonResponse([]);

@@ -65,7 +65,7 @@ class PaymentStateDataService
      * @param string $amount
      * @throws AdyenException
      */
-    public function insertPaymentStateData(string $contextToken, string $stateData, string $amount): void
+    public function insertPaymentStateData(string $contextToken, string $stateData, array $additionalData = []): void
     {
         if (empty($contextToken) || empty($stateData)) {
             $message = 'No context token or state.data found, unable to save payment state.data';
@@ -76,7 +76,7 @@ class PaymentStateDataService
         $stateDataArray = json_decode($stateData, true);
 
         //Set additional data to persist along with the state.data
-        $stateDataArray['additionalData'] = ['amount' => $amount];
+        $stateDataArray['additionalData'] = $additionalData;
 
         $fields['token'] = $contextToken;
         $fields['statedata'] = json_encode($stateDataArray);

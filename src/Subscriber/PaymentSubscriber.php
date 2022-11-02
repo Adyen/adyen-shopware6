@@ -217,12 +217,19 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     {
         /** @var CheckoutCartPage|OffcanvasCartPage $page */
         $page = $event->getPage();
+        if ($page->getCart()->getLineItems()->count() === 0) {
+            return;
+        }
         $salesChannelContext = $event->getSalesChannelContext();
 
         $shopwarePaymentMethods = null;
         if ($page instanceof CheckoutCartPage) {
             $shopwarePaymentMethods = $page->getPaymentMethods();
         }
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
+        $amountInMinorUnits = $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency);
+
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
         $giftcards = $this->paymentMethodsFilterService->getAvailableGiftcards(
             $salesChannelContext,
@@ -230,15 +237,36 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $this->adyenPluginProvider->getAdyenPluginId(),
             $shopwarePaymentMethods
         );
-        $giftcardStateData = $this->paymentStateDataService
+        $selectedPaymentMethodId = null;
+        $giftcardData = $this->paymentStateDataService
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
-        if ($giftcardStateData) {
-            $giftcardDiscount = json_decode($giftcardStateData->getStateData(), true)['additionalData']['amount'] ?? 0;
+        if ($giftcardData) {
+            $stateData = $giftcardData->getStateData();
+            $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
+            $selectedPaymentMethodId = json_decode($stateData, true)['additionalData']['paymentMethodId'] ?? 0;
+
+            // update discount amount if total becomes less than discount
+            if ((int) $giftcardDiscount > $amountInMinorUnits) {
+                $this->paymentStateDataService->insertPaymentStateData(
+                    $salesChannelContext->getToken(),
+                    $stateData,
+                    [
+                        'amount' => (string) $amountInMinorUnits,
+                        'paymentMethodId' => $selectedPaymentMethodId,
+                    ]
+                );
+                $giftcardDiscount = (string) $amountInMinorUnits;
+                $this->contextSwitchRoute->switchContext(
+                    new RequestDataBag(
+                        [
+                            SalesChannelContextService::PAYMENT_METHOD_ID => $selectedPaymentMethodId
+                        ]
+                    ),
+                    $salesChannelContext
+                );
+            }
         }
-        $currency = $salesChannelContext->getCurrency()->getIsoCode();
-        $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
-        $amountInMinorUnits = $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency);
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -250,6 +278,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'currency' => $currency,
                     'currencySymbol' => $currencySymbol,
                     'giftcardDiscount' => $giftcardDiscount,
+                    'selectedPaymentMethodId' => $selectedPaymentMethodId,
                     'checkBalanceUrl' => $this->router
                         ->generate('store-api.action.adyen.payment-methods.balance'),
                     'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
@@ -302,11 +331,15 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
         $payInFullWithGiftcard = false;
+        $adyenGiftcardSelected = false;
         if ($giftcardStateData) {
             $giftcardDiscount = json_decode($giftcardStateData->getStateData(), true)['additionalData']['amount'] ?? 0;
+            $giftcardId = json_decode($giftcardStateData->getStateData(), true)['additionalData']['paymentMethodId'] ?? 0;
             if ($giftcardDiscount >= $amount) {
                 $payInFullWithGiftcard = true;
             }
+
+            $adyenGiftcardSelected = $selectedPaymentMethod->getId() === $giftcardId;
         }
         $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),
@@ -316,9 +349,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $payInFullWithGiftcard
         );
 
-        if (!$payInFullWithGiftcard
-            && $selectedPaymentMethod->getPluginId() === $adyenPluginId
-            && $selectedPaymentMethod->getHandlerIdentifier()::$isGiftCard) {
+        if (!$payInFullWithGiftcard && $adyenGiftcardSelected) {
             $selectedPaymentMethod = $filteredPaymentMethods->first();
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
@@ -328,6 +359,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 ),
                 $salesChannelContext
             );
+            $adyenGiftcardSelected = false;
         }
 
         $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
@@ -372,7 +404,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'totalPrice' => $totalPrice,
                         'giftcardDiscount' => $giftcardDiscount,
                         'currencySymbol' => $currencySymbol,
-                        'payInFullWithGiftcard' => $payInFullWithGiftcard,
+                        'payInFullWithGiftcard' => (int) $payInFullWithGiftcard,
+                        'adyenGiftcardSelected' => (int) $adyenGiftcardSelected,
                         'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
                         'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),

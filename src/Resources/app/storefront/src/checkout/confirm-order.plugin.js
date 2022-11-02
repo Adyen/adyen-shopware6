@@ -71,7 +71,12 @@ export default class ConfirmOrderPlugin extends Plugin {
                 this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
             }
         }.bind(this));
-        if (parseInt(adyenCheckoutOptions.giftcardDiscount)) {
+
+        if (parseInt(adyenCheckoutOptions.payInFullWithGiftcard)) {
+            if (parseInt(adyenCheckoutOptions.adyenGiftcardSelected)) {
+                this.appendGiftcardSummary();
+            }
+        } else {
             this.appendGiftcardSummary();
         }
     }
@@ -530,7 +535,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     appendGiftcardSummary() {
-        if(this.shoppingCartSummaryBlock.length) {
+        if(parseInt(adyenCheckoutOptions.giftcardDiscount) && this.shoppingCartSummaryBlock.length) {
             this.shoppingCartSummaryDetails = $('<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Giftcard discount</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.currencySymbol + this.giftcardDiscount + '</dd>' +
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Remaining amount</dt>' +

@@ -30,7 +30,7 @@ export default class CartPlugin extends Plugin {
         this._client = new StoreApiClient();
         this.adyenCheckout = Promise;
         this.paymentMethodInstance = null;
-        this.selectedGiftcard = null;
+        this.selectedGiftcard = adyenGiftcardsConfiguration.selectedPaymentMethodId;
         this.initializeCheckoutComponent().then(function () {
             this.observeGiftcardSelection();
         }.bind(this));
@@ -127,7 +127,7 @@ export default class CartPlugin extends Plugin {
                     } else {
                         this.remainingAmount = ((adyenGiftcardsConfiguration.totalInMinorUnits - balance) / this.minorUnitsQuotient).toFixed(2);
                         resolve(response);
-                        this.saveGiftcardStateData(data, balance.toString());
+                        this.saveGiftcardStateData(data, balance.toString(), this.selectedGiftcard.id);
                     }
                 }
             }.bind(this)
@@ -141,9 +141,9 @@ export default class CartPlugin extends Plugin {
         }
     }
 
-    saveGiftcardStateData(stateData, amountInMinorUnits) {
+    saveGiftcardStateData(stateData, amountInMinorUnits, paymentMethodId) {
         // save state data to database, set giftcard as payment method and proceed to checkout
-        this._client.post(adyenGiftcardsConfiguration.setGiftcardUrl, JSON.stringify({ stateData, amount: amountInMinorUnits }), function (response) {
+        this._client.post(adyenGiftcardsConfiguration.setGiftcardUrl, JSON.stringify({ stateData, amount: amountInMinorUnits, paymentMethodId }), function (response) {
             if (JSON.parse(response).length === 0) {
                 this.giftcardDiscount = (amountInMinorUnits / this.minorUnitsQuotient).toFixed(2);
                 this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
@@ -155,7 +155,7 @@ export default class CartPlugin extends Plugin {
 
     setGiftcardAsPaymentMethod(stateData) {
         this._client.patch(adyenGiftcardsConfiguration.switchContextUrl, JSON.stringify({paymentMethodId: this.selectedGiftcard.id}), function (response) {
-            this.saveGiftcardStateData(stateData, adyenGiftcardsConfiguration.totalInMinorUnits)
+            this.saveGiftcardStateData(stateData, adyenGiftcardsConfiguration.totalInMinorUnits, this.selectedGiftcard.id)
         }.bind(this));
     }
 
