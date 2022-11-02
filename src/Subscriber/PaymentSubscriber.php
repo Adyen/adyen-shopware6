@@ -327,14 +327,15 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $adyenPluginId,
         );
         $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, $orderId);
-        $giftcardStateData = $this->paymentStateDataService
+        $giftcardData = $this->paymentStateDataService
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
         $payInFullWithGiftcard = false;
         $adyenGiftcardSelected = false;
-        if ($giftcardStateData) {
-            $giftcardDiscount = json_decode($giftcardStateData->getStateData(), true)['additionalData']['amount'] ?? 0;
-            $giftcardId = json_decode($giftcardStateData->getStateData(), true)['additionalData']['paymentMethodId'] ?? 0;
+        if ($giftcardData) {
+            $stateData = $giftcardData->getStateData();
+            $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
+            $giftcardId = json_decode($stateData, true)['additionalData']['paymentMethodId'] ?? 0;
             if ($giftcardDiscount >= $amount) {
                 $payInFullWithGiftcard = true;
             }
