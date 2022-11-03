@@ -343,7 +343,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             if ($giftcardDiscount >= $amount) {
                 $payInFullWithGiftcard = true;
             }
-
         }
         $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),

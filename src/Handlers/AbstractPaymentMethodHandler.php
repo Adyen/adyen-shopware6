@@ -339,7 +339,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             ->handlePaymentResponse($response, $transaction->getOrderTransaction(), false);
 
         try {
-            $this->paymentResponseHandler->handleShopwareApis($transaction, $salesChannelContext, $this->paymentResults);
+            $this->paymentResponseHandler
+                ->handleShopwareApis($transaction, $salesChannelContext, $this->paymentResults);
         } catch (PaymentCancelledException $exception) {
             throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
         } catch (PaymentFailedException $exception) {
@@ -847,9 +848,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             ->handlePaymentResponse($giftcardPaymentResponse, $transaction->getOrderTransaction(), false);
 
         $this->remainingAmount = $this->currency->sanitize(
-                $transaction->getOrder()->getPrice()->getTotalPrice(),
-                $salesChannelContext->getCurrency()->getIsoCode()
-            ) - $partialAmount;
+            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $salesChannelContext->getCurrency()->getIsoCode()
+        ) - $partialAmount;
 
         // Remove the used state.data
         $this->paymentStateDataService->deletePaymentStateDataFromContextToken($salesChannelContext->getToken());
