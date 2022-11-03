@@ -352,6 +352,6 @@ class ConfigurationService
      */
     public function getDomainUrl(string $salesChannelId): ?string
     {
-        $this->systemConfigService->get(self::BUNDLE_NAME . '.config.url', $salesChannelId);
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.url', $salesChannelId);
     }
 }

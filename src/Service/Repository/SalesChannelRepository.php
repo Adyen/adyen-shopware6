@@ -11,6 +11,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Adyen\Shopware\Service\ConfigurationService;
 
 class SalesChannelRepository
 {
@@ -25,16 +26,24 @@ class SalesChannelRepository
     private $salesChannelRepository;
 
     /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
      * SalesChannelRepository constructor.
      * @param EntityRepositoryInterface $domainRepository
      * @param EntityRepositoryInterface $salesChannelRepository
+     * @param ConfigurationService $configurationService
      */
     public function __construct(
         EntityRepositoryInterface $domainRepository,
-        EntityRepositoryInterface $salesChannelRepository
+        EntityRepositoryInterface $salesChannelRepository,
+        ConfigurationService $configurationService
     ) {
         $this->domainRepository = $domainRepository;
         $this->salesChannelRepository = $salesChannelRepository;
+        $this->configurationService = $configurationService;
     }
 
     /**
@@ -44,8 +53,9 @@ class SalesChannelRepository
     public function getCurrentDomainUrl(SalesChannelContext $context): string
     {
         $criteria = new Criteria();
-
+        $domainUrl = $this->configurationService->getDomainUrl($context->getSalesChannelId());
         $domainId = $context->getSalesChannel()->getHreflangDefaultDomainId() ?: $context->getDomainId();
+
         if ($domainId) {
             $criteria->addFilter(new EqualsFilter('id', $domainId));
         } else {
@@ -61,6 +71,9 @@ class SalesChannelRepository
             throw new SalesChannelDomainNotFoundException($context->getSalesChannel());
         }
 
+        if ($domainUrl) {
+            return $domainUrl;
+        }
         return $domainEntity->getUrl();
     }
 
