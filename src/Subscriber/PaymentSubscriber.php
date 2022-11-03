@@ -283,7 +283,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'currencySymbol' => $currencySymbol,
                     'giftcardDiscount' => $giftcardDiscount,
                     'giftcardBalance' => $giftcardBalance,
-                    'selectedPaymentMethodId' => $selectedPaymentMethodId,
                     'checkBalanceUrl' => $this->router
                         ->generate('store-api.action.adyen.payment-methods.balance'),
                     'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
@@ -336,16 +335,15 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
         $payInFullWithGiftcard = false;
-        $adyenGiftcardSelected = false;
+        $adyenGiftcardSelected = ($selectedPaymentMethod->getPluginId() === $adyenPluginId)
+            && $selectedPaymentMethod->getHandlerIdentifier()::$isGiftCard;
         if ($giftcardData) {
             $stateData = $giftcardData->getStateData();
             $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
-            $giftcardId = json_decode($stateData, true)['additionalData']['paymentMethodId'] ?? 0;
             if ($giftcardDiscount >= $amount) {
                 $payInFullWithGiftcard = true;
             }
 
-            $adyenGiftcardSelected = $selectedPaymentMethod->getId() === $giftcardId;
         }
         $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),

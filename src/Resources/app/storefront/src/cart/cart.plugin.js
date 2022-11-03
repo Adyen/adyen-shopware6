@@ -30,7 +30,7 @@ export default class CartPlugin extends Plugin {
         this._client = new StoreApiClient();
         this.adyenCheckout = Promise;
         this.paymentMethodInstance = null;
-        this.selectedGiftcard = adyenGiftcardsConfiguration.selectedPaymentMethodId;
+        this.selectedGiftcard = null;
         this.initializeCheckoutComponent().then(function () {
             this.observeGiftcardSelection();
         }.bind(this));
@@ -128,7 +128,6 @@ export default class CartPlugin extends Plugin {
                         this.setGiftcardAsPaymentMethod(data, remainingGiftcardBalanceMinorUnits);
                     } else {
                         this.remainingAmount = ((adyenGiftcardsConfiguration.totalInMinorUnits - balance) / this.minorUnitsQuotient).toFixed(2);
-                        resolve(response);
                         this.saveGiftcardStateData(data, balance.toString(), 0, this.selectedGiftcard.id);
                     }
 

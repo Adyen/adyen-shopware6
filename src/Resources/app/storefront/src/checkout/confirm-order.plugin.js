@@ -190,7 +190,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     createOrder(formData, extraParams) {
-        if (parseInt(adyenCheckoutOptions.giftcardDiscount) && !adyenCheckoutOptions.payInFullWithGiftcard) {
+        if (parseInt(adyenCheckoutOptions.giftcardDiscount) && !parseInt(adyenCheckoutOptions.payInFullWithGiftcard)) {
             // create Adyen order for partial payments
             this._client.post(
                 adyenCheckoutOptions.createOrderUrl,
