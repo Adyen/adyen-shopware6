@@ -27,6 +27,7 @@ import './component/adyen-refund';
 import './component/adyen-notifications';
 import './sw-order-detail-base-override/index';
 import './component/entity/sw-entity-single-select-override';
+import './component/entity/sw-entity-single-select-url';
 
 import localeEnGb from './snippet/en_GB.json';
 

@@ -345,4 +345,13 @@ class ConfigurationService
             $salesChannelId
         );
     }
+
+    /**
+     * @param string $salesChannelId
+     * @return array|mixed|null
+     */
+    public function getDomainUrl(string $salesChannelId): ?string
+    {
+        $this->systemConfigService->get(self::BUNDLE_NAME . '.config.url', $salesChannelId);
+    }
 }
