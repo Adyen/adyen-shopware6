@@ -54,7 +54,8 @@ class SalesChannelRepository
     {
         $criteria = new Criteria();
         $domainUrlId = $this->configurationService->getDomainUrlId($context->getSalesChannelId());
-        $domainId = $this->configurationService->getDomainUrlId($context->getSalesChannelId()) ?: $context->getDomainId();
+        $domainId = $this->configurationService->getDomainUrlId($context->getSalesChannelId()) ?:
+            $context->getDomainId();
 
         if ($domainUrlId) {
             $criteria->addFilter(new EqualsFilter('id', $domainUrlId));
