@@ -48,6 +48,7 @@ class ConfigurationService
      * ConfigurationService constructor.
      *
      * @param SystemConfigService $systemConfigService
+     * @param EntityRepositoryInterface $mediaRepository
      */
     public function __construct(
         SystemConfigService $systemConfigService,
@@ -350,8 +351,8 @@ class ConfigurationService
      * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getDomainUrl(string $salesChannelId): ?string
+    public function getDomainUrlId(string $salesChannelId): ?string
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.url', $salesChannelId);
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.returnUrlId', $salesChannelId);
     }
 }

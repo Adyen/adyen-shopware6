@@ -53,10 +53,12 @@ class SalesChannelRepository
     public function getCurrentDomainUrl(SalesChannelContext $context): string
     {
         $criteria = new Criteria();
-        $domainUrl = $this->configurationService->getDomainUrl($context->getSalesChannelId());
-        $domainId = $context->getSalesChannel()->getHreflangDefaultDomainId() ?: $context->getDomainId();
+        $domainUrlId = $this->configurationService->getDomainUrlId($context->getSalesChannelId());
+        $domainId = $this->configurationService->getDomainUrlId($context->getSalesChannelId()) ?: $context->getDomainId();
 
-        if ($domainId) {
+        if ($domainUrlId) {
+            $criteria->addFilter(new EqualsFilter('id', $domainUrlId));
+        } elseif ($domainId) {
             $criteria->addFilter(new EqualsFilter('id', $domainId));
         } else {
             $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
@@ -71,9 +73,6 @@ class SalesChannelRepository
             throw new SalesChannelDomainNotFoundException($context->getSalesChannel());
         }
 
-        if ($domainUrl) {
-            return $domainUrl;
-        }
         return $domainEntity->getUrl();
     }
 

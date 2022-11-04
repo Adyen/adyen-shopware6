@@ -202,8 +202,8 @@
     </card>
     <card>
         <title>Domain URL</title>
-        <component name="sw-entity-single-select-url">
-            <name>returnUrl</name>
+        <component name="sw-entity-single-select">
+            <name>returnUrlId</name>
             <entity>sales_channel_domain</entity>
             <labelProperty>url</labelProperty>
             <label>Select preferred domain</label>
