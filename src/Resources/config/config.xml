@@ -202,6 +202,10 @@
     </card>
     <card>
         <title>Domain URL</title>
+        <input-field type="bool">
+            <name>enableOverrideDefaultDomain</name>
+            <label>Select default domain URL</label>
+        </input-field>
         <component name="sw-entity-single-select">
             <name>returnUrlId</name>
             <entity>sales_channel_domain</entity>

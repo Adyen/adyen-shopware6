@@ -53,11 +53,11 @@ class SalesChannelRepository
     public function getCurrentDomainUrl(SalesChannelContext $context): string
     {
         $criteria = new Criteria();
+        $isDomainOverrideEnabled = $this->configurationService->getEnableOverrideDefaultDomain($context->getSalesChannelId());
         $domainUrlId = $this->configurationService->getDomainUrlId($context->getSalesChannelId());
-        $domainId = $this->configurationService->getDomainUrlId($context->getSalesChannelId()) ?:
-            $context->getDomainId();
+        $domainId = $context->getSalesChannel()->getHreflangDefaultDomainId() ?: $context->getDomainId();
 
-        if ($domainUrlId) {
+        if ($isDomainOverrideEnabled) {
             $criteria->addFilter(new EqualsFilter('id', $domainUrlId));
         } elseif ($domainId) {
             $criteria->addFilter(new EqualsFilter('id', $domainId));
