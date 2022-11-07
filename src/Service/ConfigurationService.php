@@ -48,6 +48,7 @@ class ConfigurationService
      * ConfigurationService constructor.
      *
      * @param SystemConfigService $systemConfigService
+     * @param EntityRepositoryInterface $mediaRepository
      */
     public function __construct(
         SystemConfigService $systemConfigService,
@@ -342,6 +343,27 @@ class ConfigurationService
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.adyenGivingCharityWebsite',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string $salesChannelId
+     * @return array|mixed|null
+     */
+    public function getDefaultDomainId(string $salesChannelId): ?string
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.defaultDomainId', $salesChannelId);
+    }
+
+    /**
+     * @param string $salesChannelId
+     * @return null|bool
+     */
+    public function getIsOverrideDefaultDomainEnabled(string $salesChannelId): ?bool
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.enableOverrideDefaultDomain',
             $salesChannelId
         );
     }
