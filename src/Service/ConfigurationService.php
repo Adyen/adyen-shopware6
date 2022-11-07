@@ -362,6 +362,9 @@ class ConfigurationService
      */
     public function getEnableOverrideDefaultDomain(string $salesChannelId): ?bool
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.enableOverrideDefaultDomain', $salesChannelId);
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.enableOverrideDefaultDomain',
+            $salesChannelId
+        );
     }
 }

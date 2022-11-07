@@ -210,7 +210,7 @@
             <name>returnUrlId</name>
             <entity>sales_channel_domain</entity>
             <labelProperty>url</labelProperty>
-            <label>Select preferred domain</label>
+            <label>Enabled</label>
             <helpText>
                 Select the preferred domain from the list of existing domains to be used in returnUrl.
             </helpText>

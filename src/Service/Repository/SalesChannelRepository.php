@@ -53,7 +53,9 @@ class SalesChannelRepository
     public function getCurrentDomainUrl(SalesChannelContext $context): string
     {
         $criteria = new Criteria();
-        $isDomainOverrideEnabled = $this->configurationService->getEnableOverrideDefaultDomain($context->getSalesChannelId());
+        $isDomainOverrideEnabled = $this->configurationService->getEnableOverrideDefaultDomain(
+            $context->getSalesChannelId()
+        );
         $domainUrlId = $this->configurationService->getDomainUrlId($context->getSalesChannelId());
         $domainId = $context->getSalesChannel()->getHreflangDefaultDomainId() ?: $context->getDomainId();
 
