@@ -351,9 +351,9 @@ class ConfigurationService
      * @param string $salesChannelId
      * @return array|mixed|null
      */
-    public function getDomainUrlId(string $salesChannelId): ?string
+    public function getDefaultDomainId(string $salesChannelId): ?string
     {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.returnUrlId', $salesChannelId);
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.defaultDomainId', $salesChannelId);
     }
 
     /**

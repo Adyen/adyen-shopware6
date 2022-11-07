@@ -56,8 +56,8 @@ class SalesChannelRepository
         $isDomainOverrideEnabled = $this->configurationService->getEnableOverrideDefaultDomain(
             $context->getSalesChannelId()
         );
-        $domainUrlId = $this->configurationService->getDomainUrlId($context->getSalesChannelId());
-        $domainId = $context->getSalesChannel()->getHreflangDefaultDomainId() ?: $context->getDomainId();
+        $domainUrlId = $this->configurationService->getDefaultDomainId($context->getSalesChannelId());
+        $domainId = $context->getDomainId() ?: $context->getSalesChannel()->getHreflangDefaultDomainId();
 
         if ($isDomainOverrideEnabled) {
             $criteria->addFilter(new EqualsFilter('id', $domainUrlId));
