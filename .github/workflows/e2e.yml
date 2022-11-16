@@ -34,11 +34,11 @@ jobs:
       - name: Install and Build Artifacts
         run: |
           docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make install -B'
-#          docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make build -B'
+          docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make build -B'
 
-      - name: Install/Configure Plugin
-        run: |
-               docker exec shop bash -c 'php bin/console plugin:refresh'
-               docker exec shop bash -c 'php bin/console plugin:install adyen-shopware6 --activate'
-#                    docker exec shop bash -c 'php bin/console system:config:set adyen-shopware6.config.MyKey ${{ secrets.MYKEY_TEST }}'
-               docker exec shop bash -c 'php bin/console cache:clear'
+#      - name: Install/Configure Plugin
+#        run: |
+#               docker exec shop bash -c 'php bin/console plugin:refresh'
+#               docker exec shop bash -c 'php bin/console plugin:install adyen-shopware6 --activate'
+##                    docker exec shop bash -c 'php bin/console system:config:set adyen-shopware6.config.MyKey ${{ secrets.MYKEY_TEST }}'
+#               docker exec shop bash -c 'php bin/console cache:clear'
