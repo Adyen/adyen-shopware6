@@ -1,4 +1,4 @@
-/*!
+/*
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -12,45 +12,26 @@
  *                               #############
  *                               ############
  *
- * Adyen plugin for Shopware 6
+ * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  */
 
-@import "modal";
+import Plugin from 'src/plugin-system/plugin.class';
+import DomAccess from 'src/helper/dom-access.helper';
+const { Component } = Shopware;
+const { Criteria } = Shopware.Data;
 
-.adyen-payment-method-container-div, .adyen-update-payment-details{
-    display: none;
-}
-
-.paypal-checkout-sandbox{
-    pointer-events: auto;
-}
-
-.adyen-checkout__card__brands img {
-    vertical-align: top;
-}
-
-#donation-container,
-#success-action-container {
-    margin-top: -50px;
-    margin-bottom: 50px;
-}
-
-.adyen-voucher-details {
-    padding-left: 1rem;
-    padding-bottom: 1rem;
-    background-color: #f9f9f9;
-
-    .voucher-detail {
-        display: grid;
-        grid-template-columns: 1fr 4fr;
-    }
-
-    dd {
-        margin-left: 4px;
+export default class AdyenVoucherPlugin extends Plugin {
+    init() {
+        console.log('are you here?');
+        const { orderId } = adyenVoucherDetails;
+        console.log(orderId);
+        const criteria = new Criteria();
+        criteria.addFilter(Criteria.equals('order_transaction.custom_fields.action.type', 'voucher'));
+        return criteria;
     }
 }
