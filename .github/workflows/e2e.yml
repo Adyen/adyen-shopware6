@@ -41,9 +41,8 @@ jobs:
 #          docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make install -B'
 #          docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make build -B'
 
-#      - name: Install/Configure Plugin
-#        run: |
-#          docker exec shopware6 bash -c 'php bin/console plugin:refresh'
-#          docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
-##          docker exec shop bash -c 'php bin/console system:config:set adyen-shopware6y ${{ secrets.MYKEY_TEST }}'
-#          docker exec shopware6 bash -c 'php bin/console cache:clear'
+      - name: Install/Configure Plugin
+        run: |
+          docker exec shopware6 bash -c 'php bin/console plugin:refresh'
+          docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
+          docker exec shopware6 bash -c 'php bin/console cache:clear'
