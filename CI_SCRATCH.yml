@@ -1,25 +1,28 @@
-name: Testing Workflow
+name: CI Pipeline
 
-on: ["push", "pull_request"]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
+
   e2e:
-    name: Plugin v${{ matrix.plugin }} | Shopware
+    name: E2E Tests | Shopware ${{ matrix.shopware }}, PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
-    #      matrix:
-    #        plugin: ['1.2']
+      matrix:
+        include:
+          - shopware: '6.4.7.0'
+            php: '8.0'
     steps:
 
       - name: Clone Code
         uses: actions/checkout@v2
-#        with:
-#          ref: refs/tags/
 
-      - name: Download Dockware
+      - name: Download Docker
         run: |
-          docker pull dockware/dev:latest
+          docker pull dockware/dev:${{ matrix.shopware }}
 
       - name: Start Docker
         run: |
@@ -30,14 +33,9 @@ jobs:
           sudo echo "127.0.0.1 local.shopware.shop" | sudo tee -a /etc/hosts
           docker exec shop bash -c "mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
 
-      - name: Upload plugin into Docker
-        run: |
-          docker cp $(pwd)/. shop:/var/www/html/custom/plugins/adyen-shopware6
-          docker exec shop bash -c 'sudo chown www-data:www-data /var/www/html/custom/plugins -R'
-
       - name: Upload into Docker
         run: |
-          docker cp $(pwd)/. shopware:/var/www/html/custom/plugins/adyen-shopware6
+          docker cp $(pwd)/. shop:/var/www/html/custom/plugins/adyen-shopware6
           docker exec shop bash -c 'sudo chown www-data:www-data /var/www/html/custom/plugins -R'
 
       - name: Install and Build Artifacts
@@ -49,5 +47,5 @@ jobs:
         run: |
           docker exec shop bash -c 'php bin/console plugin:refresh'
           docker exec shop bash -c 'php bin/console plugin:install adyen-shopware6 --activate'
-#          docker exec shop bash -c 'php bin/console system:config:set adyen-shopware6y ${{ secrets.MYKEY_TEST }}'
+#          docker exec shop bash -c 'php bin/console system:config:set adyen-shopware6.config.MyKey ${{ secrets.MYKEY_TEST }}'
           docker exec shop bash -c 'php bin/console cache:clear'
