@@ -1,18 +1,26 @@
 {% sw_extends '@Storefront/storefront/page/account/order-history/order-detail.html.twig' %}
 
+{% set voucherObj = order.transactions.elements | first %}
+{% set customFields = voucherObj.customFields %}
+{% set actionArr = customFields | first %}
+{% set actionType = attribute(actionArr, 'type') %}
+{% set voucherReference = attribute(actionArr, 'reference') %}
+{% set voucherExpiry = attribute(actionArr, 'expiresAt') | format_datetime() %}
+
 {% block page_account_order_item_detail_table_labels_summary %}
     {{ parent() }}
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/adyen-voucher/adyen-voucher-component.html.twig' %}
-{#    <dl class="voucher-details">#}
-{#        <div class="voucher-detail">#}
-{#            <dt>Voucher reference:</dt>#}
-{#            <dd class="order-item-detail-labels-value">Rok was here</dd>#}
-{#        </div>#}
-{#        <div class="voucher-detail">#}
-{#            <dt >Expiry date:</dt>#}
-{#            <dd class="order-item-detail-labels-value">{{ dump(order.orderId) }}</dd>#}
-{#        </div>#}
-{#    </dl>#}
+    {% if actionType === 'voucher' %}
+        <dl class="adyen-voucher-details" data-orderId = "{{ orderId }}">
+            <div class="voucher-detail">
+                <dt>Voucher reference:</dt>
+                <dd class="order-item-detail-labels-value">{{ voucherReference }}</dd>
+            </div>
+            <div class="voucher-detail">
+                <dt >Expiry date:</dt>
+                <dd class="order-item-detail-labels-value">{{ voucherExpiry }}</dd>
+            </div>
+        </dl>
+    {% endif %}
 {% endblock %}
 
 
