@@ -8,14 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-    #      matrix:
-    #        plugin: ['1.2']
     steps:
-
       - name: Clone Code
         uses: actions/checkout@v2
-#        with:
-#          ref: refs/tags/
 
       - name: Download Dockware
         run: |
@@ -23,12 +18,12 @@ jobs:
 
       - name: Start Dockware
         run: |
-          docker run --rm -p 80:80 -p 443:443 --name shop --env PHP_VERSION=7.4 -d dockware/dev:6.4.7.0
+          docker run --rm -p 80:80 -p 443:443 --name shop --env PHP_VERSION=7.4 -d dockware/dev:latest
           sleep 30
           docker logs shop
-          # now change the domain of our shop if required
-          sudo echo "127.0.0.1 local.shopware.shop" | sudo tee -a /etc/hosts
-          docker exec shop bash -c "mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
+#          # now change the domain of our shop if required
+#          sudo echo "127.0.0.1 local.shopware.shop" | sudo tee -a /etc/hosts
+#          docker exec shop bash -c "mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
 
       - name: Upload plugin into Docker
         run: |
@@ -39,15 +34,15 @@ jobs:
         run: |
           docker cp $(pwd)/. shop:/var/www/html/custom/plugins/adyen-shopware6
           docker exec shop bash -c 'sudo chown www-data:www-data /var/www/html/custom/plugins -R'
-
-      - name: Install and Build Artifacts
-        run: |
-          docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make install -B'
-          docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make build -B'
 #
-#      - name: Install/Configure Plugin
+#      - name: Install and Build Artifacts
 #        run: |
-#          docker exec shop bash -c 'php bin/console plugin:refresh'
-#          docker exec shop bash -c 'php bin/console plugin:install adyen-shopware6 --activate'
-##          docker exec shop bash -c 'php bin/console system:config:set adyen-shopware6y ${{ secrets.MYKEY_TEST }}'
-#          docker exec shop bash -c 'php bin/console cache:clear'
+#          docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make install -B'
+#          docker exec shop bash -c 'cd /var/www/html/custom/plugins/adyen-shopware6 && make build -B'
+
+      - name: Install/Configure Plugin
+        run: |
+          docker exec shop bash -c 'php bin/console plugin:refresh'
+          docker exec shop bash -c 'php bin/console plugin:install adyen-shopware6 --activate'
+#          docker exec shop bash -c 'php bin/console system:config:set adyen-shopware6y ${{ secrets.MYKEY_TEST }}'
+          docker exec shop bash -c 'php bin/console cache:clear'
