@@ -21,7 +21,7 @@ jobs:
         run: |
           docker pull dockware/dev:latest
 
-      - name: Start Docker
+      - name: Start Dockware
         run: |
           docker run --rm -p 80:80 -p 443:443 --name shop --env PHP_VERSION=7.4 -d dockware/dev:6.4.7.0
           sleep 30
@@ -37,7 +37,7 @@ jobs:
 
       - name: Upload into Docker
         run: |
-          docker cp $(pwd)/. shopware:/var/www/html/custom/plugins/adyen-shopware6
+          docker cp $(pwd)/. shop:/var/www/html/custom/plugins/adyen-shopware6
           docker exec shop bash -c 'sudo chown www-data:www-data /var/www/html/custom/plugins -R'
 
       - name: Install and Build Artifacts
