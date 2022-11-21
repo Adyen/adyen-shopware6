@@ -29,6 +29,6 @@ class GooglePayPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static function getPaymentMethodCode()
     {
-        return 'paywithgoogle';
+        return 'googlepay';
     }
 }

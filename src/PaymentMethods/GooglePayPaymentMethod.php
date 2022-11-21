@@ -85,7 +85,7 @@ class GooglePayPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'paywithgoogle.png';
+        return 'googlepay.png';
     }
 
     /**
