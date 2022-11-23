@@ -40,30 +40,6 @@ export default {
                 }
             }
         },
-        // TODO: Following block will be removed after the deprecation of the `paywithgoogle` tx_variant.
-        'paywithgoogle': {
-            extra: {
-                buttonSizeMode: 'fill',
-            },
-            onClick: function (resolve, reject, self) {
-                if (!self.confirmOrderForm.checkValidity()) {
-                    reject();
-                    return false;
-                } else {
-                    resolve();
-                    return true;
-                }
-            },
-            onError: function(error, component, self) {
-                if (error.statusCode !== 'CANCELED') {
-                    if ('statusMessage' in error) {
-                        console.log(error.statusMessage);
-                    } else {
-                        console.log(error.statusCode);
-                    }
-                }
-            }
-        },
         'googlepay': {
             extra: {
                 buttonSizeMode: 'fill',
@@ -150,8 +126,6 @@ export default {
         'oneclick': 'handler_adyen_oneclickpaymentmethodhandler',
         'giropay': 'handler_adyen_giropaypaymentmethodhandler',
         'applepay': 'handler_adyen_applepaypaymentmethodhandler',
-        // TODO: Following value will be removed after the deprecation of the `paywithgoogle` tx_variant.
-        'paywithgoogle': 'handler_adyen_googlepaypaymentmethodhandler',
         'googlepay': 'handler_adyen_googlepaypaymentmethodhandler',
         'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
