@@ -11,6 +11,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Adyen\Shopware\Service\ConfigurationService;
 
 class SalesChannelRepository
 {
@@ -25,16 +26,24 @@ class SalesChannelRepository
     private $salesChannelRepository;
 
     /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
      * SalesChannelRepository constructor.
      * @param EntityRepositoryInterface $domainRepository
      * @param EntityRepositoryInterface $salesChannelRepository
+     * @param ConfigurationService $configurationService
      */
     public function __construct(
         EntityRepositoryInterface $domainRepository,
-        EntityRepositoryInterface $salesChannelRepository
+        EntityRepositoryInterface $salesChannelRepository,
+        ConfigurationService $configurationService
     ) {
         $this->domainRepository = $domainRepository;
         $this->salesChannelRepository = $salesChannelRepository;
+        $this->configurationService = $configurationService;
     }
 
     /**
@@ -44,9 +53,15 @@ class SalesChannelRepository
     public function getCurrentDomainUrl(SalesChannelContext $context): string
     {
         $criteria = new Criteria();
+        $isDomainOverrideEnabled = $this->configurationService->getIsOverrideDefaultDomainEnabled(
+            $context->getSalesChannelId()
+        );
+        $domainUrlId = $this->configurationService->getDefaultDomainId($context->getSalesChannelId());
+        $domainId = $context->getDomainId() ?: $context->getSalesChannel()->getHreflangDefaultDomainId();
 
-        $domainId = $context->getSalesChannel()->getHreflangDefaultDomainId() ?: $context->getDomainId();
-        if ($domainId) {
+        if ($isDomainOverrideEnabled) {
+            $criteria->addFilter(new EqualsFilter('id', $domainUrlId));
+        } elseif ($domainId) {
             $criteria->addFilter(new EqualsFilter('id', $domainId));
         } else {
             $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
