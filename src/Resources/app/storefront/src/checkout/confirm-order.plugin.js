@@ -32,6 +32,7 @@ import adyenConfiguration from '../configuration/adyen';
 export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
+        debugger;
         this._client = new StoreApiClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
@@ -63,6 +64,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 // create inline component for cards etc. and set event listener for submit button to confirm payment component
                 this.renderPaymentComponent(this.selectedAdyenPaymentMethod);
             } else {
+                debugger;
                 this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
             }
         }.bind(this));
@@ -111,6 +113,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         event.preventDefault();
         ElementLoadingIndicatorUtil.create(document.body);
         const formData = FormSerializeUtil.serialize(form);
+        debugger;
         this.confirmOrder(formData);
     }
 
@@ -160,6 +163,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         const orderId = adyenCheckoutOptions.orderId;
         let url = null;
         let callback = null;
+        formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
+        formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
+
         if (!!orderId) { //Only used if the order is being edited
             formData.set('orderId', orderId);
             url = adyenCheckoutOptions.updatePaymentUrl;
