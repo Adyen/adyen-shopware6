@@ -31,6 +31,7 @@ use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
+use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Notification;
 use Adyen\Webhook\PaymentStates;
@@ -83,6 +84,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private $orderTransactionRepository;
 
     /**
+     * @var AdyenPaymentRepository
+     */
+    private $adyenPaymentRepository;
+
+    /**
      * @var CaptureService
      */
     private $captureService;
@@ -111,6 +117,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param OrderRepository $orderRepository
      * @param EntityRepositoryInterface $paymentMethodRepository
      * @param OrderTransactionRepository $orderTransactionRepository
+     * @param AdyenPaymentRepository $adyenPaymentRepository
      * @param CaptureService $captureService
      * @param WebhookHandlerFactory $webhookHandlerFactory
      */
@@ -120,6 +127,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderRepository $orderRepository,
         EntityRepositoryInterface $paymentMethodRepository,
         OrderTransactionRepository $orderTransactionRepository,
+        AdyenPaymentRepository $adyenPaymentRepository,
         CaptureService $captureService,
         WebhookHandlerFactory $webhookHandlerFactory
     ) {
@@ -128,6 +136,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->orderRepository = $orderRepository;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->adyenPaymentRepository = $adyenPaymentRepository;
         $this->captureService = $captureService;
         self::$webhookHandlerFactory = $webhookHandlerFactory;
     }
@@ -319,7 +328,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $notification->getMerchantReference(),
             $context,
             ['transactions', 'currency']
-        );
+        ) ?: $this->adyenPaymentRepository->getOrdersByMerchantReference($notification->getMerchantReference());
 
         if (!$order) {
             $errorMessage = "Skipped: Order with order_number {$notification->getMerchantReference()} not found.";

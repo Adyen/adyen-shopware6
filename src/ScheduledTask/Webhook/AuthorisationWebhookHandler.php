@@ -26,6 +26,7 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\CaptureService;
+use Adyen\Shopware\Service\AdyenPaymentService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -44,6 +45,11 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
     private $captureService;
 
     /**
+     * @var AdyenPaymentService
+     */
+    private $adyenPaymentService;
+
+    /**
      * @var OrderTransactionStateHandler
      */
     private $orderTransactionStateHandler;
@@ -55,10 +61,12 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      */
     public function __construct(
         CaptureService $captureService,
+        AdyenPaymentService $adyenPaymentService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         LoggerInterface $logger
     ) {
         $this->captureService = $captureService;
+        $this->adyenPaymentService = $adyenPaymentService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->logger = $logger;
     }
@@ -99,8 +107,11 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         Context $context
     ) {
         $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+        $isManualCapture = $this->captureService->requiresManualCapture($paymentMethodHandler);
 
-        if ($this->captureService->requiresManualCapture($paymentMethodHandler)) {
+        $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
+
+        if ($isManualCapture) {
             $this->logger->info(
                 'Manual capture required. Setting payment to `authorised` state.',
                 ['notification' => $notification->getVars()]
@@ -117,7 +128,10 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                 $context
             );
         } else {
-            $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+            // for order API orders check if full amount authorized
+            if ($this->adyenPaymentService->isFullAmountAuthorized($notification->getMerchantReference(), $orderTransaction)) {
+                $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+            }
         }
     }
 

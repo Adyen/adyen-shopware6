@@ -280,6 +280,7 @@ class NotificationService
                 }
                 break;
             case 'OFFER_CLOSED':
+            case 'ORDER_CLOSED':
                 $scheduledProcessingTime = $scheduledProcessingTime->add(new \DateInterval('PT30M'));
                 break;
             default:

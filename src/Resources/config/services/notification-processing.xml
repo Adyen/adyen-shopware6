@@ -61,5 +61,8 @@
                 <argument key="$logger" type="service" id="monolog.logger.adyen_cron"/>
             </call>
         </service>
+        <service id="Adyen\Shopware\Service\AdyenPaymentService">
+            <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository"/>
+        </service>
     </services>
 </container>
