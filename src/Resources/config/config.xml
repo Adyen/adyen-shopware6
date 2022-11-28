@@ -200,4 +200,20 @@
             </helpText>
         </component>
     </card>
+    <card>
+        <title>Domain URL</title>
+        <input-field type="bool">
+            <name>enableOverrideDefaultDomain</name>
+            <label>Enabled</label>
+        </input-field>
+        <component name="sw-entity-single-select">
+            <name>defaultDomainId</name>
+            <entity>sales_channel_domain</entity>
+            <labelProperty>url</labelProperty>
+            <label>Select default domain URL</label>
+            <helpText>
+                Select the preferred domain from the list of existing domains to be used in returnUrl.
+            </helpText>
+        </component>
+    </card>
 </config>

@@ -13,7 +13,6 @@
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
-            <argument type="service" id="payment_method.repository"/>
             <argument type="service" id="Symfony\Component\HttpFoundation\Session\SessionInterface"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>

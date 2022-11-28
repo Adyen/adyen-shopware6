@@ -24,6 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
+use Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
@@ -113,6 +114,20 @@ class PaymentMethodsFilterService
                             return $value['type'] == $pmCode;
                         }
                     );
+
+                    // TODO: Following block will be removed after the deprecation of the `paywithgoogle` tx_variant.
+                    if ($pmCode === GooglePayPaymentMethodHandler::getPaymentMethodCode()) {
+                        $paywithgoogleTxvariant = 'paywithgoogle';
+                        $paymentMethodFoundInResponse = array_merge(
+                            $paymentMethodFoundInResponse,
+                            array_filter(
+                                $adyenPaymentMethods['paymentMethods'],
+                                function ($value) use ($paywithgoogleTxvariant) {
+                                    return $value['type'] == $paywithgoogleTxvariant;
+                                }
+                            )
+                        );
+                    }
 
                     // Remove the PM if it isn't in the paymentMethods response
                     if (empty($paymentMethodFoundInResponse)) {

@@ -172,6 +172,9 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     confirmOrder(formData, extraParams= {}) {
         const orderId = adyenCheckoutOptions.orderId;
+        formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
+        formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
+
         if (!!orderId) { //Only used if the order is being edited
             this.updatePayment(formData, orderId, extraParams)
         } else {
@@ -324,6 +327,16 @@ export default class ConfirmOrderPlugin extends Plugin {
         // get selected payment method object
         let selectedPaymentMethod = this.adyenCheckout.paymentMethodsResponse.paymentMethods
             .filter(item => item.type === this.selectedAdyenPaymentMethod);
+
+        /*
+         * If the PM is GooglePay in Shopware, check for the `paywithgoogle` tx_variant also in paymentMethods response.
+         * This block should be remove after depreating the `paywithgoogle` tx_variant.
+         */
+        // TODO: Following block will be removed after the deprecation of the `paywithgoogle` tx_variant.
+        if (selectedPaymentMethod.length < 1 && this.selectedAdyenPaymentMethod === 'googlepay') {
+            selectedPaymentMethod = this.adyenCheckout.paymentMethodsResponse.paymentMethods
+                .filter(item => item.type === 'paywithgoogle');
+        }
 
         if (selectedPaymentMethod.length < 1) {
             return;

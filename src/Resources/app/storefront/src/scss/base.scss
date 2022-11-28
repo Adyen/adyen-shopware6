@@ -55,3 +55,18 @@
     display: none;
     text-align: center;
 }
+
+.adyen-voucher-details {
+    padding-left: 1rem;
+    padding-bottom: 1rem;
+    background-color: #f9f9f9;
+
+    .voucher-detail {
+        display: grid;
+        grid-template-columns: 1fr 4fr;
+    }
+
+    dd {
+        margin-left: 4px;
+    }
+}

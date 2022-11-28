@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Subscriber;
 
-use Adyen\AdyenException;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -33,21 +32,16 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
-use Psr\Container\ContainerInterface;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\CartPersisterInterface;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
-use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
-use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
-use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenChangeEvent;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Framework\AffiliateTracking\AffiliateTrackingListener;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPage;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
@@ -94,11 +88,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $paymentMethodsService;
 
     /**
-     * @var EntityRepositoryInterface $paymentMethodRepository
-     */
-    private $paymentMethodRepository;
-
-    /**
      * @var SessionInterface $session
      */
     private $session;
@@ -143,7 +132,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
-     * @param EntityRepositoryInterface $paymentMethodRepository
      * @param SessionInterface $session
      * @param CartPersisterInterface $cartPersister
      * @param CartCalculator $cartCalculator
@@ -159,7 +147,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
-        EntityRepositoryInterface $paymentMethodRepository,
         SessionInterface $session,
         CartPersisterInterface $cartPersister,
         CartCalculator $cartCalculator,
@@ -173,7 +160,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->paymentMethodRepository = $paymentMethodRepository;
         $this->session = $session;
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
@@ -305,6 +291,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $selectedPaymentMethod = $salesChannelContext->getPaymentMethod();
         $page = $event->getPage();
         $orderId = '';
+        $affiliateCode = $this->session->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->session->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+
         if (method_exists($page, 'getOrder')) {
             $orderId = $page->getOrder()->getId();
         }
@@ -419,6 +408,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'shippingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
                             $salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()
                         ),
+                        'affiliateCode' => $affiliateCode,
+                        'campaignCode' => $campaignCode,
                     ]
                 )
             )
