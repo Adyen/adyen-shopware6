@@ -35,6 +35,8 @@ use Shopware\Core\Framework\Context;
 
 class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
 {
+    use CancellableWebhookHandlerTrait;
+
     /**
      * @var RefundService
      */
@@ -71,8 +73,9 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
                 $this->handleSuccessfulRefund($orderTransactionEntity, $notificationEntity, $context);
             }
 
-            // TODO-WEBHOOK:: Implement cancel success/fail flow for notification
+            $this->handleCancelWebhook($orderTransactionEntity, $state, $context);
         } else {
+            // If CANCEL event fails (ie. success=false), transaction is unchanged.
             // WH processor returns STATE_PAID for unsuccessful REFUND notifications.
             if ($state === PaymentStates::STATE_PAID) {
                 $this->handleFailedRefundNotification($orderTransactionEntity, $notificationEntity);

@@ -107,6 +107,13 @@ class WebhookHandlerFactory
                     self::$refundService
                 );
                 break;
+            case EventCodes::OFFER_CLOSED:
+                $handler = new OfferClosedWebhookHandler(self::$orderTransactionStateHandler);
+                break;
+            case EventCodes::CANCELLED:
+            case EventCodes::CANCELLATION:
+                $handler = new CancellationWebhookHandler(self::$orderTransactionStateHandler);
+                break;
             default:
                 $errorMessage = sprintf('Notification %s is not supported by the plugin.', $eventCode);
                 throw new InvalidDataException($errorMessage);
