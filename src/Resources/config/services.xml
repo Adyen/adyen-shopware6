@@ -97,6 +97,10 @@
             <argument type="service" id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler"/>
             <tag name="console.command"/>
         </service>
+        <service id="Adyen\Shopware\Command\ScheduleWebhooksCommand">
+            <argument type="service" id="Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler"/>
+            <tag name="console.command"/>
+        </service>
 
         <!--Service decorators-->
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"

@@ -63,11 +63,10 @@ class AdyenPaymentService
 
     public function isFullAmountAuthorized($merchantReference, OrderTransactionEntity $orderTransaction): bool
     {
-        // fetch all rows from adyen_payment by merchantReference -> do that in the adyen payment repository
-        $adyenPaymentOrders = $this->adyenPaymentRepository->getOrdersByMerchantReference($merchantReference);
         $amountSum = 0;
+        $adyenPaymentOrders = $this->adyenPaymentRepository->getOrdersByMerchantReference($merchantReference);
+
         foreach ($adyenPaymentOrders as $adyenPaymentOrder) {
-            // sum all the amount values
             $amountSum += $adyenPaymentOrder['amountValue'];
         }
         if ($amountSum >= $orderTransaction->getAmount()) {
