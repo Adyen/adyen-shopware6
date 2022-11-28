@@ -50,6 +50,7 @@ use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Storefront\Framework\AffiliateTracking\AffiliateTrackingListener;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
@@ -255,6 +256,9 @@ class PaymentSubscriber implements EventSubscriberInterface
         $paymentMethod = $salesChannelContext->getPaymentMethod();
         $page = $event->getPage();
         $orderId = '';
+        $affiliateCode = $this->session->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->session->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+
         if (method_exists($page, 'getOrder')) {
             $orderId = $page->getOrder()->getId();
         }
@@ -350,6 +354,8 @@ class PaymentSubscriber implements EventSubscriberInterface
                     'shippingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
                         $salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()
                     ),
+                    'affiliateCode' => $affiliateCode,
+                    'campaignCode' => $campaignCode,
                 ]
             )
         );
