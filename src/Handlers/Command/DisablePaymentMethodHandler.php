@@ -65,23 +65,23 @@ class DisablePaymentMethodHandler
         $this->salesChannelPaymentMethodRepository = $salesChannelPaymentMethodRepository;
     }
 
-    public function run(string $paymentMethodHandlerIdentifier): void
+    public function run(bool $isAll, ?string $paymentMethodHandlerIdentifier): void
     {
         $criteria = new Criteria();
         $criteria->addFilter(
             new EqualsFilter('pluginId', $this->adyenPluginProvider->getAdyenPluginId())
         );
-        if ($paymentMethodHandlerIdentifier !== 'all') {
+        if (!$isAll) {
             $criteria->addFilter(
                 new ContainsFilter('handlerIdentifier', $paymentMethodHandlerIdentifier)
             );
         }
 
         $paymentMethods = $this->paymentMethodRepository
-            ->searchIds($criteria, Context::createDefaultContext())
-            ->getData();
+            ->search($criteria, Context::createDefaultContext())
+            ->getEntities();
 
-        if (!count($paymentMethods)) {
+        if (!count($paymentMethods->getElements())) {
             throw new \Exception('No payment methods found!');
         }
 
@@ -90,9 +90,13 @@ class DisablePaymentMethodHandler
             ->searchIds($criteria, Context::createDefaultContext())
             ->getData();
 
-        foreach ($salesChannels as $salesChannel) {
-            foreach ($paymentMethods as $paymentMethod) {
-                $this->disablePaymentMethod($paymentMethod['id'], $salesChannel['id']);
+        echo "Following payment methods will be disabled: \n";
+        foreach ($paymentMethods->getElements() as $paymentMethod) {
+            $paymentMethodName = $paymentMethod->getName();
+            echo "* $paymentMethodName \n";
+
+            foreach ($salesChannels as $salesChannel) {
+                $this->disablePaymentMethod($paymentMethod->getId(), $salesChannel['id']);
             }
         }
     }

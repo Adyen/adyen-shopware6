@@ -26,8 +26,8 @@ namespace Adyen\Shopware\Command;
 
 use Adyen\Shopware\Handlers\Command\DisablePaymentMethodHandler;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class DisablePaymentMethodCommand extends Command
@@ -48,20 +48,34 @@ class DisablePaymentMethodCommand extends Command
     protected function configure()
     {
         $this->setDescription('Finds the payment method according to given PM handler and disables it');
-        $this->addArgument(
-            'paymentMethodHandlerIdentifier',
-            InputArgument::REQUIRED,
-            'Fully qualified payment method handler identifier'
+
+        $this->addOption(
+            'all',
+            'A',
+            InputOption::VALUE_NONE, 'Disables all Adyen payment methods'
         );
-        $this->addUsage('all');
+
+        $this->addOption(
+            'payment-method',
+            'm',
+            InputOption::VALUE_REQUIRED,
+            'Disables given Adyen payment method'
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         try {
-            $paymentMethodHandlerIdentifier = $input->getArgument('paymentMethodHandlerIdentifier');
-            $this->handler->run($paymentMethodHandlerIdentifier);
-            $message = 'Payment method is disabled successfully.';
+            $isAllSelected = $input->getOption('all');
+            $paymentMethodHandlerIdentifier = $input->getOption('payment-method');
+
+            if ($isAllSelected xor isset($paymentMethodHandlerIdentifier)) {
+                $this->handler->run($isAllSelected, $paymentMethodHandlerIdentifier);
+                $message = 'Payment method is disabled successfully.';
+            } else {
+                throw new \Exception('Invalid parameter! For usage please check manual --help.');
+            }
+
         } catch (\Exception $e) {
             $message = $e->getMessage();
         }
