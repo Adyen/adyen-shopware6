@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~                       ######
+  ~                       ######
+  ~ ############    ####( ######  #####. ######  ############   ############
+  ~ #############  #####( ######  #####. ######  #############  #############
+  ~        ######  #####( ######  #####. ######  #####  ######  #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
+  ~ ###### ######  #####( ######  #####. ######  #####          #####  ######
+  ~ #############  #############  #############  #############  #####  ######
+  ~  ############   ############  #############   ############  #####  ######
+  ~                                      ######
+  ~                               #############
+  ~                               ############
+  ~
+  ~ Adyen plugin for Shopware 6
+  ~
+  ~ Copyright (c) 2022 Adyen N.V.
+  ~ This file is open source and available under the MIT license.
+  ~ See the LICENSE file for more info.
+  ~
+  -->
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
+            <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
+            <tag name="console.command"/>
+        </service>
+        <service id="Adyen\Shopware\Command\ProcessWebhooksCommand">
+            <argument type="service" id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler"/>
+            <tag name="console.command"/>
+        </service>
+        <service id="Adyen\Shopware\Command\EnablePaymentMethodCommand">
+            <argument type="service" id="Adyen\Shopware\Handlers\Command\EnablePaymentMethodHandler"/>
+            <tag name="console.command"/>
+        </service>
+        <service id="Adyen\Shopware\Command\DisablePaymentMethodCommand">
+            <argument type="service" id="Adyen\Shopware\Handlers\Command\DisablePaymentMethodHandler"/>
+            <tag name="console.command"/>
+        </service>
+
+        <!--Command handlers-->
+        <service id="Adyen\Shopware\Handlers\Command\EnablePaymentMethodHandler">
+            <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="sales_channel_payment_method.repository"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\Command\DisablePaymentMethodHandler">
+            <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="sales_channel_payment_method.repository"/>
+        </service>
+    </services>
+</container>

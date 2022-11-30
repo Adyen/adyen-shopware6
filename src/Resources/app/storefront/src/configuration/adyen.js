@@ -40,7 +40,7 @@ export default {
                 }
             }
         },
-        'paywithgoogle': {
+        'googlepay': {
             extra: {
                 buttonSizeMode: 'fill',
             },
@@ -126,7 +126,7 @@ export default {
         'oneclick': 'handler_adyen_oneclickpaymentmethodhandler',
         'giropay': 'handler_adyen_giropaypaymentmethodhandler',
         'applepay': 'handler_adyen_applepaypaymentmethodhandler',
-        'paywithgoogle': 'handler_adyen_googlepaypaymentmethodhandler',
+        'googlepay': 'handler_adyen_googlepaypaymentmethodhandler',
         'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
         'bcmc_mobile': 'handler_adyen_bancontactmobilepaymentmethodhandler',

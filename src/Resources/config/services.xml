@@ -13,6 +13,7 @@
         <import resource="services/notification-processing.xml"/>
         <import resource="services/providers.xml"/>
         <import resource="services/repositories.xml"/>
+        <import resource="services/commands.xml"/>
     </imports>
 
     <services>
@@ -66,16 +67,6 @@
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
-        </service>
-
-        <!--Commands-->
-        <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
-            <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
-            <tag name="console.command"/>
-        </service>
-        <service id="Adyen\Shopware\Command\ProcessWebhooksCommand">
-            <argument type="service" id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler"/>
-            <tag name="console.command"/>
         </service>
         <!--Event subscribers-->
         <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">

@@ -74,6 +74,7 @@ class CaptureService
         'discover_applepay',
         'maestro_applepay',
         'paywithgoogle',
+        'googlepay',
         'svs',
         'givex',
         'valuelink',
