@@ -328,7 +328,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $notification->getMerchantReference(),
             $context,
             ['transactions', 'currency']
-        ) ?: $this->adyenPaymentRepository->getOrdersByMerchantReference($notification->getMerchantReference());
+        ) ?: $this->adyenPaymentRepository->getOrderByMerchantReference($notification->getMerchantReference());
 
         if (!$order) {
             $errorMessage = "Skipped: Order with order_number {$notification->getMerchantReference()} not found.";

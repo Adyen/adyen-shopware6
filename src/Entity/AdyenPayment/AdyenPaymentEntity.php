@@ -52,7 +52,7 @@ class AdyenPaymentEntity extends Entity
     protected $merchantOrderReference;
 
     /**
-     * @var int
+     * @var string
      */
     protected $orderTransactionId;
 
@@ -146,9 +146,9 @@ class AdyenPaymentEntity extends Entity
     }
 
     /**
-     * @return int
+     * @return string
      */
-    public function getOrderTransactionId(): int
+    public function getOrderTransactionId(): string
     {
         return $this->orderTransactionId;
     }

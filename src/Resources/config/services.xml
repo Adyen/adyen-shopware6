@@ -66,6 +66,7 @@
         </service>
         <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
+            <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
             <argument type="service" id="Adyen\Shopware\Service\RefundService"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>

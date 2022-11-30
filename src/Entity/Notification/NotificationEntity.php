@@ -131,9 +131,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getOriginalReference(): string
+    public function getOriginalReference(): ?string
     {
         return $this->originalReference;
     }

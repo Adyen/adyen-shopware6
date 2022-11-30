@@ -24,12 +24,14 @@
 
 namespace Adyen\Shopware\Entity\AdyenPayment;
 
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
@@ -62,18 +64,29 @@ class AdyenPaymentEntityDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
+            (new FkField(
+                'order_transaction_id',
+                'orderTransactionId',
+                OrderTransactionDefinition::class
+            ))->addFlags(new Required()),
             new StringField('pspreference', 'pspreference'),
             new StringField('original_reference', 'originalReference'),
             new StringField('merchant_reference', 'merchantReference'),
             new StringField('merchant_order_reference', 'merchantOrderReference'),
-            new IntField('order_transaction_id', 'orderTransactionId'),
             new StringField('payment_method', 'paymentMethod'),
             new StringField('amount_value', 'amountValue'),
             new StringField('amount_currency', 'amountCurrency'),
             new LongTextField('additional_data', 'additionalData'),
             new StringField('capture_mode', 'captureMode'),
             new CreatedAtField(),
-            new UpdatedAtField()
+            new UpdatedAtField(),
+            new ManyToOneAssociationField(
+                'orderTransaction',
+                'order_transaction_id',
+                OrderTransactionDefinition::class,
+                'id',
+                true
+            )
         ]);
     }
 }

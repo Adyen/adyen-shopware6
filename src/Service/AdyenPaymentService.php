@@ -28,48 +28,49 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 
 class AdyenPaymentService
 {
-    protected EntityRepository $paymentRepository;
     protected AdyenPaymentRepository $adyenPaymentRepository;
 
-    public function __construct(EntityRepository $paymentRepository)
-    {
-        $this->paymentRepository = $paymentRepository;
+    public function __construct(
+        AdyenPaymentRepository $adyenPaymentRepository
+    ){
+        $this->adyenPaymentRepository = $adyenPaymentRepository;
     }
 
     public function insertAdyenPayment(NotificationEntity $notification, OrderTransactionEntity $orderTransaction, bool $isManualCapture): void
     {
+
         $fields = array(
-            'pspReference' => $notification['pspReference'],
-            'originalReference' => $notification['originalReference'],
-            'merchantReference' => $notification['merchantReference'],
-            'merchantOrderReference' => $notification['additionalData']['merchantOrderReference'] ?? null,
+            'pspreference' => $notification->getPspreference(),
+            'originalReference' => $notification->getOriginalReference() ?? null,
+            'merchantReference' => $notification->getMerchantReference(),
+            'merchantOrderReference' => isset($notification->getAdditionalData()['merchantOrderReference']) ?
+                json_decode($notification->getAdditionalData()['merchantOrderReference']) : null,
             'orderTransactionId' => $orderTransaction->getId(),
-            'paymentMethod' => $notification['paymentMethod'],
-            'amountValue' => $notification['amount']['value'],
-            'amountCurrency' => $notification['amount']['currency'],
-            'additionalData' => json_encode($notification['additionalData']),
+            'paymentMethod' => $notification->getPaymentMethod(),
+            'amountValue' => $notification->getAmountValue(),
+            'amountCurrency' => $notification->getAmountCurrency(),
+            'additionalData' => $notification->getAdditionalData(),
             'captureMode' => $isManualCapture ? 'manual_capture' : 'auto_capture'
         );
 
-        $this->paymentRepository->create(
+        $this->adyenPaymentRepository->getRepository()->create(
             [$fields],
             Context::createDefaultContext()
         );
     }
 
-    public function isFullAmountAuthorized($merchantReference, OrderTransactionEntity $orderTransaction): bool
+    public function isFullAmountAuthorized(string $merchantReference, OrderTransactionEntity $orderTransaction): bool
     {
         $amountSum = 0;
-        $adyenPaymentOrders = $this->adyenPaymentRepository->getOrdersByMerchantReference($merchantReference);
+        $adyenPaymentOrders = $this->adyenPaymentRepository->getOrderByMerchantReference($merchantReference);
 
         foreach ($adyenPaymentOrders as $adyenPaymentOrder) {
-            $amountSum += $adyenPaymentOrder['amountValue'];
+            $amountSum += $adyenPaymentOrder->getAmountValue();
         }
-        if ($amountSum >= $orderTransaction->getAmount()) {
+        if ($amountSum >= intval($orderTransaction->getOrder()->getAmountTotal()) * 100) {
             return true;
         }
         return false;
