@@ -49,10 +49,13 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
 
     /**
      * @param RefundService $refundService
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @return void
      */
-    public function __construct(RefundService $refundService, OrderTransactionStateHandler $orderTransactionStateHandler)
-    {
+    public function __construct(
+        RefundService $refundService,
+        OrderTransactionStateHandler $orderTransactionStateHandler
+    ) {
         $this->refundService = $refundService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
     }
