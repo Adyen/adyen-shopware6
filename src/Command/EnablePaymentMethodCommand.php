@@ -48,7 +48,11 @@ class EnablePaymentMethodCommand extends Command
     protected function configure()
     {
         $this->setDescription('Finds the payment method according to given PM handler and enables it');
-        $this->addArgument('paymentMethodHandlerIdentifier', InputArgument::REQUIRED, 'Fully qualified payment method handler identifier');
+        $this->addArgument(
+            'paymentMethodHandlerIdentifier',
+            InputArgument::REQUIRED,
+            'Fully qualified payment method handler identifier'
+        );
         $this->addUsage('all');
     }
 
