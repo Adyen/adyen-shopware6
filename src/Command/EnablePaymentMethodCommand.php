@@ -52,7 +52,8 @@ class EnablePaymentMethodCommand extends Command
         $this->addOption(
             'all',
             'A',
-            InputOption::VALUE_NONE, 'Enables all Adyen payment methods'
+            InputOption::VALUE_NONE,
+            'Enables all Adyen payment methods'
         );
 
         $this->addOption(
@@ -75,7 +76,6 @@ class EnablePaymentMethodCommand extends Command
             } else {
                 throw new \Exception('Invalid parameter! For usage please check manual --help.');
             }
-
         } catch (\Exception $e) {
             $message = $e->getMessage();
         }
