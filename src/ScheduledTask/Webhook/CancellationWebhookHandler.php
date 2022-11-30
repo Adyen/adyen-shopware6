@@ -37,6 +37,6 @@ class CancellationWebhookHandler implements WebhookHandlerInterface
         string $currentTransactionState,
         Context $context
     ): void {
-        $this->handleCancelWebhook($orderTransactionEntity, $state, $context);
+        $this->handleCancelWebhook($orderTransactionEntity, $this->orderTransactionStateHandler, $state, $context);
     }
 }

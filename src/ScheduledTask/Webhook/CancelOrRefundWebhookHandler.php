@@ -30,6 +30,7 @@ use Adyen\Shopware\Service\RefundService;
 use Adyen\Util\Currency;
 use Adyen\Webhook\PaymentStates;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 
@@ -41,14 +42,19 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
      * @var RefundService
      */
     private $refundService;
+    /**
+     * @var OrderTransactionStateHandler
+     */
+    private $orderTransactionStateHandler;
 
     /**
      * @param RefundService $refundService
      * @return void
      */
-    public function __construct(RefundService $refundService)
+    public function __construct(RefundService $refundService, OrderTransactionStateHandler $orderTransactionStateHandler)
     {
         $this->refundService = $refundService;
+        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
     }
 
     /**
@@ -73,7 +79,7 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
                 $this->handleSuccessfulRefund($orderTransactionEntity, $notificationEntity, $context);
             }
 
-            $this->handleCancelWebhook($orderTransactionEntity, $state, $context);
+            $this->handleCancelWebhook($orderTransactionEntity, $this->orderTransactionStateHandler, $state, $context);
         } else {
             // If CANCEL event fails (ie. success=false), transaction is unchanged.
             // WH processor returns STATE_PAID for unsuccessful REFUND notifications.

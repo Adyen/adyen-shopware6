@@ -94,7 +94,8 @@ class WebhookHandlerFactory
                 break;
             case EventCodes::CANCEL_OR_REFUND:
                 $handler = new CancelOrRefundWebhookHandler(
-                    self::$refundService
+                    self::$refundService,
+                    self::$orderTransactionStateHandler
                 );
                 break;
             case EventCodes::REFUND:

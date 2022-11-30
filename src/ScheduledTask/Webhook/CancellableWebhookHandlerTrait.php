@@ -13,17 +13,19 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Webhook\PaymentStates;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Framework\Context;
 
 trait CancellableWebhookHandlerTrait
 {
     protected function handleCancelWebhook(
         OrderTransactionEntity $orderTransactionEntity,
+        OrderTransactionStateHandler $orderTransactionStateHandler,
         string $state,
         Context $context
     ): void {
         if (PaymentStates::STATE_CANCELLED === $state) {
-            $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
+            $orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
         }
     }
 }
