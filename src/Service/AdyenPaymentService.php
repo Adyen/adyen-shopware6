@@ -36,7 +36,7 @@ class AdyenPaymentService
 
     public function __construct(
         AdyenPaymentRepository $adyenPaymentRepository
-    ){
+    ) {
         $this->adyenPaymentRepository = $adyenPaymentRepository;
     }
 
