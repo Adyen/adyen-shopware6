@@ -99,7 +99,8 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
         Context $context
     ): void {
         if ($this->adyenPaymentService->isFullAmountAuthorized(
-            $notificationEntity->getMerchantReference(), $orderTransactionEntity
+            $notificationEntity->getMerchantReference(),
+            $orderTransactionEntity
         )) {
             $this->orderTransactionStateHandler->paid($orderTransactionEntity->getId(), $context);
         }

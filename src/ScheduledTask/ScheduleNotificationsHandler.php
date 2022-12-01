@@ -53,46 +53,40 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
 
     public function run(): void
     {
-        try {
-            $unscheduledNotifications = $this->notificationService->getUnscheduledNotifications();
+        $unscheduledNotifications = $this->notificationService->getUnscheduledNotifications();
 
-            if ($unscheduledNotifications->count() == 0) {
-                $this->logger->debug("No unscheduled notifications found.");
-            }
+        if ($unscheduledNotifications->count() == 0) {
+            $this->logger->debug("No unscheduled notifications found.");
+        }
 
-            foreach ($unscheduledNotifications->getElements() as $notification) {
-                $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime($notification);
-                $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
-            }
+        foreach ($unscheduledNotifications->getElements() as $notification) {
+            $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime($notification);
+            $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
+        }
 
-            if ($unscheduledNotifications->count() > 0) {
-                $this->logger->info('Scheduled ' . $unscheduledNotifications->count() . ' notifications.');
-            }
+        if ($unscheduledNotifications->count() > 0) {
+            $this->logger->info('Scheduled ' . $unscheduledNotifications->count() . ' notifications.');
+        }
 
-            // Reschedule the unprocessed notifications older than 24 hours
-            $skippedNotifications = $this->notificationService->getSkippedUnprocessedNotifications();
+        // Reschedule the unprocessed notifications older than 24 hours
+        $skippedNotifications = $this->notificationService->getSkippedUnprocessedNotifications();
 
-            foreach ($skippedNotifications->getElements() as $notification) {
-                $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime(
-                    $notification,
-                    true
+        foreach ($skippedNotifications->getElements() as $notification) {
+            $scheduledProcessingTime = $this->notificationService->calculateScheduledProcessingTime(
+                $notification,
+                true
+            );
+            // If notification was stuck in state Processing=true, reset the state and reschedule.
+            if ($notification->getProcessing()) {
+                $this->notificationService->changeNotificationState(
+                    $notification->getId(), 'processing', false
                 );
-                // If notification was stuck in state Processing=true, reset the state and reschedule.
-                if ($notification->getProcessing()) {
-                    $this->notificationService->changeNotificationState(
-                        $notification->getId(), 'processing', false
-                    );
-                }
-                $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
             }
-
-            if ($skippedNotifications->count() > 0) {
-                $this->logger->info('Re-scheduled ' . $skippedNotifications->count() . ' skipped notifications.');
-            }
-        }
-        catch(\Exception $exception) {
-            $this->logger->info($exception->getMessage());
+            $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
         }
 
+        if ($skippedNotifications->count() > 0) {
+            $this->logger->info('Re-scheduled ' . $skippedNotifications->count() . ' skipped notifications.');
+        }
     }
 }

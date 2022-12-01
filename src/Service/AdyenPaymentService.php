@@ -40,8 +40,11 @@ class AdyenPaymentService
         $this->adyenPaymentRepository = $adyenPaymentRepository;
     }
 
-    public function insertAdyenPayment(NotificationEntity $notification, OrderTransactionEntity $orderTransaction, bool $isManualCapture): void
-    {
+    public function insertAdyenPayment(
+        NotificationEntity $notification,
+        OrderTransactionEntity $orderTransaction,
+        bool $isManualCapture
+    ): void {
         $fields = array(
             'pspreference' => $notification->getPspreference(),
             'originalReference' => $notification->getOriginalReference() ?? null,
@@ -61,10 +64,13 @@ class AdyenPaymentService
         );
     }
 
-    public function isFullAmountAuthorized(string $merchantOrderReference, OrderTransactionEntity $orderTransactionEntity): bool
-    {
+    public function isFullAmountAuthorized(
+        string $merchantOrderReference,
+        OrderTransactionEntity $orderTransactionEntity
+    ): bool {
         $amountSum = 0;
-        $adyenPaymentOrders = $this->adyenPaymentRepository->getAdyenPaymentsByMerchantOrderReference($merchantOrderReference);
+        $adyenPaymentOrders = $this->adyenPaymentRepository
+            ->getAdyenPaymentsByMerchantOrderReference($merchantOrderReference);
 
         foreach ($adyenPaymentOrders as $adyenPaymentOrder) {
             $amountSum += $adyenPaymentOrder->getAmountValue();
