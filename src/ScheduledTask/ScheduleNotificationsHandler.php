@@ -79,7 +79,9 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
             // If notification was stuck in state Processing=true, reset the state and reschedule.
             if ($notification->getProcessing()) {
                 $this->notificationService->changeNotificationState(
-                    $notification->getId(), 'processing', false
+                    $notification->getId(),
+                    'processing',
+                    false
                 );
             }
             $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
