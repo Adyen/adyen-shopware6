@@ -27,6 +27,7 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -129,8 +130,12 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
             );
         } else {
             // check for partial payments
-            // TODO find a utility method for sanitizing order transaction float value
-            if (intval($orderTransaction->getOrder()->getAmountTotal()) * 100 == $notification->getAmountValue()) {
+            $currencyUtil = new Currency();
+            $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
+            $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
+            $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
+
+            if ($transactionAmount == $notification->getAmountValue()) {
                 $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
             }
         }

@@ -27,6 +27,7 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Webhook\EventCodes;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Psr\Log\LoggerInterface;
@@ -60,23 +61,31 @@ class WebhookHandlerFactory
     private static $orderTransactionStateHandler;
 
     /**
+     * @var AdyenPaymentRepository
+     */
+    private static $adyenPaymentRepository;
+
+    /**
      * @param CaptureService $captureService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RefundService $refundService
      * @param AdyenPaymentService $adyenPaymentService
      * @param LoggerInterface $logger
+     * @param AdyenPaymentRepository $adyenPaymentRepository
      */
     public function __construct(
         CaptureService $captureService,
         AdyenPaymentService $adyenPaymentService,
         RefundService $refundService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
+        AdyenPaymentRepository $adyenPaymentRepository,
         LoggerInterface $logger
     ) {
         self::$captureService = $captureService;
         self::$adyenPaymentService = $adyenPaymentService;
         self::$refundService = $refundService;
         self::$orderTransactionStateHandler = $orderTransactionStateHandler;
+        self::$adyenPaymentRepository = $adyenPaymentRepository;
         self::$logger = $logger;
     }
 
@@ -119,6 +128,9 @@ class WebhookHandlerFactory
                 break;
             case EventCodes::ORDER_CLOSED:
                 $handler = new OrderClosedWebhookHandler(
+                    self::$adyenPaymentService,
+                    self::$adyenPaymentRepository,
+                    self::$orderTransactionStateHandler,
                     self::$logger
                 );
                 break;

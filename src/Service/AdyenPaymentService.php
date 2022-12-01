@@ -26,6 +26,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
+use Adyen\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
 
@@ -60,7 +61,7 @@ class AdyenPaymentService
         );
     }
 
-    public function isFullAmountAuthorized(string $merchantOrderReference, OrderTransactionEntity $orderTransaction): bool
+    public function isFullAmountAuthorized(string $merchantOrderReference, OrderTransactionEntity $orderTransactionEntity): bool
     {
         $amountSum = 0;
         $adyenPaymentOrders = $this->adyenPaymentRepository->getAdyenPaymentsByMerchantOrderReference($merchantOrderReference);
@@ -68,8 +69,13 @@ class AdyenPaymentService
         foreach ($adyenPaymentOrders as $adyenPaymentOrder) {
             $amountSum += $adyenPaymentOrder->getAmountValue();
         }
-        // TODO find a utility method for sanitizing float
-        if ($amountSum >= intval($orderTransaction->getOrder()->getAmountTotal()) * 100) {
+
+        $currencyUtil = new Currency();
+        $totalPrice = $orderTransactionEntity->getAmount()->getTotalPrice();
+        $isoCode = $orderTransactionEntity->getOrder()->getCurrency()->getIsoCode();
+        $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
+
+        if ($amountSum >= $transactionAmount) {
             return true;
         }
         return false;
