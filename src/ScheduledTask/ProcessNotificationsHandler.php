@@ -36,6 +36,7 @@ use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Notification;
 use Adyen\Webhook\PaymentStates;
 use Adyen\Webhook\Processor\ProcessorFactory;
+use Adyen\Webhook\EventCodes;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
@@ -317,18 +318,27 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     }
 
     /**
-     * @param $notification
+     * @param NotificationEntity $notification
      * @param $context
      * @param $logContext
      * @return \Shopware\Core\Checkout\Order\OrderEntity|null
      */
-    private function getOrder($notification, $context, $logContext)
+    private function getOrder(NotificationEntity $notification, $context, $logContext)
     {
+        if ($notification->getEventCode() === EventCodes::ORDER_CLOSED) {
+            // get merchant reference from adyen_payment table
+            $merchantOrderReference = $notification->getMerchantReference();
+            $merchantReference = $this->adyenPaymentRepository->getMerchantReferenceByOrderMerchantReference($merchantOrderReference);
+        } else {
+            // otherwise get the merchant reference from the notification
+            $merchantReference = $notification->getMerchantReference();
+        }
+
         $order = $this->orderRepository->getOrderByOrderNumber(
-            $notification->getMerchantReference(),
+            $merchantReference,
             $context,
             ['transactions', 'currency']
-        ) ?: $this->adyenPaymentRepository->getOrderByMerchantReference($notification->getMerchantReference());
+        );
 
         if (!$order) {
             $errorMessage = "Skipped: Order with order_number {$notification->getMerchantReference()} not found.";

@@ -51,13 +51,25 @@ class AdyenPaymentRepository
     /**
      * Get all partial payments linked to the order, based on the merchant reference
      *
-     * @param string $orderId
-     * @return EntityCollection
+     * @param string $merchantOrderReference
+     * @return string|null
      */
-    public function getOrderByMerchantReference(string $merchantReference): EntityCollection
+    public function getMerchantReferenceByOrderMerchantReference(string $merchantOrderReference): ?string
     {
         $criteria = new Criteria();
-        $criteria->addAssociation('orderTransaction');
+        $criteria->addFilter(new EqualsFilter('merchantOrderReference', $merchantOrderReference));
+        $adyenPayment =  $this->repository->search($criteria, Context::createDefaultContext())->first();
+
+        return $adyenPayment['merchantReference'] ?? null;
+    }
+
+    /**
+     * @param string $merchantReference
+     * @return EntityCollection
+     */
+    public function getAdyenPaymentsByMerchantReference(string $merchantReference): EntityCollection
+    {
+        $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('merchantReference', $merchantReference));
 
         return $this->repository->search($criteria, Context::createDefaultContext());

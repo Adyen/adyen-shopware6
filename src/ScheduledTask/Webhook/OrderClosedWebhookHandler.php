@@ -63,11 +63,7 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
         Context $context
     ): void {
         $this->logger->info(
-            'ORDER_CLOSED notification received, skipping processing.',
-            [
-                'pspReference' => $notificationEntity->getPspreference(),
-                'merchantReference' => $notificationEntity->getMerchantReference(),
-            ]
+            'ORDER_CLOSED notification received, skipping processing.'
         );
     }
 }
