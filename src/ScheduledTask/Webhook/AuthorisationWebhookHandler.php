@@ -105,7 +105,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         OrderTransactionEntity $orderTransaction,
         NotificationEntity $notification,
         Context $context
-    ) {
+    ): void {
         $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
         $isManualCapture = $this->captureService->requiresManualCapture($paymentMethodHandler);
 
@@ -128,8 +128,9 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                 $context
             );
         } else {
-            // for order API orders check if full amount authorized
-            if ($this->adyenPaymentService->isFullAmountAuthorized($notification->getMerchantReference(), $orderTransaction)) {
+            // check for partial payments
+            // TODO find a utility method for sanitizing order transaction float value
+            if (intval($orderTransaction->getOrder()->getAmountTotal()) * 100 == $notification->getAmountValue()) {
                 $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
             }
         }

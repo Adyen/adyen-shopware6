@@ -60,14 +60,15 @@ class AdyenPaymentService
         );
     }
 
-    public function isFullAmountAuthorized(string $merchantReference, OrderTransactionEntity $orderTransaction): bool
+    public function isFullAmountAuthorized(string $merchantOrderReference, OrderTransactionEntity $orderTransaction): bool
     {
         $amountSum = 0;
-        $adyenPaymentOrders = $this->adyenPaymentRepository->getAdyenPaymentsByMerchantReference($merchantReference);
+        $adyenPaymentOrders = $this->adyenPaymentRepository->getAdyenPaymentsByMerchantOrderReference($merchantOrderReference);
 
         foreach ($adyenPaymentOrders as $adyenPaymentOrder) {
             $amountSum += $adyenPaymentOrder->getAmountValue();
         }
+        // TODO find a utility method for sanitizing float
         if ($amountSum >= intval($orderTransaction->getOrder()->getAmountTotal()) * 100) {
             return true;
         }

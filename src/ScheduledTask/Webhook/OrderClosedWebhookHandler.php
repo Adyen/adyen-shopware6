@@ -25,12 +25,30 @@
 namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Framework\Context;
 
 class OrderClosedWebhookHandler implements WebhookHandlerInterface
 {
+    /**
+     * @var AdyenPaymentService
+     */
+    private $adyenPaymentService;
+
+    /**
+     * @var AdyenPaymentRepository
+     */
+    private $adyenPaymentRepository;
+
+    /**
+     * @var OrderTransactionStateHandler
+     */
+    private $orderTransactionStateHandler;
+
     /**
      * @var LoggerInterface
      */
@@ -41,8 +59,14 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
      * @param LoggerInterface $logger
      */
     public function __construct(
+        AdyenPaymentService $adyenPaymentService,
+        AdyenPaymentRepository $adyenPaymentRepository,
+        OrderTransactionStateHandler $orderTransactionStateHandler,
         LoggerInterface $logger
     ) {
+        $this->adyenPaymentService = $adyenPaymentService;
+        $this->adyenPaymentRepository = $adyenPaymentRepository;
+        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->logger = $logger;
     }
 
@@ -62,8 +86,26 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
         string $currentTransactionState,
         Context $context
     ): void {
-        $this->logger->info(
-            'ORDER_CLOSED notification received, skipping processing.'
-        );
+        if ($notificationEntity->isSuccess()) {
+            $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
+        } else {
+            $this->handleFailedNotification($orderTransactionEntity, $context);
+        }
+    }
+
+    private function handleSuccessfulNotification(
+        OrderTransactionEntity $orderTransactionEntity,
+        NotificationEntity $notificationEntity,
+        Context $context
+    ): void {
+        $additionalData = json_decode($notificationEntity->getAdditionalData());
+        if ($this->adyenPaymentService->isFullAmountAuthorized($additionalData->merchantOrderReference, $orderTransactionEntity)) {
+            $this->orderTransactionStateHandler->paid($orderTransactionEntity->getId(), $context);
+        }
+    }
+
+    private function handleFailedNotification(OrderTransactionEntity $orderTransactionEntity, Context $context): void
+    {
+        $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
     }
 }

@@ -328,7 +328,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         if ($notification->getEventCode() === EventCodes::ORDER_CLOSED) {
             // get merchant reference from adyen_payment table
             $merchantOrderReference = $notification->getMerchantReference();
-            $merchantReference = $this->adyenPaymentRepository->getMerchantReferenceByOrderMerchantReference($merchantOrderReference);
+            $merchantReference = $this->adyenPaymentRepository->getMerchantReferenceByMerchantOrderReference($merchantOrderReference);
         } else {
             // otherwise get the merchant reference from the notification
             $merchantReference = $notification->getMerchantReference();

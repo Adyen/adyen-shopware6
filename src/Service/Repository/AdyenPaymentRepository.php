@@ -54,23 +54,23 @@ class AdyenPaymentRepository
      * @param string $merchantOrderReference
      * @return string|null
      */
-    public function getMerchantReferenceByOrderMerchantReference(string $merchantOrderReference): ?string
+    public function getMerchantReferenceByMerchantOrderReference(string $merchantOrderReference): ?string
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('merchantOrderReference', $merchantOrderReference));
         $adyenPayment =  $this->repository->search($criteria, Context::createDefaultContext())->first();
 
-        return $adyenPayment['merchantReference'] ?? null;
+        return $adyenPayment->getMerchantReference() ?? null;
     }
 
     /**
      * @param string $merchantReference
      * @return EntityCollection
      */
-    public function getAdyenPaymentsByMerchantReference(string $merchantReference): EntityCollection
+    public function getAdyenPaymentsByMerchantOrderReference(string $merchantOrderReference): EntityCollection
     {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('merchantReference', $merchantReference));
+        $criteria->addFilter(new EqualsFilter('merchantOrderReference', $merchantOrderReference));
 
         return $this->repository->search($criteria, Context::createDefaultContext());
     }
