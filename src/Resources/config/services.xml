@@ -70,7 +70,6 @@
             <argument type="service" id="Adyen\Shopware\Service\RefundService"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository" />
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsBalanceService">

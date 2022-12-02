@@ -62,6 +62,11 @@ class PaymentResponseEntity extends Entity
     protected $response;
 
     /**
+     * @var \DateTimeInterface|null
+     */
+    protected $createdAt;
+
+    /**
      * @return string
      */
     public function getOrderTransactionId(): string

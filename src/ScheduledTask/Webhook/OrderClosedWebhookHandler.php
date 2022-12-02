@@ -26,7 +26,6 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\AdyenPaymentService;
-use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -40,34 +39,19 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
     private $adyenPaymentService;
 
     /**
-     * @var AdyenPaymentRepository
-     */
-    private $adyenPaymentRepository;
-
-    /**
      * @var OrderTransactionStateHandler
      */
     private $orderTransactionStateHandler;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
 
     /**
      * @param LoggerInterface $logger
      */
     public function __construct(
         AdyenPaymentService $adyenPaymentService,
-        AdyenPaymentRepository $adyenPaymentRepository,
-        OrderTransactionStateHandler $orderTransactionStateHandler,
-        LoggerInterface $logger
+        OrderTransactionStateHandler $orderTransactionStateHandler
     ) {
         $this->adyenPaymentService = $adyenPaymentService;
-        $this->adyenPaymentRepository = $adyenPaymentRepository;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
-        $this->logger = $logger;
     }
 
     /**

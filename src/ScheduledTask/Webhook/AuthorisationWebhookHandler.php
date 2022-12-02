@@ -146,7 +146,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      * @param Context $context
      * @return void
      */
-    private function handleFailedNotification(OrderTransactionEntity $orderTransactionEntity, Context $context)
+    private function handleFailedNotification(OrderTransactionEntity $orderTransactionEntity, Context $context): void
     {
         $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
     }

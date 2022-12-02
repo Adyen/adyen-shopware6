@@ -61,31 +61,23 @@ class WebhookHandlerFactory
     private static $orderTransactionStateHandler;
 
     /**
-     * @var AdyenPaymentRepository
-     */
-    private static $adyenPaymentRepository;
-
-    /**
      * @param CaptureService $captureService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RefundService $refundService
      * @param AdyenPaymentService $adyenPaymentService
      * @param LoggerInterface $logger
-     * @param AdyenPaymentRepository $adyenPaymentRepository
      */
     public function __construct(
         CaptureService $captureService,
         AdyenPaymentService $adyenPaymentService,
         RefundService $refundService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
-        AdyenPaymentRepository $adyenPaymentRepository,
         LoggerInterface $logger
     ) {
         self::$captureService = $captureService;
         self::$adyenPaymentService = $adyenPaymentService;
         self::$refundService = $refundService;
         self::$orderTransactionStateHandler = $orderTransactionStateHandler;
-        self::$adyenPaymentRepository = $adyenPaymentRepository;
         self::$logger = $logger;
     }
 
@@ -129,9 +121,7 @@ class WebhookHandlerFactory
             case EventCodes::ORDER_CLOSED:
                 $handler = new OrderClosedWebhookHandler(
                     self::$adyenPaymentService,
-                    self::$adyenPaymentRepository,
-                    self::$orderTransactionStateHandler,
-                    self::$logger
+                    self::$orderTransactionStateHandler
                 );
                 break;
             default:

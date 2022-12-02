@@ -82,6 +82,16 @@ class AdyenPaymentEntity extends Entity
     protected $captureMode;
 
     /**
+     * @var \DateTimeInterface|null
+     */
+    protected $createdAt;
+
+    /**
+     * @var \DateTimeInterface|null
+     */
+    protected $updatedAt;
+
+    /**
      * @return string
      */
     public function getPspreference(): string
@@ -239,5 +249,13 @@ class AdyenPaymentEntity extends Entity
     public function setCaptureMode(string $captureMode): void
     {
         $this->captureMode = $captureMode;
+    }
+
+    /**
+     * @return \DateTimeInterface|null
+     */
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
     }
 }

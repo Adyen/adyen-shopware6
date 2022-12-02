@@ -34,6 +34,9 @@ class AdyenPaymentService
 {
     protected AdyenPaymentRepository $adyenPaymentRepository;
 
+    const MANUAL_CAPTURE = 'manual_capture';
+    const AUTO_CAPTURE = 'auto_capture';
+
     public function __construct(
         AdyenPaymentRepository $adyenPaymentRepository
     ) {
@@ -55,7 +58,7 @@ class AdyenPaymentService
             'amountValue' => $notification->getAmountValue(),
             'amountCurrency' => $notification->getAmountCurrency(),
             'additionalData' => $notification->getAdditionalData(),
-            'captureMode' => $isManualCapture ? 'manual_capture' : 'auto_capture'
+            'captureMode' => $isManualCapture ? self::MANUAL_CAPTURE : self::AUTO_CAPTURE
         );
 
         $this->adyenPaymentRepository->getRepository()->create(
@@ -84,6 +87,7 @@ class AdyenPaymentService
         if ($amountSum >= $transactionAmount) {
             return true;
         }
+
         return false;
     }
 }

@@ -319,11 +319,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     /**
      * @param NotificationEntity $notification
-     * @param $context
-     * @param $logContext
+     * @param Context $context
+     * @param array $logContext
      * @return \Shopware\Core\Checkout\Order\OrderEntity|null
      */
-    private function getOrder(NotificationEntity $notification, $context, $logContext)
+    private function getOrder(NotificationEntity $notification, Context $context, array $logContext)
     {
         if ($notification->getEventCode() === EventCodes::ORDER_CLOSED) {
             // get merchant reference from adyen_payment table
