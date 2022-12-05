@@ -160,6 +160,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         const orderId = adyenCheckoutOptions.orderId;
         let url = null;
         let callback = null;
+        formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
+        formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
+
         if (!!orderId) { //Only used if the order is being edited
             formData.set('orderId', orderId);
             url = adyenCheckoutOptions.updatePaymentUrl;
