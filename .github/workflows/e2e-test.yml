@@ -14,7 +14,7 @@ jobs:
       - name: Run E2E Tests
         run: | 
           docker pull mcr.microsoft.com/playwright:focal
-          docker run --rm --ipc=host -it --mount type=bind,source="$(pwd)"/scripts,target=/tmp/scripts -v html-report:/tmp/test-report mcr.microsoft.com/playwright:focal /tmp/scripts/s.sh
+          docker run --rm --ipc=host --mount type=bind,source="$(pwd)"/scripts,target=/tmp/scripts -v html-report:/tmp/test-report -d mcr.microsoft.com/playwright:focal /tmp/scripts/e2e.sh
         env:
           INTEGRATION_TESTS_BRANCH: create-shopware-command
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
