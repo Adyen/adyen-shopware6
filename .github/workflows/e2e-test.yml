@@ -3,6 +3,7 @@ on: [pull_request]
 
 jobs:
   e2e:
+    name: Shopware 6 plugin E2E
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -33,7 +34,7 @@ jobs:
       - name: Run E2E tests
         run: docker-compose -f .github/workflows/templates/docker-compose.playwright.yml run --rm playwright /e2e.sh
         env:
-          INTEGRATION_TESTS_BRANCH: develop
+          INTEGRATION_TESTS_BRANCH: create-shopware-command
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
 
       - name: Archive test result artifacts
