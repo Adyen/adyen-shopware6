@@ -14,7 +14,7 @@ jobs:
       - name: Initiate Dockware
         run: |
           docker pull dockware/dev:latest
-          docker run --rm -p 80:80 -p 443:443 --name shopware6 --env PHP_VERSION=7.4 -d dockware/dev:latest
+          docker run --rm -p 8080:80 --name shopware6 --env PHP_VERSION=7.4 -d dockware/dev:latest
           sleep 30
 #          docker logs shopware6
 #          sudo echo "127.0.0.1 local.shopware.shop" >> /etc/hosts
