@@ -12,10 +12,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Playwright
-        run: docker pull mcr.microsoft.com/playwright:focal
-        volumes:
-          - scripts/e2e.sh:/e2e.sh
-          - ../test-report:/tmp/test-report
+        run: | 
+          docker pull mcr.microsoft.com/playwright:focal
+          docker run --rm --name playwirght -v scripts/e2e.sh:/e2e.sh -v ../test-report:/tmp/test-report -d mcr.microsoft.com/playwright:focal
         env:
           INTEGRATION_TESTS_BRANCH: create-shopware-command
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
