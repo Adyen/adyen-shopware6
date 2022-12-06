@@ -14,9 +14,10 @@ jobs:
       - name: Install Playwright
         run: | 
           docker pull mcr.microsoft.com/playwright:focal
-          docker run --rm --name playwright -v scripts:/tmp/scripts -v test-report:/tmp/test-report -d mcr.microsoft.com/playwright:focal
+          docker run --rm -p 80:80 -p 443:443 --name playwright -v scripts:/tmp/scripts -v test-report:/tmp/test-report -d mcr.microsoft.com/playwright:focal
           sleep 30
           docker logs playwright
+
       - name: Run E2E Tests
         run: docker exec playwright bash -c '/tmp/scripts/e2e.sh'
         env:
