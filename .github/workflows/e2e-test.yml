@@ -11,15 +11,10 @@ jobs:
       - name: Clone Code
         uses: actions/checkout@v2
 
-      - name: Install Playwright
+      - name: Run E2E Tests
         run: | 
           docker pull mcr.microsoft.com/playwright:focal
-          docker run --rm -p 80:80 -p 443:443 --name playwright -v scripts:/tmp/scripts -v test-report:/tmp/test-report -d mcr.microsoft.com/playwright:focal
-          sleep 30
-          docker logs playwright
-
-      - name: Run E2E Tests
-        run: docker exec playwright bash -c '/tmp/scripts/e2e.sh'
+          docker run --rm --ipc=host -it --mount type=bind,source="$(pwd)"/scripts,target=/tmp/scripts -v html-report:/tmp/test-report mcr.microsoft.com/playwright:focal /tmp/scripts/s.sh
         env:
           INTEGRATION_TESTS_BRANCH: create-shopware-command
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
@@ -29,4 +24,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: html-report
-          path: workflows/test-report
+          path: test-report
