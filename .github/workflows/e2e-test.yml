@@ -17,7 +17,7 @@ jobs:
           docker run --rm --name playwright -v scripts:/tmp/scripts -v test-report:/tmp/test-report -d mcr.microsoft.com/playwright:focal
 
       - name: Run E2E
-        run: docker run --rm --name playwright /tmp/scripts/e2e.sh
+        run: docker exec playwright bash -c '/tmp/scripts/e2e.sh'
         env:
           INTEGRATION_TESTS_BRANCH: create-shopware-command
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
