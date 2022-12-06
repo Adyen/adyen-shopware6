@@ -14,10 +14,14 @@ jobs:
       - name: Run E2E Tests
         run: | 
           docker pull mcr.microsoft.com/playwright:focal
-          docker run --rm --ipc=host --mount type=bind,source="$(pwd)"/.github/workflows/scripts,target=/tmp/scripts -v html-report:/tmp/test-report mcr.microsoft.com/playwright:focal /tmp/scripts/e2e.sh
-        env:
-          INTEGRATION_TESTS_BRANCH: create-shopware-command
-          SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
+          docker run \
+            --rm --ipc=host \
+            --mount type=bind,source="$(pwd)"/.github/workflows/scripts,target=/tmp/scripts \
+            -v html-report:/tmp/test-report \
+            -- env INTEGRATION_TESTS_BRANCH=create-shopware-command \
+            -- env SHOPWARE_BASE_URL=${{secrets.SHOPWARE_BASE_URL}} \
+            mcr.microsoft.com/playwright:focal \
+            /tmp/scripts/e2e.sh
 
       - name: Archive test result artifacts
         if: always()
