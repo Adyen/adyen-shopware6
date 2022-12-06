@@ -11,28 +11,11 @@ jobs:
       - name: Clone Code
         uses: actions/checkout@v2
 
-      - name: Initiate Dockware
-        run: |
-          docker pull dockware/dev:latest
-          docker run --rm -p 80:80 -p 443:443 --name shopware6 --env PHP_VERSION=7.4 -d dockware/dev:latest
-          sleep 30
-          docker logs shopware6
-          sudo echo "127.0.0.1 local.shopware.shop" | sudo tee -a /etc/hosts
-          docker exec shopware6 bash -c "mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
-
-      - name: Install/Configure Plugin
-        run: |
-          docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6'
-          docker exec shopware6 bash -c 'php bin/console plugin:refresh'
-          docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
-          docker exec shopware6 bash -c 'php bin/console cache:clear'
-          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.apiKeyTest ${{secrets.ADYEN_API_KEY}}'
-          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.merchantAccount ${{secrets.ADYEN_MERCHANT}}'
-          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.clientKeyTest ${{secrets.ADYEN_CLIENT_KEY}}'
-          docker exec shopware6 bash -c 'php bin/console adyen:payment-method:enable --all'
-
-      - name: Run E2E tests
-        run: docker-compose -f .github/workflows/templates/docker-compose.playwright.yml run --rm playwright /e2e.sh
+      - name: Install Playwright
+        run: docker pull mcr.microsoft.com/playwright:focal
+        volumes:
+          - scripts/e2e.sh:/e2e.sh
+          - ../test-report:/tmp/test-report
         env:
           INTEGRATION_TESTS_BRANCH: create-shopware-command
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
