@@ -7,8 +7,6 @@ services:
     ipc: host
     cap_add:
       - SYS_ADMIN
-    networks:
-      - backend
     environment:
       - INTEGRATION_TESTS_BRANCH
       - SHOPWARE_BASE_URL
