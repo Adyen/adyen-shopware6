@@ -17,7 +17,7 @@ jobs:
           docker run --rm -p 80:80 -p 443:443 --name shopware6 --env PHP_VERSION=7.4 -d dockware/dev:latest
           sleep 30
           docker logs shopware6
-          sudo echo "127.0.0.1 local.shopware.shop" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 local.shopware.shop" >> /etc/hosts
           docker exec shopware6 bash -c "mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
 
       - name: Install/Configure Plugin
@@ -37,7 +37,7 @@ jobs:
           docker run \
             --rm --ipc=host \
             --mount type=bind,source="$(pwd)"/.github/workflows/scripts,target=/tmp/scripts \
-            -v html-report:/tmp/test-report \
+            -v test-report:/tmp/test-report \
             --env INTEGRATION_TESTS_BRANCH=create-shopware-command \
             --env SHOPWARE_BASE_URL=${{secrets.SHOPWARE_BASE_URL}} \
             mcr.microsoft.com/playwright:focal \
