@@ -13,7 +13,11 @@ jobs:
 
       - name: Initiate Dockware
         run: |
-          sudo echo "127.0.0.1 local.shopware.shop" >> /etc/hosts§
+          docker pull dockware/dev:latest
+          docker run --rm -p 443:443 --network host --name --alias local.shopware.shop shopware6 --env PHP_VERSION=7.4 -d dockware/dev:latest
+          sleep 30
+          docker logs shopware6
+          docker exec shopware6 bash -c "mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
 
       - name: Install/Configure Plugin
         run: |
