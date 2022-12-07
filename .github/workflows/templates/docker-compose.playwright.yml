@@ -21,3 +21,6 @@ services:
         target: /tmp/test-report
         volume:
           nocopy: true
+
+volumes:
+  ../../test-report:
