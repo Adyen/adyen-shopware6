@@ -13,13 +13,14 @@ jobs:
 
       - name: Initiate Dockware
         run: |
-          docker network create localnetwork
-          
           docker pull dockware/dev:latest
           docker run --rm -p 443:443 --name shopware6 --env PHP_VERSION=7.4 -d dockware/dev:latest
           sleep 30
           docker logs shopware6
           docker exec shopware6 bash -c "mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
+          
+          docker network create localnetwork
+          docker network connect --alias local.shopware.shop localnetwork shopware6
 
       - name: Install/Configure Plugin
         run: |
@@ -31,20 +32,12 @@ jobs:
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.merchantAccount ${{secrets.ADYEN_MERCHANT}}'
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.clientKeyTest ${{secrets.ADYEN_CLIENT_KEY}}'
           docker exec shopware6 bash -c 'php bin/console adyen:payment-method:enable --all'
-          
-          docker network connect --alias local.shopware.shop localnetwork shopware6
 
       - name: Run E2E Tests
-        run: | 
-          docker pull mcr.microsoft.com/playwright:focal
-          docker run \
-            --rm --ipc=host --network localnetwork \
-            --mount type=bind,source="$(pwd)"/.github/workflows/scripts,target=/tmp/scripts \
-            -v $(pwd)"/.github/test-report:/tmp/test-report \
-            --env INTEGRATION_TESTS_BRANCH=develop\
-            --env SHOPWARE_BASE_URL=${{secrets.SHOPWARE_BASE_URL}} \
-            mcr.microsoft.com/playwright:focal \
-            /tmp/scripts/e2e.sh
+        run: docker-compose -f .github/workflows/templates/docker-compose.playwright.yml run --rm playwright /tmp/e2e.sh
+        env:
+          INTEGRATION_TESTS_BRANCH: develop
+          SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
 
       - name: Archive test result artifacts
         if: always()

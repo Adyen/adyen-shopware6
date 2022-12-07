@@ -3,6 +3,7 @@ version: '3'
 services:
   playwright:
     image: mcr.microsoft.com/playwright:focal
+    network: localnetwork
     shm_size: 1gb
     ipc: host
     cap_add:
@@ -10,7 +11,12 @@ services:
     environment:
       - INTEGRATION_TESTS_BRANCH
       - SHOPWARE_BASE_URL
-    command: chmod +x /e2e.sh
     volumes:
-      - ../scripts/e2e.sh:/e2e.sh
-      - ../../../test-report:/tmp/test-report
+      - type: bind
+          source: ./scripts
+          target: /tmp/scripts
+      - type: volume
+          source: ../../test-report
+          target: /tmp/test-report
+          volume:
+            nocopy: true
