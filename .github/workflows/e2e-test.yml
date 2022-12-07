@@ -36,7 +36,7 @@ jobs:
           docker run \
             --rm --ipc=host --network host \
             --mount type=bind,source="$(pwd)"/.github/workflows/scripts,target=/tmp/scripts \
-            -v ../test-report:/tmp/test-report \
+            -v test-report:/tmp/test-report \
             --env INTEGRATION_TESTS_BRANCH=develop\
             --env SHOPWARE_BASE_URL=${{secrets.SHOPWARE_BASE_URL}} \
             mcr.microsoft.com/playwright:focal \
