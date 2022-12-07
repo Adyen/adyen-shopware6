@@ -13,7 +13,7 @@ jobs:
 
       - name: Initiate Dockware
         run: |
-          echo "127.0.0.1 local.shopware.shop" >> /etc/hosts§
+          sudo echo "127.0.0.1 local.shopware.shop" >> /etc/hosts§
 
       - name: Install/Configure Plugin
         run: |
