@@ -3,6 +3,8 @@ version: '3'
 services:
   playwright:
     image: mcr.microsoft.com/playwright:focal
+    networks:
+      - localnetwork
     shm_size: 1gb
     ipc: host
     cap_add:
@@ -13,3 +15,7 @@ services:
     volumes:
       - ../scripts/e2e.sh:/e2e.sh
       - ../../../test-report:/tmp/test-report
+
+networks:
+  localnetwork:
+    external: true
