@@ -13,14 +13,5 @@ services:
       - INTEGRATION_TESTS_BRANCH
       - SHOPWARE_BASE_URL
     volumes:
-      - type: bind
-        source: ../scripts
-        target: /tmp/scripts
-      - type: volume
-        source: ../../test-report
-        target: /tmp/test-report
-        volume:
-          nocopy: true
-
-volumes:
-  ../../test-report:
+      - ../scripts/e2e.sh:/e2e.sh
+      - ../../../test-report:/tmp/test-report
