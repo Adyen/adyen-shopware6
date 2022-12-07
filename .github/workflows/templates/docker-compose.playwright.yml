@@ -13,10 +13,10 @@ services:
       - SHOPWARE_BASE_URL
     volumes:
       - type: bind
-          source: ./scripts
-          target: /tmp/scripts
+        source: ./scripts
+        target: /tmp/scripts
       - type: volume
-          source: ../../test-report
-          target: /tmp/test-report
-          volume:
-            nocopy: true
+        source: ../../test-report
+        target: /tmp/test-report
+        volume:
+          nocopy: true
