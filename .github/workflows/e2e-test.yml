@@ -4,9 +4,7 @@ on: [pull_request]
 jobs:
   e2e:
     name: Shopware 6 E2E
-    runs-on:
-      group: larger-runners
-      labels: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     steps:
