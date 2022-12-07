@@ -26,7 +26,7 @@ jobs:
 
       - name: Install/Configure Plugin
         run: |
-          docker exec shopware6 bash -c "composer config --json repositories.local '{"type": "path", "url": "/data/extensions/workdir", "options": { "symlink": false } }'"
+          docker exec shopware6 bash -c "composer config --json repositories.local '{\"type\": \"path\", \"url\": \"/data/extensions/workdir\", \"options\": { \"symlink\": false } }'"
           docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6:*'
           docker exec shopware6 bash -c 'php bin/console plugin:refresh'
           docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
