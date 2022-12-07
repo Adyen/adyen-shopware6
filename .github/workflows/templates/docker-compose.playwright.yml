@@ -3,8 +3,6 @@ version: '3'
 services:
   playwright:
     image: mcr.microsoft.com/playwright:focal
-    networks:
-      - localnetwork
     shm_size: 1gb
     ipc: host
     cap_add:
