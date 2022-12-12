@@ -109,34 +109,35 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
     ): void {
         $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
         $isManualCapture = $this->captureService->requiresManualCapture($paymentMethodHandler);
+        $currencyUtil = new Currency();
+        $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
+        $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
+        $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
 
         $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
 
-        if ($isManualCapture) {
-            $this->logger->info(
-                'Manual capture required. Setting payment to `authorised` state.',
-                ['notification' => $notification->getVars()]
-            );
-            $this->orderTransactionStateHandler->authorize($orderTransaction->getId(), $context);
+        if ($transactionAmount == $notification->getAmountValue()) {
+            if ($isManualCapture) {
+                $this->logger->info(
+                    'Manual capture required. Setting payment to `authorised` state.',
+                    ['notification' => $notification->getVars()]
+                );
+                $this->orderTransactionStateHandler->authorize($orderTransaction->getId(), $context);
 
-            $this->logger->info(
-                'Attempting capture for open invoice payment.',
-                ['notification' => $notification->getVars()]
-            );
-            $this->captureService->doOpenInvoiceCapture(
-                $notification->getMerchantReference(),
-                $notification->getAmountValue(),
-                $context
-            );
-        } else {
-            // check for partial payments
-            $currencyUtil = new Currency();
-            $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
-            $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
-            $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
-
-            if ($transactionAmount == $notification->getAmountValue()) {
-                $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+                $this->logger->info(
+                    'Attempting capture for open invoice payment.',
+                    ['notification' => $notification->getVars()]
+                );
+                $this->captureService->doOpenInvoiceCapture(
+                    $notification->getMerchantReference(),
+                    $notification->getAmountValue(),
+                    $context
+                );
+            } else {
+                // check for partial payments
+                if (isset(json_decode($notification->getAdditionalData())->merchantOrderReference)) {
+                    $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+                }
             }
         }
     }

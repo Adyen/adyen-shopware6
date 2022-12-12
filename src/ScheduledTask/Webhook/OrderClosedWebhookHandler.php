@@ -26,6 +26,7 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\CaptureService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -39,6 +40,11 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
     private $adyenPaymentService;
 
     /**
+     * @var CaptureService
+     */
+    private $captureService;
+
+    /**
      * @var OrderTransactionStateHandler
      */
     private $orderTransactionStateHandler;
@@ -48,9 +54,11 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
      */
     public function __construct(
         AdyenPaymentService $adyenPaymentService,
+        CaptureService $captureService,
         OrderTransactionStateHandler $orderTransactionStateHandler
     ) {
         $this->adyenPaymentService = $adyenPaymentService;
+        $this->captureService = $captureService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
     }
 
@@ -86,7 +94,18 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
             $notificationEntity->getMerchantReference(),
             $orderTransactionEntity
         )) {
-            $this->orderTransactionStateHandler->paid($orderTransactionEntity->getId(), $context);
+            $paymentMethodHandler = $orderTransactionEntity->getPaymentMethod()->getHandlerIdentifier();
+            if ($this->captureService->requiresManualCapture($paymentMethodHandler)) {
+                $this->orderTransactionStateHandler->authorize($orderTransactionEntity->getId(), $context);
+
+                $this->captureService->doOpenInvoiceCapture(
+                    $notificationEntity->getMerchantReference(),
+                    $notificationEntity->getAmountValue(),
+                    $context
+                );
+            } else {
+                $this->orderTransactionStateHandler->paid($orderTransactionEntity->getId(), $context);
+            }
         }
     }
 

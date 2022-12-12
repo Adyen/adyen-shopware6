@@ -121,6 +121,7 @@ class WebhookHandlerFactory
             case EventCodes::ORDER_CLOSED:
                 $handler = new OrderClosedWebhookHandler(
                     self::$adyenPaymentService,
+                    self::$captureService,
                     self::$orderTransactionStateHandler
                 );
                 break;
