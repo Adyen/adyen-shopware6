@@ -60,7 +60,7 @@ class AdyenPaymentRepository
         $criteria->addFilter(new EqualsFilter('merchantOrderReference', $merchantOrderReference));
         $adyenPayment =  $this->repository->search($criteria, Context::createDefaultContext())->first();
 
-        return $adyenPayment->getMerchantReference() ?? null;
+        return $adyenPayment ? $adyenPayment->getMerchantReference() : null;
     }
 
     /**
