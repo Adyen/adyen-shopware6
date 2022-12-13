@@ -62,7 +62,7 @@ class AdyenPaymentEntity extends Entity
     protected $paymentMethod;
 
     /**
-     * @var string
+     * @var int
      */
     protected $amountValue;
 
@@ -188,17 +188,17 @@ class AdyenPaymentEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return int
      */
-    public function getAmountValue(): string
+    public function getAmountValue(): int
     {
         return $this->amountValue;
     }
 
     /**
-     * @param string $amountValue
+     * @param int $amountValue
      */
-    public function setAmountValue(string $amountValue): void
+    public function setAmountValue(int $amountValue): void
     {
         $this->amountValue = $amountValue;
     }

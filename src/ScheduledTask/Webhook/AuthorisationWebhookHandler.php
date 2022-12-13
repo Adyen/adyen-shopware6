@@ -117,11 +117,12 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
 
         // check for partial payments
-        if (isset(json_decode($notification->getAdditionalData())->merchantOrderReference)) {
+        $merchantOrderReference = isset(json_decode($notification->getAdditionalData())->merchantOrderReference);
+        if ($merchantOrderReference) {
             return;
         }
 
-        if ($transactionAmount == $notification->getAmountValue()) {
+        if ($transactionAmount === intval($notification->getAmountValue())) {
             if ($isManualCapture) {
                 $this->logger->info(
                     'Manual capture required. Setting payment to `authorised` state.',

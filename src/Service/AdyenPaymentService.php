@@ -55,7 +55,7 @@ class AdyenPaymentService
             'merchantOrderReference' => json_decode($notification->getAdditionalData())->merchantOrderReference ?? null,
             'orderTransactionId' => $orderTransaction->getId(),
             'paymentMethod' => $notification->getPaymentMethod(),
-            'amountValue' => $notification->getAmountValue(),
+            'amountValue' => intval($notification->getAmountValue()),
             'amountCurrency' => $notification->getAmountCurrency(),
             'additionalData' => $notification->getAdditionalData(),
             'captureMode' => $isManualCapture ? self::MANUAL_CAPTURE : self::AUTO_CAPTURE

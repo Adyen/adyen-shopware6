@@ -23,7 +23,7 @@ class Migration1669129247AdyenPayment extends MigrationStep
                 `merchant_order_reference` VARCHAR(255) DEFAULT NULL COMMENT 'Merchant order reference',
                 `order_transaction_id` BINARY(16)  not NULL COMMENT 'Order transaction Id',
                 `payment_method` VARCHAR(255) NOT NULL COMMENT 'Payment method',
-                `amount_value` VARCHAR(255) NOT NULL COMMENT 'Amount value',
+                `amount_value` INT(11) NOT NULL COMMENT 'Amount value',
                 `amount_currency` VARCHAR(255) NOT NULL COMMENT 'Amount currency',
                 `additional_data` text COMMENT 'Additional data',
                 `capture_mode` VARCHAR(255) DEFAULT NULL COMMENT 'Capture mode',

@@ -49,8 +49,6 @@ class AdyenPaymentRepository
     }
 
     /**
-     * Get all partial payments linked to the order, based on the merchant reference
-     *
      * @param string $merchantOrderReference
      * @return string|null
      */

@@ -33,6 +33,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
@@ -74,7 +75,7 @@ class AdyenPaymentEntityDefinition extends EntityDefinition
             new StringField('merchant_reference', 'merchantReference'),
             new StringField('merchant_order_reference', 'merchantOrderReference'),
             new StringField('payment_method', 'paymentMethod'),
-            new StringField('amount_value', 'amountValue'),
+            new IntField('amount_value', 'amountValue'),
             new StringField('amount_currency', 'amountCurrency'),
             new LongTextField('additional_data', 'additionalData'),
             new StringField('capture_mode', 'captureMode'),
