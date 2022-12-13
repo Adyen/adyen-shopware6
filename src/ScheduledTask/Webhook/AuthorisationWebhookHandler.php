@@ -116,6 +116,11 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
 
         $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
 
+        // check for partial payments
+        if (isset(json_decode($notification->getAdditionalData())->merchantOrderReference)) {
+            return;
+        }
+
         if ($transactionAmount == $notification->getAmountValue()) {
             if ($isManualCapture) {
                 $this->logger->info(
@@ -134,10 +139,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                     $context
                 );
             } else {
-                // check for partial payments
-                if (isset(json_decode($notification->getAdditionalData())->merchantOrderReference)) {
                     $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
-                }
             }
         }
     }
