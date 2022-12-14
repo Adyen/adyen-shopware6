@@ -21,5 +21,8 @@
         <service id="Adyen\Shopware\Service\Repository\OrderTransactionRepository" autowire="true">
             <argument type="service" id="order_transaction.repository"/>
         </service>
+        <service id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository" autowire="true">
+            <argument type="service" id="adyen_payment.repository"/>
+        </service>
     </services>
 </container>

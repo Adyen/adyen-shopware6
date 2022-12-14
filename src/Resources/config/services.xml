@@ -35,6 +35,9 @@
         <service id="Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_payment_capture"/>
         </service>
+        <service id="Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntityDefinition">
+            <tag name="shopware.entity.definition" entity="adyen_payment"/>
+        </service>
         <service id="Adyen\Shopware\Core\Checkout\Payment\PaymentMethod\PaymentMethodExtension">
             <tag name="shopware.entity.extension"/>
         </service>
@@ -63,6 +66,7 @@
         </service>
         <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
+            <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
             <argument type="service" id="Adyen\Shopware\Service\RefundService"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
@@ -80,6 +84,9 @@
         <service id="Adyen\Shopware\Service\OrdersService" autowire="true">
         </service>
         <service id="Adyen\Shopware\Service\OrdersCancelService" autowire="true">
+        </service>
+        <service id="Adyen\Shopware\Service\AdyenPaymentService">
+            <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository"/>
         </service>
 
         <!--Commands-->
