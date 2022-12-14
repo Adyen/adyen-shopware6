@@ -125,6 +125,7 @@ class WebhookHandlerFactory
                     self::$captureService,
                     self::$orderTransactionStateHandler
                 );
+                break;
             case EventCodes::OFFER_CLOSED:
                 $handler = new OfferClosedWebhookHandler(self::$orderTransactionStateHandler);
                 break;
