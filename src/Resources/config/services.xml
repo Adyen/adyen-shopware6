@@ -14,6 +14,7 @@
         <import resource="services/providers.xml"/>
         <import resource="services/repositories.xml"/>
         <import resource="services/subscribers.xml"/>
+        <import resource="services/commands.xml"/>
     </imports>
 
     <services>
