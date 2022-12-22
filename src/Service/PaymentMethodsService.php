@@ -210,7 +210,7 @@ class PaymentMethodsService
         } else {
             // Use sales channel default country and generic shopper reference in shopping cart view
             $countryCode = $salesChannelAssocLocale->getCountry()->getIso();
-            $shopperReference = 'shopping-cart-user-' . time();
+            $shopperReference = 'shopping-cart-user-' . uniqid();
         }
 
         return [
