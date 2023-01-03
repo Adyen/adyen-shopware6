@@ -26,6 +26,8 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\CaptureService;
+use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -44,6 +46,11 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
     private $captureService;
 
     /**
+     * @var AdyenPaymentService
+     */
+    private $adyenPaymentService;
+
+    /**
      * @var OrderTransactionStateHandler
      */
     private $orderTransactionStateHandler;
@@ -55,10 +62,12 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      */
     public function __construct(
         CaptureService $captureService,
+        AdyenPaymentService $adyenPaymentService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         LoggerInterface $logger
     ) {
         $this->captureService = $captureService;
+        $this->adyenPaymentService = $adyenPaymentService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->logger = $logger;
     }
@@ -99,27 +108,42 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         OrderTransactionEntity $orderTransaction,
         NotificationEntity $notification,
         Context $context
-    ) {
+    ): void {
         $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+        $isManualCapture = $this->captureService->requiresManualCapture($paymentMethodHandler);
+        $currencyUtil = new Currency();
+        $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
+        $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
+        $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
 
-        if ($this->captureService->requiresManualCapture($paymentMethodHandler)) {
-            $this->logger->info(
-                'Manual capture required. Setting payment to `authorised` state.',
-                ['notification' => $notification->getVars()]
-            );
-            $this->orderTransactionStateHandler->authorize($orderTransaction->getId(), $context);
+        $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
 
-            $this->logger->info(
-                'Attempting capture for open invoice payment.',
-                ['notification' => $notification->getVars()]
-            );
-            $this->captureService->doOpenInvoiceCapture(
-                $notification->getMerchantReference(),
-                $notification->getAmountValue(),
-                $context
-            );
-        } else {
-            $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+        // check for partial payments
+        $merchantOrderReference = isset(json_decode($notification->getAdditionalData())->merchantOrderReference);
+        if ($merchantOrderReference) {
+            return;
+        }
+
+        if ($transactionAmount === intval($notification->getAmountValue())) {
+            if ($isManualCapture) {
+                $this->logger->info(
+                    'Manual capture required. Setting payment to `authorised` state.',
+                    ['notification' => $notification->getVars()]
+                );
+                $this->orderTransactionStateHandler->authorize($orderTransaction->getId(), $context);
+
+                $this->logger->info(
+                    'Attempting capture for open invoice payment.',
+                    ['notification' => $notification->getVars()]
+                );
+                $this->captureService->doOpenInvoiceCapture(
+                    $notification->getMerchantReference(),
+                    $notification->getAmountValue(),
+                    $context
+                );
+            } else {
+                    $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+            }
         }
     }
 
@@ -128,7 +152,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      * @param Context $context
      * @return void
      */
-    private function handleFailedNotification(OrderTransactionEntity $orderTransactionEntity, Context $context)
+    private function handleFailedNotification(OrderTransactionEntity $orderTransactionEntity, Context $context): void
     {
         $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
     }

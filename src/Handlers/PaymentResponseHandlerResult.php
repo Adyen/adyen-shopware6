@@ -14,6 +14,7 @@ class PaymentResponseHandlerResult
     private $action;
     private $additionalData;
     private $donationToken;
+    private $isGiftcard = false;
 
     /**
      * @param PaymentResponseEntity $paymentResponse
@@ -173,5 +174,18 @@ class PaymentResponseHandlerResult
     public function getDonationToken(): ?string
     {
         return $this->donationToken;
+    }
+
+    /**
+     * @param bool $isGiftcard
+     */
+    public function setIsGiftcard(bool $isGiftcard): void
+    {
+        $this->isGiftcard = $isGiftcard;
+    }
+
+    public function isGiftcard(): bool
+    {
+        return $this->isGiftcard;
     }
 }

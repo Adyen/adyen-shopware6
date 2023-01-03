@@ -1,17 +1,13 @@
 {% block adyen_checkout %}
-    {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
-    {% if adyenFrontendData and adyenFrontendData.locale and adyenFrontendData.clientKey and adyenFrontendData.environment and adyenFrontendData.paymentMethodsResponse %}
+    {% if adyenFrontendData and adyenFrontendData.locale and adyenFrontendData.clientKey and adyenFrontendData.environment %}
         <div id="adyen-checkout-configuration"
              data-locale="{{ adyenFrontendData.locale }}"
              data-client-key="{{ adyenFrontendData.clientKey }}"
              data-environment="{{ adyenFrontendData.environment }}"
-             data-payment-methods-response="{{ adyenFrontendData.paymentMethodsResponse }}"
         ></div>
         {# Load checkout web component v5.19.0 #}
         <link rel="stylesheet" href="{{ asset('bundles/adyenpaymentshopware6/css/adyen.css', 'asset') }}">
         <script type="text/javascript" src="{{ asset('bundles/adyenpaymentshopware6/js/adyen.js', 'asset') }}"></script>
-        <script>
-            var adyenCheckoutConfiguration = document.querySelector('#adyen-checkout-configuration').dataset;
-        </script>
+        <script>var adyenCheckoutConfiguration = document.querySelector('#adyen-checkout-configuration').dataset;</script>
     {% endif %}
 {% endblock %}

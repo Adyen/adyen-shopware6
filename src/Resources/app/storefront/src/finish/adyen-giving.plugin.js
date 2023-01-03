@@ -33,7 +33,8 @@ export default class AdyenGivingPlugin extends Plugin {
     }
 
     async initializeCheckoutComponent () {
-        const { locale, clientKey, environment, currency, values, backgroundUrl,
+        const { locale, clientKey, environment } = adyenCheckoutConfiguration;
+        const { currency, values, backgroundUrl,
             logoUrl, name, description, url} = adyenGivingConfiguration;
 
         const ADYEN_CHECKOUT_CONFIG = {

@@ -1,0 +1,11 @@
+{% sw_extends '@Storefront/storefront/component/checkout/offcanvas-cart.html.twig' %}
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\StorefrontSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+
+{% block component_offcanvas_cart_actions_promotion_form %}
+    {{ parent() }}
+
+    {% if adyenFrontendData and adyenFrontendData.giftcards %}
+        <a href="{{ adyenFrontendData.shoppingCartPageUrl }}" class="btn btn-xs btn-outline-info float-right mb-3">&plus; Add Giftcards</a>
+        <div class="clearfix"></div>
+    {% endif %}
+{% endblock %}

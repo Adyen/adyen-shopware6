@@ -26,6 +26,8 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\RefundService;
+use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Webhook\EventCodes;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Psr\Log\LoggerInterface;
@@ -49,25 +51,33 @@ class WebhookHandlerFactory
     private static $refundService;
 
     /**
+     * @var AdyenPaymentService
+     */
+    private static $adyenPaymentService;
+
+    /**
      * @var OrderTransactionStateHandler
      */
     private static $orderTransactionStateHandler;
 
     /**
      * @param CaptureService $captureService
-     * @param RefundService $refundService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param RefundService $refundService
+     * @param AdyenPaymentService $adyenPaymentService
      * @param LoggerInterface $logger
      */
     public function __construct(
         CaptureService $captureService,
+        AdyenPaymentService $adyenPaymentService,
         RefundService $refundService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         LoggerInterface $logger
     ) {
         self::$captureService = $captureService;
-        self::$orderTransactionStateHandler = $orderTransactionStateHandler;
+        self::$adyenPaymentService = $adyenPaymentService;
         self::$refundService = $refundService;
+        self::$orderTransactionStateHandler = $orderTransactionStateHandler;
         self::$logger = $logger;
     }
 
@@ -81,6 +91,7 @@ class WebhookHandlerFactory
             case EventCodes::AUTHORISATION:
                 $handler = new AuthorisationWebhookHandler(
                     self::$captureService,
+                    self::$adyenPaymentService,
                     self::$orderTransactionStateHandler,
                     self::$logger
                 );
@@ -106,6 +117,13 @@ class WebhookHandlerFactory
             case EventCodes::REFUND_FAILED:
                 $handler = new RefundFailedWebhookHandler(
                     self::$refundService
+                );
+                break;
+            case EventCodes::ORDER_CLOSED:
+                $handler = new OrderClosedWebhookHandler(
+                    self::$adyenPaymentService,
+                    self::$captureService,
+                    self::$orderTransactionStateHandler
                 );
                 break;
             case EventCodes::OFFER_CLOSED:

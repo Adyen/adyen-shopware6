@@ -33,7 +33,8 @@ export default class AdyenSuccessActionPlugin extends Plugin {
     }
 
     async initializeCheckoutComponent () {
-        const { locale, clientKey, environment, action} = adyenSuccessActionConfiguration;
+        const { locale, clientKey, environment } = adyenCheckoutConfiguration;
+        const { action } = adyenSuccessActionConfiguration;
 
         const ADYEN_CHECKOUT_CONFIG = {
             locale,

@@ -29,7 +29,9 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Framework\Adapter\Cache\CacheValueCompressor;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class PaymentMethodsService
 {
@@ -64,6 +66,11 @@ class PaymentMethodsService
     private $orderRepository;
 
     /**
+     * @var CacheInterface
+     */
+    private $cache;
+
+    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -76,6 +83,7 @@ class PaymentMethodsService
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param CartService $cartService
+     * @param CacheInterface $cache
      * @param SalesChannelRepository $salesChannelRepository
      * @param OrderRepository $orderRepository
      */
@@ -85,6 +93,7 @@ class PaymentMethodsService
         ConfigurationService $configurationService,
         Currency $currency,
         CartService $cartService,
+        CacheInterface $cache,
         SalesChannelRepository $salesChannelRepository,
         OrderRepository $orderRepository
     ) {
@@ -93,6 +102,7 @@ class PaymentMethodsService
         $this->currency = $currency;
         $this->cartService = $cartService;
         $this->salesChannelRepository = $salesChannelRepository;
+        $this->cache = $cache;
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
     }
@@ -104,18 +114,29 @@ class PaymentMethodsService
      */
     public function getPaymentMethods(SalesChannelContext $context, $orderId = ''): array
     {
+        $requestData = $this->buildPaymentMethodsRequestData($context, $orderId);
+
+        $paymentRequestString = json_encode($requestData);
+        $cacheKey = 'adyen_payment_methods_' . md5($paymentRequestString);
+        $paymentMethodsResponseCache = $this->cache->getItem($cacheKey);
+
+        if ($paymentMethodsResponseCache->isHit() && $paymentMethodsResponseCache->get()) {
+            return CacheValueCompressor::uncompress($paymentMethodsResponseCache->get());
+        }
+
         $responseData = [];
         try {
-            $requestData = $this->buildPaymentMethodsRequestData($context, $orderId);
-            if (!empty($requestData)) {
-                $checkoutService = new CheckoutService(
-                    $this->clientService->getClient($context->getSalesChannel()->getId())
-                );
-                $responseData = $checkoutService->paymentMethods($requestData);
-            }
+            $checkoutService = new CheckoutService(
+                $this->clientService->getClient($context->getSalesChannelId())
+            );
+            $responseData = $checkoutService->paymentMethods($requestData);
+
+            $paymentMethodsResponseCache->set(CacheValueCompressor::compress($responseData));
+            $this->cache->save($paymentMethodsResponseCache);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
         }
+
         return $responseData;
     }
 
@@ -156,10 +177,6 @@ class PaymentMethodsService
      */
     private function buildPaymentMethodsRequestData(SalesChannelContext $context, $orderId = '')
     {
-        if (is_null($context->getCustomer())) {
-            return [];
-        }
-
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
@@ -179,28 +196,33 @@ class PaymentMethodsService
             $amount = $this->currency->sanitize($order->getPrice()->getTotalPrice(), $currency);
         }
 
-        $salesChannelAssocLocale = $this->salesChannelRepository->getSalesChannelAssocLocale($context);
+        $salesChannelAssocLocale = $this->salesChannelRepository
+            ->getSalesChannelAssoc($context, ['language.locale', 'country']);
         $shopperLocale = $salesChannelAssocLocale->getLanguage()->getLocale()->getCode();
 
-        if ($context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso()) {
-            $countryCode = $context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
+        if (!is_null($context->getCustomer())) {
+            if ($context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso()) {
+                $countryCode = $context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
+            } else {
+                $countryCode = $context->getCustomer()->getActiveShippingAddress()->getCountry()->getIso();
+            }
+            $shopperReference = $context->getCustomer()->getId();
         } else {
-            $countryCode = $context->getCustomer()->getActiveShippingAddress()->getCountry()->getIso();
+            // Use sales channel default country and generic shopper reference in shopping cart view
+            $countryCode = $salesChannelAssocLocale->getCountry()->getIso();
+            $shopperReference = 'shopping-cart-user-' . uniqid();
         }
-        $shopperReference = $context->getCustomer()->getId();
 
-        $requestData = array(
+        return [
             "channel" => "Web",
             "merchantAccount" => $merchantAccount,
             "countryCode" => $countryCode,
-            "amount" => array(
+            "amount" => [
                 "currency" => $currency,
                 "value" => $amount
-            ),
+            ],
             "shopperReference" => $shopperReference,
             "shopperLocale" => $shopperLocale
-        );
-
-        return $requestData;
+        ];
     }
 }

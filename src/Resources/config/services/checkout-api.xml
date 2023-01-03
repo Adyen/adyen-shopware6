@@ -1,26 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!--
-  ~                       ######
-  ~                       ######
-  ~ ############    ####( ######  #####. ######  ############   ############
-  ~ #############  #####( ######  #####. ######  #############  #############
-  ~        ######  #####( ######  #####. ######  #####  ######  #####  ######
-  ~ ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
-  ~ ###### ######  #####( ######  #####. ######  #####          #####  ######
-  ~ #############  #############  #############  #############  #####  ######
-  ~  ############   ############  #############   ############  #####  ######
-  ~                                      ######
-  ~                               #############
-  ~                               ############
-  ~
-  ~ Adyen plugin for Shopware 6
-  ~
-  ~ Copyright (c) 2021 Adyen B.V.
-  ~ This file is open source and available under the MIT license.
-  ~ See the LICENSE file for more info.
-  ~
-  -->
-
 <container xmlns="http://symfony.com/schema/dic/services"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://symfony.com/schema/dic/services
@@ -37,7 +15,6 @@
         <service id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
         <service id="Adyen\Shopware\Service\PaymentResponseService" autowire="true">
             <argument type="service" id="adyen_payment_response.repository"/>
-            <argument type="service" id="order.repository"/>
             <argument type="service" id="order_transaction.repository"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentStatusService" autowire="true">
@@ -52,6 +29,7 @@
             <argument type="service" id="cache.tags"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
+            <argument key="$cache" type="service" id="cache.object"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentDetailsService" autowire="true">

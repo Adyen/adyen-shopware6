@@ -32,6 +32,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentStateDataService
 {
@@ -61,12 +62,11 @@ class PaymentStateDataService
     /**
      * @param string $contextToken
      * @param string $stateData
-     * @param string $origin
+     * @param array $additionalData
      * @throws AdyenException
      */
-    public function insertPaymentStateData(string $contextToken, string $stateData, string $origin): void
+    public function insertPaymentStateData(string $contextToken, string $stateData, array $additionalData = []): void
     {
-
         if (empty($contextToken) || empty($stateData)) {
             $message = 'No context token or state.data found, unable to save payment state.data';
             $this->logger->error($message);
@@ -76,9 +76,6 @@ class PaymentStateDataService
         $stateDataArray = json_decode($stateData, true);
 
         //Set additional data to persist along with the state.data
-        $additionalData = [
-            'origin' => $origin
-        ];
         $stateDataArray['additionalData'] = $additionalData;
 
         $fields['token'] = $contextToken;
@@ -91,47 +88,30 @@ class PaymentStateDataService
 
         $this->paymentStateDataRepository->upsert(
             [$fields],
-            \Shopware\Core\Framework\Context::createDefaultContext()
+            Context::createDefaultContext()
         );
     }
 
     /**
      * @param string $contextToken
-     * @return string
+     * @return PaymentStateDataEntity|null
      */
     public function getPaymentStateDataFromContextToken(string $contextToken): ?PaymentStateDataEntity
     {
-        $stateDataRow = $this->paymentStateDataRepository->search(
+        return $this->paymentStateDataRepository->search(
             (new Criteria())->addFilter(new EqualsFilter('token', $contextToken)),
             Context::createDefaultContext()
         )->first();
-
-        return $stateDataRow;
     }
 
-    /**
-     * @deprecated will be removed in v2.0
-     * @param string $contextToken
-     * @return string|null
-     */
-    public function getPaymentMethodType(string $contextToken): ?string
+    public function updateStateDataContextToken(PaymentStateDataEntity $stateData, $newToken): void
     {
-        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
-        if (empty($stateData)) {
-            return null;
-        }
-
-        $stateDataArray = json_decode($stateData->getStateData(), true);
-        if (empty($stateDataArray['paymentMethod']['type'])) {
-            return null;
-        }
-
-        //storedPaymentMethods are type=scheme. If storedPaymentMethodId is present we return storedPaymentMethods
-        if (!empty($stateDataArray['paymentMethod']['storedPaymentMethodId'])) {
-            return OneClickPaymentMethodHandler::getPaymentMethodCode();
-        }
-
-        return $stateDataArray['paymentMethod']['type'];
+        $this->paymentStateDataRepository->update([
+            [
+                'id' => $stateData->getId(),
+                'token' => $newToken
+            ]
+        ], Context::createDefaultContext());
     }
 
     /**

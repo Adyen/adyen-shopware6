@@ -1,4 +1,5 @@
-/*!
+<?php declare(strict_types=1);
+/**
  *                       ######
  *                       ######
  * ############    ####( ######  #####. ######  ############   ############
@@ -14,59 +15,29 @@
  *
  * Adyen plugin for Shopware 6
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  */
 
-@import "modal";
+namespace Adyen\Shopware\Entity\AdyenPayment;
 
-.adyen-payment-method-container-div, .adyen-update-payment-details{
-    display: none;
-}
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 
-.paypal-checkout-sandbox{
-    pointer-events: auto;
-}
-
-.adyen-checkout__card__brands img {
-    vertical-align: top;
-}
-
-#donation-container,
-#success-action-container {
-    margin-top: -50px;
-    margin-bottom: 50px;
-}
-
-.adyen-close-giftcard-component {
-    float: right;
-    cursor:pointer;
-    display: none;
-    font-weight: bold
-}
-
-.adyen-remove-giftcard {
-    display: none;
-}
-
-.adyen-remaining-balance {
-    display: none;
-    text-align: center;
-}
-
-.adyen-voucher-details {
-    padding-left: 1rem;
-    padding-bottom: 1rem;
-    background-color: #f9f9f9;
-
-    .voucher-detail {
-        display: grid;
-        grid-template-columns: 1fr 4fr;
-    }
-
-    dd {
-        margin-left: 4px;
+/**
+ * @method void              add(AdyenPaymentEntity $entity)
+ * @method void              set(string $key, AdyenPaymentEntity $entity)
+ * @method AdyenPaymentEntity[]    getIterator()
+ * @method AdyenPaymentEntity[]    getElements()
+ * @method AdyenPaymentEntity|null get(string $key)
+ * @method AdyenPaymentEntity|null first()
+ * @method AdyenPaymentEntity|null last()
+ */
+class AdyenPaymentEntityCollection extends EntityCollection
+{
+    protected function getExpectedClass(): string
+    {
+        return AdyenPaymentEntity::class;
     }
 }

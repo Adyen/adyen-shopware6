@@ -41,20 +41,13 @@ class PaymentResponseService
     /**
      * @var EntityRepositoryInterface
      */
-    private $orderRepository;
-
-    /**
-     * @var EntityRepositoryInterface
-     */
     private $orderTransactionRepository;
 
     public function __construct(
         EntityRepositoryInterface $repository,
-        EntityRepositoryInterface $orderRepository,
         EntityRepositoryInterface $orderTransactionRepository
     ) {
         $this->repository = $repository;
-        $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
@@ -89,18 +82,20 @@ class PaymentResponseService
             ->search(
                 (new Criteria())
                     ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
-                    ->addAssociation('orderTransaction.order'),
+                    ->addAssociation('orderTransaction.order')
+                    ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
                 Context::createDefaultContext()
             )
-            ->last();
+            ->first();
     }
 
     public function insertPaymentResponse(
         array $paymentResponse,
-        OrderTransactionEntity $orderTransaction
+        OrderTransactionEntity $orderTransaction,
+        bool $upsert = true
     ): void {
         $storedPaymentResponse = $this->getWithOrderTransaction($orderTransaction);
-        if ($storedPaymentResponse) {
+        if ($storedPaymentResponse && $upsert) {
             $fields['id'] = $storedPaymentResponse->getId();
         }
 
