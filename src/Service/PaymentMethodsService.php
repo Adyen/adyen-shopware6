@@ -141,36 +141,6 @@ class PaymentMethodsService
     }
 
     /**
-     * @param string $address
-     * @return array
-     */
-    public function getSplitStreetAddressHouseNumber(string $address): array
-    {
-        $streetFirstRegex = '/(?<streetName>[\w\W]+)\s+(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)$/m';
-        $numberFirstRegex = '/^(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)\s+(?<streetName>[\w\W]+)/m';
-
-        preg_match($streetFirstRegex, $address, $streetFirstAddress);
-        preg_match($numberFirstRegex, $address, $numberFirstAddress);
-
-        if ($streetFirstAddress) {
-            return [
-                'street' => $streetFirstAddress['streetName'],
-                'houseNumber' => $streetFirstAddress['houseNumber']
-            ];
-        } elseif ($numberFirstAddress) {
-            return [
-                'street' => $numberFirstAddress['streetName'],
-                'houseNumber' => $numberFirstAddress['houseNumber']
-            ];
-        }
-
-        return [
-            'street' => $address,
-            'houseNumber' => 'N/A'
-        ];
-    }
-
-    /**
      * @param SalesChannelContext $context
      * @param string $orderId
      * @return array

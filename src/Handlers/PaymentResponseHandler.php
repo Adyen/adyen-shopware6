@@ -28,6 +28,7 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
@@ -36,6 +37,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEnti
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\SyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -64,6 +66,9 @@ class PaymentResponseHandler
 
     // Merchant reference key in API response
     const MERCHANT_REFERENCE = 'merchantReference';
+
+    const PAYMENT_REFERENCE = 'paymentReference';
+    const ORDER_TRANSACTION_ID = 'orderTransactionId';
     /**
      * @var LoggerInterface
      */
@@ -120,15 +125,22 @@ class PaymentResponseHandler
 
     /**
      * @param array $response
-     * @param OrderTransactionEntity $orderTransaction
+     * @param string|null $orderTransactionId
+     * @param string|null $paymentReference
+     * @param bool $upsertResponse
      * @return PaymentResponseHandlerResult
+     * @throws ValidationException
      */
     public function handlePaymentResponse(
         array $response,
-        OrderTransactionEntity $orderTransaction,
+        string $orderTransactionId = null,
+        string $paymentReference = null,
         bool $upsertResponse = true
     ): PaymentResponseHandlerResult {
         $paymentResponseHandlerResult = new PaymentResponseHandlerResult();
+        if (is_null($orderTransactionId) && is_null($paymentReference)) {
+            throw new ValidationException('Error: either orderTransactionId or paymentReference is required');
+        }
         // Retrieve result code from response array
         $resultCode = $response['resultCode'];
         if (array_key_exists('refusalReason', $response)) {
@@ -169,11 +181,22 @@ class PaymentResponseHandler
         }
 
         // Store response for cart until the payment is finalised
-        $this->paymentResponseService->insertPaymentResponse(
-            $response,
-            $orderTransaction,
-            $upsertResponse
-        );
+        if ($orderTransactionId) {
+            $this->paymentResponseService->insertPaymentResponse(
+                $response,
+                $orderTransactionId,
+                self::ORDER_TRANSACTION_ID,
+                $upsertResponse
+            );
+        } else {
+            $paymentResponseHandlerResult->setPaymentReference($paymentReference);
+            $this->paymentResponseService->insertPaymentResponse(
+                $response,
+                $paymentReference,
+                self::PAYMENT_REFERENCE,
+                $upsertResponse
+            );
+        }
 
         // Based on the result code start different payment flows
         switch ($resultCode) {
@@ -215,6 +238,8 @@ class PaymentResponseHandler
     }
 
     /**
+     * Update Order Transaction state based on payment response.
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResults
@@ -253,6 +278,13 @@ class PaymentResponseHandler
                 && !empty($pspReference)
                 && !$result->isGiftcard()) {
                 $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
+            }
+
+            $paymentReference = $result->getPaymentReference();
+            if (empty($storedTransactionCustomFields[self::PAYMENT_REFERENCE])
+                && !empty($paymentReference)
+                && !$result->isGiftcard()) {
+                $transactionCustomFields[self::PAYMENT_REFERENCE] = $paymentReference;
             }
 
             if ($result->getAction() && empty($storedTransactionCustomFields[self::ACTION])) {
@@ -352,41 +384,47 @@ class PaymentResponseHandler
 
         switch ($resultCode) {
             case self::AUTHORISED:
-                return [
+                $response = [
                     "isFinal" => true,
                     "resultCode" => $resultCode,
                 ];
+                break;
             case self::REFUSED:
             case self::ERROR:
             case self::CANCELLED:
-                return [
+                $response = [
                     "isFinal" => true,
                     "resultCode" => $resultCode,
                     "refusalReason" => $refusalReason,
                     "refusalReasonCode" => $refusalReasonCode
                 ];
+                break;
             case self::REDIRECT_SHOPPER:
             case self::IDENTIFY_SHOPPER:
             case self::CHALLENGE_SHOPPER:
             case self::PRESENT_TO_SHOPPER:
             case self::PENDING:
-                return [
+                $response = [
                     "isFinal" => false,
                     "resultCode" => $resultCode,
                     "action" => $action
                 ];
             case self::RECEIVED:
-                return [
+                $response = [
                     "isFinal" => true,
                     "resultCode" => $resultCode,
                     "additionalData" => $additionalData
                 ];
             default:
-                return [
+                $response = [
                     "isFinal" => true,
                     "resultCode" => self::ERROR,
                 ];
         }
+
+        $response['paymentReference'] = $paymentResponseHandlerResult->getPaymentReference() ?: null;
+
+        return $response;
     }
 
     /**

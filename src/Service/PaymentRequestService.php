@@ -108,7 +108,9 @@ class PaymentRequestService
         float $totalPrice,
         string $reference,
         string $returnUrl,
-        ?array $lineItems = null
+        ?int $partialAmount = null,
+        ?array $lineItems = null,
+        ?array $adyenOrderData = []
     ): array {
         //Validate state.data for payment and build request object
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
@@ -223,7 +225,8 @@ class PaymentRequestService
         }
 
         if (empty($request['shopperLocale'])) {
-            $shopperLocale = $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
+            $shopperLocale = $this->salesChannelRepository
+                ->getSalesChannelAssoc($salesChannelContext, ['language.locale'])
                 ->getLanguage()->getLocale()->getCode();
         } else {
             $shopperLocale = $request['shopperLocale'];
@@ -275,12 +278,13 @@ class PaymentRequestService
         );
 
         //Building payment data
+        $amount = $partialAmount ?: $this->currency->sanitize(
+            $totalPrice,
+            $salesChannelContext->getCurrency()->getIsoCode()
+        );
         $request = $this->paymentBuilder->buildPaymentData(
             $salesChannelContext->getCurrency()->getIsoCode(),
-            $this->currency->sanitize(
-                $totalPrice,
-                $salesChannelContext->getCurrency()->getIsoCode()
-            ),
+            $amount,
             $reference,
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
             $returnUrl,
@@ -301,12 +305,16 @@ class PaymentRequestService
         if (!empty($stateDataAdditionalData['origin'])) {
             $request['origin'] = $stateDataAdditionalData['origin'];
         } else {
-            $request['origin'] = $this->salesChannelRepository->getSalesChannelUrl($salesChannelContext);
+            $request['origin'] = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
         }
 
         $request['additionalData']['allow3DS2'] = true;
 
         $request['channel'] = 'web';
+
+        if (!empty($adyenOrderData)) {
+            $request['order'] = $adyenOrderData;
+        }
 
         return $request;
     }

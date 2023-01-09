@@ -9,6 +9,7 @@
             <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsFilterService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentRequestService"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>

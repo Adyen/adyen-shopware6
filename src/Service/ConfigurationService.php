@@ -367,4 +367,13 @@ class ConfigurationService
             $salesChannelId
         );
     }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function usesPreparedPaymentFlow(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.usePreparedPayment', $salesChannelId);
+    }
 }

@@ -44,6 +44,11 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
+    protected $paymentReference;
+
+    /**
+     * @var string
+     */
     protected $resultCode;
 
     /**
@@ -67,9 +72,9 @@ class PaymentResponseEntity extends Entity
     protected $createdAt;
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getOrderTransactionId(): string
+    public function getOrderTransactionId(): ?string
     {
         return $this->orderTransactionId;
     }
@@ -98,6 +103,16 @@ class PaymentResponseEntity extends Entity
         $this->orderTransaction = $orderTransaction;
     }
 
+    public function getPaymentReference(): ?string
+    {
+        return $this->paymentReference;
+    }
+
+    public function setPaymentReference(string $paymentReference): void
+    {
+        $this->paymentReference = $paymentReference;
+    }
+
     /**
      * @return string
      */
@@ -115,7 +130,7 @@ class PaymentResponseEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function getRefusalReason(): ?string
     {
@@ -131,7 +146,7 @@ class PaymentResponseEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function getRefusalReasonCode(): ?string
     {

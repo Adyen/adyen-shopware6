@@ -11,6 +11,7 @@ class PaymentResponseHandlerResult
     private $refusalReason;
     private $refusalReasonCode;
     private $pspReference;
+    private $paymentReference;
     private $action;
     private $additionalData;
     private $donationToken;
@@ -23,10 +24,10 @@ class PaymentResponseHandlerResult
      */
     public function createFromPaymentResponse(PaymentResponseEntity $paymentResponse): PaymentResponseHandlerResult
     {
-        // Set result code
         $this->setResultCode($paymentResponse->getResultCode());
         $this->setRefusalReason($paymentResponse->getRefusalReason());
         $this->setRefusalReasonCode($paymentResponse->getRefusalReasonCode());
+        $this->setPaymentReference($paymentResponse->getPaymentReference());
 
         $response = $paymentResponse->getResponse();
 
@@ -187,5 +188,15 @@ class PaymentResponseHandlerResult
     public function isGiftcard(): bool
     {
         return $this->isGiftcard;
+    }
+
+    public function getPaymentReference(): ?string
+    {
+        return $this->paymentReference;
+    }
+
+    public function setPaymentReference(?string $paymentReference): void
+    {
+        $this->paymentReference = $paymentReference;
     }
 }

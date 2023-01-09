@@ -297,7 +297,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private function getOrderTransaction($order, $notification, $logContext)
     {
-        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction(
             $order->getId(),
             self::WEBHOOK_TRANSACTION_STATES
         );

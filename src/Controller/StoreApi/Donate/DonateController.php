@@ -107,7 +107,7 @@ class DonateController
         $returnUrl = $payload['returnUrl'];
 
         $transaction = $this->adyenOrderTransactionRepository
-            ->getFirstAdyenOrderTransactionByStates($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
+            ->getFirstAdyenOrderTransaction($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
 
         /** @var AbstractPaymentMethodHandler $paymentMethodIdentifier */
         $paymentMethodIdentifier = $transaction->getPaymentMethod()->getHandlerIdentifier();

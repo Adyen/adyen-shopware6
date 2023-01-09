@@ -26,49 +26,48 @@
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
-use Adyen\Service\Builder\Address;
-use Adyen\Service\Builder\Browser;
-use Adyen\Service\Builder\Customer;
-use Adyen\Service\Builder\Payment;
-use Adyen\Service\Builder\OpenInvoice;
-use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Exception\PaymentCancelledException;
+use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Exception\ValidationException;
+use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\PaymentRequestService;
+use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PreparedPaymentHandlerInterface;
+use Shopware\Core\Checkout\Payment\Cart\PreparedPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
+use Shopware\Core\Checkout\Payment\Exception\CapturePreparedPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
-use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
-use Shopware\Core\Content\Product\ProductCollection;
-use Shopware\Core\Content\Product\ProductEntity;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Checkout\Payment\Exception\ValidatePreparedPaymentException;
+use Shopware\Core\Framework\Struct\ArrayStruct;
+use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\Currency\CurrencyCollection;
-use Shopware\Core\System\Currency\CurrencyEntity;
-use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Framework\Routing\Router;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
-abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+abstract class AbstractPaymentMethodHandler implements
+    AsynchronousPaymentHandlerInterface,
+    PreparedPaymentHandlerInterface
 {
 
     const PROMOTION = 'promotion';
@@ -87,44 +86,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected $clientService;
 
     /**
-     * @var Browser
+     * @var CaptureService
      */
-    protected $browserBuilder;
-
-    /**
-     * @var Address
-     */
-    protected $addressBuilder;
-
-    /**
-     * @var Payment
-     */
-    protected $paymentBuilder;
-
-    /**
-     * @var OpenInvoice
-     */
-    protected $openInvoiceBuilder;
-
-    /**
-     * @var Currency
-     */
-    protected $currency;
+    private $captureService;
 
     /**
      * @var ConfigurationService
      */
-    protected $configurationService;
-
-    /**
-     * @var Customer
-     */
-    protected $customerBuilder;
-
-    /**
-     * @var CheckoutStateDataValidator
-     */
-    protected $checkoutStateDataValidator;
+    private $configurationService;
 
     /**
      * @var PaymentStateDataService
@@ -147,6 +116,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected $paymentResponseHandler;
 
     /**
+     * @var PaymentResponseHandlerResult
+     */
+    protected $paymentResponseHandlerResult;
+
+    /**
      * @var ResultHandler
      */
     protected $resultHandler;
@@ -157,28 +131,25 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected $orderTransactionStateHandler;
 
     /**
-     * @var RouterInterface
+     * @var PaymentRequestService
      */
-    protected $router;
+    protected $paymentRequestService;
 
     /**
      * @var CsrfTokenManagerInterface
      */
-    protected $csrfTokenManager;
+    private $csrfTokenManager;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var RouterInterface
      */
-    protected $currencyRepository;
+    private $router;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var PaymentResponseService
      */
-    protected $productRepository;
+    private $paymentResponseService;
 
-    /**
-     * @var Session
-     */
     protected $session;
 
     private $checkoutService;
@@ -188,72 +159,61 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     private $orderRequestData = [];
 
     private $remainingAmount = null;
+    /**
+     * @var Currency
+     */
+    private $currency;
 
     /**
      * AbstractPaymentMethodHandler constructor.
-     * @param ConfigurationService $configurationService
      * @param ClientService $clientService
-     * @param Browser $browserBuilder
-     * @param Address $addressBuilder
-     * @param Payment $paymentBuilder
-     * @param OpenInvoice $openInvoiceBuilder
+     * @param CaptureService $captureService
      * @param Currency $currency
-     * @param Customer $customerBuilder
-     * @param CheckoutStateDataValidator $checkoutStateDataValidator
+     * @param ConfigurationService $configurationService
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $router
+     * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
+     * @param PaymentResponseService $paymentResponseService
      * @param CsrfTokenManagerInterface $csrfTokenManager
-     * @param Session $session
-     * @param EntityRepositoryInterface $currencyRepository
-     * @param EntityRepositoryInterface $productRepository
+     * @param PaymentRequestService $paymentRequestService
      * @param LoggerInterface $logger
      */
     public function __construct(
-        ConfigurationService $configurationService,
         ClientService $clientService,
-        Browser $browserBuilder,
-        Address $addressBuilder,
-        Payment $paymentBuilder,
-        OpenInvoice $openInvoiceBuilder,
+        CaptureService $captureService,
         Currency $currency,
-        Customer $customerBuilder,
-        CheckoutStateDataValidator $checkoutStateDataValidator,
+        ConfigurationService $configurationService,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
         PaymentResponseHandler $paymentResponseHandler,
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $router,
+        PaymentResponseHandlerResult $paymentResponseHandlerResult,
+        PaymentResponseService $paymentResponseService,
         CsrfTokenManagerInterface $csrfTokenManager,
-        Session $session,
-        EntityRepositoryInterface $currencyRepository,
-        EntityRepositoryInterface $productRepository,
+        PaymentRequestService $paymentRequestService,
         LoggerInterface $logger
     ) {
         $this->clientService = $clientService;
-        $this->browserBuilder = $browserBuilder;
-        $this->addressBuilder = $addressBuilder;
-        $this->openInvoiceBuilder = $openInvoiceBuilder;
-        $this->currency = $currency;
         $this->configurationService = $configurationService;
-        $this->customerBuilder = $customerBuilder;
-        $this->paymentBuilder = $paymentBuilder;
-        $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
+        $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
         $this->resultHandler = $resultHandler;
-        $this->logger = $logger;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->router = $router;
+        $this->paymentResponseService = $paymentResponseService;
         $this->csrfTokenManager = $csrfTokenManager;
-        $this->session = $session;
-        $this->currencyRepository = $currencyRepository;
-        $this->productRepository = $productRepository;
+        $this->paymentRequestService = $paymentRequestService;
+        $this->logger = $logger;
+        $this->captureService = $captureService;
+        $this->currency = $currency;
     }
 
     abstract public static function getPaymentMethodCode();
@@ -269,6 +229,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param SalesChannelContext $salesChannelContext
      * @return RedirectResponse
      * @throws PaymentProcessException|AdyenException
+     * @throws ValidationException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
@@ -283,16 +244,17 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $requestStateData = json_decode($requestStateData, true);
         }
 
-        $this->handleAdyenOrderPayment($transaction, $dataBag, $salesChannelContext);
+        $returnUrl = $this->getAdyenReturnUrl($transaction, $salesChannelContext);
+        $this->handleAdyenOrderPayment($transaction, $dataBag, $salesChannelContext, $returnUrl);
 
         $transactionId = $transaction->getOrderTransaction()->getId();
         $storedStateData = $this->getStoredStateData($salesChannelContext, $transactionId);
         $stateData = $requestStateData ?? $storedStateData ?? [];
-
         try {
             $request = $this->preparePaymentsRequest(
                 $salesChannelContext,
                 $transaction,
+                $returnUrl,
                 $stateData,
                 $this->remainingAmount,
                 $this->orderRequestData
@@ -323,7 +285,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $transaction->getOrder()->getOrderNumber(),
                 $exception->getMessage()
             );
-            $this->displaySafeErrorMessages($exception);
+            $this->paymentRequestService->displaySafeErrorMessages($exception);
             $this->logger->error($message);
             throw new AsyncPaymentProcessException($transactionId, $message);
         }
@@ -336,7 +298,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         $this->paymentResults[] = $this->paymentResponseHandler
-            ->handlePaymentResponse($response, $transaction->getOrderTransaction(), false);
+            ->handlePaymentResponse($response, $transaction->getOrderTransaction()->getId(), null, false);
 
         try {
             $this->paymentResponseHandler
@@ -348,7 +310,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction, $salesChannelContext));
+        return new RedirectResponse($returnUrl);
     }
 
     /**
@@ -374,8 +336,100 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     }
 
     /**
+     * @param Cart $cart
+     * @param RequestDataBag $requestDataBag
+     * @param SalesChannelContext $context
+     * @return Struct
+     * @throws ValidatePreparedPaymentException
+     */
+    public function validate(Cart $cart, RequestDataBag $requestDataBag, SalesChannelContext $context): Struct
+    {
+        if ($this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
+            $paymentReference = $requestDataBag->get('paymentReference');
+            if (empty($paymentReference)) {
+                throw new ValidatePreparedPaymentException('Error: Payment reference is required.');
+            }
+            $response = $this->paymentResponseService->getWithPaymentReference($paymentReference);
+            if (empty($response)) {
+                throw new ValidatePreparedPaymentException('Error: Payment result not found.');
+            }
+
+            $valid = $response->getResultCode() === PaymentResponseHandler::AUTHORISED;
+
+            return new ArrayStruct(['isValid' => $valid]);
+        }
+
+        return new ArrayStruct([]);
+    }
+
+    /**
+     * @param PreparedPaymentTransactionStruct $transaction
+     * @param RequestDataBag $requestDataBag
+     * @param SalesChannelContext $context
+     * @param Struct $preOrderPaymentStruct
+     * @return void
+     * @throws PaymentProcessException
+     */
+    public function capture(
+        PreparedPaymentTransactionStruct $transaction,
+        RequestDataBag $requestDataBag,
+        SalesChannelContext $context,
+        Struct $preOrderPaymentStruct
+    ): void {
+        if (!$this->configurationService->usesPreparedPaymentFlow($context->getSalesChannelId())) {
+            return;
+        }
+        if (!$preOrderPaymentStruct->get('isValid')) {
+            return;
+        }
+
+        $paymentReference = $requestDataBag->get('paymentReference');
+        if (empty($paymentReference)) {
+            throw new CapturePreparedPaymentException(
+                $transaction->getOrderTransaction()->getId(),
+                'Error: Payment reference is required.'
+            );
+        }
+        $paymentResponse = $this->paymentResponseService->getWithPaymentReference($paymentReference);
+        try {
+            $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
+            $this->paymentResponseHandler->handleShopwareApis($transaction, $context, $result);
+        } catch (PaymentException $e) {
+            $this->logger->error('Error occurred in updating order transaction: ' . $e->getMessage());
+            throw new CapturePreparedPaymentException(
+                $transaction->getOrderTransaction()->getId(),
+                'An error occurred. Please contact administrator.'
+            );
+        }
+
+        if ($this->captureService
+            ->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier())) {
+            return;
+        }
+
+        $currency = $transaction->getOrder()->getCurrency()->getIsoCode();
+        $captureAmount = $this->currency->sanitize($transaction->getOrder()->getAmountTotal(), $currency);
+
+        try {
+            $this->captureService->capture(
+                $context->getContext(),
+                $transaction->getOrder()->getOrderNumber(),
+                $captureAmount,
+                true
+            );
+        } catch (CaptureException $e) {
+            $this->logger->error($e->getMessage());
+            throw new CapturePreparedPaymentException(
+                $transaction->getOrderTransaction()->getId(),
+                'An error occurred. Please contact administrator.'
+            );
+        }
+    }
+
+    /**
      * @param SalesChannelContext $salesChannelContext
      * @param AsyncPaymentTransactionStruct $transaction
+     * @param string $returnUrl
      * @param array $request
      * @param int|null $partialAmount
      * @param array|null $adyenOrderData
@@ -384,278 +438,33 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
+        string $returnUrl,
         array $request = [],
         ?int $partialAmount = null,
         ?array $adyenOrderData = []
     ): array {
-        if (!empty($request['additionalData'])) {
-            $stateDataAdditionalData = $request['additionalData'];
-        }
-
-        //Validate state.data for payment and build request object
-        $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
-
-        //Setting payment method type if not present in statedata
-        if (empty($request['paymentMethod']['type'])) {
-            $paymentMethodType = static::getPaymentMethodCode();
-        } else {
-            $paymentMethodType = $request['paymentMethod']['type'];
-        }
-
-        if (static::$isGiftCard) {
-            $request['paymentMethod']['brand'] = static::getBrand();
-        }
-
-        if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
-            $request['recurringProcessingModel'] = 'CardOnFile';
-            $request['shopperInteraction'] = 'Ecommerce';
-        }
-
-        //Setting browser info if not present in statedata
-        if (empty($request['browserInfo']['acceptHeader'])) {
-            $acceptHeader = $_SERVER['HTTP_ACCEPT'];
-        } else {
-            $acceptHeader = $request['browserInfo']['acceptHeader'];
-        }
-        if (empty($request['browserInfo']['userAgent'])) {
-            $userAgent = $_SERVER['HTTP_USER_AGENT'];
-        } else {
-            $userAgent = $request['browserInfo']['userAgent'];
-        }
-
-        //Setting delivery address info if not present in statedata
-        if (empty($request['deliveryAddress'])) {
-            if ($salesChannelContext->getShippingLocation()->getAddress()->getCountryState()) {
-                $shippingState = $salesChannelContext->getShippingLocation()
-                    ->getAddress()->getCountryState()->getShortCode();
-            } else {
-                $shippingState = 'n/a';
-            }
-
-            $shippingStreetAddress = $this->getSplitStreetAddressHouseNumber(
-                $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
-            );
-            $request = $this->addressBuilder->buildDeliveryAddress(
-                $shippingStreetAddress['street'],
-                $shippingStreetAddress['houseNumber'],
-                $salesChannelContext->getShippingLocation()->getAddress()->getZipcode(),
-                $salesChannelContext->getShippingLocation()->getAddress()->getCity(),
-                $shippingState,
-                $salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso(),
-                $request
-            );
-        }
-
-        //Setting billing address info if not present in statedata
-        if (empty($request['billingAddress'])) {
-            if ($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountryState()) {
-                $billingState = $salesChannelContext->getCustomer()
-                    ->getActiveBillingAddress()->getCountryState()->getShortCode();
-            } else {
-                $billingState = 'n/a';
-            }
-
-            $billingStreetAddress = $this->getSplitStreetAddressHouseNumber(
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
-            );
-            $request = $this->addressBuilder->buildBillingAddress(
-                $billingStreetAddress['street'],
-                $billingStreetAddress['houseNumber'],
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode(),
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity(),
-                $billingState,
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso(),
-                $request
-            );
-        }
-
-        //Setting customer data if not present in statedata
-        if (empty($request['shopperName'])) {
-            $shopperFirstName = $salesChannelContext->getCustomer()->getFirstName();
-            $shopperLastName = $salesChannelContext->getCustomer()->getLastName();
-        } else {
-            $shopperFirstName = $request['shopperName']['firstName'];
-            $shopperLastName = $request['shopperName']['lastName'];
-        }
-
-        if (empty($request['shopperEmail'])) {
-            $shopperEmail = $salesChannelContext->getCustomer()->getEmail();
-        } else {
-            $shopperEmail = $request['shopperEmail'];
-        }
-
-        if (empty($request['paymentMethod']['personalDetails']['telephoneNumber'])) {
-            $shopperPhone = $salesChannelContext->getShippingLocation()->getAddress()->getPhoneNumber();
-        } else {
-            $shopperPhone = $request['paymentMethod']['personalDetails']['telephoneNumber'];
-        }
-
-        if (empty($request['paymentMethod']['personalDetails']['dateOfBirth'])) {
-            if ($salesChannelContext->getCustomer()->getBirthday()) {
-                $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('Y-m-d');
-            } else {
-                $shopperDob = '';
-            }
-        } else {
-            $shopperDob = $request['paymentMethod']['personalDetails']['dateOfBirth'];
-        }
-
-        if (empty($request['shopperLocale'])) {
-            $shopperLocale = $this->salesChannelRepository
-                ->getSalesChannelAssoc($salesChannelContext, ['language.locale'])
-                ->getLanguage()->getLocale()->getCode();
-        } else {
-            $shopperLocale = $request['shopperLocale'];
-        }
-
-        if (empty($request['shopperIP'])) {
-            $shopperIp = $salesChannelContext->getCustomer()->getRemoteAddress();
-        } else {
-            $shopperIp = $request['shopperIP'];
-        }
-
-        if (empty($request['shopperReference'])) {
-            $shopperReference = $salesChannelContext->getCustomer()->getId();
-        } else {
-            $shopperReference = $request['shopperReference'];
-        }
-
-        if (empty($request['countryCode'])) {
-            $countryCode = $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
-        } else {
-            $countryCode = $request['countryCode'];
-        }
-
-        $request = $this->browserBuilder->buildBrowserData(
-            $userAgent,
-            $acceptHeader,
-            isset($request['browserInfo']['screenWidth']) ? $request['browserInfo']['screenWidth'] : null,
-            isset($request['browserInfo']['screenHeight']) ? $request['browserInfo']['screenHeight'] : null,
-            isset($request['browserInfo']['colorDepth']) ? $request['browserInfo']['colorDepth'] : null,
-            isset($request['browserInfo']['timeZoneOffset']) ? $request['browserInfo']['timeZoneOffset'] : null,
-            isset($request['browserInfo']['language']) ? $request['browserInfo']['language'] : null,
-            isset($request['browserInfo']['javaEnabled']) ? $request['browserInfo']['javaEnabled'] : null,
-            $request
+        $currency = $this->paymentRequestService->getCurrency(
+            $transaction->getOrder()->getCurrencyId(),
+            $salesChannelContext->getContext()
+        );
+        $lineItems = $this->paymentRequestService->getLineItems(
+            $transaction->getOrder()->getLineItems(),
+            $salesChannelContext,
+            $currency,
+            $transaction->getOrder()->getTaxStatus()
         );
 
-        $request = $this->customerBuilder->buildCustomerData(
-            false,
-            $shopperEmail,
-            $shopperPhone,
-            '',
-            $shopperDob,
-            $shopperFirstName,
-            $shopperLastName,
-            $countryCode,
-            $shopperLocale,
-            $shopperIp,
-            $shopperReference,
-            $request
-        );
-
-        //Building payment data
-        $amount = $partialAmount ?: $this->currency->sanitize(
+        return $this->paymentRequestService->buildPaymentRequest(
+            $request,
+            $salesChannelContext,
+            static::class,
             $transaction->getOrder()->getPrice()->getTotalPrice(),
-            $salesChannelContext->getCurrency()->getIsoCode()
-        );
-        $request = $this->paymentBuilder->buildPaymentData(
-            $salesChannelContext->getCurrency()->getIsoCode(),
-            $amount,
             $transaction->getOrder()->getOrderNumber(),
-            $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $this->getAdyenReturnUrl($transaction, $salesChannelContext),
-            $request
+            $returnUrl,
+            $partialAmount,
+            $lineItems,
+            $adyenOrderData
         );
-
-        $request = $this->paymentBuilder->buildAlternativePaymentMethodData(
-            $paymentMethodType,
-            '',
-            $request
-        );
-
-        if (static::$isOpenInvoice) {
-            $orderLines = $transaction->getOrder()->getLineItems();
-            $lineItems = [];
-            foreach ($orderLines->getElements() as $orderLine) {
-                //Getting line price
-                $price = $orderLine->getPrice();
-
-                if (empty($orderLine->getProductId()) || $orderLine->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
-                    continue;
-                }
-
-                $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
-                $productName = $product->getTranslation('name');
-                $productNumber = $product->getProductNumber();
-
-                //Getting line tax amount and rate
-                $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
-                $taxRate = $price->getCalculatedTaxes()->first();
-                if (!empty($taxRate)) {
-                    $taxRate = $taxRate->getTaxRate();
-                } else {
-                    $taxRate = 0;
-                }
-
-                $currency = $this->getCurrency(
-                    $transaction->getOrder()->getCurrencyId(),
-                    $salesChannelContext->getContext()
-                );
-
-                if (!is_null($product->getSeoUrls())) {
-                    $hostname = $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl();
-                    $productPath = $product->getSeoUrls()->first()->getPathInfo();
-                    $productUrl = str_replace('//', '/', $hostname . $productPath);
-                } else {
-                    $productUrl = null;
-                }
-
-                //Building open invoice line
-                $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
-                    $productName,
-                    $this->currency->sanitize(
-                        $price->getUnitPrice() -
-                        ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
-                        $currency
-                    ),
-                    $this->currency->sanitize(
-                        $lineTax,
-                        $currency
-                    ),
-                    $taxRate * 100,
-                    $orderLine->getQuantity(),
-                    '',
-                    $productNumber,
-                    $productUrl,
-                    $product->getCover() ? $product->getCover()->getMedia()->getUrl() : null,
-                    $this->currency->sanitize(
-                        $price->getUnitPrice(),
-                        $currency
-                    ),
-                    $product->getCategories() ? $product->getCategories()->first()->getName() : null
-                );
-            }
-
-            $request['lineItems'] = $lineItems;
-        }
-
-        //Setting info from statedata additionalData if present
-        if (!empty($stateDataAdditionalData['origin'])) {
-            $request['origin'] = $stateDataAdditionalData['origin'];
-        } else {
-            $origin = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
-            $request['origin'] = $origin;
-        }
-
-        $request['additionalData']['allow3DS2'] = true;
-
-        $request['channel'] = 'web';
-
-        if (!empty($adyenOrderData)) {
-            $request['order'] = $adyenOrderData;
-        }
-
-        return $request;
     }
 
     /**
@@ -693,51 +502,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
 
         // Create the adyen redirect result URL with the same query as the original return URL
-        return $baseUrl . $adyenReturnPath . '&' . $returnUrlQuery;
-    }
-
-    /**
-     * @param string $currencyId
-     * @param Context $context
-     * @return CurrencyEntity
-     */
-    private function getCurrency(string $currencyId, Context $context): CurrencyEntity
-    {
-        $criteria = new Criteria([$currencyId]);
-
-        /** @var CurrencyCollection $currencyCollection */
-        $currencyCollection = $this->currencyRepository->search($criteria, $context);
-
-        $currency = $currencyCollection->get($currencyId);
-        if ($currency === null) {
-            throw new CurrencyNotFoundException($currencyId);
-        }
-
-        return $currency;
-    }
-
-    /**
-     * @param string $productId
-     * @param Context $context
-     * @return ProductEntity
-     */
-    private function getProduct(string $productId, Context $context): ProductEntity
-    {
-        $criteria = new Criteria([$productId]);
-
-        $criteria->addAssociation('seoUrls');
-        $criteria->addAssociation('cover');
-        $criteria->addAssociation('categories');
-
-        /** @var ProductCollection $productCollection */
-        $productCollection = $this->productRepository->search($criteria, $context);
-
-        $product = $productCollection->get($productId);
-        if ($product === null) {
-            throw new ProductNotFoundException($productId);
-        }
-
-        return $product;
+        return rtrim($baseUrl, '/') . $adyenReturnPath . '&' . $returnUrlQuery;
     }
 
     private function displaySafeErrorMessages(AdyenException $exception)
@@ -749,45 +514,18 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     }
 
     /**
-     * @param string $address
-     * @return array
-     */
-    private function getSplitStreetAddressHouseNumber(string $address): array
-    {
-        $streetFirstRegex = '/(?<streetName>[\w\W]+)\s+(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)$/m';
-        $numberFirstRegex = '/^(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)\s+(?<streetName>[\w\W]+)/m';
-
-        preg_match($streetFirstRegex, $address, $streetFirstAddress);
-        preg_match($numberFirstRegex, $address, $numberFirstAddress);
-
-        if ($streetFirstAddress) {
-            return [
-                'street' => $streetFirstAddress['streetName'],
-                'houseNumber' => $streetFirstAddress['houseNumber']
-            ];
-        } elseif ($numberFirstAddress) {
-            return [
-                'street' => $numberFirstAddress['streetName'],
-                'houseNumber' => $numberFirstAddress['houseNumber']
-            ];
-        }
-
-        return [
-            'street' => $address,
-            'houseNumber' => 'N/A'
-        ];
-    }
-
-    /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     * @param string $returnUrl
      * @return void
+     * @throws ValidationException
      */
     public function handleAdyenOrderPayment(
         AsyncPaymentTransactionStruct $transaction,
         RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext
+        SalesChannelContext $salesChannelContext,
+        string $returnUrl
     ): void {
         $adyenOrder = $dataBag->get('order');
         if (!$adyenOrder) {
@@ -814,6 +552,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $giftcardPaymentRequest = $this->preparePaymentsRequest(
                 $salesChannelContext,
                 $transaction,
+                $returnUrl,
                 $storedStateData,
                 $partialAmount,
                 $this->orderRequestData
@@ -845,7 +584,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         $this->paymentResults[] = $this->paymentResponseHandler
-            ->handlePaymentResponse($giftcardPaymentResponse, $transaction->getOrderTransaction(), false);
+            ->handlePaymentResponse($giftcardPaymentResponse, $transaction->getOrderTransaction()->getId(), null, false);
 
         $this->remainingAmount = $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
