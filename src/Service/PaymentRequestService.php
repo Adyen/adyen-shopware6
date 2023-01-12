@@ -395,8 +395,8 @@ class PaymentRequestService
      */
     public function getSplitStreetAddressHouseNumber(string $address): array
     {
-        $streetFirstRegex = '/(?<streetName>[\w\W]+)\s+(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)$/m';
-        $numberFirstRegex = '/^(?<houseNumber>\d{1,10}((\s)?\w{1,3})?)\s+(?<streetName>[\w\W]+)/m';
+        $streetFirstRegex = '/(?<streetName>[\w\W]+)\s+(?<houseNumber>[\d-]{1,10}((\s)?\w{1,3})?)$/m';
+        $numberFirstRegex = '/^(?<houseNumber>[\d-]{1,10}((\s)?\w{1,3})?)\s+(?<streetName>[\w\W]+)/m';
 
         preg_match($streetFirstRegex, $address, $streetFirstAddress);
         preg_match($numberFirstRegex, $address, $numberFirstAddress);
