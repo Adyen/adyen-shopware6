@@ -299,8 +299,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     handlePaymentAction(response) {
-        debugger;
-
         try {
             const paymentResponse = JSON.parse(response);
             if (paymentResponse.isFinal || paymentResponse.action.type === 'voucher') {
