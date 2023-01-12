@@ -299,14 +299,21 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     handlePaymentAction(response) {
+        debugger;
+
         try {
             const paymentResponse = JSON.parse(response);
             if (paymentResponse.isFinal || paymentResponse.action.type === 'voucher') {
                 location.href = this.returnUrl;
             }
             if (!!paymentResponse.action) {
+                const actionModalConfiguration = {};
+                if (paymentResponse.action.type === 'threeDS2') {
+                    actionModalConfiguration.challengeWindowSize = '05';
+                }
+
                 this.adyenCheckout
-                    .createFromAction(paymentResponse.action)
+                    .createFromAction(paymentResponse.action, actionModalConfiguration)
                     .mount('[data-adyen-payment-action-container]');
                 const modalActionTypes = ['threeDS2', 'qrCode']
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
