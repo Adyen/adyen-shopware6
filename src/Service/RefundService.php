@@ -120,8 +120,7 @@ class RefundService
     {
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
 
-        // No param since sales channel is not available since we're in admin
-        $merchantAccount = $this->configurationService->getMerchantAccount();
+        $merchantAccount = $this->configurationService->getMerchantAccount($order->getSalesChannelId());
 
         if (!$merchantAccount) {
             $message = 'No Merchant Account set. ' .
