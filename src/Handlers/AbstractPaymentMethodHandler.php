@@ -159,7 +159,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * @var RouterInterface
      */
-    protected $router;
+    protected $symfonyRouter;
 
     /**
      * @var CsrfTokenManagerInterface
@@ -191,6 +191,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     /**
      * AbstractPaymentMethodHandler constructor.
+     *
      * @param ConfigurationService $configurationService
      * @param ClientService $clientService
      * @param Browser $browserBuilder
@@ -205,7 +206,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
-     * @param RouterInterface $router
+     * @param RouterInterface $symfonyRouter
      * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param Session $session
      * @param EntityRepositoryInterface $currencyRepository
@@ -227,7 +228,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         PaymentResponseHandler $paymentResponseHandler,
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
-        RouterInterface $router,
+        RouterInterface $symfonyRouter,
         CsrfTokenManagerInterface $csrfTokenManager,
         Session $session,
         EntityRepositoryInterface $currencyRepository,
@@ -249,7 +250,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->resultHandler = $resultHandler;
         $this->logger = $logger;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
-        $this->router = $router;
+        $this->symfonyRouter = $symfonyRouter;
         $this->csrfTokenManager = $csrfTokenManager;
         $this->session = $session;
         $this->currencyRepository = $currencyRepository;
@@ -682,7 +683,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $baseUrl = $this->salesChannelRepository->getCurrentDomainUrl($context);
 
         // Generate the custom Adyen endpoint to receive the redirect from the issuer page
-        $adyenReturnPath = $this->router->generate(
+        $adyenReturnPath = $this->symfonyRouter->generate(
             'payment.adyen.redirect_result',
             [
                 RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
