@@ -161,6 +161,7 @@ class CaptureService
                         $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
                         $captureAmount,
                         $currencyIso,
+                        $order->getSalesChannelId(),
                         $additionalData
                     );
 
@@ -233,6 +234,7 @@ class CaptureService
         string $originalReference,
         $captureAmountInMinorUnits,
         string $currency,
+        string $salesChannelId,
         ?array $additionalData = null
     ): array {
         return [
@@ -241,7 +243,7 @@ class CaptureService
                 'value' => $captureAmountInMinorUnits,
                 'currency' => $currency,
             ],
-            'merchantAccount' => $this->configurationService->getMerchantAccount(),
+            'merchantAccount' => $this->configurationService->getMerchantAccount($salesChannelId),
             'additionalData' => $additionalData
         ];
     }
