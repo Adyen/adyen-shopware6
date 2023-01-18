@@ -6,7 +6,7 @@
         }
     ],
     "description": "Official Shopware 6 Plugin to connect to Payment Service Provider Adyen",
-    "version": "3.8.1",
+    "version": "3.9.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "require": {
