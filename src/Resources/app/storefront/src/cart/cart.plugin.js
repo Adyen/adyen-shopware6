@@ -59,7 +59,7 @@ export default class CartPlugin extends Plugin {
             this.removeGiftcard();
         }.bind(this));
 
-        if (parseInt(adyenGiftcardsConfiguration.giftcardDiscount)) {
+        if (parseInt(adyenGiftcardsConfiguration.giftcardDiscount, 10)) {
             this.onGiftcardSelected();
         }
     }

@@ -72,8 +72,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             }
         }.bind(this));
 
-        if (parseInt(adyenCheckoutOptions.payInFullWithGiftcard)) {
-            if (parseInt(adyenCheckoutOptions.adyenGiftcardSelected)) {
+        if (parseInt(adyenCheckoutOptions.payInFullWithGiftcard, 10)) {
+            if (parseInt(adyenCheckoutOptions.adyenGiftcardSelected, 10)) {
                 this.appendGiftcardSummary();
             }
         } else {
@@ -193,7 +193,10 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     createOrder(formData, extraParams) {
-        if (parseInt(adyenCheckoutOptions.giftcardDiscount) && !parseInt(adyenCheckoutOptions.payInFullWithGiftcard)) {
+        if (
+            parseInt(adyenCheckoutOptions.giftcardDiscount, 10) &&
+            !parseInt(adyenCheckoutOptions.payInFullWithGiftcard, 10)
+        ) {
             // create Adyen order for partial payments
             this._client.post(
                 adyenCheckoutOptions.createOrderUrl,
@@ -553,7 +556,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     appendGiftcardSummary() {
-        if(parseInt(adyenCheckoutOptions.giftcardDiscount) && this.shoppingCartSummaryBlock.length) {
+        if(parseInt(adyenCheckoutOptions.giftcardDiscount, 10) && this.shoppingCartSummaryBlock.length) {
             this.shoppingCartSummaryDetails = $('<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Giftcard discount</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.currencySymbol + this.giftcardDiscount + '</dd>' +
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Remaining amount</dt>' +
