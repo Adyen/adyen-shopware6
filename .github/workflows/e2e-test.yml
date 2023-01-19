@@ -3,7 +3,7 @@ on: [pull_request]
 
 jobs:
   e2e:
-    name: Shopware 6  E2E
+    name: Shopware 6 E2E
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
