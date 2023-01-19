@@ -1,0 +1,44 @@
+{% block adyen_giftcards %}
+    {% if adyenFrontendData and adyenFrontendData.giftcards %}
+        <div id="adyen-giftcards-container">
+            <div id="adyen-giftcards-configuration"
+                 data-total-price="{{ adyenFrontendData.totalPrice }}"
+                 data-total-in-minor-units="{{ adyenFrontendData.totalInMinorUnits }}"
+                 data-currency="{{ adyenFrontendData.currency }}"
+                 data-currency-symbol="{{ adyenFrontendData.currencySymbol }}"
+                 data-giftcard-discount="{{ adyenFrontendData.giftcardDiscount }}"
+                 data-giftcard-balance="{{ adyenFrontendData.giftcardBalance }}"
+                 data-check-balance-url="{{ adyenFrontendData.checkBalanceUrl }}"
+                 data-set-giftcard-url="{{ adyenFrontendData.setGiftcardUrl }}"
+                 data-remove-giftcard-url="{{ adyenFrontendData.removeGiftcardUrl }}"
+                 data-switch-context-url="{{ adyenFrontendData.switchContextUrl }}"
+            ></div>
+            <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
+            <hr>
+            {# loop through giftcards and display logo #}
+            {% for giftcard in adyenFrontendData.giftcards %}
+                <span style="cursor: pointer"
+                      class="adyen-giftcard"
+                      data-giftcard="{{ giftcard|json_encode }}">
+                    {% if giftcard.media %}
+                        {% sw_thumbnails 'payment-method-image-thumbnails' with {
+                            media: giftcard.media,
+                            attributes: {
+                                'alt': (giftcard.media.translated.alt ?: giftcard.translated.name),
+                                'title': (giftcard.media.translated.title ?: giftcard.translated.name)
+                            }
+                        } %}
+                    {% endif %}
+                </span>
+            {% endfor %}
+            <div class="clearfix"></div>
+            <a href="javascript:void(0)" class="btn btn-xs adyen-remove-giftcard btn-outline-dark">Remove giftcard</a>
+            <span class="adyen-close-giftcard-component" title="Close giftcard">&times;</span>
+            <h6 class="adyen-giftcard-header"></h6>
+            <p class="adyen-remaining-balance"></p>
+            <div id="adyen-giftcard-component"></div>
+            <hr>
+        </div>
+
+    {% endif %}
+{% endblock %}

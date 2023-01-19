@@ -28,9 +28,10 @@ use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Struct\AdyenContextDataStruct;
 use Shopware\Core\Framework\Routing\Event\SalesChannelContextResolvedEvent;
+use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenChangeEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class ContextResolvedSubscriber implements EventSubscriberInterface
+class ContextSubscriber implements EventSubscriberInterface
 {
     /**
      * @var ConfigurationService
@@ -54,7 +55,20 @@ class ContextResolvedSubscriber implements EventSubscriberInterface
     {
         return [
             SalesChannelContextResolvedEvent::class => 'addAdyenData',
+            SalesChannelContextTokenChangeEvent::class => 'onContextTokenChange'
         ];
+    }
+
+    public function onContextTokenChange(SalesChannelContextTokenChangeEvent $event)
+    {
+        $token = $event->getCurrentToken();
+        $oldToken = $event->getPreviousToken();
+
+        $stateData = $this->paymentStateDataService->getPaymentStateDataFromContextToken($oldToken);
+
+        if ($stateData) {
+            $this->paymentStateDataService->updateStateDataContextToken($stateData, $token);
+        }
     }
 
     public function addAdyenData(SalesChannelContextResolvedEvent $event): void

@@ -81,16 +81,16 @@ class SalesChannelRepository
 
     /**
      * @param SalesChannelContext $context
+     * @param array $associations
      * @return SalesChannelEntity
-     * @throws InconsistentCriteriaIdsException
      */
-    public function getSalesChannelAssocLocale(SalesChannelContext $context): SalesChannelEntity
+    public function getSalesChannelAssoc(SalesChannelContext $context, array $associations = []): SalesChannelEntity
     {
-        $salesChannelCriteria = new Criteria([$context->getSalesChannel()->getId()]);
+        $criteria = new Criteria([$context->getSalesChannel()->getId()]);
+        foreach ($associations as $association) {
+            $criteria->addAssociation($association);
+        }
 
-        return $this->salesChannelRepository->search(
-            $salesChannelCriteria->addAssociation('language.locale'),
-            $context->getContext()
-        )->first();
+        return $this->salesChannelRepository->search($criteria, $context->getContext())->first();
     }
 }

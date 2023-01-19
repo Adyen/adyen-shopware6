@@ -31,10 +31,12 @@ use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
+use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Notification;
 use Adyen\Webhook\PaymentStates;
 use Adyen\Webhook\Processor\ProcessorFactory;
+use Adyen\Webhook\EventCodes;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
@@ -83,6 +85,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private $orderTransactionRepository;
 
     /**
+     * @var AdyenPaymentRepository
+     */
+    private $adyenPaymentRepository;
+
+    /**
      * @var CaptureService
      */
     private $captureService;
@@ -111,6 +118,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param OrderRepository $orderRepository
      * @param EntityRepositoryInterface $paymentMethodRepository
      * @param OrderTransactionRepository $orderTransactionRepository
+     * @param AdyenPaymentRepository $adyenPaymentRepository
      * @param CaptureService $captureService
      * @param WebhookHandlerFactory $webhookHandlerFactory
      */
@@ -120,6 +128,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderRepository $orderRepository,
         EntityRepositoryInterface $paymentMethodRepository,
         OrderTransactionRepository $orderTransactionRepository,
+        AdyenPaymentRepository $adyenPaymentRepository,
         CaptureService $captureService,
         WebhookHandlerFactory $webhookHandlerFactory
     ) {
@@ -128,6 +137,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->orderRepository = $orderRepository;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->adyenPaymentRepository = $adyenPaymentRepository;
         $this->captureService = $captureService;
         self::$webhookHandlerFactory = $webhookHandlerFactory;
     }
@@ -308,15 +318,25 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     }
 
     /**
-     * @param $notification
-     * @param $context
-     * @param $logContext
+     * @param NotificationEntity $notification
+     * @param Context $context
+     * @param array $logContext
      * @return \Shopware\Core\Checkout\Order\OrderEntity|null
      */
-    private function getOrder($notification, $context, $logContext)
+    private function getOrder(NotificationEntity $notification, Context $context, array $logContext)
     {
+        if ($notification->getEventCode() === EventCodes::ORDER_CLOSED) {
+            // get merchant reference from adyen_payment table
+            $merchantOrderReference = $notification->getMerchantReference();
+            $merchantReference = $this->adyenPaymentRepository
+                ->getMerchantReferenceByMerchantOrderReference($merchantOrderReference);
+        } else {
+            // otherwise get the merchant reference from the notification
+            $merchantReference = $notification->getMerchantReference();
+        }
+
         $order = $this->orderRepository->getOrderByOrderNumber(
-            $notification->getMerchantReference(),
+            $merchantReference,
             $context,
             ['transactions', 'currency']
         );

@@ -12,7 +12,7 @@
            class="{{ formCheckInputClass }} payment-method-input {% if 'handler_adyen_' in payment.formattedHandlerIdentifier %}adyen-payment-method-input-radio{% endif %}">
 {% endblock %}
 
-{% block component_payment_method_description_text %}
+{% block component_payment_method_description %}
     {{ parent() }}
     {% if payment.id is same as(selectedPaymentMethodId) and 'handler_adyen_' in payment.formattedHandlerIdentifier %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-component.html.twig' %}

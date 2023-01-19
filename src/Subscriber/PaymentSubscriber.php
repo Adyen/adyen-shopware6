@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Subscriber;
 
-use Adyen\AdyenException;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -33,26 +32,22 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
-use Psr\Container\ContainerInterface;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\CartPersisterInterface;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
-use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
-use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
-use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
-use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
+use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Framework\AffiliateTracking\AffiliateTrackingListener;
 use Shopware\Storefront\Page\Account\Order\AccountEditOrderPageLoadedEvent;
+use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPage;
+use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
+use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPage;
+use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -60,11 +55,8 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Routing\RouterInterface;
 
-class PaymentSubscriber implements EventSubscriberInterface
+class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberInterface
 {
-
-    const ADYEN_DATA_EXTENSION_ID = 'adyenFrontendData';
-
     /**
      * @var PaymentStateDataService
      */
@@ -96,19 +88,9 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $paymentMethodsService;
 
     /**
-     * @var EntityRepositoryInterface $paymentMethodRepository
-     */
-    private $paymentMethodRepository;
-
-    /**
      * @var SessionInterface $session
      */
     private $session;
-
-    /**
-     * @var ContainerInterface $container
-     */
-    private $container;
 
     /**
      * @var CartPersisterInterface
@@ -126,17 +108,12 @@ class PaymentSubscriber implements EventSubscriberInterface
     private $currency;
 
     /**
-     * @var LoggerInterface $logger
-     */
-    private $logger;
-
-    /**
      * @var AdyenPluginProvider
      */
     private $adyenPluginProvider;
 
     /**
-     * @var ContextSwitchRoute
+     * @var AbstractContextSwitchRoute
      */
     private $contextSwitchRoute;
 
@@ -155,15 +132,12 @@ class PaymentSubscriber implements EventSubscriberInterface
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
-     * @param EntityRepositoryInterface $paymentMethodRepository
      * @param SessionInterface $session
-     * @param ContainerInterface $container
      * @param CartPersisterInterface $cartPersister
      * @param CartCalculator $cartCalculator
-     * @param ContextSwitchRoute $contextSwitchRoute
+     * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
      * @param Currency $currency
-     * @param LoggerInterface $logger
      */
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
@@ -173,15 +147,12 @@ class PaymentSubscriber implements EventSubscriberInterface
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
-        EntityRepositoryInterface $paymentMethodRepository,
         SessionInterface $session,
-        ContainerInterface $container,
         CartPersisterInterface $cartPersister,
         CartCalculator $cartCalculator,
-        ContextSwitchRoute $contextSwitchRoute,
+        AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,
-        Currency $currency,
-        LoggerInterface $logger
+        Currency $currency
     ) {
         $this->paymentStateDataService = $paymentStateDataService;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
@@ -189,15 +160,12 @@ class PaymentSubscriber implements EventSubscriberInterface
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->paymentMethodRepository = $paymentMethodRepository;
         $this->session = $session;
-        $this->container = $container;
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
         $this->contextSwitchRoute = $contextSwitchRoute;
         $this->salesChannelContextFactory = $salesChannelContextFactory;
         $this->currency = $currency;
-        $this->logger = $logger;
         $this->adyenPluginProvider = $adyenPluginProvider;
     }
 
@@ -207,42 +175,109 @@ class PaymentSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            SalesChannelContextSwitchEvent::class => 'onContextTokenUpdate',
+            CheckoutCartPageLoadedEvent::class => 'onShoppingCartLoaded',
+            OffcanvasCartPageLoadedEvent::class => 'onShoppingCartLoaded',
             CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             AccountEditOrderPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             RequestEvent::class => 'onKernelRequest',
         ];
     }
 
-    /**
-     * @param SalesChannelContextSwitchEvent $event
-     */
-    public function onContextTokenUpdate(SalesChannelContextSwitchEvent $event)
+    private function getComponentData(SalesChannelContext $salesChannelContext): array
     {
-        // Clear state.data if payment method is updated
-        if ($event->getRequestDataBag()->has('paymentMethodId')) {
-            $this->removeCurrentStateData($event);
-        }
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
 
-        // Save state data, only if Adyen payment method is selected
-        if ($event->getRequestDataBag()->get('adyenStateData')) {
-            // Use payment method selected in the same request if available, otherwise get payment method from context
-            $paymentMethodId = $event->getRequestDataBag()->get('paymentMethodId')
-                ?? $event->getSalesChannelContext()->getPaymentMethod()->getId();
-            /** @var PaymentMethodEntity $paymentMethod */
-            $paymentMethod = $this->paymentMethodRepository->search(
-                (new Criteria())
-                    ->addFilter(new EqualsFilter('id', $paymentMethodId)),
-                $event->getContext()
-            )->first();
-            if ($paymentMethod->getPluginId() === $this->adyenPluginProvider->getAdyenPluginId()) {
-                $this->saveStateData($event, $paymentMethod);
-            } else {
-                $this->logger->error('No Adyen payment method selected, skipping state data save.');
-                $this->session->getFlashBag()
-                    ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
+        return [
+            'clientKey' => $this->configurationService->getClientKey($salesChannelId),
+            'locale' => $this->salesChannelRepository
+                ->getSalesChannelAssoc($salesChannelContext, ['language.locale'])
+                ->getLanguage()->getLocale()->getCode(),
+            'environment' => $this->configurationService->getEnvironment($salesChannelId),
+        ];
+    }
+
+    /**
+     * @param PageLoadedEvent $event
+     */
+    public function onShoppingCartLoaded(PageLoadedEvent $event)
+    {
+        /** @var CheckoutCartPage|OffcanvasCartPage $page */
+        $page = $event->getPage();
+        if ($page->getCart()->getLineItems()->count() === 0) {
+            return;
+        }
+        $salesChannelContext = $event->getSalesChannelContext();
+
+        $shopwarePaymentMethods = null;
+        if ($page instanceof CheckoutCartPage) {
+            $shopwarePaymentMethods = $page->getPaymentMethods();
+        }
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
+        $amountInMinorUnits = $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency);
+
+        $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+        $giftcards = $this->paymentMethodsFilterService->getAvailableGiftcards(
+            $salesChannelContext,
+            $paymentMethods,
+            $this->adyenPluginProvider->getAdyenPluginId(),
+            $shopwarePaymentMethods
+        );
+        $selectedPaymentMethodId = null;
+        $giftcardData = $this->paymentStateDataService
+            ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
+        $giftcardDiscount = 0;
+        $giftcardBalance = 0;
+        if ($giftcardData) {
+            $stateData = $giftcardData->getStateData();
+            $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
+            $selectedPaymentMethodId = json_decode($stateData, true)['additionalData']['paymentMethodId'] ?? 0;
+            $giftcardBalance = json_decode($stateData, true)['additionalData']['balance'] ?? 0;
+
+            // update discount amount if total becomes less than discount
+            if ((int) $giftcardDiscount > $amountInMinorUnits) {
+                $newBalance = ($giftcardDiscount - $amountInMinorUnits) + $giftcardBalance;
+                $this->paymentStateDataService->insertPaymentStateData(
+                    $salesChannelContext->getToken(),
+                    $stateData,
+                    [
+                        'amount' => $amountInMinorUnits,
+                        'paymentMethodId' => $selectedPaymentMethodId,
+                        'balance' => $newBalance,
+                    ]
+                );
+                $giftcardDiscount = $amountInMinorUnits;
+                $this->contextSwitchRoute->switchContext(
+                    new RequestDataBag(
+                        [
+                            SalesChannelContextService::PAYMENT_METHOD_ID => $selectedPaymentMethodId
+                        ]
+                    ),
+                    $salesChannelContext
+                );
             }
         }
+
+        $page->addExtension(
+            self::ADYEN_DATA_EXTENSION_ID,
+            new ArrayEntity(
+                array_merge($this->getComponentData($salesChannelContext), [
+                    'giftcards' => $giftcards->getElements(),
+                    'totalPrice' => $page->getCart()->getPrice()->getTotalPrice(),
+                    'totalInMinorUnits' => $amountInMinorUnits,
+                    'currency' => $currency,
+                    'currencySymbol' => $currencySymbol,
+                    'giftcardDiscount' => $giftcardDiscount,
+                    'giftcardBalance' => $giftcardBalance,
+                    'checkBalanceUrl' => $this->router
+                        ->generate('store-api.action.adyen.payment-methods.balance'),
+                    'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
+                    'removeGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard.remove'),
+                    'switchContextUrl' => $this->router->generate('store-api.switch-context'),
+                    'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
+                ])
+            )
+        );
     }
 
     /**
@@ -253,7 +288,7 @@ class PaymentSubscriber implements EventSubscriberInterface
     public function onCheckoutConfirmLoaded(PageLoadedEvent $event)
     {
         $salesChannelContext = $event->getSalesChannelContext();
-        $paymentMethod = $salesChannelContext->getPaymentMethod();
+        $selectedPaymentMethod = $salesChannelContext->getPaymentMethod();
         $page = $event->getPage();
         $orderId = '';
         $affiliateCode = $this->session->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
@@ -263,100 +298,120 @@ class PaymentSubscriber implements EventSubscriberInterface
             $orderId = $page->getOrder()->getId();
         }
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
-        $amount = null;
+        $totalPrice = 0;
         try {
             $cart = $this->cartCalculator->calculate(
                 $this->cartPersister->load($salesChannelContext->getToken(), $salesChannelContext),
                 $salesChannelContext
             );
-            $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
+            $totalPrice = $cart->getPrice()->getTotalPrice();
         } catch (CartTokenNotFoundException $exception) {
             $cart = null;
             if (!empty($orderId)) {
-                $amount = $this->currency->sanitize($page->getOrder()->getPrice()->getTotalPrice(), $currency);
+                $totalPrice = $page->getOrder()->getPrice()->getTotalPrice();
             }
         }
+        $amount = $this->currency->sanitize($totalPrice, $currency);
 
+        $adyenPluginId = $this->adyenPluginProvider->getAdyenPluginId();
         $displaySaveCreditCardOption = $this->paymentMethodsFilterService->isPaymentMethodInCollection(
             $page->getPaymentMethods(),
             OneClickPaymentMethodHandler::getPaymentMethodCode(),
-            $this->adyenPluginProvider->getAdyenPluginId(),
+            $adyenPluginId,
         );
-
         $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, $orderId);
+        $giftcardData = $this->paymentStateDataService
+            ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
+        $giftcardDiscount = 0;
+        $payInFullWithGiftcard = false;
+        $adyenGiftcardSelected = ($selectedPaymentMethod->getPluginId() === $adyenPluginId)
+            && $selectedPaymentMethod->getHandlerIdentifier()::$isGiftCard;
+        if ($giftcardData) {
+            $stateData = $giftcardData->getStateData();
+            $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
+            if ($giftcardDiscount >= $amount) {
+                $payInFullWithGiftcard = true;
+            }
+        }
         $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),
             $salesChannelContext,
-            $this->adyenPluginProvider->getAdyenPluginId(),
-            $paymentMethodsResponse
+            $adyenPluginId,
+            $paymentMethodsResponse,
+            $payInFullWithGiftcard
         );
+
+        if (!$payInFullWithGiftcard && $adyenGiftcardSelected) {
+            $selectedPaymentMethod = $filteredPaymentMethods->first();
+            $this->contextSwitchRoute->switchContext(
+                new RequestDataBag(
+                    [
+                        SalesChannelContextService::PAYMENT_METHOD_ID => $selectedPaymentMethod->getId()
+                    ]
+                ),
+                $salesChannelContext
+            );
+            $adyenGiftcardSelected = false;
+        }
+
+        $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
 
         $page->setPaymentMethods($filteredPaymentMethods);
-
-        $stateDataIsStored = (bool)$this->paymentStateDataService->getPaymentStateDataFromContextToken(
-            $salesChannelContext->getToken()
-        );
-
-        $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
-                [
-                    'paymentStatusUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-status'
-                    ),
-                    'checkoutOrderUrl' => $this->router->generate(
-                        'store-api.checkout.cart.order'
-                    ),
-                    'paymentHandleUrl' => $this->router->generate(
-                        'store-api.payment.handle'
-                    ),
-                    'paymentDetailsUrl' => $this->router->generate(
-                        'store-api.action.adyen.payment-details'
-                    ),
-                    'paymentFinishUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        ['orderId' => '']
-                    ),
-                    'paymentErrorUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        [
-                            'orderId' => '',
-                            'changedPayment' => false,
-                            'paymentFailed' => true,
-                        ]
-                    ),
-                    'updatePaymentUrl' => $this->router->generate(
-                        'store-api.action.adyen.set-payment'
-                    ),
-                    'cancelOrderTransactionUrl' => $this->router->generate(
-                        'store-api.action.adyen.cancel-order-transaction',
-                    ),
-                    'languageId' => $salesChannelContext->getContext()->getLanguageId(),
-                    'clientKey' => $this->configurationService->getClientKey($salesChannelId),
-                    'locale' => $this->salesChannelRepository->getSalesChannelAssocLocale($salesChannelContext)
-                        ->getLanguage()->getLocale()->getCode(),
-                    'currency' => $currency,
-                    'amount' => $amount,
-                    'environment' => $this->configurationService->getEnvironment($salesChannelId),
-                    'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
-                    'orderId' => $orderId,
-                    'pluginId' => $this->adyenPluginProvider->getAdyenPluginId(),
-                    'stateDataIsStored' => $stateDataIsStored,
-                    'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
-                    'selectedPaymentMethodHandler' => $paymentMethod->getFormattedHandlerIdentifier(),
-                    'selectedPaymentMethodPluginId' => $paymentMethod->getPluginId(),
-                    'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
-                    'billingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
-                        $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
-                    ),
-                    'shippingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
-                        $salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()
-                    ),
-                    'affiliateCode' => $affiliateCode,
-                    'campaignCode' => $campaignCode,
-                ]
+                array_merge(
+                    $this->getComponentData($salesChannelContext),
+                    [
+                        'paymentStatusUrl' => $this->router->generate('store-api.action.adyen.payment-status'),
+                        'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
+                        'checkoutOrderUrl' => $this->router->generate('store-api.checkout.cart.order'),
+                        'paymentHandleUrl' => $this->router->generate('store-api.payment.handle'),
+                        'paymentDetailsUrl' => $this->router->generate('store-api.action.adyen.payment-details'),
+                        'paymentFinishUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            ['orderId' => '']
+                        ),
+                        'paymentErrorUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            [
+                                'orderId' => '',
+                                'changedPayment' => false,
+                                'paymentFailed' => true,
+                            ]
+                        ),
+                        'updatePaymentUrl' => $this->router->generate(
+                            'store-api.action.adyen.set-payment'
+                        ),
+                        'cancelOrderTransactionUrl' => $this->router->generate(
+                            'store-api.action.adyen.cancel-order-transaction',
+                        ),
+                        'languageId' => $salesChannelContext->getContext()->getLanguageId(),
+                        'currency' => $currency,
+                        'amount' => $amount,
+                        'paymentMethodsResponse' => json_encode($paymentMethodsResponse),
+                        'orderId' => $orderId,
+                        'pluginId' => $this->adyenPluginProvider->getAdyenPluginId(),
+                        'totalPrice' => $totalPrice,
+                        'giftcardDiscount' => $giftcardDiscount,
+                        'currencySymbol' => $currencySymbol,
+                        'payInFullWithGiftcard' => (int) $payInFullWithGiftcard,
+                        'adyenGiftcardSelected' => (int) $adyenGiftcardSelected,
+                        'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
+                        'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
+                        'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),
+                        'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
+                        'billingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
+                            $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
+                        ),
+                        'shippingAddressStreetHouse' => $this->paymentMethodsService->getSplitStreetAddressHouseNumber(
+                            $salesChannelContext->getCustomer()->getActiveShippingAddress()->getStreet()
+                        ),
+                        'affiliateCode' => $affiliateCode,
+                        'campaignCode' => $campaignCode,
+                    ]
+                )
             )
         );
     }
@@ -388,65 +443,5 @@ class PaymentSubscriber implements EventSubscriberInterface
                 )
             );
         }
-    }
-
-    private function trans(string $snippet, array $parameters = []): string
-    {
-        return $this->container
-            ->get('translator')
-            ->trans($snippet, $parameters);
-    }
-
-    /**
-     * Persists the Adyen payment state data on payment method confirmation/update
-     *
-     * @param SalesChannelContextSwitchEvent $event
-     */
-    private function saveStateData(SalesChannelContextSwitchEvent $event, PaymentMethodEntity $selectedPaymentMethod)
-    {
-        //State data from the frontend
-        $stateData = $event->getRequestDataBag()->get('adyenStateData');
-
-        //Convert the state data into an array
-        $stateDataArray = json_decode($stateData, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->logger->error('Payment state data is an invalid JSON: ' . json_last_error_msg());
-            $this->session->getFlashBag()
-                ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
-
-            return;
-        }
-
-        $selectedPaymentMethodIsStoredPM =
-            $selectedPaymentMethod->getFormattedHandlerIdentifier() == 'handler_adyen_oneclickpaymentmethodhandler';
-
-        $stateDataIsStoredPM = !empty($stateDataArray["paymentMethod"]["storedPaymentMethodId"]);
-
-        //Only store the state data if it matches the selected PM
-        if ($stateDataIsStoredPM === $selectedPaymentMethodIsStoredPM) {
-            try {
-                $this->paymentStateDataService->insertPaymentStateData(
-                    $event->getSalesChannelContext()->getToken(),
-                    $event->getRequestDataBag()->get('adyenStateData'),
-                    $event->getRequestDataBag()->get('adyenOrigin')
-                );
-            } catch (AdyenException $exception) {
-                $this->session->getFlashBag()
-                    ->add('danger', $this->trans('adyen.paymentMethodSelectionError'));
-
-                return;
-            }
-        } else {
-            //PM selected and state.data don't match, clear previous state.data
-            $this->removeCurrentStateData($event);
-        }
-    }
-
-    private function removeCurrentStateData(SalesChannelContextSwitchEvent $event)
-    {
-        $this->paymentStateDataService->deletePaymentStateDataFromContextToken(
-            $event->getSalesChannelContext()->getToken()
-        );
     }
 }

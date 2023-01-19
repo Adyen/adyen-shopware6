@@ -1,5 +1,7 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/confirm-payment.html.twig' %}
 
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\StorefrontSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+
 {% block page_checkout_confirm_payment_inner %}
     {{ parent() }}
     {% block page_checkout_confirm_payment_inner_adyen %}
@@ -33,9 +35,9 @@
                 var activeShippingAddress = document.querySelector('#active-shipping-address').dataset;
             </script>
         {% endif %}
-        {% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\PaymentSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
-        {% if adyenFrontendData and adyenFrontendData.paymentStatusUrl %}
+        {% if adyenFrontendData and adyenFrontendData.paymentStatusUrl and adyenFrontendData.paymentMethodsResponse %}
             <div id="adyen-checkout-options"
+                 data-payment-methods-response="{{ adyenFrontendData.paymentMethodsResponse }}"
                  data-language-id="{{ adyenFrontendData.languageId }}"
                  data-payment-status-url="{{ adyenFrontendData.paymentStatusUrl }}"
                  data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}"
@@ -44,12 +46,17 @@
                  data-payment-finish-url="{{ adyenFrontendData.paymentFinishUrl }}"
                  data-payment-error-url="{{ adyenFrontendData.paymentErrorUrl }}"
                  data-update-payment-url="{{ adyenFrontendData.updatePaymentUrl }}"
+                 data-create-order-url="{{ adyenFrontendData.createOrderUrl }}"
                  data-cancel-order-transaction-url="{{ adyenFrontendData.cancelOrderTransactionUrl }}"
                  data-order-id="{{ adyenFrontendData.orderId }}"
                  data-currency="{{ adyenFrontendData.currency }}"
                  data-amount="{{ adyenFrontendData.amount }}"
-                 data-state-data-is-stored="{{ adyenFrontendData.stateDataIsStored }}"
+                 data-total-price="{{ adyenFrontendData.totalPrice }}"
+                 data-giftcard-discount="{{ adyenFrontendData.giftcardDiscount }}"
+                 data-currency-symbol="{{ adyenFrontendData.currencySymbol }}"
+                 data-pay-in-full-with-giftcard="{{ adyenFrontendData.payInFullWithGiftcard }}"
                  data-adyen-plugin-id="{{ adyenFrontendData.pluginId }}"
+                 data-adyen-giftcard-selected="{{ adyenFrontendData.adyenGiftcardSelected }}"
                  data-selected-payment-method-handler="{{ adyenFrontendData.selectedPaymentMethodHandler }}"
                  data-selected-payment-method-plugin-id="{{ adyenFrontendData.selectedPaymentMethodPluginId }}"
                  data-display-save-credit-card-option="{{ adyenFrontendData.displaySaveCreditCardOption }}"

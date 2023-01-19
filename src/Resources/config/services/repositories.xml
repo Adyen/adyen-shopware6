@@ -1,26 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!--
-  ~                       ######
-  ~                       ######
-  ~ ############    ####( ######  #####. ######  ############   ############
-  ~ #############  #####( ######  #####. ######  #############  #############
-  ~        ######  #####( ######  #####. ######  #####  ######  #####  ######
-  ~ ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
-  ~ ###### ######  #####( ######  #####. ######  #####          #####  ######
-  ~ #############  #############  #############  #############  #####  ######
-  ~  ############   ############  #############   ############  #####  ######
-  ~                                      ######
-  ~                               #############
-  ~                               ############
-  ~
-  ~ Adyen plugin for Shopware 6
-  ~
-  ~ Copyright (c) 2021 Adyen B.V.
-  ~ This file is open source and available under the MIT license.
-  ~ See the LICENSE file for more info.
-  ~
-  -->
-
 <container xmlns="http://symfony.com/schema/dic/services"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://symfony.com/schema/dic/services
@@ -42,6 +20,9 @@
         </service>
         <service id="Adyen\Shopware\Service\Repository\OrderTransactionRepository" autowire="true">
             <argument type="service" id="order_transaction.repository"/>
+        </service>
+        <service id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository" autowire="true">
+            <argument type="service" id="adyen_payment.repository"/>
         </service>
     </services>
 </container>

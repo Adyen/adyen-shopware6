@@ -144,7 +144,7 @@ class ResultHandler
         $this->paymentResponseHandler->handleShopwareAPIs(
             $transaction,
             $salesChannelContext,
-            $result
+            [$result]
         );
     }
 }

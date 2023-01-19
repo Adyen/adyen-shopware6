@@ -5,13 +5,14 @@
 
     {{ parent() }}
 
-    {% if adyenFrontendData and (adyenFrontendData.givingEnabled or adyenFrontendData.action) %}
-        <link rel="stylesheet" href="{{ asset('bundles/adyenpaymentshopware6/css/adyen.css', 'asset') }}">
-        <script type="text/javascript" src="{{ asset('bundles/adyenpaymentshopware6/js/adyen.js', 'asset') }}"></script>
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
+    {% if adyenFrontendData %}
+        {% if adyenFrontendData.givingEnabled %}
+            {% sw_include '@AdyenPaymentShopware6/storefront/component/adyen-giving/adyen-giving-component.html.twig' %}
+        {% endif %}
+        {% if adyenFrontendData.action %}
+            {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-success-action.html.twig' %}
+        {% endif %}
     {% endif %}
-
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-success-action.html.twig' %}
-
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/adyen-giving/adyen-giving-component.html.twig' %}
 
 {% endblock %}
