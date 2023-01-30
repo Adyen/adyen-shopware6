@@ -42,7 +42,6 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
@@ -61,7 +60,6 @@ use Shopware\Core\System\Currency\CurrencyCollection;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Storefront\Framework\Routing\Router;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -70,7 +68,11 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
-
+    const ALLOWED_LINE_ITEM_TYPES = [
+        'product',
+        'option-values',
+        'customized-products-option'
+    ];
     const PROMOTION = 'promotion';
     /**
      * Error codes that are safe to display to the shopper.
@@ -576,19 +578,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         if (static::$isOpenInvoice) {
             $orderLines = $transaction->getOrder()->getLineItems();
             $lineItems = [];
-            foreach ($orderLines->getElements() as $orderLine) {
-                //Getting line price
-                $price = $orderLine->getPrice();
 
-                if (empty($orderLine->getProductId()) || $orderLine->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
+            foreach ($orderLines->getElements() as $orderLine) {
+                if (!in_array($orderLine->getType(), self::ALLOWED_LINE_ITEM_TYPES)) {
                     continue;
                 }
 
-                $product = $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext());
-                $productName = $product->getTranslation('name');
-                $productNumber = $product->getProductNumber();
+                $productNumber = $orderLine->getReferencedId();
+                $productName = $orderLine->getLabel();
 
-                //Getting line tax amount and rate
+                $price = $orderLine->getPrice();
                 $lineTax = $price->getCalculatedTaxes()->getAmount() / $orderLine->getQuantity();
                 $taxRate = $price->getCalculatedTaxes()->first();
                 if (!empty($taxRate)) {
@@ -596,18 +595,34 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 } else {
                     $taxRate = 0;
                 }
-
                 $currency = $this->getCurrency(
                     $transaction->getOrder()->getCurrencyId(),
                     $salesChannelContext->getContext()
                 );
 
-                if (!is_null($product->getSeoUrls())) {
+                $product =
+                    !is_null($orderLine->getProductId()) ?
+                    $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext()) :
+                    null;
+
+                if (isset($product) && !is_null($product->getSeoUrls())) {
                     $hostname = $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl();
                     $productPath = $product->getSeoUrls()->first()->getPathInfo();
                     $productUrl = str_replace('//', '/', $hostname . $productPath);
                 } else {
                     $productUrl = null;
+                }
+
+                if (isset($product) && !is_null($product->getCover())) {
+                    $imageUrl = $product->getCover()->getMedia()->getUrl();
+                } else {
+                    $imageUrl = null;
+                }
+
+                if (isset($product) && !is_null($product->getCategories())) {
+                    $productCategory = $product->getCategories()->first()->getName();
+                } else {
+                    $productCategory = null;
                 }
 
                 //Building open invoice line
@@ -627,12 +642,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     '',
                     $productNumber,
                     $productUrl,
-                    $product->getCover() ? $product->getCover()->getMedia()->getUrl() : null,
+                    $imageUrl,
                     $this->currency->sanitize(
                         $price->getUnitPrice(),
                         $currency
                     ),
-                    $product->getCategories() ? $product->getCategories()->first()->getName() : null
+                    $productCategory
                 );
             }
 
