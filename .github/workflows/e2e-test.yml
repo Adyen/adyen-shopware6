@@ -1,12 +1,17 @@
 name: E2E Test
+run-name: Headless E2E tests for Adyen Shopware Plugin
+
 on: [pull_request]
 
 jobs:
   e2e:
     name: Shopware 6 E2E
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
+    if: ${{ github.actor != 'renovate[bot]' || github.actor != 'lgtm-com[bot]' }}
+    # Prevent bots from initiating E2E pipeline
     steps:
       - name: Clone Code
         uses: actions/checkout@v2
@@ -44,6 +49,8 @@ jobs:
         env:
           INTEGRATION_TESTS_BRANCH: develop
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
+          PAYPAL_USERNAME: ${{secrets.PLAYWRIGHT_PAYPAL_USERNAME}}
+          PAYPAL_PASSWORD: ${{secrets.PLAYWRIGHT_PAYPAL_PASSWORD}}
 
       - name: Archive test result artifacts
         if: always()
