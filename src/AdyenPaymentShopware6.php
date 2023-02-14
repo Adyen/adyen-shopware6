@@ -131,6 +131,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.7.0', '<')) {
             $this->updateTo370($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.10.0', '<')) {
+            $this->updateTo3100($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -488,6 +492,27 @@ class AdyenPaymentShopware6 extends Plugin
             new PaymentMethods\VippsPaymentMethod(),
             new PaymentMethods\AffirmPaymentMethod(),
             new PaymentMethods\PayBrightPaymentMethod()
+        ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
+    }
+
+    private function updateTo3100(UpdateContext $updateContext): void
+    {
+        /*
+         * Version 3.10.0 introduces following payment methods.
+         * Open Banking / Pay by Bank
+         */
+        foreach ([
+            new PaymentMethods\OpenBankingPaymentMethod(),
         ] as $method) {
             $this->addPaymentMethod(
                 $method,
