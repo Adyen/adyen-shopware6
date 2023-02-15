@@ -153,37 +153,44 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $notifications = $this->notificationService->getScheduledUnprocessedNotifications();
 
         foreach ($notifications->getElements() as $notification) {
-            /** @var NotificationEntity $notification */
-            $logContext = ['eventCode' => $notification->getEventCode()];
-            $this->markAsProcessing($notification->getId(), $notification->getMerchantReference());
-
-            $order = $this->getOrder($notification, $context, $logContext);
-            if (is_null($order)) {
-                continue;
-            }
-
-            $logContext['orderId'] = $order->getId();
-            $logContext['orderNumber'] = $order->getOrderNumber();
-
-            $orderTransaction = $this->getOrderTransaction($order, $notification, $logContext);
-            if (is_null($orderTransaction)) {
-                continue;
-            }
-
-            $currentTransactionState = $this->getCurrentTransactionState($orderTransaction, $notification);
-            if (is_null($currentTransactionState)) {
-                continue;
-            }
-
-            $processor = $this->createProcessor($notification, $currentTransactionState);
-            if (is_null($processor)) {
-                continue;
-            }
-
-            $state = $processor->process();
-
             try {
+                /** @var NotificationEntity $notification */
+                $logContext = ['eventCode' => $notification->getEventCode()];
+
+                /*
+                 * Before processing any notification, factory should be created first.
+                 * It checks the supported EventCode to use related class in the factory.
+                 * If the EventCode is not supported, factory will throw an InvalidDataException.
+                 */
                 $webhookHandler = self::$webhookHandlerFactory::create($notification->getEventCode());
+
+                $this->markAsProcessing($notification->getId(), $notification->getMerchantReference());
+
+                $order = $this->getOrder($notification, $context, $logContext);
+                if (is_null($order)) {
+                    continue;
+                }
+
+                $logContext['orderId'] = $order->getId();
+                $logContext['orderNumber'] = $order->getOrderNumber();
+
+                $orderTransaction = $this->getOrderTransaction($order, $notification, $logContext);
+                if (is_null($orderTransaction)) {
+                    continue;
+                }
+
+                $currentTransactionState = $this->getCurrentTransactionState($orderTransaction, $notification);
+                if (is_null($currentTransactionState)) {
+                    continue;
+                }
+
+                $processor = $this->createProcessor($notification, $currentTransactionState);
+                if (is_null($processor)) {
+                    continue;
+                }
+
+                $state = $processor->process();
+
                 $webhookHandler->handleWebhook(
                     $orderTransaction,
                     $notification,
@@ -368,7 +375,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param string $merchantReference
      * @return void
      */
-    private function markAsDone(string $notificationId, string $merchantReference)
+    private function markAsDone(string $notificationId, ?string $merchantReference = null)
     {
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
         $this->notificationService->changeNotificationState($notificationId, 'done', true);
