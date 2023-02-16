@@ -66,6 +66,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Twint
  - Vipps
  - WeChat Pay
+ - Open Banking / Pay by Bank
 
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
