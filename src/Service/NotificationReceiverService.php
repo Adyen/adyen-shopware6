@@ -24,14 +24,14 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Webhook\Exception\HMACKeyValidationException;
+use Adyen\Webhook\Exception\InvalidDataException;
+use Adyen\Webhook\Exception\MerchantAccountCodeException;
 use Adyen\Webhook\Receiver\NotificationReceiver;
 use Adyen\Shopware\Exception\AuthenticationException;
-use Adyen\Shopware\Exception\HMACKeyValidationException;
 use Adyen\Shopware\Exception\ValidationException;
-use Adyen\Shopware\Exception\MerchantAccountCodeException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Adyen\AdyenException;
 use Symfony\Component\HttpFoundation\Request;
 
 class NotificationReceiverService
@@ -39,22 +39,22 @@ class NotificationReceiverService
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var NotificationService
      */
-    private $notificationService;
+    private NotificationService $notificationService;
 
     /**
      * @var NotificationReceiver
      */
-    private $notificationReceiver;
+    private NotificationReceiver $notificationReceiver;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * NotificationReceiverService constructor.
@@ -77,15 +77,16 @@ class NotificationReceiverService
     }
 
     /**
-     * @param $notificationItems
+     * @param Request $requestObject
      * @return string|JsonResponse
-     * @throws AdyenException
      * @throws AuthenticationException
+     * @throws InvalidDataException
+     * @throws ValidationException
+     * @throws \Adyen\Webhook\Exception\AuthenticationException
      * @throws HMACKeyValidationException
      * @throws MerchantAccountCodeException
-     * @throws ValidationException
      */
-    public function process(Request $requestObject)
+    public function process(Request $requestObject): JsonResponse
     {
         $request = $requestObject->request->all();
         $salesChannelId = $requestObject->attributes->get('sw-sales-channel-id');
@@ -149,12 +150,10 @@ class NotificationReceiverService
      * @param $notificationItem
      * @param $salesChannelId
      * @return bool
-     * @throws AdyenException
-     * @throws AuthenticationException
      * @throws HMACKeyValidationException
-     * @throws MerchantAccountCodeException
+     * @throws InvalidDataException
      */
-    private function processNotificationItem($notificationItem, $salesChannelId)
+    private function processNotificationItem($notificationItem, $salesChannelId): bool
     {
         $hmacKey = $this->configurationService->getHmacKey($salesChannelId);
 
@@ -163,13 +162,6 @@ class NotificationReceiverService
             // log the notification
             $this->logger->info('The content of the notification item is: ' .
                 print_r($notificationItem, true));
-
-            // skip report notifications
-            if ($this->notificationReceiver->isReportNotification($notificationItem['eventCode'])) {
-                $this->logger->info('Notification is a REPORT notification from ' .
-                    'Adyen Customer Area');
-                return true;
-            }
 
             // check if notification already exists
             if (!$this->notificationService->isDuplicateNotification($notificationItem)) {

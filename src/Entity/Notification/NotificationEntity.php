@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Entity\Notification;
 
+use DateTimeInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
@@ -35,89 +36,89 @@ class NotificationEntity extends Entity
     public const NOTIFICATION_STATUS_PROCESSED = 'PROCESSED';
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $pspreference;
+    protected ?string $pspreference;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $originalReference;
+    protected ?string $originalReference;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $merchantReference;
+    protected ?string $merchantReference;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $eventCode;
+    protected ?string $eventCode;
 
     /**
-     * @var bool
+     * @var bool|null
      */
-    protected $success;
+    protected ?bool $success;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $paymentMethod;
+    protected ?string $paymentMethod;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $amountValue;
+    protected ?string $amountValue;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $amountCurrency;
+    protected ?string $amountCurrency;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $reason;
+    protected ?string $reason;
 
     /**
-     * @var bool
+     * @var bool|null
      */
-    protected $live;
+    protected ?bool $live;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $additionalData;
-
-    /**
-     * @var bool
-     */
-    protected $done;
+    protected ?string $additionalData;
 
     /**
      * @var bool
      */
-    protected $processing;
+    protected bool $done;
 
     /**
-     * @var \DateTimeInterface|null
+     * @var bool|null
      */
-    protected $scheduledProcessingTime;
+    protected ?bool $processing;
+
+    /**
+     * @var DateTimeInterface|null
+     */
+    protected ?DateTimeInterface $scheduledProcessingTime;
 
     /**
      * @var int|null
      */
-    protected $errorCount;
+    protected ?int $errorCount;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected $errorMessage;
+    protected ?string $errorMessage;
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getPspreference(): string
+    public function getPspreference(): ?string
     {
         return $this->pspreference;
     }
@@ -147,9 +148,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getMerchantReference(): string
+    public function getMerchantReference(): ?string
     {
         return $this->merchantReference;
     }
@@ -163,9 +164,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getEventCode(): string
+    public function getEventCode(): ?string
     {
         return $this->eventCode;
     }
@@ -179,9 +180,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return bool
+     * @return bool|null
      */
-    public function isSuccess(): bool
+    public function isSuccess(): ?bool
     {
         return $this->success;
     }
@@ -195,9 +196,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getPaymentMethod(): string
+    public function getPaymentMethod(): ?string
     {
         return $this->paymentMethod;
     }
@@ -211,9 +212,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getAmountValue(): string
+    public function getAmountValue(): ?string
     {
         return $this->amountValue;
     }
@@ -227,9 +228,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getAmountCurrency(): string
+    public function getAmountCurrency(): ?string
     {
         return $this->amountCurrency;
     }
@@ -243,9 +244,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getReason(): string
+    public function getReason(): ?string
     {
         return $this->reason;
     }
@@ -259,9 +260,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return bool
+     * @return bool|null
      */
-    public function isLive(): bool
+    public function isLive(): ?bool
     {
         return $this->live;
     }
@@ -275,9 +276,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getAdditionalData(): string
+    public function getAdditionalData(): ?string
     {
         return $this->additionalData;
     }
@@ -307,9 +308,9 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return bool
+     * @return bool|null
      */
-    public function getProcessing(): bool
+    public function getProcessing(): ?bool
     {
         return $this->processing;
     }
@@ -323,17 +324,17 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @return \DateTimeInterface|null
+     * @return DateTimeInterface|null
      */
-    public function getScheduledProcessingTime(): ?\DateTimeInterface
+    public function getScheduledProcessingTime(): ?DateTimeInterface
     {
         return $this->scheduledProcessingTime;
     }
 
     /**
-     * @param \DateTimeInterface $scheduleProcessingTime
+     * @param DateTimeInterface $scheduleProcessingTime
      */
-    public function setScheduledProcessingTime(\DateTimeInterface $scheduleProcessingTime): void
+    public function setScheduledProcessingTime(DateTimeInterface $scheduleProcessingTime): void
     {
         $this->scheduledProcessingTime = $scheduleProcessingTime;
     }
@@ -347,15 +348,15 @@ class NotificationEntity extends Entity
     }
 
     /**
-     * @param string $errorCount
+     * @param int $errorCount
      */
-    public function setErrorCount(string $errorCount): void
+    public function setErrorCount(int $errorCount): void
     {
         $this->errorCount = $errorCount;
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function getErrorMessage(): ?string
     {
