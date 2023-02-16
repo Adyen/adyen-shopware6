@@ -20,7 +20,7 @@
             <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument type="service" id="router.default"/>
             <argument type="service" id="security.csrf.token_manager"/>
             <argument type="service" id="session"/>
             <argument type="service" id="currency.repository"/>
@@ -244,6 +244,10 @@
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Adyen\Shopware\Handlers\PayBrightPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\OpenBankingPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
