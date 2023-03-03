@@ -189,9 +189,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         return [
             'clientKey' => $this->configurationService->getClientKey($salesChannelId),
-            'locale' => $this->salesChannelRepository
-                ->getSalesChannelAssoc($salesChannelContext, ['language.locale'])
-                ->getLanguage()->getLocale()->getCode(),
+            'locale' => $this->salesChannelRepository->getSalesChannelLocale($salesChannelContext),
             'environment' => $this->configurationService->getEnvironment($salesChannelId),
         ];
     }
