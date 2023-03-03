@@ -7,6 +7,8 @@
         <service id="Adyen\Shopware\Service\Repository\SalesChannelRepository" autowire="true">
             <argument type="service" id="sales_channel_domain.repository"/>
             <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="language.repository"/>
         </service>
         <service id="Adyen\Shopware\Service\Repository\OrderRepository" autowire="true">
             <argument type="service" id="order.repository"/>
