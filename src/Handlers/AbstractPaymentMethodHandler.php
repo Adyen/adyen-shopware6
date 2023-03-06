@@ -59,6 +59,8 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyCollection;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Adyen\Shopware\Exception\CurrencyNotFoundException;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -183,6 +185,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      */
     protected $session;
 
+    /**
+     * @var AbstractContextSwitchRoute
+     */
+    private $contextSwitchRoute;
+
     private $checkoutService;
 
     private $paymentResults = [];
@@ -214,6 +221,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param EntityRepositoryInterface $currencyRepository
      * @param EntityRepositoryInterface $productRepository
      * @param LoggerInterface $logger
+     * @param AbstractContextSwitchRoute $contextSwitchRoute
      */
     public function __construct(
         ConfigurationService $configurationService,
@@ -235,6 +243,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         Session $session,
         EntityRepositoryInterface $currencyRepository,
         EntityRepositoryInterface $productRepository,
+        AbstractContextSwitchRoute $contextSwitchRoute,
         LoggerInterface $logger
     ) {
         $this->clientService = $clientService;
@@ -257,6 +266,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->session = $session;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
+        $this->contextSwitchRoute = $contextSwitchRoute;
     }
 
     abstract public static function getPaymentMethodCode();
@@ -349,6 +359,19 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         } catch (PaymentFailedException $exception) {
             throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
         }
+
+        /*
+         * Removes the giftcard payment method from the databag
+         *  if the previous order was completed with a giftcard.
+         */
+        $this->contextSwitchRoute->switchContext(
+            new RequestDataBag(
+                [
+                    SalesChannelContextService::PAYMENT_METHOD_ID => null
+                ]
+            ),
+            $salesChannelContext
+        );
 
         // Payment had no error, continue the process
         return new RedirectResponse($this->getAdyenReturnUrl($transaction, $salesChannelContext));
