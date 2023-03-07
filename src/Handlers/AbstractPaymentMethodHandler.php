@@ -373,8 +373,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $salesChannelContext
         );
 
+        $action = $response[PaymentResponseHandler::ACTION] ?? [];
+        $redirectUrl = ($action['type'] ?? null) === 'redirect' ?
+            $action['url'] ?? null :
+            null;
+
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction, $salesChannelContext));
+        return new RedirectResponse($redirectUrl ?? $this->getAdyenReturnUrl($transaction, $salesChannelContext));
+
     }
 
     /**
