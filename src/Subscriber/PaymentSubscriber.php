@@ -424,7 +424,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
                     [
-                        SalesChannelContextService::PAYMENT_METHOD_ID => $request->get('paymentMethodId'),
+                        SalesChannelContextService::PAYMENT_METHOD_ID => $request->request->get('paymentMethodId'),
                         'adyenStateData' => $request->request->get('adyenStateData'),
                         'adyenOrigin' => $request->request->get('adyenOrigin'),
                     ]

@@ -99,7 +99,7 @@ class DonateController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        $payload = $request->get('payload');
+        $payload = $request->request->get('payload');
 
         $orderId = $payload['orderId'];
         $currency = $payload['amount']['currency'];
