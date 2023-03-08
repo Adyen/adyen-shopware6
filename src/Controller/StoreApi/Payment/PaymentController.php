@@ -33,9 +33,11 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use Petstore30\Order;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
@@ -108,6 +110,10 @@ class PaymentController
      * @var ConfigurationService
      */
     private $configurationService;
+    /**
+     * @var OrderTransactionStateHandler
+     */
+    private $orderTransactionStateHandler;
 
     /**
      * StoreApiController constructor.
@@ -137,7 +143,8 @@ class PaymentController
         StateMachineRegistry $stateMachineRegistry,
         LoggerInterface $logger,
         EntityRepositoryInterface $orderTransactionRepository,
-        ConfigurationService $configurationService
+        ConfigurationService $configurationService,
+        OrderTransactionStateHandler $orderTransactionStateHandler
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -151,6 +158,7 @@ class PaymentController
         $this->logger = $logger;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
+        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
     }
 
     /**
@@ -265,7 +273,7 @@ class PaymentController
      */
     public function getPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
     {
-        $orderId = $request->get('orderId');
+        $orderId = $request->request->get('orderId');
         if (empty($orderId)) {
             return new JsonResponse('Order ID not provided', 400);
         }
@@ -315,7 +323,11 @@ class PaymentController
      */
     public function updatePaymentMethod(Request $request, SalesChannelContext $context): SetPaymentOrderRouteResponse
     {
-        $this->setPaymentMethod($request->get('paymentMethodId'), $request->get('orderId'), $context);
+        $this->setPaymentMethod(
+            $request->request->get('paymentMethodId'),
+            $request->request->get('orderId'),
+            $context
+        );
         return new SetPaymentOrderRouteResponse();
     }
 
@@ -337,10 +349,8 @@ class PaymentController
                     foreach ($order->getTransactions() as $transaction) {
                         if ($transaction->getStateMachineState()->getTechnicalName()
                             !== OrderTransactionStates::STATE_CANCELLED) {
-                            $this->orderService->orderTransactionStateTransition(
+                            $this->orderTransactionStateHandler->cancel(
                                 $transaction->getId(),
-                                'cancel',
-                                new ParameterBag(),
                                 $context
                             );
                         }
@@ -385,7 +395,7 @@ class PaymentController
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         $context = $salesChannelContext->getContext();
-        $orderId = $request->get('orderId');
+        $orderId = $request->request->get('orderId');
         $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
 
         $transaction = $order->getTransactions()->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)->first();
