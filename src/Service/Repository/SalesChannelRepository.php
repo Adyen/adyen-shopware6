@@ -2,11 +2,8 @@
 
 namespace Adyen\Shopware\Service\Repository;
 
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -31,19 +28,27 @@ class SalesChannelRepository
     private $configurationService;
 
     /**
+     * @var EntityRepositoryInterface
+     */
+    private $languageRepository;
+
+    /**
      * SalesChannelRepository constructor.
      * @param EntityRepositoryInterface $domainRepository
      * @param EntityRepositoryInterface $salesChannelRepository
      * @param ConfigurationService $configurationService
+     * @param EntityRepositoryInterface $languageRepository
      */
     public function __construct(
         EntityRepositoryInterface $domainRepository,
         EntityRepositoryInterface $salesChannelRepository,
-        ConfigurationService $configurationService
+        ConfigurationService $configurationService,
+        EntityRepositoryInterface $languageRepository
     ) {
         $this->domainRepository = $domainRepository;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
+        $this->languageRepository = $languageRepository;
     }
 
     /**
@@ -92,5 +97,21 @@ class SalesChannelRepository
         }
 
         return $this->salesChannelRepository->search($criteria, $context->getContext())->first();
+    }
+
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @return string
+     */
+    public function getSalesChannelLocale(SalesChannelContext $salesChannelContext): string
+    {
+        $criteria = new Criteria();
+
+        $criteria->addFilter(new EqualsFilter('id', $salesChannelContext->getLanguageId()));
+        $criteria->addAssociation('locale');
+
+        $languageEntity = $this->languageRepository->search($criteria, $salesChannelContext->getContext())->first();
+
+        return $languageEntity->getLocale()->getCode();
     }
 }

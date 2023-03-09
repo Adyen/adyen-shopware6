@@ -375,11 +375,13 @@ class PaymentRequestService
                 $item['imageUrl'] = $product->getCover()->getMedia()->getUrl();
             }
 
-            if (!is_null($product->getSeoUrls())) {
-                $hostname = $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl();
-                $productPath = $product->getSeoUrls()->first()->getPathInfo();
-
-                $item['productUrl'] = str_replace('//', '/', $hostname . $productPath);
+            // Add url for only real product and not for the custom cart items.
+            if (!is_null($product->getId())) {
+                $item['productUrl'] = sprintf(
+                    "%s/detail/%s",
+                    $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl(),
+                    $product->getId()
+                );
             }
 
             //Building open invoice line
@@ -448,7 +450,6 @@ class PaymentRequestService
     {
         $criteria = new Criteria([$productId]);
 
-        $criteria->addAssociation('seoUrls');
         $criteria->addAssociation('cover');
 
         /** @var ProductCollection $productCollection */

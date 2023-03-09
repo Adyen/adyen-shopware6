@@ -1,0 +1,10 @@
+{% sw_extends '@Storefront/storefront/page/checkout/address/index.html.twig' %}
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\StorefrontSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+
+{% block page_checkout_address_products %}
+
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
+
+    {{ parent() }}
+{% endblock %}

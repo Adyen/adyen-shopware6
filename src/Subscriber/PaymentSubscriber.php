@@ -48,6 +48,7 @@ use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPage;
 use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
+use Shopware\Storefront\Page\Checkout\Register\CheckoutRegisterPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -177,6 +178,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         return [
             CheckoutCartPageLoadedEvent::class => 'onShoppingCartLoaded',
             OffcanvasCartPageLoadedEvent::class => 'onShoppingCartLoaded',
+            CheckoutRegisterPageLoadedEvent::class => 'onShoppingCartLoaded',
             CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             AccountEditOrderPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             RequestEvent::class => 'onKernelRequest',
@@ -189,9 +191,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         return [
             'clientKey' => $this->configurationService->getClientKey($salesChannelId),
-            'locale' => $this->salesChannelRepository
-                ->getSalesChannelAssoc($salesChannelContext, ['language.locale'])
-                ->getLanguage()->getLocale()->getCode(),
+            'locale' => $this->salesChannelRepository->getSalesChannelLocale($salesChannelContext),
             'environment' => $this->configurationService->getEnvironment($salesChannelId),
         ];
     }
@@ -424,7 +424,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
                     [
-                        SalesChannelContextService::PAYMENT_METHOD_ID => $request->get('paymentMethodId'),
+                        SalesChannelContextService::PAYMENT_METHOD_ID => $request->request->get('paymentMethodId'),
                         'adyenStateData' => $request->request->get('adyenStateData'),
                         'adyenOrigin' => $request->request->get('adyenOrigin'),
                     ]
