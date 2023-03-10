@@ -8,7 +8,9 @@ on:
 jobs:
   e2e:
     name: Shopware 6 E2E
-    runs-on: ubuntu-latest
+    runs-on:
+      group: larger-runners
+      labels: ubuntu-latest-8-cores
     timeout-minutes: 20
     strategy:
       fail-fast: false
