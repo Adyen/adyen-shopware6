@@ -1,0 +1,11 @@
+{% block sw_order_detail_base_secondary_info_payment %}
+    {% parent %}
+    <dd>
+        ABC123456789 - VISA - 120.00 EUR
+    </dd>
+    <dd>
+        XYZ123456789 - GENERICGIFTCARD - 50.00 EUR
+    </dd>
+
+    <adyen-partial-payments></adyen-partial-payments>
+{% endblock %}
