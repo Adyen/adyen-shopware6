@@ -28,15 +28,37 @@ Component.register('adyen-partial-payments', {
 
     inject: ['adyenService'],
 
-    // methods: {
-    //     // fetchAdyenPartialPayments() {
-    //     //     this.adyenService.fetchAdyenPartialPayments(this.order.id).then((res) => {
-    //     //         this.partialPayments = res;
-    //     //     });
-    //     // }
-    // },
+    props: {
+        order: {
+            type: Object,
+            required: true
+        },
+    },
+
+    methods: {
+        fetchAdyenPartialPayments() {
+            this.adyenService.fetchAdyenPartialPayments(this.order.id).then((res) => {
+                if (res.length > 0) {
+                    this.partialPayments = res;
+                } else {
+                    this.errorMessage = this.$tc('adyen.pendingWebhook')
+                }
+            });
+        }
+    },
+
+    data() {
+        return {
+            errorMessage: "",
+            partialPayments: [],
+            showWidget: false,
+        }
+    },
 
     beforeMount() {
-       console.log('plugin works fine!');
+        this.showWidget = this.adyenService.isAdyenOrder(this.order);
+        if (this.showWidget) {
+            this.fetchAdyenPartialPayments();
+        }
     }
 });
