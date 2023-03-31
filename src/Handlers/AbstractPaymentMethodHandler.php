@@ -735,7 +735,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
 
         // Create the adyen redirect result URL with the same query as the original return URL
-        return $baseUrl . $adyenReturnPath . '&' . $returnUrlQuery;
+        return rtrim($baseUrl, '/') . $adyenReturnPath . '&' . $returnUrlQuery;
     }
 
     /**
