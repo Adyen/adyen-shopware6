@@ -78,7 +78,6 @@ class PluginPaymentMethodsService
         foreach ($pluginPaymentMethods as $pluginPaymentMethod) {
             if ($pluginPaymentMethod->getHandlerIdentifier()::getPaymentMethodCode() === 'giftcard' &&
                 $pluginPaymentMethod->getHandlerIdentifier()::getBrand() === $paymentMethod) {
-
                 return $pluginPaymentMethod->getHandlerIdentifier();
             }
         }
