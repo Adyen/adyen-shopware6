@@ -26,12 +26,15 @@ namespace Adyen\Shopware\Controller;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
+use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\CaptureException;
+use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
+use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
@@ -47,7 +50,6 @@ use Shopware\Core\System\Currency\CurrencyFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\RouterInterface;
 
 /**
  * @RouteScope(scopes={"administration"})
@@ -71,9 +73,7 @@ class AdminController
     /** @var AdyenRefundRepository */
     private $adyenRefundRepository;
 
-    /**
-     * @var NotificationService
-     */
+    /** @var NotificationService */
     private $notificationService;
 
     /** @var CurrencyFormatter */
@@ -88,6 +88,12 @@ class AdminController
     /** @var AdyenPaymentCaptureRepository */
     private $adyenPaymentCaptureRepository;
 
+    /** @var ConfigurationService */
+    private $configurationService;
+
+    /** @var AdyenPaymentService */
+    private $adyenPaymentService;
+
     /**
      * AdminController constructor.
      *
@@ -100,6 +106,8 @@ class AdminController
      * @param CaptureService $captureService
      * @param CurrencyFormatter $currencyFormatter
      * @param Currency $currencyUtil
+     * @param ConfigurationService $configurationService
+     * @param AdyenPaymentService $adyenPaymentService
      */
     public function __construct(
         LoggerInterface $logger,
@@ -110,7 +118,9 @@ class AdminController
         NotificationService $notificationService,
         CaptureService $captureService,
         CurrencyFormatter $currencyFormatter,
-        Currency $currencyUtil
+        Currency $currencyUtil,
+        ConfigurationService $configurationService,
+        AdyenPaymentService $adyenPaymentService
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
@@ -121,6 +131,8 @@ class AdminController
         $this->captureService = $captureService;
         $this->currencyFormatter = $currencyFormatter;
         $this->currencyUtil = $currencyUtil;
+        $this->configurationService = $configurationService;
+        $this->adyenPaymentService = $adyenPaymentService;
     }
 
     /**
@@ -361,6 +373,39 @@ class AdminController
                 'canBeRescheduled' => $this->notificationService->canBeRescheduled($notification),
                 'errorCount' => $notification->getErrorCount(),
                 'errorMessage' => $notification->getErrorMessage()
+            ];
+        }
+
+        return new JsonResponse($response);
+    }
+
+    /**
+     * Get all the authorised payments of an order from adyen_payment table.
+     *
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/partial-payments",
+     *      methods={"GET"}
+     *     )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function getPartialPayments(string $orderId): JsonResponse
+    {
+        $order = $this->orderRepository->getOrder($orderId, Context::createDefaultContext());
+        $adyenPayments = $this->adyenPaymentService->getAdyenPayments($orderId);
+        $response = [];
+
+        /** @var AdyenPaymentEntity $adyenPayments */
+        foreach ($adyenPayments as $payment) {
+            $response[] = [
+                'pspReference' => $payment->pspreference,
+                'method' => $payment->paymentMethod,
+                'amount' => $payment->amountValue . ' ' . $payment->amountCurrency,
+                'caLink' => sprintf(
+                    "https://ca-%s.adyen.com/ca/ca/accounts/showTx.shtml?pspReference=%s&txType=Payment",
+                    $this->configurationService->getEnvironment($order->getSalesChannelId()),
+                    $payment->pspreference
+                )
             ];
         }
 

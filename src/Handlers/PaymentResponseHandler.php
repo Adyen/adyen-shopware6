@@ -156,15 +156,24 @@ class PaymentResponseHandler
             $paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
         }
 
-        $isGiftcardResponse = false;
-        if (!empty($response['paymentMethod']) && !empty($response['paymentMethod']['type'])) {
-            $isGiftcardResponse = 'giftcard' === $response['paymentMethod']['type'];
+        /*
+         * If this payment is a part of an Adyen order,
+         * payment response contains `order` object.
+         */
+        $isGiftcardOrderResponse = false;
+        if (
+            !empty($response['paymentMethod']) &&
+            !empty($response['paymentMethod']['type']) &&
+            $response['paymentMethod']['type'] === 'giftcard' &&
+            array_key_exists('order', $response)
+        ) {
+            $isGiftcardOrderResponse = true;
         }
 
-        $paymentResponseHandlerResult->setIsGiftcard($isGiftcardResponse);
+        $paymentResponseHandlerResult->setIsGiftcardOrder($isGiftcardOrderResponse);
 
         // Set Donation Token if response contains it, except for giftcards
-        if (!empty($response[self::DONATION_TOKEN]) && !$isGiftcardResponse) {
+        if (!empty($response[self::DONATION_TOKEN]) && !$isGiftcardOrderResponse) {
             $paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
         }
 
@@ -251,7 +260,7 @@ class PaymentResponseHandler
             $pspReference = $result->getPspReference();
             if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE])
                 && !empty($pspReference)
-                && !$result->isGiftcard()) {
+                && !$result->isGiftcardOrder()) {
                 $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
             }
 
@@ -263,7 +272,7 @@ class PaymentResponseHandler
             $additionalData = $result->getAdditionalData();
             if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA])
                 && !empty($additionalData)
-                && !$result->isGiftcard()) {
+                && !$result->isGiftcardOrder()) {
                 $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
             }
         }

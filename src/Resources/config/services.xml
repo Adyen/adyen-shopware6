@@ -88,6 +88,7 @@
         <service id="Adyen\Shopware\Service\PluginPaymentMethodsService" autowire="true"></service>
         <service id="Adyen\Shopware\Service\AdyenPaymentService">
             <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository"/>
+            <argument type="service" id="order_transaction.repository"/>
         </service>
 
         <!--Service decorators-->

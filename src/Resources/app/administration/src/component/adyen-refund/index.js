@@ -56,7 +56,7 @@ Component.register('adyen-refund', {
             isLoadingTable: true,
             errorOccurred: false,
             isLoadingRefund: false,
-            showWidget: true,
+            showWidget: false,
         };
     },
 

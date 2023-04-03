@@ -1,0 +1,9 @@
+<ul v-if="showWidget">
+    <dt>{{ $tc('adyen.authorisedPayments') }}</dt>
+    <dd v-for="payment in partialPayments">
+        <a v-bind:href="payment.caLink" target="_blank">{{ payment.pspReference }}</a> -
+        <span>{{ payment.method }}</span> -
+        <span>{{ payment.amount }}</span>
+    </dd>
+    <dd>{{ errorMessage }}</dd>
+</ul>
