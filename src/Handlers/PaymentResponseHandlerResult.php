@@ -14,7 +14,7 @@ class PaymentResponseHandlerResult
     private $action;
     private $additionalData;
     private $donationToken;
-    private $isGiftcard = false;
+    private $isGiftcardOrder = false;
 
     /**
      * @param PaymentResponseEntity $paymentResponse
@@ -177,15 +177,15 @@ class PaymentResponseHandlerResult
     }
 
     /**
-     * @param bool $isGiftcard
+     * @param bool $isGiftcardOrder
      */
-    public function setIsGiftcard(bool $isGiftcard): void
+    public function setIsGiftcardOrder(bool $isGiftcardOrder): void
     {
-        $this->isGiftcard = $isGiftcard;
+        $this->isGiftcardOrder = $isGiftcardOrder;
     }
 
-    public function isGiftcard(): bool
+    public function isGiftcardOrder(): bool
     {
-        return $this->isGiftcard;
+        return $this->isGiftcardOrder;
     }
 }

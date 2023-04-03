@@ -29,18 +29,25 @@ use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class AdyenPaymentService
 {
-    protected AdyenPaymentRepository $adyenPaymentRepository;
-
     const MANUAL_CAPTURE = 'manual_capture';
     const AUTO_CAPTURE = 'auto_capture';
 
+    protected AdyenPaymentRepository $adyenPaymentRepository;
+    protected EntityRepositoryInterface $orderTransactionRepository;
+
     public function __construct(
-        AdyenPaymentRepository $adyenPaymentRepository
+        AdyenPaymentRepository $adyenPaymentRepository,
+        EntityRepositoryInterface $orderTransactionRepository
     ) {
         $this->adyenPaymentRepository = $adyenPaymentRepository;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     public function insertAdyenPayment(
@@ -65,6 +72,29 @@ class AdyenPaymentService
             [$fields],
             Context::createDefaultContext()
         );
+    }
+
+    public function getAdyenPayments(string $orderId): array
+    {
+        $orderTransaction = $this->orderTransactionRepository
+            ->search(
+                (new Criteria())
+                    ->addFilter((new EqualsFilter('orderId', $orderId)))
+                    ->addAssociation('order')
+                    ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
+                Context::createDefaultContext()
+            )
+            ->first();
+
+        return $this->adyenPaymentRepository->getRepository()
+            ->search(
+                (new Criteria())
+                    ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
+                    ->addAssociation('orderTransaction.order')
+                    ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
+                Context::createDefaultContext()
+            )
+            ->getElements();
     }
 
     public function isFullAmountAuthorized(
