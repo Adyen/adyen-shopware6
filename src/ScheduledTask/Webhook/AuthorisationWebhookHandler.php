@@ -104,7 +104,6 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      * @param NotificationEntity $notification
      * @param Context $context
      * @return void
-     * @throws AdyenException
      * @throws CaptureException
      */
     private function handleSuccessfulNotification(
@@ -112,9 +111,13 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         NotificationEntity $notification,
         Context $context
     ): void {
-        $paymentMethodHandler = $this->pluginPaymentMethodsService->getHandlerIdentifierFromTxVariant(
+        $paymentMethodHandler = $this->pluginPaymentMethodsService->getGiftcardHandlerIdentifierFromTxVariant(
             $notification->getPaymentMethod()
         );
+
+        if (is_null($paymentMethodHandler)) {
+            $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+        }
 
         $isManualCapture = $this->captureService->requiresManualCapture($paymentMethodHandler);
         $currencyUtil = new Currency();

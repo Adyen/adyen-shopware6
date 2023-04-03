@@ -69,25 +69,20 @@ class PluginPaymentMethodsService
 
     /**
      * @param string $paymentMethod
-     * @return string
-     * @throws AdyenException
+     * @return string|null
      */
-    public function getHandlerIdentifierFromTxVariant(string $paymentMethod): string
+    public function getGiftcardHandlerIdentifierFromTxVariant(string $paymentMethod): ?string
     {
-        if (CardsPaymentMethodHandler::isSchemePayment($paymentMethod)) {
-            return CardsPaymentMethodHandler::class;
-        } else {
-            $pluginPaymentMethods = $this->getPluginPaymentMethods();
+        $pluginPaymentMethods = $this->getPluginPaymentMethods();
 
-            foreach ($pluginPaymentMethods as $pluginPaymentMethod) {
-                if (($pluginPaymentMethod->getHandlerIdentifier()::getPaymentMethodCode() === 'giftcard' &&
-                    $pluginPaymentMethod->getHandlerIdentifier()::getBrand() === $paymentMethod) ||
-                    $pluginPaymentMethod->getHandlerIdentifier()::getPaymentMethodCode() === $paymentMethod) {
-                    return $pluginPaymentMethod->getHandlerIdentifier();
-                }
+        foreach ($pluginPaymentMethods as $pluginPaymentMethod) {
+            if ($pluginPaymentMethod->getHandlerIdentifier()::getPaymentMethodCode() === 'giftcard' &&
+                $pluginPaymentMethod->getHandlerIdentifier()::getBrand() === $paymentMethod) {
+
+                return $pluginPaymentMethod->getHandlerIdentifier();
             }
         }
 
-        throw new AdyenException(sprintf("Payment method %s not found!", $paymentMethod));
+        return null;
     }
 }
