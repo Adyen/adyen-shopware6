@@ -267,10 +267,9 @@ class AdminController
     public function isCaptureAllowed(string $orderId)
     {
         $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
-            $orderId, [
-                OrderTransactionStates::STATE_AUTHORIZED,
-                OrderTransactionStates::STATE_IN_PROGRESS
-            ]);
+            $orderId,
+            [OrderTransactionStates::STATE_AUTHORIZED, OrderTransactionStates::STATE_IN_PROGRESS]
+        );
 
         if (isset($orderTransaction)) {
             $isFullAmountAuthorised = $this->adyenPaymentService->isFullAmountAuthorized($orderTransaction);
