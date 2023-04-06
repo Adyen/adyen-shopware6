@@ -51,7 +51,7 @@ Component.register('adyen-payment-capture', {
             ],
             showModal: false,
             captureRequests: [],
-            allowCapture: true,
+            allowCapture: false,
             captureEnabled: false,
             errorOccurred: false,
             isLoading: true,
@@ -121,20 +121,14 @@ Component.register('adyen-payment-capture', {
         },
 
         isCaptureAllowed() {
-            let capturableTransactions = this.getAuthorizedAdyenOrderTransaction();
-            let capturePending = this.captureRequests.filter(request => {
-                return "Pending Webhook" === request.status;
-            });
-
-            this.allowCapture = capturableTransactions.length > 0 && capturePending.length === 0;
-        },
-
-        getAuthorizedAdyenOrderTransaction() {
-            return this.order.transactions.filter(transaction => {
-                const isAdyenPayment = 'originalPspReference' in transaction.customFields;
-                const isAuthorized = 'Authorized' === transaction.stateMachineState.name;
-
-                return isAdyenPayment && isAuthorized;
+            this.isLoading = true;
+            this.adyenService.isCaptureAllowed(this.order.id).then((res) => {
+                this.allowCapture = res;
+            }).catch(() => {
+                this.errorOccurred = true;
+                this.allowCapture = false;
+            }).finally(() => {
+                this.isLoading = false;
             });
         }
     },

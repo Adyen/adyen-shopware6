@@ -69,6 +69,21 @@ class ApiClient extends ApiService {
             });
     }
 
+    isCaptureAllowed(orderId) {
+        const headers = this.getBasicHeaders({});
+
+        return this.httpClient
+            .get(this.getApiBasePath() + '/orders/' + orderId + '/is-capture-allowed', {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            }).catch((error) => {
+                console.error('An error occurred during is-capture-allowed request: ' + error.message);
+                throw error;
+            });
+    }
+
     getRefunds(orderId) {
         const headers = this.getBasicHeaders({});
 

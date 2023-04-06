@@ -62,13 +62,13 @@ class AdyenPaymentRepository
     }
 
     /**
-     * @param string $merchantReference
+     * @param string $orderTransactionId
      * @return EntityCollection
      */
-    public function getAdyenPaymentsByMerchantOrderReference(string $merchantOrderReference): EntityCollection
+    public function getAdyenPaymentsByOrderTransaction(string $orderTransactionId): EntityCollection
     {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('merchantOrderReference', $merchantOrderReference));
+        $criteria->addFilter(new EqualsFilter('orderTransactionId', $orderTransactionId));
 
         return $this->repository->search($criteria, Context::createDefaultContext());
     }

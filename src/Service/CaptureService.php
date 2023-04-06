@@ -27,6 +27,7 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Modification;
+use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Exception\CaptureException;
@@ -39,7 +40,6 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
-use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
@@ -49,38 +49,6 @@ class CaptureService
 {
     use LoggerAwareTrait;
 
-    const SUPPORTED_PAYMENT_METHOD_CODES = [
-        'cup',
-        'cartebancaire',
-        'visa',
-        'visadankort',
-        'mc',
-        'uatp',
-        'amex',
-        'maestro',
-        'maestrouk',
-        'diners',
-        'discover',
-        'jcb',
-        'laser',
-        'paypal',
-        'sepadirectdebit',
-        'dankort',
-        'elo',
-        'hipercard',
-        'mc_applepay',
-        'visa_applepay',
-        'amex_applepay',
-        'discover_applepay',
-        'maestro_applepay',
-        'paywithgoogle',
-        'googlepay',
-        'svs',
-        'givex',
-        'valuelink',
-        'twint',
-    ];
-
     const REASON_DELIVERY_STATE_MISMATCH = 'DELIVERY_STATE_MISMATCH';
 
     private OrderRepository $orderRepository;
@@ -88,19 +56,22 @@ class CaptureService
     private AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository;
     private ConfigurationService $configurationService;
     private ClientService $clientService;
+    private AdyenPaymentService $adyenPaymentService;
 
     public function __construct(
         OrderRepository $orderRepository,
         OrderTransactionRepository $orderTransactionRepository,
         AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository,
         ConfigurationService $configurationService,
-        ClientService $clientService
+        ClientService $clientService,
+        AdyenPaymentService $adyenPaymentService
     ) {
         $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->adyenPaymentCaptureRepository = $adyenPaymentCaptureRepository;
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
+        $this->adyenPaymentService = $adyenPaymentService;
     }
 
     /**
@@ -205,71 +176,6 @@ class CaptureService
         return $dateTime;
     }
 
-    private function getLineItemsArray(
-        ?OrderLineItemCollection $lineItems,
-        $currencyCode
-    ): array {
-        $lineItemsArray = [];
-        $lineIndex = 0;
-        foreach ($lineItems as $lineItem) {
-            // Skip non-product line items.
-            if (empty($lineItem->getProductId()) || $lineItem->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
-                continue;
-            }
-
-            $key = 'openinvoicedata.line' . ++$lineIndex;
-            $lineItemsArray[$key . '.itemAmount'] = ceil($lineItem->getPrice()->getTotalPrice() * 100);
-            $lineItemsArray[$key . '.itemVatPercentage'] = $lineItem->getPrice()->getTaxRules()
-                    ->highestRate()->getPercentage() * 10;
-            $lineItemsArray[$key . '.description'] = $lineItem->getLabel();
-            $lineItemsArray[$key . '.itemVatAmount'] = $lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100;
-            $lineItemsArray[$key . '.currencyCode'] = $currencyCode;
-            $lineItemsArray[$key . '.numberOfItems'] = $lineItem->getQuantity();
-        }
-        $lineItemsArray['openinvoicedata.numberOfLines'] = $lineIndex;
-        return $lineItemsArray;
-    }
-
-    private function buildCaptureRequest(
-        string $originalReference,
-        $captureAmountInMinorUnits,
-        string $currency,
-        string $salesChannelId,
-        ?array $additionalData = null
-    ): array {
-        return [
-            'originalReference' => $originalReference,
-            'modificationAmount' => [
-                'value' => $captureAmountInMinorUnits,
-                'currency' => $currency,
-            ],
-            'merchantAccount' => $this->configurationService->getMerchantAccount($salesChannelId),
-            'additionalData' => $additionalData
-        ];
-    }
-
-    /**
-     * @throws CaptureException
-     */
-    private function sendCaptureRequest(
-        Client $client,
-        array $request
-    ) {
-        try {
-            $modification = new Modification($client);
-            $response = $modification->capture($request);
-        } catch (AdyenException $e) {
-            $this->logger->error('Capture failed', $request);
-            throw new CaptureException(
-                'Capture failed.',
-                0,
-                $e
-            );
-        }
-
-        return $response;
-    }
-
     public function requiresManualCapture($handlerIdentifier)
     {
         return $this->configurationService->isManualCaptureActive() && $handlerIdentifier::$isOpenInvoice;
@@ -340,6 +246,92 @@ class CaptureService
     }
 
     /**
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     * @return bool
+     */
+    public function checkRequiredAmountFullyCapturedInNotification(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification
+    ):bool {
+        return $notification->getAmountValue() >= $this->getRequiredCaptureAmount($orderTransaction->getOrderId());
+    }
+
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     * @return bool
+     */
+    public function isRequiredAmountCaptured(OrderTransactionEntity $orderTransaction): bool
+    {
+        $requiredCaptureAmount = $this->getRequiredCaptureAmount($orderTransaction->getOrderId());
+        $totalCapturedAmount = $this->getTotalCapturedAmount($orderTransaction);
+
+        return $totalCapturedAmount >= $requiredCaptureAmount;
+    }
+
+    /**
+     * @param string $orderId
+     * @return int
+     */
+    public function getRequiredCaptureAmount(string $orderId): int
+    {
+        $adyenPayments = $this->adyenPaymentService->getAdyenPayments($orderId);
+        $requiredCaptureAmount = 0;
+
+        /** @var AdyenPaymentEntity $adyenPayment */
+        foreach ($adyenPayments as $adyenPayment) {
+            if ($adyenPayment->getCaptureMode() === AdyenPaymentService::MANUAL_CAPTURE) {
+                $requiredCaptureAmount += $adyenPayment->getAmountValue();
+            }
+        }
+
+        return $requiredCaptureAmount;
+    }
+
+    private function getLineItemsArray(
+        ?OrderLineItemCollection $lineItems,
+                                 $currencyCode
+    ): array {
+        $lineItemsArray = [];
+        $lineIndex = 0;
+        foreach ($lineItems as $lineItem) {
+            // Skip non-product line items.
+            if (empty($lineItem->getProductId()) || $lineItem->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
+                continue;
+            }
+
+            $key = 'openinvoicedata.line' . ++$lineIndex;
+            $lineItemsArray[$key . '.itemAmount'] = ceil($lineItem->getPrice()->getTotalPrice() * 100);
+            $lineItemsArray[$key . '.itemVatPercentage'] = $lineItem->getPrice()->getTaxRules()
+                    ->highestRate()->getPercentage() * 10;
+            $lineItemsArray[$key . '.description'] = $lineItem->getLabel();
+            $lineItemsArray[$key . '.itemVatAmount'] = $lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100;
+            $lineItemsArray[$key . '.currencyCode'] = $currencyCode;
+            $lineItemsArray[$key . '.numberOfItems'] = $lineItem->getQuantity();
+        }
+        $lineItemsArray['openinvoicedata.numberOfLines'] = $lineIndex;
+        return $lineItemsArray;
+    }
+
+    private function buildCaptureRequest(
+        string $originalReference,
+               $captureAmountInMinorUnits,
+        string $currency,
+        string $salesChannelId,
+        ?array $additionalData = null
+    ): array {
+        return [
+            'originalReference' => $originalReference,
+            'modificationAmount' => [
+                'value' => $captureAmountInMinorUnits,
+                'currency' => $currency,
+            ],
+            'merchantAccount' => $this->configurationService->getMerchantAccount($salesChannelId),
+            'additionalData' => $additionalData
+        ];
+    }
+
+    /**
      * @param string $newStatus
      * @param string $pspReference
      * @throws AdyenException
@@ -351,5 +343,43 @@ class CaptureService
             $this->logger->error($message, ['newStatus' => $newStatus, 'pspReference' => $pspReference]);
             throw new AdyenException($message);
         }
+    }
+
+    /**
+     * @throws CaptureException
+     */
+    private function sendCaptureRequest(
+        Client $client,
+        array $request
+    ) {
+        try {
+            $modification = new Modification($client);
+            $response = $modification->capture($request);
+        } catch (AdyenException $e) {
+            $this->logger->error('Capture failed', $request);
+            throw new CaptureException(
+                'Capture failed.',
+                0,
+                $e
+            );
+        }
+
+        return $response;
+    }
+
+    private function getTotalCapturedAmount(OrderTransactionEntity $orderTransaction)
+    {
+        $totalCapturedAmount = 0;
+        $captures = $this->adyenPaymentCaptureRepository->getCaptureRequestsByOrderId(
+            $orderTransaction->getOrderId(),
+            true
+        );
+
+        /** @var PaymentCaptureEntity $capture */
+        foreach ($captures as $capture) {
+            $totalCapturedAmount += $capture->getAmount();
+        }
+
+        return $totalCapturedAmount;
     }
 }

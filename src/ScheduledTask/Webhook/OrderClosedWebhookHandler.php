@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Psr\Log\LoggerInterface;
@@ -69,7 +70,6 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
      * @param string $currentTransactionState
      * @param Context $context
      * @return void
-     * @throws \Adyen\Shopware\Exception\CaptureException
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -85,22 +85,36 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
         }
     }
 
+    /**
+     * @throws CaptureException
+     */
     private function handleSuccessfulNotification(
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity,
         Context $context
     ): void {
-        if ($this->adyenPaymentService->isFullAmountAuthorized(
-            $notificationEntity->getMerchantReference(),
-            $orderTransactionEntity
-        )) {
+        if ($this->adyenPaymentService->isFullAmountAuthorized($orderTransactionEntity)) {
             $paymentMethodHandler = $orderTransactionEntity->getPaymentMethod()->getHandlerIdentifier();
             if ($this->captureService->requiresManualCapture($paymentMethodHandler)) {
                 $this->orderTransactionStateHandler->authorize($orderTransactionEntity->getId(), $context);
 
+                $merchantReference = $this->adyenPaymentService->getMerchantReferenceFromOrderReference(
+                    $notificationEntity->getMerchantReference()
+                );
+
+                $requiredCaptureAmount = $this->captureService->getRequiredCaptureAmount(
+                    $orderTransactionEntity->getOrderId()
+                );
+
+                if ($requiredCaptureAmount === 0) {
+                    throw new CaptureException(
+                        'There is no adyen payment. Waiting for the authorisation webhook to be processed.'
+                    );
+                }
+
                 $this->captureService->doOpenInvoiceCapture(
-                    $notificationEntity->getMerchantReference(),
-                    $notificationEntity->getAmountValue(),
+                    $merchantReference,
+                    $requiredCaptureAmount,
                     $context
                 );
             } else {
