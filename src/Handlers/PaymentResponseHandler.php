@@ -161,12 +161,10 @@ class PaymentResponseHandler
          * payment response contains `order` object.
          */
         $isGiftcardOrderResponse = false;
-        if (
-            !empty($response['paymentMethod']) &&
+        if (!empty($response['paymentMethod']) &&
             !empty($response['paymentMethod']['type']) &&
             $response['paymentMethod']['type'] === 'giftcard' &&
-            array_key_exists('order', $response)
-        ) {
+            array_key_exists('order', $response)) {
             $isGiftcardOrderResponse = true;
         }
 

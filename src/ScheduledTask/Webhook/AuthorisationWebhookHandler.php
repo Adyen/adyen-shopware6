@@ -24,9 +24,12 @@
 
 namespace Adyen\Shopware\ScheduledTask\Webhook;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\PluginPaymentMethodsService;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -35,40 +38,39 @@ use Shopware\Core\Framework\Context;
 
 class AuthorisationWebhookHandler implements WebhookHandlerInterface
 {
-    /**
-     * @var LoggerInterface
-     */
+    /** @var LoggerInterface */
     private $logger;
 
-    /**
-     * @var CaptureService
-     */
+    /** @var CaptureService */
     private $captureService;
 
-    /**
-     * @var AdyenPaymentService
-     */
+    /** @var AdyenPaymentService */
     private $adyenPaymentService;
 
-    /**
-     * @var OrderTransactionStateHandler
-     */
+    /** @var OrderTransactionStateHandler */
     private $orderTransactionStateHandler;
+
+    /** @var PluginPaymentMethodsService */
+    private $pluginPaymentMethodsService;
 
     /**
      * @param CaptureService $captureService
+     * @param AdyenPaymentService $adyenPaymentService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param PluginPaymentMethodsService $pluginPaymentMethodsService
      * @param LoggerInterface $logger
      */
     public function __construct(
         CaptureService $captureService,
         AdyenPaymentService $adyenPaymentService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
+        PluginPaymentMethodsService $pluginPaymentMethodsService,
         LoggerInterface $logger
     ) {
         $this->captureService = $captureService;
         $this->adyenPaymentService = $adyenPaymentService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
+        $this->pluginPaymentMethodsService = $pluginPaymentMethodsService;
         $this->logger = $logger;
     }
 
@@ -79,7 +81,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      * @param string $currentTransactionState
      * @param Context $context
      * @return void
-     * @throws \Adyen\Shopware\Exception\CaptureException
+     * @throws CaptureException|AdyenException
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -102,14 +104,21 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      * @param NotificationEntity $notification
      * @param Context $context
      * @return void
-     * @throws \Adyen\Shopware\Exception\CaptureException
+     * @throws CaptureException
      */
     private function handleSuccessfulNotification(
         OrderTransactionEntity $orderTransaction,
         NotificationEntity $notification,
         Context $context
     ): void {
-        $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+        $paymentMethodHandler = $this->pluginPaymentMethodsService->getGiftcardHandlerIdentifierFromTxVariant(
+            $notification->getPaymentMethod()
+        );
+
+        if (is_null($paymentMethodHandler)) {
+            $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+        }
+
         $isManualCapture = $this->captureService->requiresManualCapture($paymentMethodHandler);
         $currencyUtil = new Currency();
         $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
