@@ -98,27 +98,27 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
             if ($this->captureService->requiresManualCapture($paymentMethodHandler)) {
                 $this->orderTransactionStateHandler->authorize($orderTransactionEntity->getId(), $context);
 
-                $merchantReference = $this->adyenPaymentService->getMerchantReferenceFromOrderReference(
-                    $notificationEntity->getMerchantReference()
-                );
+                if ($this->adyenPaymentService->isFullAmountAuthorized($orderTransactionEntity)) {
+                    $merchantReference = $this->adyenPaymentService->getMerchantReferenceFromOrderReference(
+                        $notificationEntity->getMerchantReference()
+                    );
 
-                $requiredCaptureAmount = $this->captureService->getRequiredCaptureAmount(
-                    $orderTransactionEntity->getOrderId()
-                );
+                    $requiredCaptureAmount = $this->captureService->getRequiredCaptureAmount(
+                        $orderTransactionEntity->getOrderId()
+                    );
 
-                if ($requiredCaptureAmount === 0) {
+                    $this->captureService->doOpenInvoiceCapture(
+                        $merchantReference,
+                        $requiredCaptureAmount,
+                        $context
+                    );
+                } else {
                     $exception = new CaptureException(
-                        'There is no adyen payment. Waiting for the authorisation webhook to be processed.'
+                        'Full amount has not been authorised yet.'
                     );
                     $exception->reason = CaptureService::REASON_WAITING_AUTH_WEBHOOK;
                     throw $exception;
                 }
-
-                $this->captureService->doOpenInvoiceCapture(
-                    $merchantReference,
-                    $requiredCaptureAmount,
-                    $context
-                );
             } else {
                 $this->orderTransactionStateHandler->paid($orderTransactionEntity->getId(), $context);
             }
