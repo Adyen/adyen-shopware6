@@ -50,6 +50,7 @@ class CaptureService
     use LoggerAwareTrait;
 
     const REASON_DELIVERY_STATE_MISMATCH = 'DELIVERY_STATE_MISMATCH';
+    const REASON_WAITING_AUTH_WEBHOOK = 'WAITING_AUTH_WEBHOOK';
 
     private OrderRepository $orderRepository;
     private OrderTransactionRepository $orderTransactionRepository;
@@ -305,7 +306,8 @@ class CaptureService
             $lineItemsArray[$key . '.itemVatPercentage'] = $lineItem->getPrice()->getTaxRules()
                     ->highestRate()->getPercentage() * 10;
             $lineItemsArray[$key . '.description'] = $lineItem->getLabel();
-            $lineItemsArray[$key . '.itemVatAmount'] = $lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100;
+            $lineItemsArray[$key . '.itemVatAmount'] =
+                intval($lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100);
             $lineItemsArray[$key . '.currencyCode'] = $currencyCode;
             $lineItemsArray[$key . '.numberOfItems'] = $lineItem->getQuantity();
         }

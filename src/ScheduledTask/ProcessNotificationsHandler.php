@@ -204,7 +204,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             } catch (CaptureException $exception) {
                 $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
                 $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
-                if (CaptureService::REASON_DELIVERY_STATE_MISMATCH === $exception->reason) {
+                if (CaptureService::REASON_DELIVERY_STATE_MISMATCH === $exception->reason ||
+                    CaptureService::REASON_WAITING_AUTH_WEBHOOK === $exception->reason) {
                     $this->rescheduleNotification(
                         $notification->getId(),
                         $notification->getMerchantReference(),

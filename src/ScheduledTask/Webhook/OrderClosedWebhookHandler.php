@@ -107,9 +107,11 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
                 );
 
                 if ($requiredCaptureAmount === 0) {
-                    throw new CaptureException(
+                    $exception = new CaptureException(
                         'There is no adyen payment. Waiting for the authorisation webhook to be processed.'
                     );
+                    $exception->reason = CaptureService::REASON_WAITING_AUTH_WEBHOOK;
+                    throw $exception;
                 }
 
                 $this->captureService->doOpenInvoiceCapture(
