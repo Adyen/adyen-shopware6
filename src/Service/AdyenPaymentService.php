@@ -106,7 +106,8 @@ class AdyenPaymentService
             ->getElements();
     }
 
-    public function isFullAmountAuthorized(OrderTransactionEntity $orderTransactionEntity): bool {
+    public function isFullAmountAuthorized(OrderTransactionEntity $orderTransactionEntity): bool
+    {
         $amountSum = 0;
         $adyenPaymentOrders = $this->adyenPaymentRepository
             ->getAdyenPaymentsByOrderTransaction($orderTransactionEntity->getId());

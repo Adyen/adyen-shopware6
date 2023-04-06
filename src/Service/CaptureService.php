@@ -291,7 +291,7 @@ class CaptureService
 
     private function getLineItemsArray(
         ?OrderLineItemCollection $lineItems,
-                                 $currencyCode
+        string $currencyCode
     ): array {
         $lineItemsArray = [];
         $lineIndex = 0;
@@ -317,7 +317,7 @@ class CaptureService
 
     private function buildCaptureRequest(
         string $originalReference,
-               $captureAmountInMinorUnits,
+        $captureAmountInMinorUnits,
         string $currency,
         string $salesChannelId,
         ?array $additionalData = null
