@@ -72,6 +72,7 @@
             <argument type="service" id="Adyen\Shopware\Service\RefundService"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="Adyen\Shopware\Service\PluginPaymentMethodsService"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsBalanceService">
@@ -83,23 +84,12 @@
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService" />
             <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute" />
         </service>
-        <service id="Adyen\Shopware\Service\OrdersService" autowire="true">
-        </service>
-        <service id="Adyen\Shopware\Service\OrdersCancelService" autowire="true">
-        </service>
+        <service id="Adyen\Shopware\Service\OrdersService" autowire="true"></service>
+        <service id="Adyen\Shopware\Service\OrdersCancelService" autowire="true"></service>
+        <service id="Adyen\Shopware\Service\PluginPaymentMethodsService" autowire="true"></service>
         <service id="Adyen\Shopware\Service\AdyenPaymentService">
             <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository"/>
             <argument type="service" id="order_transaction.repository"/>
-        </service>
-
-        <!--Commands-->
-        <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
-            <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
-            <tag name="console.command"/>
-        </service>
-        <service id="Adyen\Shopware\Command\ProcessWebhooksCommand">
-            <argument type="service" id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler"/>
-            <tag name="console.command"/>
         </service>
 
         <!--Service decorators-->
