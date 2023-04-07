@@ -23,13 +23,12 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class DonationService
 {
-    const SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
-
     /**
      * For donations with iDeal!
      * As iDeal does not support recurring payments and Adyen do not have the IBAN yet
@@ -148,7 +147,7 @@ class DonationService
             'paymentMethod' => [
                 'type' => $paymentMethodCode
             ],
-            'shopperInteraction' => self::SHOPPER_INTERACTION_CONTAUTH,
+            'shopperInteraction' => AbstractPaymentMethodHandler::SHOPPER_INTERACTION_CONTAUTH,
             'returnUrl' => $returnUrl
         ];
     }
