@@ -423,7 +423,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         //Validate state.data for payment and build request object
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
-        $paymentMethodEntity = $transaction->getOrderTransaction()->getPaymentMethod();
 
         //Setting payment method type if not present in statedata
         if (empty($request['paymentMethod']['type'])) {
@@ -440,7 +439,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $request['recurringProcessingModel'] = 'CardOnFile';
         }
 
-        if ($paymentMethodEntity->getHandlerIdentifier() === OneClickPaymentMethodHandler::class) {
+        if (static::class === OneClickPaymentMethodHandler::class) {
             $request['shopperInteraction'] = self::SHOPPER_INTERACTION_CONTAUTH;
         } else {
             $request['shopperInteraction'] = self::SHOPPER_INTERACTION_ECOMMERCE;
