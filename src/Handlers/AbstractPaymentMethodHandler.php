@@ -70,6 +70,9 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
+    const SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
+    const SHOPPER_INTERACTION_ECOMMERCE = 'Ecommerce';
+
     const ALLOWED_LINE_ITEM_TYPES = [
         'product',
         'option-values',
@@ -434,7 +437,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
             $request['recurringProcessingModel'] = 'CardOnFile';
-            $request['shopperInteraction'] = 'Ecommerce';
+        }
+
+        if (static::class === OneClickPaymentMethodHandler::class) {
+            $request['shopperInteraction'] = self::SHOPPER_INTERACTION_CONTAUTH;
+        } else {
+            $request['shopperInteraction'] = self::SHOPPER_INTERACTION_ECOMMERCE;
         }
 
         //Setting browser info if not present in statedata
