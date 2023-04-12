@@ -97,12 +97,25 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
         NotificationEntity $notification,
         Context $context
     ) {
-        $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
-
         $this->logger->info(
             'Handling CAPTURE notification',
             ['order' => $orderTransaction->getOrder()->getVars(), 'notification' => $notification->getVars()]
         );
+
+        $isRequiredAmountCapturedInNotification =
+            $this->captureService->checkRequiredAmountFullyCapturedInNotification(
+                $orderTransaction,
+                $notification
+            );
+
+        if ($isRequiredAmountCapturedInNotification) {
+            $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+        } else {
+            $this->logger->info(
+                'Required amount was not fully captured. Payment state will not change.',
+                ['order' => $orderTransaction->getOrder()->getVars(), 'notification' => $notification->getVars()]
+            );
+        }
 
         $this->captureService->handleCaptureNotification(
             $orderTransaction,

@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service\Repository;
 
+use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -52,15 +53,20 @@ class AdyenPaymentCaptureRepository
      * Get all captures linked to an order, based on the order id
      *
      * @param string $orderId
+     * @param bool|null $isOnlySuccess
      * @return EntityCollection
      */
-    public function getCaptureRequestsByOrderId(string $orderId): EntityCollection
+    public function getCaptureRequestsByOrderId(string $orderId, bool $isOnlySuccess = null): EntityCollection
     {
         $criteria = new Criteria();
         $criteria->addAssociation('orderTransaction');
         $criteria->addAssociation('orderTransaction.order');
         $criteria->addAssociation('orderTransaction.order.currency');
         $criteria->addFilter(new EqualsFilter('orderTransaction.order.id', $orderId));
+
+        if ($isOnlySuccess === true) {
+            $criteria->addFilter(new EqualsFilter('status', PaymentCaptureEntity::STATUS_SUCCESS));
+        }
 
         return $this->repository->search($criteria, Context::createDefaultContext());
     }

@@ -34,13 +34,14 @@ use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
-use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
@@ -94,6 +95,9 @@ class AdminController
     /** @var AdyenPaymentService */
     private $adyenPaymentService;
 
+    /** @var OrderTransactionRepository */
+    private $orderTransactionRepository;
+
     /**
      * AdminController constructor.
      *
@@ -108,6 +112,7 @@ class AdminController
      * @param Currency $currencyUtil
      * @param ConfigurationService $configurationService
      * @param AdyenPaymentService $adyenPaymentService
+     * @param OrderTransactionRepository $orderTransactionRepository
      */
     public function __construct(
         LoggerInterface $logger,
@@ -120,7 +125,8 @@ class AdminController
         CurrencyFormatter $currencyFormatter,
         Currency $currencyUtil,
         ConfigurationService $configurationService,
-        AdyenPaymentService $adyenPaymentService
+        AdyenPaymentService $adyenPaymentService,
+        OrderTransactionRepository $orderTransactionRepository
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
@@ -133,6 +139,7 @@ class AdminController
         $this->currencyUtil = $currencyUtil;
         $this->configurationService = $configurationService;
         $this->adyenPaymentService = $adyenPaymentService;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
@@ -204,7 +211,14 @@ class AdminController
         }
 
         $currencyIso = $order->getCurrency()->getIsoCode();
-        $amountInMinorUnit = $this->currencyUtil->sanitize($order->getAmountTotal(), $currencyIso);
+        $adyenPayments = $this->adyenPaymentService->getAdyenPayments($orderId);
+
+        if (isset($adyenPayments)) {
+            // This line assumes there can be only one manual capture partial payment in an order.
+            $amountInMinorUnit = $this->captureService->getRequiredCaptureAmount($orderId);
+        } else {
+            $amountInMinorUnit = $this->currencyUtil->sanitize($order->getAmountTotal(), $currencyIso);
+        }
 
         try {
             $results = $this->captureService
@@ -237,6 +251,43 @@ class AdminController
         $captureRequests = $this->adyenPaymentCaptureRepository->getCaptureRequestsByOrderId($orderId);
 
         return new JsonResponse($this->buildResponseData($captureRequests->getElements()));
+    }
+
+    /**
+     * Get payment capture requests by order
+     *
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/is-capture-allowed",
+     *     name="api.adyen_payment_capture_allowed.get",
+     *     methods={"GET"}
+     * )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function isCaptureAllowed(string $orderId)
+    {
+        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+            $orderId,
+            [OrderTransactionStates::STATE_AUTHORIZED, OrderTransactionStates::STATE_IN_PROGRESS]
+        );
+
+        if (isset($orderTransaction)) {
+            $isFullAmountAuthorised = $this->adyenPaymentService->isFullAmountAuthorized($orderTransaction);
+            $isRequiredAmountCaptured = $this->captureService->isRequiredAmountCaptured($orderTransaction);
+            $isPaymentMethodSupportsManualCapture = $this->captureService->requiresManualCapture(
+                $orderTransaction->getPaymentMethod()->getHandlerIdentifier()
+            );
+
+            if ($isPaymentMethodSupportsManualCapture && $isFullAmountAuthorised && !$isRequiredAmountCaptured) {
+                $isCaptureAllowed = true;
+            } else {
+                $isCaptureAllowed = false;
+            }
+        } else {
+            $isCaptureAllowed = false;
+        }
+
+        return new JsonResponse($isCaptureAllowed);
     }
 
     /**

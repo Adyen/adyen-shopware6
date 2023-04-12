@@ -74,6 +74,15 @@ class AdyenPaymentService
         );
     }
 
+    /**
+     * @param string $orderReference
+     * @return string|null
+     */
+    public function getMerchantReferenceFromOrderReference(string $orderReference): ?string
+    {
+        return $this->adyenPaymentRepository->getMerchantReferenceByMerchantOrderReference($orderReference);
+    }
+
     public function getAdyenPayments(string $orderId): array
     {
         $orderTransaction = $this->orderTransactionRepository
@@ -97,13 +106,11 @@ class AdyenPaymentService
             ->getElements();
     }
 
-    public function isFullAmountAuthorized(
-        string $merchantOrderReference,
-        OrderTransactionEntity $orderTransactionEntity
-    ): bool {
+    public function isFullAmountAuthorized(OrderTransactionEntity $orderTransactionEntity): bool
+    {
         $amountSum = 0;
         $adyenPaymentOrders = $this->adyenPaymentRepository
-            ->getAdyenPaymentsByMerchantOrderReference($merchantOrderReference);
+            ->getAdyenPaymentsByOrderTransaction($orderTransactionEntity->getId());
 
         foreach ($adyenPaymentOrders as $adyenPaymentOrder) {
             $amountSum += $adyenPaymentOrder->getAmountValue();
