@@ -31,6 +31,7 @@ use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Exception\CaptureException;
+use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
@@ -297,7 +298,7 @@ class CaptureService
         $lineIndex = 0;
         foreach ($lineItems as $lineItem) {
             // Skip non-product line items.
-            if (empty($lineItem->getProductId()) || $lineItem->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
+            if (!in_array($lineItem->getType(), AbstractPaymentMethodHandler::ALLOWED_LINE_ITEM_TYPES)) {
                 continue;
             }
 
