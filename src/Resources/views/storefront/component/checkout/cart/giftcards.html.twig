@@ -12,6 +12,9 @@
                  data-set-giftcard-url="{{ adyenFrontendData.setGiftcardUrl }}"
                  data-remove-giftcard-url="{{ adyenFrontendData.removeGiftcardUrl }}"
                  data-switch-context-url="{{ adyenFrontendData.switchContextUrl }}"
+                 data-translation-adyen-giftcard-remaining-balance="{{ "adyen.giftcard.remainingBalance" | trans }}"
+                 data-translation-adyen-giftcard-discount="{{ "adyen.giftcard.discount" | trans }}"
+                 data-translation-adyen-giftcard-remaining-amount="{{ "adyen.giftcard.remainingAmount" | trans }}"
             ></div>
             <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
             <hr>
@@ -32,13 +35,14 @@
                 </span>
             {% endfor %}
             <div class="clearfix"></div>
-            <a href="javascript:void(0)" class="btn btn-xs adyen-remove-giftcard btn-outline-dark">Remove giftcard</a>
-            <span class="adyen-close-giftcard-component" title="Close giftcard">&times;</span>
+            <a href="javascript:void(0)" class="btn btn-xs adyen-remove-giftcard btn-outline-dark">
+                {{ "adyen.giftcard.removeGiftcard" | trans }}
+            </a>
+            <span class="adyen-close-giftcard-component" title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
             <h6 class="adyen-giftcard-header"></h6>
             <p class="adyen-remaining-balance"></p>
             <div id="adyen-giftcard-component"></div>
             <hr>
         </div>
-
     {% endif %}
 {% endblock %}

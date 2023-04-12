@@ -2,6 +2,14 @@
     "adyen": {
         "updateDetails": "Update payment details",
         "loading": "Loading...",
-        "paymentMethodSelectionError": "Unfortunately, something went wrong saving the payment method selection. Please select a different payment method."
+        "paymentMethodSelectionError": "Unfortunately, something went wrong saving the payment method selection. Please select a different payment method.",
+        "giftcard": {
+            "addGiftcards": "Add Giftcards",
+            "removeGiftcard": "Remove Giftcard",
+            "closeGiftcardSection": "Close Giftcard Section",
+            "remainingBalance": "Remaining giftcard balance",
+            "remainingAmount": "Remaining amount",
+            "discount": "Giftcard discount"
+        }
     }
 }

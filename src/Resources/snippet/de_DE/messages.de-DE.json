@@ -2,6 +2,14 @@
     "adyen": {
         "updateDetails": "Zahlungsdetails aktualisieren",
         "loading": "Laden...",
-        "paymentMethodSelectionError": "Leider ist beim Speichern der Auswahl der Zahlungsmethode ein Fehler aufgetreten. Bitte wählen Sie eine andere Zahlungsmethode."
+        "paymentMethodSelectionError": "Leider ist beim Speichern der Auswahl der Zahlungsmethode ein Fehler aufgetreten. Bitte wählen Sie eine andere Zahlungsmethode.",
+        "giftcard": {
+            "addGiftcards": "Geschenkkarten hinzufügen",
+            "removeGiftcard": "Geschenkkarte entfernen",
+            "closeGiftcardSection": "Geschenkkartenbereich schließen",
+            "remainingBalance": "Verbleibendes guthaben der geschenkkarte",
+            "remainingAmount": "Restbetrag",
+            "discount": "Geschenkkarten-Rabatt"
+        }
     }
 }
