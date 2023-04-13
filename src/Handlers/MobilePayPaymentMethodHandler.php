@@ -27,6 +27,9 @@ namespace Adyen\Shopware\Handlers;
 
 class MobilePayPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
+    public static $supportsManualCapture = true;
+    public static $supportsPartialCapture = true;
+
     public static function getPaymentMethodCode()
     {
         return 'mobilepay';
