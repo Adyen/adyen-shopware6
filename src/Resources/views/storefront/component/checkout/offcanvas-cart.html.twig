@@ -5,7 +5,9 @@
     {{ parent() }}
 
     {% if adyenFrontendData and adyenFrontendData.giftcards %}
-        <a href="{{ adyenFrontendData.shoppingCartPageUrl }}" class="btn btn-xs btn-outline-info float-right mb-3">&plus; Add Giftcards</a>
+        <a href="{{ adyenFrontendData.shoppingCartPageUrl }}" class="btn btn-xs btn-outline-info float-right mb-3">
+            &plus; {{ "adyen.giftcard.addGiftcards" | trans }}
+        </a>
         <div class="clearfix"></div>
     {% endif %}
 {% endblock %}
