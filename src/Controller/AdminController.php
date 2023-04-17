@@ -228,7 +228,7 @@ class AdminController
 
             return new JsonResponse([
                 'success' => false,
-                'message' => 'adyen.error',
+                'message' => $e->getMessage()
             ]);
         }
 
@@ -274,7 +274,7 @@ class AdminController
         if (isset($orderTransaction)) {
             $isFullAmountAuthorised = $this->adyenPaymentService->isFullAmountAuthorized($orderTransaction);
             $isRequiredAmountCaptured = $this->captureService->isRequiredAmountCaptured($orderTransaction);
-            $isPaymentMethodSupportsManualCapture = $this->captureService->requiresManualCapture(
+            $isPaymentMethodSupportsManualCapture = $this->captureService->isManualCapture(
                 $orderTransaction->getPaymentMethod()->getHandlerIdentifier()
             );
 

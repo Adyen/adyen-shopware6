@@ -121,40 +121,42 @@ class CaptureService
 
             $results = [];
             foreach ($deliveries as $delivery) {
-                if ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState()) {
-                    $lineItems = $order->getLineItems();
-                    $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
-
-                    $additionalData = array_merge($lineItemsArray, [
-                        'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
-                        'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
-                    ]);
-
-                    $request = $this->buildCaptureRequest(
-                        $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
-                        $captureAmount,
-                        $currencyIso,
-                        $order->getSalesChannelId(),
-                        $additionalData
-                    );
-
-                    $response = $this->sendCaptureRequest($client, $request);
-                    if ('[capture-received]' === $response['response']) {
-                        $this->saveCaptureRequest(
-                            $orderTransaction,
-                            $response['pspReference'],
-                            PaymentCaptureEntity::SOURCE_SHOPWARE,
-                            PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
-                            intval($captureAmount),
-                            $context
-                        );
-                    }
-                    $results[] = $response;
-                } else {
+                if ($this->configurationService->isCaptureOnShipmentEnabled($order->getSalesChannelId()) &&
+                    $delivery->getStateMachineState()->getId() !== $this->configurationService->getOrderState()) {
                     $exception = new CaptureException('Order delivery status does not match configuration');
                     $exception->reason = self::REASON_DELIVERY_STATE_MISMATCH;
+
                     throw $exception;
                 }
+
+                $lineItems = $order->getLineItems();
+                $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
+
+                $additionalData = array_merge($lineItemsArray, [
+                    'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
+                    'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
+                ]);
+
+                $request = $this->buildCaptureRequest(
+                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
+                    $captureAmount,
+                    $currencyIso,
+                    $order->getSalesChannelId(),
+                    $additionalData
+                );
+
+                $response = $this->sendCaptureRequest($client, $request);
+                if ('[capture-received]' === $response['response']) {
+                    $this->saveCaptureRequest(
+                        $orderTransaction,
+                        $response['pspReference'],
+                        PaymentCaptureEntity::SOURCE_SHOPWARE,
+                        PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
+                        intval($captureAmount),
+                        $context
+                    );
+                }
+                $results[] = $response;
             }
             $this->logger->info('Capture for order_number ' . $order->getOrderNumber() . ' end.');
 
@@ -178,9 +180,22 @@ class CaptureService
         return $dateTime;
     }
 
-    public function requiresManualCapture($handlerIdentifier)
+    public function isManualCapture($handlerIdentifier)
     {
-        return $this->configurationService->isManualCaptureActive() && $handlerIdentifier::$isOpenInvoice;
+        // TODO:: fix capture on shipment before pushing
+        // TODO:: IF PAYPAL, check manual_capture_paypal flag and return the result.
+
+        if ($handlerIdentifier::$isOpenInvoice) {
+            if ($this->configurationService->isAutoCaptureActiveForOpenInvoices()) {
+                // Open invoice payment methods can be auto capture if the merchant account is authorised.
+                return false;
+            } else {
+                // Open invoice payment methods are manual capture by default.
+                return true;
+            }
+        } else {
+            return $this->configurationService->isManualCaptureActive() && $handlerIdentifier::$supportsManualCapture;
+        }
     }
 
     public function saveCaptureRequest(

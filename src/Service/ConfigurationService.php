@@ -217,6 +217,30 @@ class ConfigurationService
     }
 
     /**
+     * Merchant account should be authorised in order to use auto capture for open invoices.
+     * This can be done via reaching out to Adyen support.
+     *
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function isAutoCaptureActiveForOpenInvoices(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.autoCaptureOpenInvoice', $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function isCaptureOnShipmentEnabled(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.captureOnShipmentEnabled',
+            $salesChannelId
+        );
+    }
+
+    /**
      * @param string|null $salesChannelId
      * @return array|bool|float|int|string|null
      */

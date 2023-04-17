@@ -29,6 +29,7 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PluginPaymentMethodsService;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
@@ -53,11 +54,15 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
     /** @var PluginPaymentMethodsService */
     private $pluginPaymentMethodsService;
 
+    /** @var ConfigurationService */
+    private $configurationService;
+
     /**
      * @param CaptureService $captureService
      * @param AdyenPaymentService $adyenPaymentService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param PluginPaymentMethodsService $pluginPaymentMethodsService
+     * @param ConfigurationService $configurationService
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -65,12 +70,14 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         AdyenPaymentService $adyenPaymentService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         PluginPaymentMethodsService $pluginPaymentMethodsService,
+        ConfigurationService $configurationService,
         LoggerInterface $logger
     ) {
         $this->captureService = $captureService;
         $this->adyenPaymentService = $adyenPaymentService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->pluginPaymentMethodsService = $pluginPaymentMethodsService;
+        $this->configurationService = $configurationService;
         $this->logger = $logger;
     }
 
@@ -119,7 +126,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
             $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
         }
 
-        $isManualCapture = $this->captureService->requiresManualCapture($paymentMethodHandler);
+        $isManualCapture = $this->captureService->isManualCapture($paymentMethodHandler);
         $currencyUtil = new Currency();
         $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
         $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
@@ -141,15 +148,17 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                 );
                 $this->orderTransactionStateHandler->authorize($orderTransaction->getId(), $context);
 
-                $this->logger->info(
-                    'Attempting capture for open invoice payment.',
-                    ['notification' => $notification->getVars()]
-                );
-                $this->captureService->doOpenInvoiceCapture(
-                    $notification->getMerchantReference(),
-                    $notification->getAmountValue(),
-                    $context
-                );
+                if ($this->configurationService->isCaptureOnShipmentEnabled()) {
+                    $this->logger->info(
+                        'Attempting capture for open invoice payment.',
+                        ['notification' => $notification->getVars()]
+                    );
+                    $this->captureService->doOpenInvoiceCapture(
+                        $notification->getMerchantReference(),
+                        $notification->getAmountValue(),
+                        $context
+                    );
+                }
             } else {
                     $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
             }

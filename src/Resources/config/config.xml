@@ -118,27 +118,41 @@
         </input-field>
     </card>
     <card>
-        <title>Manual Capture</title>
+        <title>Capture Settings</title>
         <input-field type="bool">
             <name>manualCaptureEnabled</name>
-            <label>Enabled</label>
+            <label>Manual capture enabled for non-open invoice payment methods</label>
             <helpText>
                 Please note that this configuration will only be enabled for Open Invoice payment methods such as Klarna &amp; RatePay.
                 See https://docs.adyen.com/online-payments/classic-integrations/hosted-payment-pages/klarna-afterpay-and-ratepay-open-invoice for more information.
             </helpText>
         </input-field>
+        <input-field type="bool">
+            <name>autoCaptureOpenInvoice</name>
+            <label>Auto capture enabled for open invoice payment methods</label>
+            <helpText>
+
+            </helpText>
+        </input-field>
+        <input-field type="bool">
+            <name>captureOnShipmentEnabled</name>
+            <label>Capture on shipment</label>
+            <helpText>
+
+            </helpText>
+        </input-field>
         <input-field type="int">
             <name>rescheduleTime</name>
-            <label>Capture Delay</label>
+            <label>Capture delay</label>
             <helpText>
-                This is the time to wait before trying the next capture in seconds
+                This is the time to wait before trying the next capture in seconds if the shipping state condition is set and not satisfied.
             </helpText>
             <defaultValue>43200</defaultValue>
         </input-field>
         <component name="sw-entity-single-select-override">
             <name>orderState</name>
             <entity>state_machine_state</entity>
-            <label>Order Shipping State</label>
+            <label>Order shipping state for triggering capture</label>
         </component>
     </card>
     <card>
