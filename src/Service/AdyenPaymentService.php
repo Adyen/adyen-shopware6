@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Util\Currency;
@@ -104,6 +105,20 @@ class AdyenPaymentService
                 Context::createDefaultContext()
             )
             ->getElements();
+    }
+
+    /**
+     * @param string $pspreference
+     * @return AdyenPaymentEntity|null
+     */
+    public function getAdyenPayment(string $pspreference): ?AdyenPaymentEntity
+    {
+        return $this->adyenPaymentRepository->getRepository()
+            ->search(
+                (new Criteria())->addFilter(new EqualsFilter('pspreference', $pspreference)),
+                Context::createDefaultContext()
+            )
+            ->first();
     }
 
     public function isFullAmountAuthorized(OrderTransactionEntity $orderTransactionEntity): bool
