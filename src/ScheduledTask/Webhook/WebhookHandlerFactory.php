@@ -25,9 +25,9 @@
 namespace Adyen\Shopware\ScheduledTask\Webhook;
 
 use Adyen\Shopware\Service\CaptureService;
+use Adyen\Shopware\Service\PluginPaymentMethodsService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\AdyenPaymentService;
-use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Webhook\EventCodes;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Psr\Log\LoggerInterface;
@@ -35,36 +35,30 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 
 class WebhookHandlerFactory
 {
-    /**
-     * @var LoggerInterface
-     */
+    /** @var LoggerInterface */
     private static $logger;
 
-    /**
-     * @var CaptureService
-     */
+    /** @var CaptureService */
     private static $captureService;
 
-    /**
-     * @var RefundService
-     */
+    /** @var RefundService */
     private static $refundService;
 
-    /**
-     * @var AdyenPaymentService
-     */
+    /** @var AdyenPaymentService */
     private static $adyenPaymentService;
 
-    /**
-     * @var OrderTransactionStateHandler
-     */
+    /** @var OrderTransactionStateHandler */
     private static $orderTransactionStateHandler;
+
+    /** @var PluginPaymentMethodsService */
+    private static $pluginPaymentMethodsService;
 
     /**
      * @param CaptureService $captureService
-     * @param OrderTransactionStateHandler $orderTransactionStateHandler
-     * @param RefundService $refundService
      * @param AdyenPaymentService $adyenPaymentService
+     * @param RefundService $refundService
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param PluginPaymentMethodsService $pluginPaymentMethodsService
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -72,12 +66,14 @@ class WebhookHandlerFactory
         AdyenPaymentService $adyenPaymentService,
         RefundService $refundService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
+        PluginPaymentMethodsService $pluginPaymentMethodsService,
         LoggerInterface $logger
     ) {
         self::$captureService = $captureService;
         self::$adyenPaymentService = $adyenPaymentService;
         self::$refundService = $refundService;
         self::$orderTransactionStateHandler = $orderTransactionStateHandler;
+        self::$pluginPaymentMethodsService = $pluginPaymentMethodsService;
         self::$logger = $logger;
     }
 
@@ -93,6 +89,7 @@ class WebhookHandlerFactory
                     self::$captureService,
                     self::$adyenPaymentService,
                     self::$orderTransactionStateHandler,
+                    self::$pluginPaymentMethodsService,
                     self::$logger
                 );
                 break;

@@ -31,6 +31,8 @@
         "noCaptureRequests": "No capture requests have been sent",
         "sendCaptureRequest": "Send Capture Request",
         "captureConfirm": "Capture payment for order",
-        "captureSuccessful": "Capture request has been successfully sent"
+        "captureSuccessful": "Capture request has been successfully sent",
+        "pendingWebhook": "Order is pending webhook.",
+        "authorisedPayments": "Authorised Payments"
     }
 }

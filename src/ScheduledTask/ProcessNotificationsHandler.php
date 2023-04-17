@@ -27,11 +27,11 @@ namespace Adyen\Shopware\ScheduledTask;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory;
+use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
-use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Notification;
 use Adyen\Webhook\PaymentStates;
@@ -88,9 +88,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private OrderTransactionRepository $orderTransactionRepository;
 
     /**
-     * @var AdyenPaymentRepository
+     * @var AdyenPaymentService
      */
-    private AdyenPaymentRepository $adyenPaymentRepository;
+    private AdyenPaymentService $adyenPaymentService;
 
     /**
      * @var CaptureService
@@ -121,7 +121,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param OrderRepository $orderRepository
      * @param EntityRepositoryInterface $paymentMethodRepository
      * @param OrderTransactionRepository $orderTransactionRepository
-     * @param AdyenPaymentRepository $adyenPaymentRepository
+     * @param AdyenPaymentService $adyenPaymentService
      * @param CaptureService $captureService
      * @param WebhookHandlerFactory $webhookHandlerFactory
      */
@@ -131,7 +131,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderRepository $orderRepository,
         EntityRepositoryInterface $paymentMethodRepository,
         OrderTransactionRepository $orderTransactionRepository,
-        AdyenPaymentRepository $adyenPaymentRepository,
+        AdyenPaymentService $adyenPaymentService,
         CaptureService $captureService,
         WebhookHandlerFactory $webhookHandlerFactory
     ) {
@@ -140,7 +140,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->orderRepository = $orderRepository;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
-        $this->adyenPaymentRepository = $adyenPaymentRepository;
+        $this->adyenPaymentService = $adyenPaymentService;
         $this->captureService = $captureService;
         self::$webhookHandlerFactory = $webhookHandlerFactory;
     }
@@ -204,7 +204,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             } catch (CaptureException $exception) {
                 $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
                 $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
-                if (CaptureService::REASON_DELIVERY_STATE_MISMATCH === $exception->reason) {
+                if (CaptureService::REASON_DELIVERY_STATE_MISMATCH === $exception->reason ||
+                    CaptureService::REASON_WAITING_AUTH_WEBHOOK === $exception->reason) {
                     $this->rescheduleNotification(
                         $notification->getId(),
                         $notification->getMerchantReference(),
@@ -348,8 +349,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         if ($notification->getEventCode() === EventCodes::ORDER_CLOSED) {
             // get merchant reference from adyen_payment table
             $merchantOrderReference = $notification->getMerchantReference();
-            $merchantReference = $this->adyenPaymentRepository
-                ->getMerchantReferenceByMerchantOrderReference($merchantOrderReference);
+            $merchantReference = $this->adyenPaymentService->getMerchantReferenceFromOrderReference(
+                $merchantOrderReference
+            );
         } else {
             // otherwise get the merchant reference from the notification
             $merchantReference = $notification->getMerchantReference();

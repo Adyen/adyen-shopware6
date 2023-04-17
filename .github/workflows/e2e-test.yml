@@ -1,12 +1,16 @@
 name: E2E Test
 run-name: Headless E2E tests for Adyen Shopware Plugin
 
-on: [pull_request]
+on: 
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   e2e:
     name: Shopware 6 E2E
-    runs-on: ubuntu-latest
+    runs-on:
+      group: larger-runners
+      labels: ubuntu-latest-8-cores
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -41,6 +45,9 @@ jobs:
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.apiKeyTest "${{secrets.ADYEN_API_KEY}}"'
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.merchantAccount "${{secrets.ADYEN_MERCHANT}}"'
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.clientKeyTest "${{secrets.ADYEN_CLIENT_KEY}}"'
+          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.adyenGivingCharityMerchantAccount "${{secrets.DONATION_ACCOUNT}}"'
+          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.adyenGivingEnabled true'
+          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.adyenGivingDonationAmounts "1,5,10"'
           docker exec shopware6 bash -c 'php bin/console adyen:payment-method:enable --all'
           docker exec shopware6 bash -c 'php bin/console adyen:fetch-logos'
 

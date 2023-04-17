@@ -557,9 +557,9 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     appendGiftcardSummary() {
         if(parseInt(adyenCheckoutOptions.giftcardDiscount, 10) && this.shoppingCartSummaryBlock.length) {
-            this.shoppingCartSummaryDetails = $('<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Giftcard discount</dt>' +
+            this.shoppingCartSummaryDetails = $('<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.translationAdyenGiftcardDiscount + '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.currencySymbol + this.giftcardDiscount + '</dd>' +
-                '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">Remaining amount</dt>' +
+                '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.translationAdyenGiftcardRemainingAmount + '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.currencySymbol + this.remainingAmount + '</dd>');
             this.shoppingCartSummaryDetails.appendTo(this.shoppingCartSummaryBlock[0]);
         }

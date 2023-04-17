@@ -24,23 +24,31 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class AdyenPaymentService
 {
-    protected AdyenPaymentRepository $adyenPaymentRepository;
-
     const MANUAL_CAPTURE = 'manual_capture';
     const AUTO_CAPTURE = 'auto_capture';
 
+    protected AdyenPaymentRepository $adyenPaymentRepository;
+    protected EntityRepositoryInterface $orderTransactionRepository;
+
     public function __construct(
-        AdyenPaymentRepository $adyenPaymentRepository
+        AdyenPaymentRepository $adyenPaymentRepository,
+        EntityRepositoryInterface $orderTransactionRepository
     ) {
         $this->adyenPaymentRepository = $adyenPaymentRepository;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     public function insertAdyenPayment(
@@ -67,13 +75,57 @@ class AdyenPaymentService
         );
     }
 
-    public function isFullAmountAuthorized(
-        string $merchantOrderReference,
-        OrderTransactionEntity $orderTransactionEntity
-    ): bool {
+    /**
+     * @param string $orderReference
+     * @return string|null
+     */
+    public function getMerchantReferenceFromOrderReference(string $orderReference): ?string
+    {
+        return $this->adyenPaymentRepository->getMerchantReferenceByMerchantOrderReference($orderReference);
+    }
+
+    public function getAdyenPayments(string $orderId): array
+    {
+        $orderTransaction = $this->orderTransactionRepository
+            ->search(
+                (new Criteria())
+                    ->addFilter((new EqualsFilter('orderId', $orderId)))
+                    ->addAssociation('order')
+                    ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
+                Context::createDefaultContext()
+            )
+            ->first();
+
+        return $this->adyenPaymentRepository->getRepository()
+            ->search(
+                (new Criteria())
+                    ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
+                    ->addAssociation('orderTransaction.order')
+                    ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
+                Context::createDefaultContext()
+            )
+            ->getElements();
+    }
+
+    /**
+     * @param string $pspreference
+     * @return AdyenPaymentEntity|null
+     */
+    public function getAdyenPayment(string $pspreference): ?AdyenPaymentEntity
+    {
+        return $this->adyenPaymentRepository->getRepository()
+            ->search(
+                (new Criteria())->addFilter(new EqualsFilter('pspreference', $pspreference)),
+                Context::createDefaultContext()
+            )
+            ->first();
+    }
+
+    public function isFullAmountAuthorized(OrderTransactionEntity $orderTransactionEntity): bool
+    {
         $amountSum = 0;
         $adyenPaymentOrders = $this->adyenPaymentRepository
-            ->getAdyenPaymentsByMerchantOrderReference($merchantOrderReference);
+            ->getAdyenPaymentsByOrderTransaction($orderTransactionEntity->getId());
 
         foreach ($adyenPaymentOrders as $adyenPaymentOrder) {
             $amountSum += $adyenPaymentOrder->getAmountValue();

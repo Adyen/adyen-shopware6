@@ -26,9 +26,11 @@ namespace Adyen\Shopware\Controller;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
+use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\CaptureException;
+use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
@@ -36,8 +38,10 @@ use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
@@ -47,7 +51,6 @@ use Shopware\Core\System\Currency\CurrencyFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\RouterInterface;
 
 /**
  * @RouteScope(scopes={"administration"})
@@ -71,9 +74,7 @@ class AdminController
     /** @var AdyenRefundRepository */
     private $adyenRefundRepository;
 
-    /**
-     * @var NotificationService
-     */
+    /** @var NotificationService */
     private $notificationService;
 
     /** @var CurrencyFormatter */
@@ -88,6 +89,15 @@ class AdminController
     /** @var AdyenPaymentCaptureRepository */
     private $adyenPaymentCaptureRepository;
 
+    /** @var ConfigurationService */
+    private $configurationService;
+
+    /** @var AdyenPaymentService */
+    private $adyenPaymentService;
+
+    /** @var OrderTransactionRepository */
+    private $orderTransactionRepository;
+
     /**
      * AdminController constructor.
      *
@@ -100,6 +110,9 @@ class AdminController
      * @param CaptureService $captureService
      * @param CurrencyFormatter $currencyFormatter
      * @param Currency $currencyUtil
+     * @param ConfigurationService $configurationService
+     * @param AdyenPaymentService $adyenPaymentService
+     * @param OrderTransactionRepository $orderTransactionRepository
      */
     public function __construct(
         LoggerInterface $logger,
@@ -110,7 +123,10 @@ class AdminController
         NotificationService $notificationService,
         CaptureService $captureService,
         CurrencyFormatter $currencyFormatter,
-        Currency $currencyUtil
+        Currency $currencyUtil,
+        ConfigurationService $configurationService,
+        AdyenPaymentService $adyenPaymentService,
+        OrderTransactionRepository $orderTransactionRepository
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
@@ -121,6 +137,9 @@ class AdminController
         $this->captureService = $captureService;
         $this->currencyFormatter = $currencyFormatter;
         $this->currencyUtil = $currencyUtil;
+        $this->configurationService = $configurationService;
+        $this->adyenPaymentService = $adyenPaymentService;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
@@ -192,7 +211,14 @@ class AdminController
         }
 
         $currencyIso = $order->getCurrency()->getIsoCode();
-        $amountInMinorUnit = $this->currencyUtil->sanitize($order->getAmountTotal(), $currencyIso);
+        $adyenPayments = $this->adyenPaymentService->getAdyenPayments($orderId);
+
+        if (isset($adyenPayments)) {
+            // This line assumes there can be only one manual capture partial payment in an order.
+            $amountInMinorUnit = $this->captureService->getRequiredCaptureAmount($orderId);
+        } else {
+            $amountInMinorUnit = $this->currencyUtil->sanitize($order->getAmountTotal(), $currencyIso);
+        }
 
         try {
             $results = $this->captureService
@@ -225,6 +251,43 @@ class AdminController
         $captureRequests = $this->adyenPaymentCaptureRepository->getCaptureRequestsByOrderId($orderId);
 
         return new JsonResponse($this->buildResponseData($captureRequests->getElements()));
+    }
+
+    /**
+     * Get payment capture requests by order
+     *
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/is-capture-allowed",
+     *     name="api.adyen_payment_capture_allowed.get",
+     *     methods={"GET"}
+     * )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function isCaptureAllowed(string $orderId)
+    {
+        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+            $orderId,
+            [OrderTransactionStates::STATE_AUTHORIZED, OrderTransactionStates::STATE_IN_PROGRESS]
+        );
+
+        if (isset($orderTransaction)) {
+            $isFullAmountAuthorised = $this->adyenPaymentService->isFullAmountAuthorized($orderTransaction);
+            $isRequiredAmountCaptured = $this->captureService->isRequiredAmountCaptured($orderTransaction);
+            $isPaymentMethodSupportsManualCapture = $this->captureService->requiresManualCapture(
+                $orderTransaction->getPaymentMethod()->getHandlerIdentifier()
+            );
+
+            if ($isPaymentMethodSupportsManualCapture && $isFullAmountAuthorised && !$isRequiredAmountCaptured) {
+                $isCaptureAllowed = true;
+            } else {
+                $isCaptureAllowed = false;
+            }
+        } else {
+            $isCaptureAllowed = false;
+        }
+
+        return new JsonResponse($isCaptureAllowed);
     }
 
     /**
@@ -361,6 +424,39 @@ class AdminController
                 'canBeRescheduled' => $this->notificationService->canBeRescheduled($notification),
                 'errorCount' => $notification->getErrorCount(),
                 'errorMessage' => $notification->getErrorMessage()
+            ];
+        }
+
+        return new JsonResponse($response);
+    }
+
+    /**
+     * Get all the authorised payments of an order from adyen_payment table.
+     *
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/partial-payments",
+     *      methods={"GET"}
+     *     )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function getPartialPayments(string $orderId): JsonResponse
+    {
+        $order = $this->orderRepository->getOrder($orderId, Context::createDefaultContext());
+        $adyenPayments = $this->adyenPaymentService->getAdyenPayments($orderId);
+        $response = [];
+
+        /** @var AdyenPaymentEntity $adyenPayments */
+        foreach ($adyenPayments as $payment) {
+            $response[] = [
+                'pspReference' => $payment->pspreference,
+                'method' => $payment->paymentMethod,
+                'amount' => $payment->amountValue . ' ' . $payment->amountCurrency,
+                'caLink' => sprintf(
+                    "https://ca-%s.adyen.com/ca/ca/accounts/showTx.shtml?pspReference=%s&txType=Payment",
+                    $this->configurationService->getEnvironment($order->getSalesChannelId()),
+                    $payment->pspreference
+                )
             ];
         }
 
