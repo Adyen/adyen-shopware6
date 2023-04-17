@@ -31,6 +31,7 @@ use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\PluginPaymentMethodsService;
 use Adyen\Util\Currency;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -125,7 +126,10 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
         $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
 
-        $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
+        $adyenPayment = $this->adyenPaymentService->getAdyenPayment($notification->getPspreference());
+        if (is_null($adyenPayment)) {
+            $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
+        }
 
         // check for partial payments
         $merchantOrderReference = isset(json_decode($notification->getAdditionalData())->merchantOrderReference);
