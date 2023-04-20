@@ -31,7 +31,7 @@ use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -50,7 +50,7 @@ class DonateController
      */
     private $adyenOrderTransactionRepository;
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $orderTransactionRepository;
     /**
@@ -67,13 +67,13 @@ class DonateController
      *
      * @param DonationService $donationService
      * @param OrderTransactionRepository $adyenOrderTransactionRepository
-     * @param EntityRepositoryInterface $orderTransactionRepository
+     * @param EntityRepository $orderTransactionRepository
      * @param LoggerInterface $logger
      */
     public function __construct(
         DonationService $donationService,
         OrderTransactionRepository $adyenOrderTransactionRepository,
-        EntityRepositoryInterface $orderTransactionRepository,
+        EntityRepository $orderTransactionRepository,
         LoggerInterface $logger
     ) {
         $this->donationService = $donationService;

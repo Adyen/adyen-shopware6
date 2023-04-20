@@ -23,11 +23,9 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\AdyenException;
-use Adyen\Shopware\Handlers\CardsPaymentMethodHandler;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
@@ -36,12 +34,12 @@ class PluginPaymentMethodsService
     /** @var AdyenPluginProvider */
     protected $adyenPluginProvider;
 
-    /** @var EntityRepositoryInterface */
+    /** @var EntityRepository */
     protected $paymentMethodRepository;
 
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
-        EntityRepositoryInterface $paymentMethodRepository
+        EntityRepository $paymentMethodRepository
     ) {
         $this->adyenPluginProvider = $adyenPluginProvider;
         $this->paymentMethodRepository = $paymentMethodRepository;

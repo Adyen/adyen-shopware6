@@ -30,7 +30,7 @@ use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
@@ -41,11 +41,11 @@ class AdyenPaymentService
     const AUTO_CAPTURE = 'auto_capture';
 
     protected AdyenPaymentRepository $adyenPaymentRepository;
-    protected EntityRepositoryInterface $orderTransactionRepository;
+    protected EntityRepository $orderTransactionRepository;
 
     public function __construct(
         AdyenPaymentRepository $adyenPaymentRepository,
-        EntityRepositoryInterface $orderTransactionRepository
+        EntityRepository $orderTransactionRepository
     ) {
         $this->adyenPaymentRepository = $adyenPaymentRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;

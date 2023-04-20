@@ -33,7 +33,7 @@ use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Content\Media\File\MediaFile;
 use Shopware\Core\Content\Media\MediaService;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
@@ -52,11 +52,11 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
      */
     private $mediaService;
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $paymentMethodRepository;
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $mediaRepository;
     /**
@@ -65,11 +65,11 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
     private $enableUrlUploadFeature;
 
     public function __construct(
-        EntityRepositoryInterface $scheduledTaskRepository,
+        EntityRepository $scheduledTaskRepository,
         ConfigurationService $configurationService,
         MediaService $mediaService,
-        EntityRepositoryInterface $paymentMethodRepository,
-        EntityRepositoryInterface $mediaRepository,
+        EntityRepository $paymentMethodRepository,
+        EntityRepository $mediaRepository,
         bool $enableUrlUploadFeature = true
     ) {
         parent::__construct($scheduledTaskRepository);

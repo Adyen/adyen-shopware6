@@ -26,7 +26,7 @@ namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\Service\NotificationService;
 use Psr\Log\LoggerAwareTrait;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 
 class ScheduleNotificationsHandler extends ScheduledTaskHandler
@@ -39,7 +39,7 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
     private $notificationService;
 
     public function __construct(
-        EntityRepositoryInterface $scheduledTaskRepository,
+        EntityRepository $scheduledTaskRepository,
         NotificationService $notificationService
     ) {
         parent::__construct($scheduledTaskRepository);

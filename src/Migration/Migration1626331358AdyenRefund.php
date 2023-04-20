@@ -14,7 +14,7 @@ class Migration1626331358AdyenRefund extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeUpdate(<<<SQL
+        $connection->executeStatement(<<<SQL
             CREATE TABLE IF NOT EXISTS `adyen_refund` (
                 `id` BINARY(16) NOT NULL,
                 `order_transaction_id` BINARY(16)  not NULL,

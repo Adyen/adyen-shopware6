@@ -53,7 +53,7 @@ use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyCollection;
@@ -174,12 +174,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected $csrfTokenManager;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     protected $currencyRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     protected $productRepository;
 
@@ -221,8 +221,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param RouterInterface $symfonyRouter
      * @param CsrfTokenManagerInterface $csrfTokenManager
      * @param Session $session
-     * @param EntityRepositoryInterface $currencyRepository
-     * @param EntityRepositoryInterface $productRepository
+     * @param EntityRepository $currencyRepository
+     * @param EntityRepository $productRepository
      * @param LoggerInterface $logger
      * @param AbstractContextSwitchRoute $contextSwitchRoute
      */
@@ -244,8 +244,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         RouterInterface $symfonyRouter,
         CsrfTokenManagerInterface $csrfTokenManager,
         Session $session,
-        EntityRepositoryInterface $currencyRepository,
-        EntityRepositoryInterface $productRepository,
+        EntityRepository $currencyRepository,
+        EntityRepository $productRepository,
         AbstractContextSwitchRoute $contextSwitchRoute,
         LoggerInterface $logger
     ) {

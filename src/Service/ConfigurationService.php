@@ -26,7 +26,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\Environment;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
@@ -40,7 +40,7 @@ class ConfigurationService
     private $systemConfigService;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $mediaRepository;
 
@@ -48,11 +48,11 @@ class ConfigurationService
      * ConfigurationService constructor.
      *
      * @param SystemConfigService $systemConfigService
-     * @param EntityRepositoryInterface $mediaRepository
+     * @param EntityRepository $mediaRepository
      */
     public function __construct(
         SystemConfigService $systemConfigService,
-        EntityRepositoryInterface $mediaRepository
+        EntityRepository $mediaRepository
     ) {
         $this->systemConfigService = $systemConfigService;
         $this->mediaRepository = $mediaRepository;
