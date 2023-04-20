@@ -26,7 +26,6 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Storefront\Controller;
 
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
@@ -55,7 +54,8 @@ class RedirectResultController extends StorefrontController
     }
 
     /**
-     * @RouteScope(scopes={"storefront"})
+     * @Route(defaults={"_routeScope"={"storefront"}})
+     *
      * @Route(
      *     "/adyen/redirect-result",
      *     name="payment.adyen.redirect_result",
@@ -64,6 +64,8 @@ class RedirectResultController extends StorefrontController
      * )
      *
      * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
+     * @return Response
      */
     public function execute(Request $request, SalesChannelContext $salesChannelContext): Response
     {

@@ -28,7 +28,6 @@ use Adyen\AdyenException;
 use Adyen\Shopware\Exception\AuthenticationException;
 use Adyen\Shopware\Exception\HMACKeyValidationException;
 use Adyen\Shopware\Exception\MerchantAccountCodeException;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -51,7 +50,8 @@ class NotificationReceiverController extends StorefrontController
     }
 
     /**
-     * @RouteScope(scopes={"storefront"})
+     * @Route(defaults={"_routeScope"={"storefront"}})
+
      * @Route(
      *     "/adyen/notification",
      *     name="payment.adyen.notification",

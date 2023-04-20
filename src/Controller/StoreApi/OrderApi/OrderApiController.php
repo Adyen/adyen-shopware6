@@ -35,13 +35,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use OpenApi\Annotations as OA;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 
 /**
  * Class OrderApiController
- * @package Adyen\Shopware\Controller\StoreApi\Donate
- * @RouteScope(scopes={"store-api"})
+ * @package Adyen\Shopware\Controller\StoreApi\OrderApi
+ * @Route(defaults={"_routeScope"={"store-api"}})
  */
 class OrderApiController
 {

@@ -37,13 +37,11 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Symfony\Component\Routing\Annotation\Route;
-use OpenApi\Annotations as OA;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 
 /**
  * Class DonateController
- * @package Adyen\Shopware\Controller\StoreApi\OrderApi
- * @RouteScope(scopes={"store-api"})
+ * @package Adyen\Shopware\Controller\StoreApi\Donate
+ * @Route(defaults={"_routeScope"={"store-api"}})
  */
 class DonateController
 {
