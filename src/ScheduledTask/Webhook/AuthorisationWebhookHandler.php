@@ -148,7 +148,10 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                 );
                 $this->orderTransactionStateHandler->authorize($orderTransaction->getId(), $context);
 
-                if ($this->configurationService->isCaptureOnShipmentEnabled()) {
+                if ($this->captureService->requiresCaptureOnShipment(
+                    $paymentMethodHandler,
+                    $orderTransaction->getOrder()->getSalesChannelId())
+                ) {
                     $this->logger->info(
                         'Attempting capture for open invoice payment.',
                         ['notification' => $notification->getVars()]

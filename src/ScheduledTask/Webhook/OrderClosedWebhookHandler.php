@@ -110,8 +110,9 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
             );
 
             $this->orderTransactionStateHandler->authorize($orderTransactionEntity->getId(), $context);
+            $salesChannelId = $orderTransactionEntity->getOrder()->getSalesChannelId();
 
-            if ($this->configurationService->isCaptureOnShipmentEnabled()) {
+            if ($this->captureService->requiresCaptureOnShipment($paymentMethodHandler, $salesChannelId)) {
                 if ($this->adyenPaymentService->isFullAmountAuthorized($orderTransactionEntity)) {
                     $merchantReference = $this->adyenPaymentService->getMerchantReferenceFromOrderReference(
                         $notificationEntity->getMerchantReference()
@@ -119,6 +120,11 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
 
                     $requiredCaptureAmount = $this->captureService->getRequiredCaptureAmount(
                         $orderTransactionEntity->getOrderId()
+                    );
+
+                    $this->logger->info(
+                        'Attempting capture for open invoice payment.',
+                        ['notification' => $notificationEntity->getVars()]
                     );
 
                     $this->captureService->doOpenInvoiceCapture(
