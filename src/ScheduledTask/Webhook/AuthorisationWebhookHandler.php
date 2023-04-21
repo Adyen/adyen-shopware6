@@ -132,7 +132,10 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
         $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
 
-        $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
+        $adyenPayment = $this->adyenPaymentService->getAdyenPayment($notification->getPspreference());
+        if (is_null($adyenPayment)) {
+            $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
+        }
 
         // check for partial payments
         $merchantOrderReference = isset(json_decode($notification->getAdditionalData())->merchantOrderReference);
