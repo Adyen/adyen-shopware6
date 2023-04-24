@@ -33,6 +33,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Shopware\Core\Checkout\Payment\Controller\PaymentController;
 
+/**
+ * @Route(defaults={"_routeScope"={"storefront"}})
+ */
 class RedirectResultController extends StorefrontController
 {
     const CSRF_TOKEN = '_csrf_token';
@@ -54,8 +57,6 @@ class RedirectResultController extends StorefrontController
     }
 
     /**
-     * @Route(defaults={"_routeScope"={"storefront"}})
-     *
      * @Route(
      *     "/adyen/redirect-result",
      *     name="payment.adyen.redirect_result",

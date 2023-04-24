@@ -34,6 +34,9 @@ use Symfony\Component\Routing\Annotation\Route;
 use Adyen\Shopware\Service\NotificationReceiverService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+/**
+ * @Route(defaults={"_routeScope"={"storefront"}})
+ */
 class NotificationReceiverController extends StorefrontController
 {
     /** @var NotificationReceiverService */
@@ -50,8 +53,6 @@ class NotificationReceiverController extends StorefrontController
     }
 
     /**
-     * @Route(defaults={"_routeScope"={"storefront"}})
-
      * @Route(
      *     "/adyen/notification",
      *     name="payment.adyen.notification",
