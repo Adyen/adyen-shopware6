@@ -310,6 +310,8 @@ class PaymentResponseHandler
                 // Transactions will be set as paid via webhook notification
                 if (!$requiresManualCapture) {
                     $this->transactionStateHandler->authorize($orderTransactionId, $context);
+                } else {
+                    $this->transactionStateHandler->process($orderTransactionId, $context);
                 }
                 break;
             case self::REFUSED:
@@ -410,6 +412,10 @@ class PaymentResponseHandler
         $resultCode,
         $requiresManualCapture = false
     ) {
+        if ($transactionStateTechnicalName === OrderTransactionStates::STATE_OPEN) {
+            return false;
+        }
+
         // TODO check all the states and adyen resultCodes not just the straightforward ones
         switch ($resultCode) {
             case self::AUTHORISED:
