@@ -135,7 +135,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
 
         // Get the payment method object from paymentMethodsResponse
-        let paymentMethodConfigs = $.grep(this.adyenCheckout.paymentMethodsResponse.paymentMethods, function(paymentMethod) {
+        let paymentMethodConfigs = this.adyenCheckout.paymentMethodsResponse.paymentMethods.filter(function(paymentMethod) {
             return paymentMethod['type'] === type;
         });
         if (paymentMethodConfigs.length === 0) {
@@ -156,18 +156,30 @@ export default class ConfirmOrderPlugin extends Plugin {
         // Mount payment method instance
         storedPaymentMethods.forEach((paymentMethod) => {
             let selector = `[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`;
-            this.mountPaymentComponent(paymentMethod, selector, true);
+            this.mountPaymentComponent(paymentMethod, true, selector);
         });
 
-        this.showSelectedStoredPaymentMethod();
-        $('[name=adyenStoredPaymentMethodId]').change(this.showSelectedStoredPaymentMethod);
+        this.hideStorePaymentMethodComponents();
+        let storedPaymentMethodFields = DomAccess.querySelectorAll(document, '[name=adyenStoredPaymentMethodId]');
+        storedPaymentMethodFields.forEach(field => {
+            field.addEventListener('change', this.showSelectedStoredPaymentMethod.bind(this));
+        });
     }
 
-    showSelectedStoredPaymentMethod() {
+    showSelectedStoredPaymentMethod(event) {
         // Only show the component for the selected stored payment method
-        $('.stored-payment-component').hide();
-        let selected = $('[name=adyenStoredPaymentMethodId]:checked').val();
-        $(`[data-adyen-stored-payment-method-id="${selected}"]`).show();
+        this.hideStorePaymentMethodComponents();
+        let selectedId = event.target.value;
+        let selector = `[data-adyen-stored-payment-method-id="${selectedId}"]`;
+        let component = DomAccess.querySelector(document, selector);
+        component.style.display = 'block';
+    }
+
+    hideStorePaymentMethodComponents() {
+        let storedPaymentComponents = DomAccess.querySelectorAll(document, '.stored-payment-component');
+        storedPaymentComponents.forEach(component => {
+            component.style.display = 'none';
+        });
     }
 
     confirmOrder(formData, extraParams= {}) {
@@ -508,7 +520,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
-    mountPaymentComponent(paymentMethod, isOneClick = false) {
+    mountPaymentComponent(paymentMethod, isOneClick = false, selector = null) {
         const configuration = Object.assign({}, paymentMethod, {
             data: {
                 personalDetails: shopperDetails,
@@ -534,9 +546,10 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (!isOneClick && paymentMethod.type === 'scheme' && adyenCheckoutOptions.displaySaveCreditCardOption) {
             configuration.enableStoreDetails = true;
         }
+        let componentSelector = isOneClick ? selector : '#' + this.el.id;
         try {
             const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
-            paymentMethodInstance.mount('#' + this.el.id);
+            paymentMethodInstance.mount(componentSelector);
             this.confirmFormSubmit.addEventListener('click', function(event) {
                 const form =  DomAccess.querySelector(document, '#confirmOrderForm');
                 if (!form.checkValidity()) {

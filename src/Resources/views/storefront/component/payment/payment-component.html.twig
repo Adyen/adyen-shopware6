@@ -16,8 +16,7 @@
                 <div class="col stored-payment-component"
                      data-adyen-stored-payment-method-id="{{ storedPaymentMethod.id }}"></div>
             </div>
-            {% if loop.last == false %}
-                <hr>{% endif %}
+            {% if loop.last == false %}<hr>{% endif %}
         {% endfor %}
     {% endif %}
 </div>
