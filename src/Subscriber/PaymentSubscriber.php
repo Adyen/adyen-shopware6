@@ -341,7 +341,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $giftcardSelectedId
         );
 
-        if (is_null($giftcardSelectedId) && $adyenGiftcardSelected) {
+        if (!isset($giftcardSelectedId) && $adyenGiftcardSelected) {
             $selectedPaymentMethod = $filteredPaymentMethods->first();
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
