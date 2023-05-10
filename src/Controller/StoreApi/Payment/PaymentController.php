@@ -33,7 +33,6 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
-use Petstore30\Order;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
@@ -43,22 +42,20 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Annotations as OA;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 
 /**
  * Class PaymentController
  * @package Adyen\Shopware\Controller\StoreApi\Payment
- * @RouteScope(scopes={"store-api"})
+ * @Route(defaults={"_routeScope"={"store-api"}})
  */
 class PaymentController
 {
@@ -95,7 +92,7 @@ class PaymentController
      */
     private $orderService;
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $orderTransactionRepository;
     /**
@@ -128,8 +125,9 @@ class PaymentController
      * @param OrderService $orderService
      * @param StateMachineRegistry $stateMachineRegistry
      * @param LoggerInterface $logger
-     * @param EntityRepositoryInterface $orderTransactionRepository
+     * @param EntityRepository $orderTransactionRepository
      * @param ConfigurationService $configurationService
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -142,7 +140,7 @@ class PaymentController
         OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
         LoggerInterface $logger,
-        EntityRepositoryInterface $orderTransactionRepository,
+        EntityRepository $orderTransactionRepository,
         ConfigurationService $configurationService,
         OrderTransactionStateHandler $orderTransactionStateHandler
     ) {

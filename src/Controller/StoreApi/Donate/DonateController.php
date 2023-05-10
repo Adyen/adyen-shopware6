@@ -31,19 +31,17 @@ use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Symfony\Component\Routing\Annotation\Route;
-use OpenApi\Annotations as OA;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 
 /**
  * Class DonateController
- * @package Adyen\Shopware\Controller\StoreApi\OrderApi
- * @RouteScope(scopes={"store-api"})
+ * @package Adyen\Shopware\Controller\StoreApi\Donate
+ * @Route(defaults={"_routeScope"={"store-api"}})
  */
 class DonateController
 {
@@ -52,7 +50,7 @@ class DonateController
      */
     private $adyenOrderTransactionRepository;
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $orderTransactionRepository;
     /**
@@ -69,13 +67,13 @@ class DonateController
      *
      * @param DonationService $donationService
      * @param OrderTransactionRepository $adyenOrderTransactionRepository
-     * @param EntityRepositoryInterface $orderTransactionRepository
+     * @param EntityRepository $orderTransactionRepository
      * @param LoggerInterface $logger
      */
     public function __construct(
         DonationService $donationService,
         OrderTransactionRepository $adyenOrderTransactionRepository,
-        EntityRepositoryInterface $orderTransactionRepository,
+        EntityRepository $orderTransactionRepository,
         LoggerInterface $logger
     ) {
         $this->donationService = $donationService;

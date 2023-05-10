@@ -26,18 +26,16 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntity;
-use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentStateDataService
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     protected $paymentStateDataRepository;
 
@@ -48,11 +46,11 @@ class PaymentStateDataService
 
     /**
      * PaymentStateDataService constructor.
-     * @param EntityRepositoryInterface $paymentStateDataRepository
+     * @param EntityRepository $paymentStateDataRepository
      * @param LoggerInterface $logger
      */
     public function __construct(
-        EntityRepositoryInterface $paymentStateDataRepository,
+        EntityRepository $paymentStateDataRepository,
         LoggerInterface $logger
     ) {
         $this->paymentStateDataRepository = $paymentStateDataRepository;

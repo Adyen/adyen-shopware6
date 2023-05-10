@@ -25,12 +25,9 @@
 namespace Adyen\Shopware\Service\Repository;
 
 use Adyen\Shopware\Service\ConfigurationService;
-use Adyen\Shopware\Service\RefundService;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -39,16 +36,16 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 class OrderTransactionRepository
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $repository;
 
     /**
      * OrderTransactionRepository constructor.
      *
-     * @param EntityRepositoryInterface $repository
+     * @param EntityRepository $repository
      */
-    public function __construct(EntityRepositoryInterface $repository)
+    public function __construct(EntityRepository $repository)
     {
         $this->repository = $repository;
     }

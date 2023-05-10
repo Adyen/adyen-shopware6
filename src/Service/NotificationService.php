@@ -29,7 +29,7 @@ use Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler;
 use DateTimeInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
@@ -39,10 +39,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class NotificationService
 {
-    /** @var EntityRepositoryInterface */
+    /** @var EntityRepository */
     protected $notificationRepository;
 
-    public function __construct(EntityRepositoryInterface $notificationRepository)
+    public function __construct(EntityRepository $notificationRepository)
     {
         $this->notificationRepository = $notificationRepository;
     }

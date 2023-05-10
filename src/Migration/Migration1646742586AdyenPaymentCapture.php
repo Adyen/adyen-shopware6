@@ -14,7 +14,7 @@ class Migration1646742586AdyenPaymentCapture extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeUpdate(<<<SQL
+        $connection->executeStatement(<<<SQL
             CREATE TABLE IF NOT EXISTS `adyen_payment_capture` (
                 `id` BINARY(16) NOT NULL,
                 `order_transaction_id` BINARY(16)  not NULL,

@@ -26,7 +26,6 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Storefront\Controller;
 
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,6 +33,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Shopware\Core\Checkout\Payment\Controller\PaymentController;
 
+/**
+ * @Route(defaults={"_routeScope"={"storefront"}})
+ */
 class RedirectResultController extends StorefrontController
 {
     const CSRF_TOKEN = '_csrf_token';
@@ -55,7 +57,6 @@ class RedirectResultController extends StorefrontController
     }
 
     /**
-     * @RouteScope(scopes={"storefront"})
      * @Route(
      *     "/adyen/redirect-result",
      *     name="payment.adyen.redirect_result",
@@ -64,6 +65,8 @@ class RedirectResultController extends StorefrontController
      * )
      *
      * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
+     * @return Response
      */
     public function execute(Request $request, SalesChannelContext $salesChannelContext): Response
     {

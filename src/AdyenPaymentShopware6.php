@@ -32,7 +32,6 @@ use Adyen\Shopware\Handlers\GenericGiftCardPaymentMethodHandler;
 use Adyen\Shopware\PaymentMethods;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
-use Shopware\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
@@ -41,12 +40,11 @@ use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
-use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
 class AdyenPaymentShopware6 extends Plugin
@@ -159,14 +157,14 @@ class AdyenPaymentShopware6 extends Plugin
             'afterOrderEnabled' => true
         ];
 
-        /** @var EntityRepositoryInterface $paymentRepository */
+        /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
         $paymentRepository->create([$paymentData], $context);
     }
 
     private function setPluginId(string $paymentMethodId, string $pluginId, Context $context): void
     {
-        /** @var EntityRepositoryInterface $paymentRepository */
+        /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
         $paymentMethodData = [
             'id' => $paymentMethodId,
@@ -178,7 +176,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function getPaymentMethodId(string $paymentMethodHandler): ?string
     {
-        /** @var EntityRepositoryInterface $paymentRepository */
+        /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
         $paymentCriteria = (new Criteria())->addFilter(new EqualsFilter(
@@ -200,7 +198,7 @@ class AdyenPaymentShopware6 extends Plugin
         Context $context,
         PaymentMethods\PaymentMethodInterface $paymentMethod
     ): void {
-        /** @var EntityRepositoryInterface $paymentRepository */
+        /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
         $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
@@ -221,7 +219,7 @@ class AdyenPaymentShopware6 extends Plugin
     private function removePluginData()
     {
         //Search for config keys that contain the bundle's name
-        /** @var EntityRepositoryInterface $systemConfigRepository */
+        /** @var EntityRepository $systemConfigRepository */
         $systemConfigRepository = $this->container->get('system_config.repository');
         $criteria = (new Criteria())
             ->addFilter(
@@ -243,7 +241,7 @@ class AdyenPaymentShopware6 extends Plugin
         ];
         $connection = $this->container->get(Connection::class);
         foreach ($tables as $table) {
-            $connection->executeUpdate(\sprintf('DROP TABLE IF EXISTS `%s`', $table));
+            $connection->executeStatement(\sprintf('DROP TABLE IF EXISTS `%s`', $table));
         }
 
         $this->removeMigrations();
@@ -405,7 +403,7 @@ class AdyenPaymentShopware6 extends Plugin
         }
 
         // Set the Savvy payment method to inactive
-        /** @var EntityRepositoryInterface $paymentRepository */
+        /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
         $salesChannelPaymentRepository = $this->container->get('sales_channel_payment_method.repository');
         $savvyPaymentMethodId = $this->getPaymentMethodId(

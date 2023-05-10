@@ -32,8 +32,8 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
+use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
-use Shopware\Core\Checkout\Cart\CartPersisterInterface;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -94,7 +94,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $session;
 
     /**
-     * @var CartPersisterInterface
+     * @var AbstractCartPersister
      */
     private $cartPersister;
 
@@ -134,7 +134,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
      * @param SessionInterface $session
-     * @param CartPersisterInterface $cartPersister
+     * @param AbstractCartPersister $cartPersister
      * @param CartCalculator $cartCalculator
      * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
@@ -149,7 +149,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
         SessionInterface $session,
-        CartPersisterInterface $cartPersister,
+        AbstractCartPersister $cartPersister,
         CartCalculator $cartCalculator,
         AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,

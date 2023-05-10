@@ -22,7 +22,7 @@ class Migration1609373668AdyenMediaFolder extends MigrationStep
         $connection->transactional(function (Connection $connection) {
             $defaultFolderId = Uuid::randomBytes();
             $configurationId = Uuid::randomBytes();
-            $connection->executeUpdate('
+            $connection->executeStatement('
                 INSERT INTO `media_default_folder` (`id`, `association_fields`, `entity`, `created_at`)
                 VALUES (:id, :associationFields, :entity, :createdAt)
             ', [
@@ -31,7 +31,7 @@ class Migration1609373668AdyenMediaFolder extends MigrationStep
                 'entity' => 'adyen',
                 'createdAt' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)
             ]);
-            $connection->executeUpdate("
+            $connection->executeStatement("
                 INSERT INTO `media_folder_configuration`
                     (`id`, `thumbnail_quality`, `create_thumbnails`, `private`, created_at)
                 VALUES
@@ -40,7 +40,7 @@ class Migration1609373668AdyenMediaFolder extends MigrationStep
                 'id' => $configurationId,
                 'createdAt' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)
             ]);
-            $connection->executeUpdate('
+            $connection->executeStatement('
                 INSERT INTO `media_folder`
                     (
                         `id`,
