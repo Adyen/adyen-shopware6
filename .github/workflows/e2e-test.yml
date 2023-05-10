@@ -22,10 +22,10 @@ jobs:
 
       - name: Initiate Dockware
         run: |
-          docker pull dockware/dev:latest
+          docker pull dockware/dev:6.4.20.1
           docker run --rm -p 443:443 --name shopware6 \
             --mount type=bind,source="$(pwd)",target=/data/extensions/workdir \
-            --env PHP_VERSION=7.4 -d dockware/dev:latest
+            --env PHP_VERSION=7.4 -d dockware/dev:6.4.20.1
           sleep 30
           docker logs shopware6
           docker exec shopware6 bash -c "mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""

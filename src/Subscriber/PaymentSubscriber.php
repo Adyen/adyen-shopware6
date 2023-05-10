@@ -323,14 +323,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $giftcardData = $this->paymentStateDataService
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
-        $payInFullWithGiftcard = false;
+        $giftcardSelectedId = null;
         $adyenGiftcardSelected = ($selectedPaymentMethod->getPluginId() === $adyenPluginId)
             && $selectedPaymentMethod->getHandlerIdentifier()::$isGiftCard;
         if ($giftcardData) {
             $stateData = $giftcardData->getStateData();
             $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
             if ($giftcardDiscount >= $amount) {
-                $payInFullWithGiftcard = true;
+                $giftcardSelectedId = json_decode($stateData, true)['additionalData']['paymentMethodId'];
             }
         }
         $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
@@ -338,10 +338,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $salesChannelContext,
             $adyenPluginId,
             $paymentMethodsResponse,
-            $payInFullWithGiftcard
+            $giftcardSelectedId
         );
 
-        if (!$payInFullWithGiftcard && $adyenGiftcardSelected) {
+        if (!isset($giftcardSelectedId) && $adyenGiftcardSelected) {
             $selectedPaymentMethod = $filteredPaymentMethods->first();
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
@@ -396,7 +396,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'totalPrice' => $totalPrice,
                         'giftcardDiscount' => $giftcardDiscount,
                         'currencySymbol' => $currencySymbol,
-                        'payInFullWithGiftcard' => (int) $payInFullWithGiftcard,
+                        'payInFullWithGiftcard' => (int) isset($giftcardSelectedId),
                         'adyenGiftcardSelected' => (int) $adyenGiftcardSelected,
                         'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),

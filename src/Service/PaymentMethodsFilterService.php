@@ -68,7 +68,7 @@ class PaymentMethodsFilterService
         SalesChannelContext $salesChannelContext,
         string $adyenPluginId,
         array $adyenPaymentMethods = [],
-        bool $giftcardSelected = false
+        string $giftcardId = null
     ): PaymentMethodCollection {
         if (empty($adyenPaymentMethods)) {
             // Get Adyen /paymentMethods response
@@ -98,9 +98,8 @@ class PaymentMethodsFilterService
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                 } elseif ($pmHandlerIdentifier::$isGiftCard) {
-                    // Remove giftcards from checkout list, except the selected giftcard
-                    if (!$giftcardSelected ||
-                        $salesChannelContext->getPaymentMethod()->getId() !== $paymentMethodEntity->getId()) {
+                    if (isset($giftcardId) &&
+                        $giftcardId !== $paymentMethodEntity->getId()) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                     // Remove ApplePay PM if the browser is not Safari
