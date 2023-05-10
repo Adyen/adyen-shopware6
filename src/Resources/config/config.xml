@@ -121,7 +121,7 @@
         <title>Capture Settings</title>
         <input-field type="bool">
             <name>manualCaptureEnabled</name>
-            <label>Manual capture</label>
+            <label>Manual Capture</label>
             <helpText>
                 Enable this option if you want to perform the capture of funds manually later. This configuration won’t affect the capture mode of open invoice payment methods (Klarna, Afterpay Touch, Ratepay, FacilyPay/Oney, Affirm, Clearpay, Zip and PayBright).
             </helpText>
