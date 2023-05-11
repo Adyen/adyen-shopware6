@@ -40,6 +40,7 @@ use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
+use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -172,7 +173,7 @@ class AdminController
                 $response['message'] = 'adyen.paymentMethodsMissing';
             }
             return new JsonResponse($response);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return new JsonResponse(['success' => false, 'message' => $exception->getMessage()]);
         }
     }
@@ -227,7 +228,7 @@ class AdminController
 
             return new JsonResponse([
                 'success' => false,
-                'message' => 'adyen.error',
+                'message' => $e->getMessage()
             ]);
         }
 
@@ -273,7 +274,7 @@ class AdminController
         if (isset($orderTransaction)) {
             $isFullAmountAuthorised = $this->adyenPaymentService->isFullAmountAuthorized($orderTransaction);
             $isRequiredAmountCaptured = $this->captureService->isRequiredAmountCaptured($orderTransaction);
-            $isPaymentMethodSupportsManualCapture = $this->captureService->requiresManualCapture(
+            $isPaymentMethodSupportsManualCapture = $this->captureService->isManualCapture(
                 $orderTransaction->getPaymentMethod()->getHandlerIdentifier()
             );
 
@@ -287,6 +288,29 @@ class AdminController
         }
 
         return new JsonResponse($isCaptureAllowed);
+    }
+
+    /**
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/is-manual-capture-enabled",
+     *     name="api.adyen_payment_capture_enabled.get",
+     *     methods={"GET"}
+     * )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function isManualCaptureEnabled(string $orderId)
+    {
+        try {
+            $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId);
+            $paymentMethodHandlerIdentifier = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+
+            return new JsonResponse(
+                $this->captureService->isManualCapture($paymentMethodHandlerIdentifier)
+            );
+        } catch (Exception $e) {
+            return new JsonResponse(false);
+        }
     }
 
     /**
@@ -362,7 +386,7 @@ class AdminController
                     $amountInMinorUnit
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e->getMessage());
 
             return new JsonResponse([

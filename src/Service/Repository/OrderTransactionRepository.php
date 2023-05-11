@@ -78,4 +78,26 @@ class OrderTransactionRepository
 
         return $this->repository->search($criteria, Context::createDefaultContext())->first();
     }
+
+    /**
+     * @param string $orderId
+     * @return OrderTransactionEntity|null
+     */
+    public function getFirstAdyenOrderTransaction(string $orderId): ?OrderTransactionEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addAssociation('order');
+        $criteria->addAssociation('order.currency');
+        $criteria->addAssociation('paymentMethod');
+        $criteria->addAssociation('paymentMethod.plugin');
+        $criteria->addFilter(new EqualsFilter('order.id', $orderId));
+        $criteria->addFilter(
+            new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME)
+        );
+
+        $criteria->setLimit(1);
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
+
+        return $this->repository->search($criteria, Context::createDefaultContext())->first();
+    }
 }

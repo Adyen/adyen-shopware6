@@ -118,28 +118,44 @@
         </input-field>
     </card>
     <card>
-        <title>Manual Capture</title>
+        <title>Capture Settings</title>
         <input-field type="bool">
             <name>manualCaptureEnabled</name>
-            <label>Enabled</label>
+            <label>Manual Capture</label>
             <helpText>
-                Please note that this configuration will only be enabled for Open Invoice payment methods such as Klarna &amp; RatePay.
-                See https://docs.adyen.com/online-payments/classic-integrations/hosted-payment-pages/klarna-afterpay-and-ratepay-open-invoice for more information.
+                Enable this option if you want to perform the capture of funds manually later. This configuration won’t affect the capture mode of open invoice payment methods (Klarna, Afterpay Touch, Ratepay, FacilyPay/Oney, Affirm, Clearpay, Zip and PayBright).
             </helpText>
         </input-field>
-        <input-field type="int">
-            <name>rescheduleTime</name>
-            <label>Capture Delay</label>
+        <input-field type="bool">
+            <name>autoCaptureOpenInvoice</name>
+            <label>Use auto capture for open invoice payments</label>
             <helpText>
-                This is the time to wait before trying the next capture in seconds
+                Applicable for Klarna, Afterpay Touch, Ratepay, FacilyPay/Oney, Affirm, Clearpay, Zip and PayBright. By default, open invoice methods are set to manual capture. For auto capture, please contact support@adyen.com. After the approval, you can enable this option.
             </helpText>
-            <defaultValue>43200</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>captureOnShipmentEnabled</name>
+            <label>Capture on shipment for open invoice payments</label>
+            <helpText>
+                A capture request will be sent to Adyen whenever you make a shipment for an open invoice payment.
+            </helpText>
         </input-field>
         <component name="sw-entity-single-select-override">
             <name>orderState</name>
             <entity>state_machine_state</entity>
-            <label>Order Shipping State</label>
+            <label>Order shipping state for triggering capture</label>
+            <helpText>
+                This is the order shipping status that needs to be fulfilled in order to make a capture request to Adyen for open invoice payments.
+            </helpText>
         </component>
+        <input-field type="int">
+            <name>rescheduleTime</name>
+            <label>Capture delay for shipment</label>
+            <helpText>
+                This is the time to wait before trying the next capture in seconds if the shipping state is set and not fulfilled.
+            </helpText>
+            <defaultValue>43200</defaultValue>
+        </input-field>
     </card>
     <card>
         <title>Adyen Giving</title>
