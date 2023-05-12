@@ -27,8 +27,10 @@ namespace Adyen\Shopware\Controller\StoreApi\Donate;
 use Adyen\AdyenException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
+use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -57,6 +59,16 @@ class DonateController
      * @var DonationService
      */
     private $donationService;
+
+    /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
+     * @var Currency
+     */
+    private $currency;
     /**
      * @var LoggerInterface
      */
@@ -68,17 +80,22 @@ class DonateController
      * @param DonationService $donationService
      * @param OrderTransactionRepository $adyenOrderTransactionRepository
      * @param EntityRepository $orderTransactionRepository
+     * @param ConfigurationService $configurationService
      * @param LoggerInterface $logger
      */
     public function __construct(
         DonationService $donationService,
         OrderTransactionRepository $adyenOrderTransactionRepository,
         EntityRepository $orderTransactionRepository,
+        ConfigurationService $configurationService,
+        Currency $currency,
         LoggerInterface $logger
     ) {
         $this->donationService = $donationService;
         $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->configurationService = $configurationService;
+        $this->currency = $currency;
         $this->logger = $logger;
     }
 
@@ -107,6 +124,21 @@ class DonateController
         $transaction = $this->adyenOrderTransactionRepository
             ->getFirstAdyenOrderTransactionByStates($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
 
+        $orderCurrency = $transaction->getOrder()->getCurrency()->getIsoCode();
+        $donationAmounts = $this->configurationService
+            ->getAdyenGivingDonationAmounts($salesChannelContext->getSalesChannelId());
+
+        $formatter = $this->currency;
+        $donationAmountsMinorUnits = array_map(
+            function ($amount) use ($formatter, $orderCurrency) {
+                return $formatter->sanitize($amount, $orderCurrency);
+            },
+            explode(',', $donationAmounts)
+        );
+        if ($currency !== $orderCurrency || !in_array($value, $donationAmountsMinorUnits)) {
+            $this->logger->error("Invalid amount or currency from request", (array)$payload);
+            return new JsonResponse('An unknown error occurred');
+        }
         /** @var AbstractPaymentMethodHandler $paymentMethodIdentifier */
         $paymentMethodIdentifier = $transaction->getPaymentMethod()->getHandlerIdentifier();
         $paymentMethodCode = $paymentMethodIdentifier::getPaymentMethodCode();
