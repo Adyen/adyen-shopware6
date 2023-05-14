@@ -258,6 +258,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             }
         }
 
+        $minorUnitsQuotient = $amountInMinorUnits / $page->getCart()->getPrice()->getTotalPrice();
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -268,6 +270,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'currency' => $currency,
                     'currencySymbol' => $currencySymbol,
                     'giftcardDiscount' => $giftcardDiscount,
+                    'giftcardDiscountDisplay' => $giftcardDiscount / $minorUnitsQuotient,
                     'giftcardBalance' => $giftcardBalance,
                     'checkBalanceUrl' => $this->router
                         ->generate('store-api.action.adyen.payment-methods.balance'),
