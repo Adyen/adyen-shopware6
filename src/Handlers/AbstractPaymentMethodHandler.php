@@ -87,6 +87,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     public static $isOpenInvoice = false;
     public static $isGiftCard = false;
+    public static $supportsManualCapture = false;
+    public static $supportsPartialCapture = false;
 
     /**
      * @var ClientService

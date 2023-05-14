@@ -28,6 +28,7 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
+use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -50,17 +51,24 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
      */
     private $orderTransactionStateHandler;
 
-    /**
-     * @param LoggerInterface $logger
-     */
+    /** @var $configurationService */
+    private $configurationService;
+
+    /** @var LoggerInterface */
+    private $logger;
+
     public function __construct(
         AdyenPaymentService $adyenPaymentService,
         CaptureService $captureService,
-        OrderTransactionStateHandler $orderTransactionStateHandler
+        OrderTransactionStateHandler $orderTransactionStateHandler,
+        ConfigurationService $configurationService,
+        LoggerInterface $logger
     ) {
         $this->adyenPaymentService = $adyenPaymentService;
         $this->captureService = $captureService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
+        $this->configurationService = $configurationService;
+        $this->logger = $logger;
     }
 
     /**
@@ -70,6 +78,7 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
      * @param string $currentTransactionState
      * @param Context $context
      * @return void
+     * @throws CaptureException
      */
     public function handleWebhook(
         OrderTransactionEntity $orderTransactionEntity,
@@ -94,29 +103,42 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
         Context $context
     ): void {
         $paymentMethodHandler = $orderTransactionEntity->getPaymentMethod()->getHandlerIdentifier();
-        if ($this->captureService->requiresManualCapture($paymentMethodHandler)) {
+        if ($this->captureService->isManualCapture($paymentMethodHandler)) {
+            $this->logger->info(
+                'Manual capture required. Setting payment to `authorised` state.',
+                ['notification' => $notificationEntity->getVars()]
+            );
+
             $this->orderTransactionStateHandler->authorize($orderTransactionEntity->getId(), $context);
+            $salesChannelId = $orderTransactionEntity->getOrder()->getSalesChannelId();
 
-            if ($this->adyenPaymentService->isFullAmountAuthorized($orderTransactionEntity)) {
-                $merchantReference = $this->adyenPaymentService->getMerchantReferenceFromOrderReference(
-                    $notificationEntity->getMerchantReference()
-                );
+            if ($this->captureService->requiresCaptureOnShipment($paymentMethodHandler, $salesChannelId)) {
+                if ($this->adyenPaymentService->isFullAmountAuthorized($orderTransactionEntity)) {
+                    $merchantReference = $this->adyenPaymentService->getMerchantReferenceFromOrderReference(
+                        $notificationEntity->getMerchantReference()
+                    );
 
-                $requiredCaptureAmount = $this->captureService->getRequiredCaptureAmount(
-                    $orderTransactionEntity->getOrderId()
-                );
+                    $requiredCaptureAmount = $this->captureService->getRequiredCaptureAmount(
+                        $orderTransactionEntity->getOrderId()
+                    );
 
-                $this->captureService->doOpenInvoiceCapture(
-                    $merchantReference,
-                    $requiredCaptureAmount,
-                    $context
-                );
-            } else {
-                $exception = new CaptureException(
-                    'Full amount has not been authorised yet.'
-                );
-                $exception->reason = CaptureService::REASON_WAITING_AUTH_WEBHOOK;
-                throw $exception;
+                    $this->logger->info(
+                        'Attempting capture for open invoice payment.',
+                        ['notification' => $notificationEntity->getVars()]
+                    );
+
+                    $this->captureService->doOpenInvoiceCapture(
+                        $merchantReference,
+                        $requiredCaptureAmount,
+                        $context
+                    );
+                } else {
+                    $exception = new CaptureException(
+                        'Full amount has not been authorised yet.'
+                    );
+                    $exception->reason = CaptureService::REASON_WAITING_AUTH_WEBHOOK;
+                    throw $exception;
+                }
             }
         } else {
             $this->orderTransactionStateHandler->paid($orderTransactionEntity->getId(), $context);
