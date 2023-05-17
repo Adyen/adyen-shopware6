@@ -369,7 +369,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
 
         // Payment had no error, continue the process
-        // return new RedirectResponse($this->getAdyenReturnUrl($transaction, $salesChannelContext));
         return new RedirectResponse($transaction->getReturnUrl());
     }
 
@@ -590,7 +589,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $amount,
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            // $this->getAdyenReturnUrl($transaction, $salesChannelContext),
             $transaction->getReturnUrl(),
             $request
         );
