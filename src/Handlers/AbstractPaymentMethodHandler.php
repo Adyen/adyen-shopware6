@@ -237,7 +237,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $symfonyRouter,
         SessionInterface $session,
-        Session $session,
         EntityRepository $currencyRepository,
         EntityRepository $productRepository,
         AbstractContextSwitchRoute $contextSwitchRoute,
