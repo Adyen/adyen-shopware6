@@ -64,7 +64,7 @@ use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
@@ -186,7 +186,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected $productRepository;
 
     /**
-     * @var Session
+     * @var SessionInterface
      */
     protected $session;
 
@@ -222,7 +222,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $symfonyRouter
      * @param CsrfTokenManagerInterface $csrfTokenManager
-     * @param Session $session
+     * @param SessionInterface $session
      * @param EntityRepository $currencyRepository
      * @param EntityRepository $productRepository
      * @param LoggerInterface $logger
@@ -245,7 +245,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $symfonyRouter,
         CsrfTokenManagerInterface $csrfTokenManager,
-        Session $session,
+        SessionInterface $session,
         EntityRepository $currencyRepository,
         EntityRepository $productRepository,
         AbstractContextSwitchRoute $contextSwitchRoute,

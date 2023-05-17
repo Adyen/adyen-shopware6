@@ -52,7 +52,7 @@ use Shopware\Storefront\Page\Checkout\Register\CheckoutRegisterPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -89,7 +89,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $paymentMethodsService;
 
     /**
-     * @var Session $session
+     * @var SessionInterface $session
      */
     private $session;
 
@@ -133,7 +133,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
-     * @param Session $session
+     * @param SessionInterface $session
      * @param AbstractCartPersister $cartPersister
      * @param CartCalculator $cartCalculator
      * @param AbstractContextSwitchRoute $contextSwitchRoute
@@ -148,7 +148,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
-        Session $session,
+        SessionInterface $session,
         AbstractCartPersister $cartPersister,
         CartCalculator $cartCalculator,
         AbstractContextSwitchRoute $contextSwitchRoute,
