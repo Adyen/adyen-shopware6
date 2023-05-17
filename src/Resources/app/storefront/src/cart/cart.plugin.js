@@ -27,6 +27,8 @@ import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-l
 
 export default class CartPlugin extends Plugin {
     init() {
+        let self = this;
+
         this._client = new StoreApiClient();
         this.adyenCheckout = Promise;
         this.paymentMethodInstance = null;
@@ -34,34 +36,38 @@ export default class CartPlugin extends Plugin {
         this.initializeCheckoutComponent().then(function () {
             this.observeGiftcardSelection();
         }.bind(this));
-        this.giftcardHeader = $('.adyen-giftcard-header');
-        this.giftcardComponentClose = $('.adyen-close-giftcard-component');
-        this.removeGiftcardButton = $('.adyen-remove-giftcard');
-        this.remainingBalanceField = $('.adyen-remaining-balance');
+        this.adyenGiftcard = DomAccess.querySelectorAll(document, '.adyen-giftcard');
+        this.giftcardHeader = DomAccess.querySelector(document, '.adyen-giftcard-header');
+        this.giftcardComponentClose = DomAccess.querySelector(document, '.adyen-close-giftcard-component');
+        this.removeGiftcardButton =  DomAccess.querySelector(document, '.adyen-remove-giftcard');
+        this.remainingBalanceField = DomAccess.querySelector(document, '.adyen-remaining-balance');
         this.minorUnitsQuotient = adyenGiftcardsConfiguration.totalInMinorUnits/adyenGiftcardsConfiguration.totalPrice;
         this.giftcardDiscount = (adyenGiftcardsConfiguration.giftcardDiscount / this.minorUnitsQuotient).toFixed(2);
         this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
         this.remainingGiftcardBalance = (adyenGiftcardsConfiguration.giftcardBalance / this.minorUnitsQuotient).toFixed(2);
-        this.offCanvasCartSummaryBlock = $('.offcanvas-summary-list');
-        this.shoppingCartSummaryBlock = $('.checkout-aside-summary-list');
+
+        this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
         this.offCanvasSummaryDetails = null;
         this.shoppingCartSummaryDetails = null;
 
-        this.giftcardComponentClose.on('click', function (event) {
-            $(event.currentTarget).hide();
-            this.selectedGiftcard = null;
-            this.giftcardHeader.html(' ');
-            if (this.paymentMethodInstance) {
-                this.paymentMethodInstance.unmount();
+        this.giftcardComponentClose.onclick = function (event) {
+            event.currentTarget.style.display = 'none';
+            self.selectedGiftcard = null;
+            self.giftcardHeader.innerHTML = ' ';
+            if (self.paymentMethodInstance) {
+                self.paymentMethodInstance.unmount();
             }
-        }.bind(this));
-        this.removeGiftcardButton.on('click', function (event) {
-            this.removeGiftcard();
-        }.bind(this));
+        };
 
-        if (parseInt(adyenGiftcardsConfiguration.giftcardDiscount, 10)) {
-            this.onGiftcardSelected();
-        }
+        this.removeGiftcardButton.onclick = function (event) {
+            self.removeGiftcard();
+        };
+
+        window.addEventListener("DOMContentLoaded", (event) => {
+            if (parseInt(adyenGiftcardsConfiguration.giftcardDiscount, 10)) {
+                this.onGiftcardSelected();
+            }
+        });
     }
 
     async initializeCheckoutComponent() {
@@ -81,10 +87,14 @@ export default class CartPlugin extends Plugin {
     }
 
     observeGiftcardSelection() {
-        $('.adyen-giftcard').on('click', function (event) {
-            this.selectedGiftcard = JSON.parse(event.currentTarget.dataset.giftcard);
-            this.mountGiftcardComponent(this.selectedGiftcard.extensions.adyenGiftcardData[0]);
-        }.bind(this));
+        let self = this;
+
+        for (let i=0; i < this.adyenGiftcard.length; i++) {
+            this.adyenGiftcard[i].onclick = function() {
+                self.selectedGiftcard = JSON.parse(event.currentTarget.dataset.giftcard);
+                self.mountGiftcardComponent(self.selectedGiftcard.extensions.adyenGiftcardData[0]);
+            }
+        }
     }
 
     mountGiftcardComponent(giftcard) {
@@ -95,8 +105,8 @@ export default class CartPlugin extends Plugin {
             this.paymentMethodInstance.unmount();
         }
         ElementLoadingIndicatorUtil.create(DomAccess.querySelector(document, '#adyen-giftcard-component'));
-        this.giftcardHeader.html(giftcard.name);
-        this.giftcardComponentClose.show();
+        this.giftcardHeader.innerHTML = giftcard.name;
+        this.giftcardComponentClose.style.display = 'block';
         const giftcardConfiguration = Object.assign({}, giftcard, {
             showPayButton: true,
             onBalanceCheck: this.handleBalanceCheck.bind(this),
@@ -131,8 +141,11 @@ export default class CartPlugin extends Plugin {
                         this.saveGiftcardStateData(data, balance.toString(), 0, this.selectedGiftcard.id);
                     }
 
-                    this.remainingBalanceField.show();
-                    this.remainingBalanceField.html(adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingBalance + ': ' + adyenGiftcardsConfiguration.currencySymbol + this.remainingGiftcardBalance);
+                    this.remainingBalanceField.style.display = 'block';
+                    let innerHtmlBalance = adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingBalance + ': ' +
+                        adyenGiftcardsConfiguration.currencySymbol + this.remainingGiftcardBalance;
+
+                    this.remainingBalanceField.innerHTML = innerHtmlBalance;
                 }
             }.bind(this)
         );
@@ -164,52 +177,62 @@ export default class CartPlugin extends Plugin {
             if ('token' in response) {
                 this.giftcardDiscount = 0;
                 this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
-                if (this.offCanvasCartSummaryBlock.length) {
-                    this.offCanvasCartSummaryBlock.children('.adyen-giftcard-summary').remove();
-                }
+
                 if (this.shoppingCartSummaryBlock.length) {
-                    this.shoppingCartSummaryBlock.children('.adyen-giftcard-summary').remove();
+                    debugger;
+
+                    let giftcardSummary = this.shoppingCartSummaryBlock[0].querySelectorAll('.adyen-giftcard-summary');
+                    for (let i = 0; i < giftcardSummary.length; i++) {
+                        giftcardSummary[i].remove();
+                    }
                 }
-                this.removeGiftcardButton.hide();
-                this.remainingBalanceField.hide();
+                this.removeGiftcardButton.style.display = 'none';
+                this.remainingBalanceField.style.display = 'none';
                 // Show giftcards
-                $('.adyen-giftcard').show();
+                for(var i=0;i<this.adyenGiftcard.length;i++){
+                    this.adyenGiftcard[i].style.display = '';
+                }
                 ElementLoadingIndicatorUtil.remove(document.body);
             }
         }.bind(this));
     }
 
     appendGiftcardSummary() {
-        if (this.offCanvasCartSummaryBlock.length) {
-            this.offCanvasSummaryDetails = $('<dt class="col-7 summary-label summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.translationAdyenGiftcardDiscount + '</dt>' +
-                '<dd class="col-5 summary-value summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.giftcardDiscount + '</dd>' +
-                '<dt class="col-7 summary-label summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingAmount + '</dt>' +
-                '<dd class="col-5 summary-value summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.remainingAmount + '</dd>');
-            this.offCanvasSummaryDetails.appendTo(this.offCanvasCartSummaryBlock[0]);
-        }
         if(this.shoppingCartSummaryBlock.length) {
-            this.shoppingCartSummaryDetails = $('<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.translationAdyenGiftcardDiscount + '</dt>' +
+            let innerHtmlShoppingCartSummaryDetails = '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.translationAdyenGiftcardDiscount + '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.giftcardDiscount + '</dd>' +
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingAmount + '</dt>' +
-                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.remainingAmount + '</dd>');
-            this.shoppingCartSummaryDetails.appendTo(this.shoppingCartSummaryBlock[0]);
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.remainingAmount + '</dd>';
+
+            this.shoppingCartSummaryBlock[0].innerHTML += innerHtmlShoppingCartSummaryDetails;
         }
     }
 
     onGiftcardSelected() {
+        debugger;
+
         // Remove component
         if (this.paymentMethodInstance) {
             this.paymentMethodInstance.unmount();
         }
-        this.giftcardComponentClose.hide();
+        this.giftcardComponentClose.style.display = 'none';
         // Hide giftcards
-        $('.adyen-giftcard').hide();
-        this.giftcardHeader.html(' ');
+        // this.adyenGiftcard.style.display = 'none';
+
+        for(var i=0;i<this.adyenGiftcard.length;i++){
+            this.adyenGiftcard[i].style.display = 'none';
+        }
+
+        this.giftcardHeader.innerHTML = ' ';
 
         this.appendGiftcardSummary();
         // Show Remove button
-        this.removeGiftcardButton.show();
-        this.remainingBalanceField.show();
-        this.remainingBalanceField.html(adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingBalance + ': ' + adyenGiftcardsConfiguration.currencySymbol + this.remainingGiftcardBalance);
+        this.removeGiftcardButton.style.display = 'block';
+        this.remainingBalanceField.style.display = 'block'
+
+        let balanceInnerHtml = adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingBalance + ': ' +
+            adyenGiftcardsConfiguration.currencySymbol + this.remainingGiftcardBalance
+
+        this.remainingBalanceField.innerHTML = balanceInnerHtml;
     }
 }
