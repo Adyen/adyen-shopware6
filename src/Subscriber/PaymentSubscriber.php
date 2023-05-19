@@ -52,7 +52,7 @@ use Shopware\Storefront\Page\Checkout\Register\CheckoutRegisterPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -89,9 +89,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $paymentMethodsService;
 
     /**
-     * @var Session $session
+     * @var RequestStack $requestStack
      */
-    private $session;
+    private $requestStack;
 
     /**
      * @var AbstractCartPersister
@@ -133,7 +133,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
-     * @param Session $session
+     * @param RequestStack $requestStack
      * @param AbstractCartPersister $cartPersister
      * @param CartCalculator $cartCalculator
      * @param AbstractContextSwitchRoute $contextSwitchRoute
@@ -148,7 +148,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
-        Session $session,
+        RequestStack $requestStack,
         AbstractCartPersister $cartPersister,
         CartCalculator $cartCalculator,
         AbstractContextSwitchRoute $contextSwitchRoute,
@@ -161,7 +161,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->session = $session;
+        $this->requestStack = $requestStack;
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
         $this->contextSwitchRoute = $contextSwitchRoute;
@@ -294,8 +294,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $selectedPaymentMethod = $salesChannelContext->getPaymentMethod();
         $page = $event->getPage();
         $orderId = '';
-        $affiliateCode = $this->session->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
-        $campaignCode = $this->session->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+        $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
 
         if (method_exists($page, 'getOrder')) {
             $orderId = $page->getOrder()->getId();
@@ -433,7 +433,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     ]
                 ),
                 $this->salesChannelContextFactory->create(
-                    $this->session->get('sw-context-token'),
+                    $this->requestStack->getSession()->get('sw-context-token'),
                     $request->attributes->get('sw-sales-channel-id')
                 )
             );
