@@ -22,7 +22,7 @@
 
 import Plugin from 'src/plugin-system/plugin.class';
 import DomAccess from 'src/helper/dom-access.helper';
-import StoreApiClient from 'src/service/store-api-client.service';
+import HttpClient from 'src/service/http-client.service';
 import FormSerializeUtil from 'src/utility/form/form-serialize.util';
 import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 import adyenConfiguration from '../configuration/adyen';
@@ -34,7 +34,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     init() {
         debugger;
 
-        this._client = new StoreApiClient();
+        this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
