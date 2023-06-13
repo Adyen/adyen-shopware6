@@ -179,8 +179,6 @@ export default class CartPlugin extends Plugin {
                 this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
 
                 if (this.shoppingCartSummaryBlock.length) {
-                    debugger;
-
                     let giftcardSummary = this.shoppingCartSummaryBlock[0].querySelectorAll('.adyen-giftcard-summary');
                     for (let i = 0; i < giftcardSummary.length; i++) {
                         giftcardSummary[i].remove();
@@ -209,8 +207,6 @@ export default class CartPlugin extends Plugin {
     }
 
     onGiftcardSelected() {
-        debugger;
-
         // Remove component
         if (this.paymentMethodInstance) {
             this.paymentMethodInstance.unmount();
