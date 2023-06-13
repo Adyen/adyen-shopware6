@@ -32,8 +32,6 @@ import adyenConfiguration from '../configuration/adyen';
 export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
-        debugger;
-
         this._client = new StoreApiClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
@@ -580,8 +578,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     appendGiftcardSummary() {
-        debugger;
-
         if(parseInt(adyenCheckoutOptions.giftcardDiscount, 10) && this.shoppingCartSummaryBlock.length) {
             let shoppingCartSummaryDetails =
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
