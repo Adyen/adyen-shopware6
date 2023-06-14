@@ -545,7 +545,8 @@ class AdminController
                 $this->notificationService->changeNotificationState(
                     $notification->getId(),
                     'processing',
-                    false);
+                    false
+                );
             }
             $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
         }
