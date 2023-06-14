@@ -442,7 +442,7 @@ class AdminController
                     ? NotificationEntity::NOTIFICATION_STATUS_PROCESSED
                     : NotificationEntity::NOTIFICATION_STATUS_PENDING,
                 'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
-                'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'updatedAt' => $notification->getUpdatedAt() ? $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT) : '',
                 'notificationId' => $notification->getId(),
                 'canBeRescheduled' => $this->notificationService->canBeRescheduled($notification),
                 'errorCount' => $notification->getErrorCount(),
