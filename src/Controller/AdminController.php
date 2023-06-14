@@ -442,7 +442,9 @@ class AdminController
                     ? NotificationEntity::NOTIFICATION_STATUS_PROCESSED
                     : NotificationEntity::NOTIFICATION_STATUS_PENDING,
                 'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
-                'updatedAt' => $notification->getUpdatedAt() ? $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT) : '',
+                'updatedAt' => $notification->getUpdatedAt()
+                    ? $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT)
+                    : '',
                 'notificationId' => $notification->getId(),
                 'canBeRescheduled' => $this->notificationService->canBeRescheduled($notification),
                 'errorCount' => $notification->getErrorCount(),
@@ -540,7 +542,10 @@ class AdminController
             );
             // If notification was stuck in state Processing=true, reset the state and reschedule.
             if ($notification->getProcessing()) {
-                $this->notificationService->changeNotificationState($notification->getId(), 'processing', false);
+                $this->notificationService->changeNotificationState(
+                    $notification->getId(),
+                    'processing',
+                    false);
             }
             $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
         }
