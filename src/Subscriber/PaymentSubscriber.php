@@ -369,8 +369,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     [
                         'paymentStatusUrl' => $this->router->generate('store-api.action.adyen.payment-status'),
                         'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
-                        'checkoutOrderUrl' => $this->router->generate('store-api.checkout.cart.order'),
-                        'paymentHandleUrl' => $this->router->generate('store-api.payment.handle'),
+                        'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                        'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
                         'paymentDetailsUrl' => $this->router->generate('store-api.action.adyen.payment-details'),
                         'paymentFinishUrl' => $this->router->generate(
                             'frontend.checkout.finish.page',

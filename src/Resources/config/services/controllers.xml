@@ -20,6 +20,15 @@
             <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\Storefront\Controller\FrontendProxyController">
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+            <tag name="controller.service_arguments"/>
+        </service>
         <service id="Adyen\Shopware\Controller\AdminController" autowire="true">
             <argument type="service" key="$logger" id="monolog.logger.adyen_api"/>
             <tag name="controller.service_arguments"/>
