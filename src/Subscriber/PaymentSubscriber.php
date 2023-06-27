@@ -276,7 +276,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         ->generate('payment.adyen.proxy-check-balance'),
                     'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
                     'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
-                    'switchContextUrl' => $this->router->generate('store-api.switch-context'),
+                    'switchContextUrl' => $this->router->generate('payment.adyen.proxy-switch-context'),
                     'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
                 ])
             )
