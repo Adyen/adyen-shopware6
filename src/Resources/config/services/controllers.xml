@@ -23,6 +23,7 @@
         <service id="Adyen\Shopware\Storefront\Controller\FrontendProxyController">
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute"/>
             <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Payment\PaymentController"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController"/>

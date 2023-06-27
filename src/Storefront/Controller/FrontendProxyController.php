@@ -24,9 +24,11 @@
 
 namespace Adyen\Shopware\Storefront\Controller;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
+use Adyen\Shopware\Exception\ValidationException;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
@@ -34,6 +36,9 @@ use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\SalesChannel\ContextTokenResponse;
+use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
+use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
@@ -48,6 +53,7 @@ class FrontendProxyController extends StorefrontController
 
     private CartOrderRoute $cartOrderRoute;
     private CartService $cartService;
+    private ContextSwitchRoute $contextSwitchRoute;
     private HandlePaymentMethodRoute $handlePaymentMethodRoute;
     private PaymentController $paymentController;
     private OrderApiController $orderApiController;
@@ -56,6 +62,7 @@ class FrontendProxyController extends StorefrontController
     public function __construct(
         AbstractCartOrderRoute $cartOrderRoute,
         AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
+        AbstractContextSwitchRoute $contextSwitchRoute,
         CartService $cartService,
         PaymentController $paymentController,
         OrderApiController $orderApiController,
@@ -65,9 +72,23 @@ class FrontendProxyController extends StorefrontController
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
+        $this->contextSwitchRoute = $contextSwitchRoute;
         $this->paymentController = $paymentController;
         $this->orderApiController = $orderApiController;
         $this->donateController = $donateController;
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-switch-context",
+     *     name="payment.adyen.proxy-switch-context",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"PATCH"}
+     * )
+     */
+    public function switchContext(RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
+    {
+        return $this->contextSwitchRoute->switchContext($data, $context);
     }
 
     /**
@@ -77,12 +98,8 @@ class FrontendProxyController extends StorefrontController
      *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *     methods={"POST"}
      * )
-     *
-     * @param SalesChannelContext $salesChannelContext
-     * @param RequestDataBag $data
-     * @return JsonResponse
      */
-    public function checkoutOrder(SalesChannelContext $salesChannelContext, RequestDataBag $data): JsonResponse
+    public function checkoutOrder(RequestDataBag $data, SalesChannelContext $salesChannelContext): JsonResponse
     {
         $cart = $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext);
         return new JsonResponse($this->cartOrderRoute->order($cart, $salesChannelContext, $data)->getOrder());
@@ -96,7 +113,7 @@ class FrontendProxyController extends StorefrontController
      *     methods={"POST"}
      * )
      */
-    public function handlePayment(Request $request, SalesChannelContext $salesChannelContext)
+    public function handlePayment(Request $request, SalesChannelContext $salesChannelContext): JsonResponse
     {
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
@@ -146,6 +163,7 @@ class FrontendProxyController extends StorefrontController
      * @Route(
      *    "/adyen/proxy-set-payment",
      *    name="payment.adyen.proxy-set-payment",
+     *    defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *    methods={"POST"}
      * )
      */
@@ -158,6 +176,7 @@ class FrontendProxyController extends StorefrontController
      * @Route(
      *     "/adyen/proxy-cancel-order-transaction",
      *     name="payment.adyen.proxy-cancel-order-transaction",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *     methods={"POST"}
      * )
      */
@@ -170,10 +189,11 @@ class FrontendProxyController extends StorefrontController
      * @Route(
      *    "/adyen/proxy-check-balance",
      *    name="payment.adyen.proxy-check-balance",
+     *    defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *    methods={"POST"}
      * )
      */
-    public function checkBalance(SalesChannelContext $context, Request $request): JsonResponse
+    public function checkBalance(Request $request, SalesChannelContext $context): JsonResponse
     {
         return $this->orderApiController->getPaymentMethodsBalance($context, $request);
     }
@@ -182,10 +202,11 @@ class FrontendProxyController extends StorefrontController
      * @Route(
      *    "/adyen/proxy-create-adyen-order",
      *    name="payment.adyen.proxy-create-adyen-order",
+     *    defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *    methods={"POST"}
      * )
      */
-    public function createAdyenOrder(SalesChannelContext $context, Request $request): JsonResponse
+    public function createAdyenOrder(Request $request, SalesChannelContext $context): JsonResponse
     {
         return $this->orderApiController->createOrder($context, $request);
     }
@@ -194,11 +215,53 @@ class FrontendProxyController extends StorefrontController
      * @Route(
      *    "/adyen/proxy-cancel-adyen-order",
      *    name="payment.adyen.proxy-cancel-adyen-order",
+     *    defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *    methods={"POST"}
      * )
      */
-    public function cancelAdyenOrder(SalesChannelContext $context, Request $request): JsonResponse
+    public function cancelAdyenOrder(Request $request, SalesChannelContext $context): JsonResponse
     {
         return $this->orderApiController->cancelOrder($context, $request);
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-store-giftcard-state-data",
+     *     name="payment.adyen.proxy-store-giftcard-state-data",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"POST"}
+     * )
+     *
+     * @throws ValidationException
+     * @throws AdyenException
+     */
+    public function storeGiftcardStateData(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        return $this->orderApiController->giftcardStateData($context, $request);
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-remove-giftcard-state-data",
+     *     name="payment.adyen.proxy-remove-giftcard-state-data",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"POST"}
+     * )
+     */
+    public function removeGiftcardStateData(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        return $this->orderApiController->deleteGiftCardStateData($context, $request);
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-donate",
+     *     name="payment.adyen.proxy-donate",
+     *     methods={"POST"}
+     * )
+     */
+    public function donate(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        return $this->donateController->donate($request, $context);
     }
 }

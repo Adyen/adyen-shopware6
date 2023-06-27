@@ -273,9 +273,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'giftcardDiscountDisplay' => $giftcardDiscount / $minorUnitsQuotient,
                     'giftcardBalance' => $giftcardBalance,
                     'checkBalanceUrl' => $this->router
-                        ->generate('store-api.action.adyen.payment-methods.balance'),
-                    'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
-                    'removeGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard.remove'),
+                        ->generate('payment.adyen.proxy-check-balance'),
+                    'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
+                    'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
                     'switchContextUrl' => $this->router->generate('store-api.switch-context'),
                     'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
                 ])
