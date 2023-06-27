@@ -24,9 +24,13 @@
 
 namespace Adyen\Shopware\Storefront\Controller;
 
+use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
+use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
+use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -45,16 +49,25 @@ class FrontendProxyController extends StorefrontController
     private CartOrderRoute $cartOrderRoute;
     private CartService $cartService;
     private HandlePaymentMethodRoute $handlePaymentMethodRoute;
+    private PaymentController $paymentController;
+    private OrderApiController $orderApiController;
+    private DonateController $donateController;
 
     public function __construct(
         AbstractCartOrderRoute $cartOrderRoute,
         AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
-        CartService $cartService
+        CartService $cartService,
+        PaymentController $paymentController,
+        OrderApiController $orderApiController,
+        DonateController $donateController
     )
     {
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
+        $this->paymentController = $paymentController;
+        $this->orderApiController = $orderApiController;
+        $this->donateController = $donateController;
     }
 
     /**
@@ -88,5 +101,104 @@ class FrontendProxyController extends StorefrontController
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
         return new JsonResponse($routeResponse->getObject());
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-payment-methods",
+     *     name="payment.adyen.proxy-payment-methods",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"GET"}
+     * )
+     */
+    public function paymentMethods(SalesChannelContext $context): JsonResponse
+    {
+        return $this->paymentController->getPaymentMethods($context);
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-payment-status",
+     *     name="payment.adyen.proxy-payment-status",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"POST"}
+     * )
+     */
+    public function paymentStatus(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        return $this->paymentController->getPaymentStatus($request, $context);
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-payment-details",
+     *     name="payment.adyen.proxy-payment-details",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"POST"}
+     * )
+     */
+    public function paymentDetails(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        return $this->paymentController->postPaymentDetails($request, $context);
+    }
+
+    /**
+     * @Route(
+     *    "/adyen/proxy-set-payment",
+     *    name="payment.adyen.proxy-set-payment",
+     *    methods={"POST"}
+     * )
+     */
+    public function setPaymentMethod(Request $request, SalesChannelContext $context): SetPaymentOrderRouteResponse
+    {
+        return $this->paymentController->updatePaymentMethod($request, $context);
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-cancel-order-transaction",
+     *     name="payment.adyen.proxy-cancel-order-transaction",
+     *     methods={"POST"}
+     * )
+     */
+    public function cancelOrderTransaction(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        return $this->paymentController->cancelOrderTransaction($request, $context);
+    }
+
+    /**
+     * @Route(
+     *    "/adyen/proxy-check-balance",
+     *    name="payment.adyen.proxy-check-balance",
+     *    methods={"POST"}
+     * )
+     */
+    public function checkBalance(SalesChannelContext $context, Request $request): JsonResponse
+    {
+        return $this->orderApiController->getPaymentMethodsBalance($context, $request);
+    }
+
+    /**
+     * @Route(
+     *    "/adyen/proxy-create-adyen-order",
+     *    name="payment.adyen.proxy-create-adyen-order",
+     *    methods={"POST"}
+     * )
+     */
+    public function createAdyenOrder(SalesChannelContext $context, Request $request): JsonResponse
+    {
+        return $this->orderApiController->createOrder($context, $request);
+    }
+
+    /**
+     * @Route(
+     *    "/adyen/proxy-cancel-adyen-order",
+     *    name="payment.adyen.proxy-cancel-adyen-order",
+     *    methods={"POST"}
+     * )
+     */
+    public function cancelAdyenOrder(SalesChannelContext $context, Request $request): JsonResponse
+    {
+        return $this->orderApiController->cancelOrder($context, $request);
     }
 }

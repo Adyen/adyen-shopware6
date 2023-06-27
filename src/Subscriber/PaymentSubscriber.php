@@ -367,11 +367,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 array_merge(
                     $this->getComponentData($salesChannelContext),
                     [
-                        'paymentStatusUrl' => $this->router->generate('store-api.action.adyen.payment-status'),
-                        'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
+                        'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
+                        'createOrderUrl' => $this->router->generate('payment.adyen.proxy-create-adyen-order'),
                         'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
                         'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
-                        'paymentDetailsUrl' => $this->router->generate('store-api.action.adyen.payment-details'),
+                        'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
+                        'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
                         'paymentFinishUrl' => $this->router->generate(
                             'frontend.checkout.finish.page',
                             ['orderId' => '']
@@ -384,11 +385,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'updatePaymentUrl' => $this->router->generate(
-                            'store-api.action.adyen.set-payment'
-                        ),
                         'cancelOrderTransactionUrl' => $this->router->generate(
-                            'store-api.action.adyen.cancel-order-transaction',
+                            'payment.adyen.proxy-cancel-order-transaction',
                         ),
                         'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                         'currency' => $currency,
