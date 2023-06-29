@@ -100,10 +100,8 @@ class OrderApiController
      */
     public function getPaymentMethodsBalance(SalesChannelContext $context, Request $request): JsonResponse
     {
-        $paymentMethodData = $request->request->get('paymentMethod');
-
         return new JsonResponse(
-            $this->paymentMethodsBalanceService->getPaymentMethodsBalance($context, (array) $paymentMethodData)
+            $this->paymentMethodsBalanceService->getPaymentMethodsBalance($context, (array) $request)
         );
     }
 

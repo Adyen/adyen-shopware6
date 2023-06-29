@@ -105,7 +105,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     handleOnAdditionalDetails (state) {
         this._client.post(
             `${adyenCheckoutOptions.paymentDetailsUrl}`,
-            JSON.stringify({orderId: this.orderId, stateData: state.data}),
+            JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     location.href = this.errorUrl.toString();

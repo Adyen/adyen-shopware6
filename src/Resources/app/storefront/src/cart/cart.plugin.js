@@ -123,7 +123,7 @@ export default class CartPlugin extends Plugin {
     handleBalanceCheck(resolve, reject, data) {
         this._client.post(
             `${adyenGiftcardsConfiguration.checkBalanceUrl}`,
-            JSON.stringify({paymentMethod: data.paymentMethod}),
+            JSON.stringify(data.paymentMethod),
             function (response) {
                 response = JSON.parse(response);
                 if ('Success' !== response.resultCode) {

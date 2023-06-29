@@ -199,6 +199,7 @@ class PaymentController
 
         // Get state data object if sent
         $stateData = $request->request->get('stateData');
+        $stateData = json_decode($stateData, true);
 
         // Validate stateData object
         if (!empty($stateData)) {
