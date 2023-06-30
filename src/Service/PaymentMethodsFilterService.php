@@ -98,8 +98,7 @@ class PaymentMethodsFilterService
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                 } elseif ($pmHandlerIdentifier::$isGiftCard) {
-                    if (isset($giftcardId) &&
-                        $giftcardId !== $paymentMethodEntity->getId()) {
+                    if ($giftcardId !== $paymentMethodEntity->getId()) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                     // Remove ApplePay PM if the browser is not Safari
