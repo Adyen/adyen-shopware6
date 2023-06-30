@@ -257,6 +257,7 @@ class FrontendProxyController extends StorefrontController
      * @Route(
      *     "/adyen/proxy-donate",
      *     name="payment.adyen.proxy-donate",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *     methods={"POST"}
      * )
      */

@@ -433,6 +433,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         if (static::class === OneClickPaymentMethodHandler::class) {
             $request['shopperInteraction'] = self::SHOPPER_INTERACTION_CONTAUTH;
+            $request['recurringProcessingModel'] = 'CardOnFile';
         } else {
             $request['shopperInteraction'] = self::SHOPPER_INTERACTION_ECOMMERCE;
         }

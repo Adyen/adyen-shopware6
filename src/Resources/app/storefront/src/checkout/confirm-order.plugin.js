@@ -160,16 +160,21 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
 
         this.hideStorePaymentMethodComponents();
+        let selectedId = null;
         let storedPaymentMethodFields = DomAccess.querySelectorAll(document, '[name=adyenStoredPaymentMethodId]');
         storedPaymentMethodFields.forEach(field => {
+            if (!selectedId) {
+                selectedId = field.value;
+            }
             field.addEventListener('change', this.showSelectedStoredPaymentMethod.bind(this));
         });
+        this.showSelectedStoredPaymentMethod(null, selectedId);
     }
 
-    showSelectedStoredPaymentMethod(event) {
+    showSelectedStoredPaymentMethod(event, selectedId=null) {
         // Only show the component for the selected stored payment method
         this.hideStorePaymentMethodComponents();
-        let selectedId = event.target.value;
+        selectedId = event ? event.target.value : selectedId;
         let selector = `[data-adyen-stored-payment-method-id="${selectedId}"]`;
         let component = DomAccess.querySelector(document, selector);
         component.style.display = 'block';
