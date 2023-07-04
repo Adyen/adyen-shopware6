@@ -121,12 +121,18 @@ export default class CartPlugin extends Plugin {
     }
 
     handleBalanceCheck(resolve, reject, data) {
+        let params = {};
+        params.paymentMethod = JSON.stringify(data.paymentMethod);
+        params.amount = JSON.stringify({
+            "currency":adyenGiftcardsConfiguration.currency,
+            "value": adyenGiftcardsConfiguration.totalInMinorUnits
+        });
         this._client.post(
             `${adyenGiftcardsConfiguration.checkBalanceUrl}`,
-            JSON.stringify(data.paymentMethod),
+            JSON.stringify(params),
             function (response) {
                 response = JSON.parse(response);
-                if ('Success' !== response.resultCode) {
+                if (!response.hasOwnProperty('pspReference')) {
                     console.error(response.resultCode);
                     reject(response.resultCode);
                 } else {
@@ -153,6 +159,7 @@ export default class CartPlugin extends Plugin {
 
     saveGiftcardStateData(stateData, amountInMinorUnits, balance, paymentMethodId) {
         // save state data to database, set giftcard as payment method and proceed to checkout
+        stateData = JSON.stringify(stateData);
         this._client.post(adyenGiftcardsConfiguration.setGiftcardUrl, JSON.stringify({ stateData, amount: amountInMinorUnits, balance, paymentMethodId }), function (response) {
             response = JSON.parse(response);
             if ('paymentMethodId' in response) {
