@@ -67,8 +67,7 @@ class FrontendProxyController extends StorefrontController
         PaymentController $paymentController,
         OrderApiController $orderApiController,
         DonateController $donateController
-    )
-    {
+    ) {
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
