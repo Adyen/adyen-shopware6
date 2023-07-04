@@ -63,7 +63,7 @@ use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\RouterInterface;
 
 abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
@@ -179,9 +179,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected $productRepository;
 
     /**
-     * @var Session
+     * @var RequestStack
      */
-    protected $session;
+    protected $requestStack;
 
     /**
      * @var AbstractContextSwitchRoute
@@ -214,7 +214,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $symfonyRouter
-     * @param Session $session
+     * @param RequestStack $requestStack
      * @param EntityRepository $currencyRepository
      * @param EntityRepository $productRepository
      * @param LoggerInterface $logger
@@ -236,7 +236,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $symfonyRouter,
-        Session $session,
+        RequestStack $requestStack,
         EntityRepository $currencyRepository,
         EntityRepository $productRepository,
         AbstractContextSwitchRoute $contextSwitchRoute,
@@ -258,7 +258,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->logger = $logger;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->symfonyRouter = $symfonyRouter;
-        $this->session = $session;
+        $this->requestStack = $requestStack;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
         $this->contextSwitchRoute = $contextSwitchRoute;
@@ -433,6 +433,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         if (static::class === OneClickPaymentMethodHandler::class) {
             $request['shopperInteraction'] = self::SHOPPER_INTERACTION_CONTAUTH;
+            $request['recurringProcessingModel'] = 'CardOnFile';
         } else {
             $request['shopperInteraction'] = self::SHOPPER_INTERACTION_ECOMMERCE;
         }
@@ -747,7 +748,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     {
         if ('validation' === $exception->getErrorType()
             && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)) {
-            $this->session->getFlashBag()->add('warning', $exception->getMessage());
+            $this->requestStack->getSession()->getFlashBag()->add('warning', $exception->getMessage());
         }
     }
 

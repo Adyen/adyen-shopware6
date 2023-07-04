@@ -55,12 +55,13 @@ class PaymentMethodsBalanceService
 
     public function getPaymentMethodsBalance(
         SalesChannelContext $context,
-        array $paymentMethod
+        array $paymentMethod,
+        array $amount
     ): array {
         $responseData = [];
 
         try {
-            $requestData = $this->buildPaymentMethodsBalanceRequestData($context, $paymentMethod);
+            $requestData = $this->buildPaymentMethodsBalanceRequestData($context, $paymentMethod, $amount);
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
@@ -74,7 +75,8 @@ class PaymentMethodsBalanceService
 
     private function buildPaymentMethodsBalanceRequestData(
         SalesChannelContext $context,
-        array $paymentMethod
+        array $paymentMethod,
+        array $amount
     ): array {
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
@@ -85,8 +87,9 @@ class PaymentMethodsBalanceService
         }
 
         return [
-            "paymentMethod" => $paymentMethod,
-            "merchantAccount" => $merchantAccount
+            'paymentMethod' => $paymentMethod,
+            'amount' => $amount,
+            'merchantAccount' => $merchantAccount
         ];
     }
 }

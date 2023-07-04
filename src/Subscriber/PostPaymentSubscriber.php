@@ -175,7 +175,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
             'name' => $this->configurationService->getAdyenGivingCharityName($salesChannelId),
             'charityUrl' => $this->configurationService->getAdyenGivingCharityWebsite($salesChannelId),
             'donationEndpointUrl' => $this->router->generate(
-                'store-api.action.adyen.donate'
+                'payment.adyen.proxy-donate'
             ),
             'continueActionUrl' => $this->router->generate(
                 'frontend.home.page'

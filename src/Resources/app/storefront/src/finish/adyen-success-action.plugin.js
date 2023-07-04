@@ -22,12 +22,10 @@
 
 import Plugin from 'src/plugin-system/plugin.class';
 import DomAccess from 'src/helper/dom-access.helper';
-import StoreApiClient from 'src/service/store-api-client.service';
 import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 
 export default class AdyenSuccessActionPlugin extends Plugin {
     init() {
-        this._client = new StoreApiClient();
         this.adyenCheckout = Promise;
         this.initializeCheckoutComponent().bind(this);
     }
