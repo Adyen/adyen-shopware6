@@ -39,7 +39,6 @@ use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
-use Adyen\Shopware\Storefront\Controller\RedirectResultController;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -53,7 +52,7 @@ use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyCollection;
@@ -64,9 +63,8 @@ use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
 {
@@ -87,6 +85,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     public static $isOpenInvoice = false;
     public static $isGiftCard = false;
+    public static $supportsManualCapture = false;
+    public static $supportsPartialCapture = false;
 
     /**
      * @var ClientService
@@ -169,24 +169,19 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected $symfonyRouter;
 
     /**
-     * @var CsrfTokenManagerInterface
-     */
-    protected $csrfTokenManager;
-
-    /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     protected $currencyRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     protected $productRepository;
 
     /**
-     * @var Session
+     * @var RequestStack
      */
-    protected $session;
+    protected $requestStack;
 
     /**
      * @var AbstractContextSwitchRoute
@@ -219,10 +214,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      * @param RouterInterface $symfonyRouter
-     * @param CsrfTokenManagerInterface $csrfTokenManager
-     * @param Session $session
-     * @param EntityRepositoryInterface $currencyRepository
-     * @param EntityRepositoryInterface $productRepository
+     * @param RequestStack $requestStack
+     * @param EntityRepository $currencyRepository
+     * @param EntityRepository $productRepository
      * @param LoggerInterface $logger
      * @param AbstractContextSwitchRoute $contextSwitchRoute
      */
@@ -242,10 +236,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         RouterInterface $symfonyRouter,
-        CsrfTokenManagerInterface $csrfTokenManager,
-        Session $session,
-        EntityRepositoryInterface $currencyRepository,
-        EntityRepositoryInterface $productRepository,
+        RequestStack $requestStack,
+        EntityRepository $currencyRepository,
+        EntityRepository $productRepository,
         AbstractContextSwitchRoute $contextSwitchRoute,
         LoggerInterface $logger
     ) {
@@ -265,8 +258,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->logger = $logger;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->symfonyRouter = $symfonyRouter;
-        $this->csrfTokenManager = $csrfTokenManager;
-        $this->session = $session;
+        $this->requestStack = $requestStack;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
         $this->contextSwitchRoute = $contextSwitchRoute;
@@ -377,7 +369,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
 
         // Payment had no error, continue the process
-        return new RedirectResponse($this->getAdyenReturnUrl($transaction, $salesChannelContext));
+        return new RedirectResponse($transaction->getReturnUrl());
     }
 
     /**
@@ -441,6 +433,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         if (static::class === OneClickPaymentMethodHandler::class) {
             $request['shopperInteraction'] = self::SHOPPER_INTERACTION_CONTAUTH;
+            $request['recurringProcessingModel'] = 'CardOnFile';
         } else {
             $request['shopperInteraction'] = self::SHOPPER_INTERACTION_ECOMMERCE;
         }
@@ -597,7 +590,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $amount,
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $this->getAdyenReturnUrl($transaction, $salesChannelContext),
+            $transaction->getReturnUrl(),
             $request
         );
 
@@ -709,44 +702,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     }
 
     /**
-     * Creates the Adyen Redirect Result URL with the same query as the original return URL
-     * Fixes the CSRF validation bug: https://issues.shopware.com/issues/NEXT-6356
-     *
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param SalesChannelContext $context
-     * @return string
-     */
-    private function getAdyenReturnUrl(AsyncPaymentTransactionStruct $transaction, SalesChannelContext $context): string
-    {
-        // Parse the original return URL to retrieve the query parameters
-        $returnUrlQuery = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
-
-        // In case the URL is malformed it cannot be parsed
-        if (false === $returnUrlQuery) {
-            throw new AsyncPaymentProcessException(
-                $transaction->getOrderTransaction()->getId(),
-                'Return URL is malformed'
-            );
-        }
-
-        $baseUrl = $this->salesChannelRepository->getCurrentDomainUrl($context);
-
-        // Generate the custom Adyen endpoint to receive the redirect from the issuer page
-        $adyenReturnPath = $this->symfonyRouter->generate(
-            'payment.adyen.redirect_result',
-            [
-                RedirectResultController::CSRF_TOKEN => $this->csrfTokenManager->getToken(
-                    'payment.finalize.transaction'
-                )->getValue()
-            ],
-            RouterInterface::ABSOLUTE_PATH
-        );
-
-        // Create the adyen redirect result URL with the same query as the original return URL
-        return rtrim($baseUrl, '/') . $adyenReturnPath . '&' . $returnUrlQuery;
-    }
-
-    /**
      * @param string $currencyId
      * @param Context $context
      * @return CurrencyEntity
@@ -793,7 +748,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     {
         if ('validation' === $exception->getErrorType()
             && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)) {
-            $this->session->getFlashBag()->add('warning', $exception->getMessage());
+            $this->requestStack->getSession()->getFlashBag()->add('warning', $exception->getMessage());
         }
     }
 

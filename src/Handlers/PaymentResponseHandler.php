@@ -37,7 +37,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentResponseHandler
@@ -80,7 +80,7 @@ class PaymentResponseHandler
     private $transactionStateHandler;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $orderTransactionRepository;
 
@@ -98,7 +98,7 @@ class PaymentResponseHandler
      * @param LoggerInterface $logger
      * @param PaymentResponseService $paymentResponseService
      * @param OrderTransactionStateHandler $transactionStateHandler
-     * @param EntityRepositoryInterface $orderTransactionRepository
+     * @param EntityRepository $orderTransactionRepository
      * @param CaptureService $captureService
      * @param ConfigurationService $configurationService
      */
@@ -106,7 +106,7 @@ class PaymentResponseHandler
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
-        EntityRepositoryInterface $orderTransactionRepository,
+        EntityRepository $orderTransactionRepository,
         CaptureService $captureService,
         ConfigurationService $configurationService
     ) {
@@ -237,7 +237,7 @@ class PaymentResponseHandler
         $context = $salesChannelContext->getContext();
         $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
         $requiresManualCapture = $this->captureService
-            ->requiresManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
+            ->isManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
 
         // Get already stored transaction custom fields
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
@@ -310,6 +310,8 @@ class PaymentResponseHandler
                 // Transactions will be set as paid via webhook notification
                 if (!$requiresManualCapture) {
                     $this->transactionStateHandler->authorize($orderTransactionId, $context);
+                } else {
+                    $this->transactionStateHandler->process($orderTransactionId, $context);
                 }
                 break;
             case self::REFUSED:
@@ -410,6 +412,10 @@ class PaymentResponseHandler
         $resultCode,
         $requiresManualCapture = false
     ) {
+        if ($transactionStateTechnicalName === OrderTransactionStates::STATE_OPEN) {
+            return false;
+        }
+
         // TODO check all the states and adyen resultCodes not just the straightforward ones
         switch ($resultCode) {
             case self::AUTHORISED:

@@ -55,24 +55,12 @@ Component.register('adyen-payment-capture', {
             captureEnabled: false,
             errorOccurred: false,
             isLoading: true,
-            showWidget: false,
+            showWidget: false
         };
     },
 
-    created() {
-        this.createdComponent();
-    },
 
     methods: {
-        createdComponent() {
-            return this.systemConfigApiService.getValues('AdyenPaymentShopware6.config')
-                .then((response) => {
-                    this.captureEnabled = response['AdyenPaymentShopware6.config.manualCaptureEnabled'] || null;
-                }).finally(() => {
-                    this.isLoading = false;
-                    this.showWidget = this.adyenService.isAdyenOrder(this.order) && this.captureEnabled;
-                });
-        },
         openModal() {
             this.showModal = true;
         },
@@ -120,6 +108,19 @@ Component.register('adyen-payment-capture', {
             });
         },
 
+        isManualCaptureEnabled() {
+            this.isLoading = true;
+            this.adyenService.isManualCaptureEnabled(this.order.id).then((res) => {
+                this.captureEnabled = res;
+                this.showWidget = this.adyenService.isAdyenOrder(this.order) && this.captureEnabled;
+            }).catch(() => {
+                this.errorOccurred = true;
+                this.captureEnabled = false;
+            }).finally(() => {
+                this.isLoading = false;
+            });
+        },
+
         isCaptureAllowed() {
             this.isLoading = true;
             this.adyenService.isCaptureAllowed(this.order.id).then((res) => {
@@ -134,6 +135,7 @@ Component.register('adyen-payment-capture', {
     },
 
     beforeMount() {
+        this.isManualCaptureEnabled();
         this.fetchCaptureRequests();
     }
 })

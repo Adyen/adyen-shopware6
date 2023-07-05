@@ -27,23 +27,23 @@ namespace Adyen\Shopware\Controller\StoreApi\Donate;
 use Adyen\AdyenException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
+use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Symfony\Component\Routing\Annotation\Route;
-use OpenApi\Annotations as OA;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 
 /**
  * Class DonateController
- * @package Adyen\Shopware\Controller\StoreApi\OrderApi
- * @RouteScope(scopes={"store-api"})
+ * @package Adyen\Shopware\Controller\StoreApi\Donate
+ * @Route(defaults={"_routeScope"={"store-api"}})
  */
 class DonateController
 {
@@ -52,13 +52,23 @@ class DonateController
      */
     private $adyenOrderTransactionRepository;
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $orderTransactionRepository;
     /**
      * @var DonationService
      */
     private $donationService;
+
+    /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
+     * @var Currency
+     */
+    private $currency;
     /**
      * @var LoggerInterface
      */
@@ -69,18 +79,23 @@ class DonateController
      *
      * @param DonationService $donationService
      * @param OrderTransactionRepository $adyenOrderTransactionRepository
-     * @param EntityRepositoryInterface $orderTransactionRepository
+     * @param EntityRepository $orderTransactionRepository
+     * @param ConfigurationService $configurationService
      * @param LoggerInterface $logger
      */
     public function __construct(
         DonationService $donationService,
         OrderTransactionRepository $adyenOrderTransactionRepository,
-        EntityRepositoryInterface $orderTransactionRepository,
+        EntityRepository $orderTransactionRepository,
+        ConfigurationService $configurationService,
+        Currency $currency,
         LoggerInterface $logger
     ) {
         $this->donationService = $donationService;
         $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->configurationService = $configurationService;
+        $this->currency = $currency;
         $this->logger = $logger;
     }
 
@@ -99,16 +114,32 @@ class DonateController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        $payload = $request->request->get('payload');
+        $orderId = $request->request->get('orderId');
+        $returnUrl = $request->request->get('returnUrl');
+        $stateData = $request->request->get('stateData');
+        $payload = json_decode($stateData, true);
 
-        $orderId = $payload['orderId'];
         $currency = $payload['amount']['currency'];
         $value = $payload['amount']['value'];
-        $returnUrl = $payload['returnUrl'];
 
         $transaction = $this->adyenOrderTransactionRepository
             ->getFirstAdyenOrderTransactionByStates($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
 
+        $orderCurrency = $transaction->getOrder()->getCurrency()->getIsoCode();
+        $donationAmounts = $this->configurationService
+            ->getAdyenGivingDonationAmounts($salesChannelContext->getSalesChannelId());
+
+        $formatter = $this->currency;
+        $donationAmountsMinorUnits = array_map(
+            function ($amount) use ($formatter, $orderCurrency) {
+                return $formatter->sanitize($amount, $orderCurrency);
+            },
+            explode(',', $donationAmounts)
+        );
+        if ($currency !== $orderCurrency || !in_array($value, $donationAmountsMinorUnits)) {
+            $this->logger->error("Invalid amount or currency from request", (array)$payload);
+            return new JsonResponse('An unknown error occurred');
+        }
         /** @var AbstractPaymentMethodHandler $paymentMethodIdentifier */
         $paymentMethodIdentifier = $transaction->getPaymentMethod()->getHandlerIdentifier();
         $paymentMethodCode = $paymentMethodIdentifier::getPaymentMethodCode();

@@ -18,7 +18,7 @@ class Migration1681716164AlterAdyenPayment extends MigrationStep
             ALTER TABLE `adyen_payment` ADD CONSTRAINT `UQ_ADYEN_PAYMENT_PSPREFERENCE` UNIQUE (`pspreference`)
         SQL;
 
-        $connection->executeUpdate($query);
+        $connection->executeStatement($query);
     }
 
     public function updateDestructive(Connection $connection): void

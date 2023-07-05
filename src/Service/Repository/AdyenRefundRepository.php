@@ -28,27 +28,26 @@ use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
 class AdyenRefundRepository
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $repository;
 
     /**
      * AdyenRefundRepository constructor.
      *
-     * @param EntityRepositoryInterface $repository
+     * @param EntityRepository $repository
      * @param LoggerInterface $logger
      */
     public function __construct(
-        EntityRepositoryInterface $repository
+        EntityRepository $repository
     ) {
         $this->repository = $repository;
     }
@@ -88,9 +87,9 @@ class AdyenRefundRepository
     }
 
     /**
-     * @return EntityRepositoryInterface
+     * @return EntityRepository
      */
-    public function getRepository() : EntityRepositoryInterface
+    public function getRepository() : EntityRepository
     {
         return $this->repository;
     }

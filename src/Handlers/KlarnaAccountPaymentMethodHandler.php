@@ -28,6 +28,8 @@ namespace Adyen\Shopware\Handlers;
 class KlarnaAccountPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static $isOpenInvoice = true;
+    public static $supportsManualCapture = true;
+    public static $supportsPartialCapture = true;
 
     public static function getPaymentMethodCode()
     {

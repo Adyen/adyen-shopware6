@@ -3,7 +3,7 @@
 namespace Adyen\Shopware\Service\Repository;
 
 use Shopware\Core\Content\Newsletter\Exception\SalesChannelDomainNotFoundException;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -13,12 +13,12 @@ use Adyen\Shopware\Service\ConfigurationService;
 class SalesChannelRepository
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $domainRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $salesChannelRepository;
 
@@ -28,22 +28,22 @@ class SalesChannelRepository
     private $configurationService;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $languageRepository;
 
     /**
      * SalesChannelRepository constructor.
-     * @param EntityRepositoryInterface $domainRepository
-     * @param EntityRepositoryInterface $salesChannelRepository
+     * @param EntityRepository $domainRepository
+     * @param EntityRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
-     * @param EntityRepositoryInterface $languageRepository
+     * @param EntityRepository $languageRepository
      */
     public function __construct(
-        EntityRepositoryInterface $domainRepository,
-        EntityRepositoryInterface $salesChannelRepository,
+        EntityRepository $domainRepository,
+        EntityRepository $salesChannelRepository,
         ConfigurationService $configurationService,
-        EntityRepositoryInterface $languageRepository
+        EntityRepository $languageRepository
     ) {
         $this->domainRepository = $domainRepository;
         $this->salesChannelRepository = $salesChannelRepository;

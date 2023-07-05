@@ -27,24 +27,24 @@ namespace Adyen\Shopware\Service\Repository;
 use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
 class AdyenPaymentCaptureRepository
 {
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $repository;
 
     /**
      * AdyenPaymentCaptureRepository constructor.
      *
-     * @param EntityRepositoryInterface $repository
+     * @param EntityRepository $repository
      */
     public function __construct(
-        EntityRepositoryInterface $repository
+        EntityRepository $repository
     ) {
         $this->repository = $repository;
     }
@@ -72,9 +72,9 @@ class AdyenPaymentCaptureRepository
     }
 
     /**
-     * @return EntityRepositoryInterface
+     * @return EntityRepository
      */
-    public function getRepository() : EntityRepositoryInterface
+    public function getRepository() : EntityRepository
     {
         return $this->repository;
     }

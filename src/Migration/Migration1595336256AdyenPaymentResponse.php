@@ -15,7 +15,7 @@ class Migration1595336256AdyenPaymentResponse extends MigrationStep
     public function update(Connection $connection): void
     {
         // TODO add FKs
-        $connection->executeUpdate(<<<SQL
+        $connection->executeStatement(<<<SQL
             CREATE TABLE IF NOT EXISTS `adyen_payment_response` (
                 `id` BINARY(16) NOT NULL,
                 `order_number` VARCHAR(64) NOT NULL,

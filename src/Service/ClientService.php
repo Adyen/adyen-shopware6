@@ -28,11 +28,10 @@ use Adyen\Client;
 use Adyen\Environment;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Plugin\PluginEntity;
-use Shopware\Core\Framework\Store\Services\StoreService;
 use Psr\Cache\CacheItemPoolInterface;
 
 class ClientService
@@ -62,7 +61,7 @@ class ClientService
     private $shopwareVersion;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $pluginRepository;
 
@@ -74,7 +73,7 @@ class ClientService
     /**
      * Client constructor.
      *
-     * @param EntityRepositoryInterface $pluginRepository
+     * @param EntityRepository $pluginRepository
      * @param LoggerInterface $genericLogger
      * @param LoggerInterface $apiLogger
      * @param string $shopwareVersion
@@ -82,7 +81,7 @@ class ClientService
      * @param CacheItemPoolInterface $cache
      */
     public function __construct(
-        EntityRepositoryInterface $pluginRepository,
+        EntityRepository $pluginRepository,
         LoggerInterface $genericLogger,
         LoggerInterface $apiLogger,
         string $shopwareVersion,

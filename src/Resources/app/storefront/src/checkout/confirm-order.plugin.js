@@ -22,7 +22,7 @@
 
 import Plugin from 'src/plugin-system/plugin.class';
 import DomAccess from 'src/helper/dom-access.helper';
-import StoreApiClient from 'src/service/store-api-client.service';
+import HttpClient from 'src/service/http-client.service';
 import FormSerializeUtil from 'src/utility/form/form-serialize.util';
 import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 import adyenConfiguration from '../configuration/adyen';
@@ -32,12 +32,12 @@ import adyenConfiguration from '../configuration/adyen';
 export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
-        this._client = new StoreApiClient();
+        this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
-        this.shoppingCartSummaryBlock = $('.checkout-aside-summary-list');
-        this.shoppingCartSummaryDetails = null;
+        this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
+
         this.minorUnitsQuotient = adyenCheckoutOptions.amount/adyenCheckoutOptions.totalPrice;
         this.giftcardDiscount = (adyenCheckoutOptions.giftcardDiscount / this.minorUnitsQuotient).toFixed(2);
         this.remainingAmount = (adyenCheckoutOptions.totalPrice - this.giftcardDiscount).toFixed(2);
@@ -105,7 +105,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     handleOnAdditionalDetails (state) {
         this._client.post(
             `${adyenCheckoutOptions.paymentDetailsUrl}`,
-            JSON.stringify({orderId: this.orderId, stateData: state.data}),
+            JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     location.href = this.errorUrl.toString();
@@ -135,7 +135,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
 
         // Get the payment method object from paymentMethodsResponse
-        let paymentMethodConfigs = $.grep(this.adyenCheckout.paymentMethodsResponse.paymentMethods, function(paymentMethod) {
+        let paymentMethodConfigs = this.adyenCheckout.paymentMethodsResponse.paymentMethods.filter(function(paymentMethod) {
             return paymentMethod['type'] === type;
         });
         if (paymentMethodConfigs.length === 0) {
@@ -156,18 +156,35 @@ export default class ConfirmOrderPlugin extends Plugin {
         // Mount payment method instance
         storedPaymentMethods.forEach((paymentMethod) => {
             let selector = `[data-adyen-stored-payment-method-id="${paymentMethod.id}"]`;
-            this.mountPaymentComponent(paymentMethod, selector, true);
+            this.mountPaymentComponent(paymentMethod, true, selector);
         });
 
-        this.showSelectedStoredPaymentMethod();
-        $('[name=adyenStoredPaymentMethodId]').change(this.showSelectedStoredPaymentMethod);
+        this.hideStorePaymentMethodComponents();
+        let selectedId = null;
+        let storedPaymentMethodFields = DomAccess.querySelectorAll(document, '[name=adyenStoredPaymentMethodId]');
+        storedPaymentMethodFields.forEach(field => {
+            if (!selectedId) {
+                selectedId = field.value;
+            }
+            field.addEventListener('change', this.showSelectedStoredPaymentMethod.bind(this));
+        });
+        this.showSelectedStoredPaymentMethod(null, selectedId);
     }
 
-    showSelectedStoredPaymentMethod() {
+    showSelectedStoredPaymentMethod(event, selectedId=null) {
         // Only show the component for the selected stored payment method
-        $('.stored-payment-component').hide();
-        let selected = $('[name=adyenStoredPaymentMethodId]:checked').val();
-        $(`[data-adyen-stored-payment-method-id="${selected}"]`).show();
+        this.hideStorePaymentMethodComponents();
+        selectedId = event ? event.target.value : selectedId;
+        let selector = `[data-adyen-stored-payment-method-id="${selectedId}"]`;
+        let component = DomAccess.querySelector(document, selector);
+        component.style.display = 'block';
+    }
+
+    hideStorePaymentMethodComponents() {
+        let storedPaymentComponents = DomAccess.querySelectorAll(document, '.stored-payment-component');
+        storedPaymentComponents.forEach(component => {
+            component.style.display = 'none';
+        });
     }
 
     confirmOrder(formData, extraParams= {}) {
@@ -318,7 +335,16 @@ export default class ConfirmOrderPlugin extends Plugin {
                     .mount('[data-adyen-payment-action-container]');
                 const modalActionTypes = ['threeDS2', 'qrCode']
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
-                    $('[data-adyen-payment-action-modal]').modal({show: true});
+                    if (window.jQuery) {
+                        // Bootstrap v4 support
+                        $('[data-adyen-payment-action-modal]').modal({show: true});
+                    } else {
+                        // Bootstrap v5 support
+                        var adyenPaymentModal = new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
+                            keyboard: false
+                        });
+                        adyenPaymentModal.show();
+                    }
                 }
             }
         } catch (e) {
@@ -508,7 +534,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
-    mountPaymentComponent(paymentMethod, isOneClick = false) {
+    mountPaymentComponent(paymentMethod, isOneClick = false, selector = null) {
         const configuration = Object.assign({}, paymentMethod, {
             data: {
                 personalDetails: shopperDetails,
@@ -534,9 +560,10 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (!isOneClick && paymentMethod.type === 'scheme' && adyenCheckoutOptions.displaySaveCreditCardOption) {
             configuration.enableStoreDetails = true;
         }
+        let componentSelector = isOneClick ? selector : '#' + this.el.id;
         try {
             const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
-            paymentMethodInstance.mount('#' + this.el.id);
+            paymentMethodInstance.mount(componentSelector);
             this.confirmFormSubmit.addEventListener('click', function(event) {
                 const form =  DomAccess.querySelector(document, '#confirmOrderForm');
                 if (!form.checkValidity()) {
@@ -557,11 +584,21 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     appendGiftcardSummary() {
         if(parseInt(adyenCheckoutOptions.giftcardDiscount, 10) && this.shoppingCartSummaryBlock.length) {
-            this.shoppingCartSummaryDetails = $('<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.translationAdyenGiftcardDiscount + '</dt>' +
-                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.currencySymbol + this.giftcardDiscount + '</dd>' +
-                '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.translationAdyenGiftcardRemainingAmount + '</dt>' +
-                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenCheckoutOptions.currencySymbol + this.remainingAmount + '</dd>');
-            this.shoppingCartSummaryDetails.appendTo(this.shoppingCartSummaryBlock[0]);
+            let shoppingCartSummaryDetails =
+                '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
+                    adyenCheckoutOptions.translationAdyenGiftcardDiscount +
+                '</dt>' +
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' +
+                    adyenCheckoutOptions.currencySymbol + this.giftcardDiscount +
+                '</dd>' +
+                '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
+                    adyenCheckoutOptions.translationAdyenGiftcardRemainingAmount +
+                '</dt>' +
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' +
+                    adyenCheckoutOptions.currencySymbol + this.remainingAmount +
+                '</dd>';
+
+            this.shoppingCartSummaryBlock[0].innerHTML += shoppingCartSummaryDetails;
         }
     }
 

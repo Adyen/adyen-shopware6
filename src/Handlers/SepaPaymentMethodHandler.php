@@ -27,6 +27,8 @@ namespace Adyen\Shopware\Handlers;
 
 class SepaPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
+    public static $supportsManualCapture = true;
+
     public static function getPaymentMethodCode()
     {
         return 'sepadirectdebit';

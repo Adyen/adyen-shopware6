@@ -43,7 +43,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEnti
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 
 class ProcessNotificationsHandler extends ScheduledTaskHandler
@@ -73,9 +73,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private OrderRepository $orderRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
-    private EntityRepositoryInterface $paymentMethodRepository;
+    private EntityRepository $paymentMethodRepository;
 
     /**
      * @var array|null
@@ -116,20 +116,20 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     ];
 
     /**
-     * @param EntityRepositoryInterface $scheduledTaskRepository
+     * @param EntityRepository $scheduledTaskRepository
      * @param NotificationService $notificationService
      * @param OrderRepository $orderRepository
-     * @param EntityRepositoryInterface $paymentMethodRepository
+     * @param EntityRepository $paymentMethodRepository
      * @param OrderTransactionRepository $orderTransactionRepository
      * @param AdyenPaymentService $adyenPaymentService
      * @param CaptureService $captureService
      * @param WebhookHandlerFactory $webhookHandlerFactory
      */
     public function __construct(
-        EntityRepositoryInterface $scheduledTaskRepository,
+        EntityRepository $scheduledTaskRepository,
         NotificationService $notificationService,
         OrderRepository $orderRepository,
-        EntityRepositoryInterface $paymentMethodRepository,
+        EntityRepository $paymentMethodRepository,
         OrderTransactionRepository $orderTransactionRepository,
         AdyenPaymentService $adyenPaymentService,
         CaptureService $captureService,

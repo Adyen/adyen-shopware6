@@ -40,12 +40,12 @@ use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
+use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
-use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -53,7 +53,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * @RouteScope(scopes={"administration"})
+ * @Route(defaults={"_routeScope"={"administration"}})
  *
  * Class AdminController
  * @package Adyen\Shopware\Controller
@@ -173,7 +173,7 @@ class AdminController
                 $response['message'] = 'adyen.paymentMethodsMissing';
             }
             return new JsonResponse($response);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return new JsonResponse(['success' => false, 'message' => $exception->getMessage()]);
         }
     }
@@ -228,7 +228,7 @@ class AdminController
 
             return new JsonResponse([
                 'success' => false,
-                'message' => 'adyen.error',
+                'message' => $e->getMessage()
             ]);
         }
 
@@ -274,7 +274,7 @@ class AdminController
         if (isset($orderTransaction)) {
             $isFullAmountAuthorised = $this->adyenPaymentService->isFullAmountAuthorized($orderTransaction);
             $isRequiredAmountCaptured = $this->captureService->isRequiredAmountCaptured($orderTransaction);
-            $isPaymentMethodSupportsManualCapture = $this->captureService->requiresManualCapture(
+            $isPaymentMethodSupportsManualCapture = $this->captureService->isManualCapture(
                 $orderTransaction->getPaymentMethod()->getHandlerIdentifier()
             );
 
@@ -288,6 +288,29 @@ class AdminController
         }
 
         return new JsonResponse($isCaptureAllowed);
+    }
+
+    /**
+     * @Route(
+     *     "/api/adyen/orders/{orderId}/is-manual-capture-enabled",
+     *     name="api.adyen_payment_capture_enabled.get",
+     *     methods={"GET"}
+     * )
+     * @param string $orderId
+     * @return JsonResponse
+     */
+    public function isManualCaptureEnabled(string $orderId)
+    {
+        try {
+            $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId);
+            $paymentMethodHandlerIdentifier = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+
+            return new JsonResponse(
+                $this->captureService->isManualCapture($paymentMethodHandlerIdentifier)
+            );
+        } catch (Exception $e) {
+            return new JsonResponse(false);
+        }
     }
 
     /**
@@ -363,7 +386,7 @@ class AdminController
                     $amountInMinorUnit
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e->getMessage());
 
             return new JsonResponse([
@@ -419,7 +442,9 @@ class AdminController
                     ? NotificationEntity::NOTIFICATION_STATUS_PROCESSED
                     : NotificationEntity::NOTIFICATION_STATUS_PENDING,
                 'createdAt' => $notification->getCreatedAt()->format(self::ADMIN_DATETIME_FORMAT),
-                'updatedAt' => $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT),
+                'updatedAt' => $notification->getUpdatedAt()
+                    ? $notification->getUpdatedAt()->format(self::ADMIN_DATETIME_FORMAT)
+                    : '',
                 'notificationId' => $notification->getId(),
                 'canBeRescheduled' => $this->notificationService->canBeRescheduled($notification),
                 'errorCount' => $notification->getErrorCount(),
@@ -517,7 +542,11 @@ class AdminController
             );
             // If notification was stuck in state Processing=true, reset the state and reschedule.
             if ($notification->getProcessing()) {
-                $this->notificationService->changeNotificationState($notification->getId(), 'processing', false);
+                $this->notificationService->changeNotificationState(
+                    $notification->getId(),
+                    'processing',
+                    false
+                );
             }
             $this->notificationService->setNotificationSchedule($notification->getId(), $scheduledProcessingTime);
         }

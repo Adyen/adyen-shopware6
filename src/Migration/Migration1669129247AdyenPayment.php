@@ -37,7 +37,7 @@ class Migration1669129247AdyenPayment extends MigrationStep
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL;
 
-        $connection->executeUpdate($query);
+        $connection->executeStatement($query);
     }
 
     public function updateDestructive(Connection $connection): void

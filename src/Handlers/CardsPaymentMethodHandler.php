@@ -27,6 +27,9 @@ namespace Adyen\Shopware\Handlers;
 
 class CardsPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
+    public static $supportsManualCapture = true;
+    public static $supportsPartialCapture = true;
+
     public static function getPaymentMethodCode()
     {
         return 'scheme';

@@ -32,8 +32,8 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
+use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
-use Shopware\Core\Checkout\Cart\CartPersisterInterface;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -52,7 +52,7 @@ use Shopware\Storefront\Page\Checkout\Register\CheckoutRegisterPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -89,12 +89,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $paymentMethodsService;
 
     /**
-     * @var SessionInterface $session
+     * @var RequestStack $requestStack
      */
-    private $session;
+    private $requestStack;
 
     /**
-     * @var CartPersisterInterface
+     * @var AbstractCartPersister
      */
     private $cartPersister;
 
@@ -133,8 +133,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
-     * @param SessionInterface $session
-     * @param CartPersisterInterface $cartPersister
+     * @param RequestStack $requestStack
+     * @param AbstractCartPersister $cartPersister
      * @param CartCalculator $cartCalculator
      * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
@@ -148,8 +148,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
-        SessionInterface $session,
-        CartPersisterInterface $cartPersister,
+        RequestStack $requestStack,
+        AbstractCartPersister $cartPersister,
         CartCalculator $cartCalculator,
         AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,
@@ -161,7 +161,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->session = $session;
+        $this->requestStack = $requestStack;
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
         $this->contextSwitchRoute = $contextSwitchRoute;
@@ -258,6 +258,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             }
         }
 
+        $minorUnitsQuotient = $amountInMinorUnits / $page->getCart()->getPrice()->getTotalPrice();
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -268,12 +270,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'currency' => $currency,
                     'currencySymbol' => $currencySymbol,
                     'giftcardDiscount' => $giftcardDiscount,
+                    'giftcardDiscountDisplay' => $giftcardDiscount / $minorUnitsQuotient,
                     'giftcardBalance' => $giftcardBalance,
                     'checkBalanceUrl' => $this->router
-                        ->generate('store-api.action.adyen.payment-methods.balance'),
-                    'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
-                    'removeGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard.remove'),
-                    'switchContextUrl' => $this->router->generate('store-api.switch-context'),
+                        ->generate('payment.adyen.proxy-check-balance'),
+                    'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
+                    'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
+                    'switchContextUrl' => $this->router->generate('payment.adyen.proxy-switch-context'),
                     'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
                 ])
             )
@@ -291,8 +294,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $selectedPaymentMethod = $salesChannelContext->getPaymentMethod();
         $page = $event->getPage();
         $orderId = '';
-        $affiliateCode = $this->session->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
-        $campaignCode = $this->session->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+        $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
 
         if (method_exists($page, 'getOrder')) {
             $orderId = $page->getOrder()->getId();
@@ -323,14 +326,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $giftcardData = $this->paymentStateDataService
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
-        $payInFullWithGiftcard = false;
+        $giftcardSelectedId = null;
         $adyenGiftcardSelected = ($selectedPaymentMethod->getPluginId() === $adyenPluginId)
             && $selectedPaymentMethod->getHandlerIdentifier()::$isGiftCard;
         if ($giftcardData) {
             $stateData = $giftcardData->getStateData();
             $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
             if ($giftcardDiscount >= $amount) {
-                $payInFullWithGiftcard = true;
+                $giftcardSelectedId = json_decode($stateData, true)['additionalData']['paymentMethodId'];
             }
         }
         $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
@@ -338,10 +341,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $salesChannelContext,
             $adyenPluginId,
             $paymentMethodsResponse,
-            $payInFullWithGiftcard
+            $giftcardSelectedId
         );
 
-        if (!$payInFullWithGiftcard && $adyenGiftcardSelected) {
+        if (!isset($giftcardSelectedId) && $adyenGiftcardSelected) {
             $selectedPaymentMethod = $filteredPaymentMethods->first();
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
@@ -364,11 +367,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 array_merge(
                     $this->getComponentData($salesChannelContext),
                     [
-                        'paymentStatusUrl' => $this->router->generate('store-api.action.adyen.payment-status'),
-                        'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
-                        'checkoutOrderUrl' => $this->router->generate('store-api.checkout.cart.order'),
-                        'paymentHandleUrl' => $this->router->generate('store-api.payment.handle'),
-                        'paymentDetailsUrl' => $this->router->generate('store-api.action.adyen.payment-details'),
+                        'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
+                        'createOrderUrl' => $this->router->generate('payment.adyen.proxy-create-adyen-order'),
+                        'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                        'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
+                        'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
+                        'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
                         'paymentFinishUrl' => $this->router->generate(
                             'frontend.checkout.finish.page',
                             ['orderId' => '']
@@ -381,11 +385,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'updatePaymentUrl' => $this->router->generate(
-                            'store-api.action.adyen.set-payment'
-                        ),
                         'cancelOrderTransactionUrl' => $this->router->generate(
-                            'store-api.action.adyen.cancel-order-transaction',
+                            'payment.adyen.proxy-cancel-order-transaction',
                         ),
                         'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                         'currency' => $currency,
@@ -396,7 +397,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'totalPrice' => $totalPrice,
                         'giftcardDiscount' => $giftcardDiscount,
                         'currencySymbol' => $currencySymbol,
-                        'payInFullWithGiftcard' => (int) $payInFullWithGiftcard,
+                        'payInFullWithGiftcard' => (int) isset($giftcardSelectedId),
                         'adyenGiftcardSelected' => (int) $adyenGiftcardSelected,
                         'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
@@ -430,7 +431,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     ]
                 ),
                 $this->salesChannelContextFactory->create(
-                    $this->session->get('sw-context-token'),
+                    $this->requestStack->getSession()->get('sw-context-token'),
                     $request->attributes->get('sw-sales-channel-id')
                 )
             );

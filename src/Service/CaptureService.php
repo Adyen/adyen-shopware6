@@ -82,27 +82,31 @@ class CaptureService
      */
     public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context)
     {
-        if ($this->configurationService->isManualCaptureActive()) {
-            $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
-            $order = $this->orderRepository->getOrderByOrderNumber(
-                $orderNumber,
-                $context,
-                ['transactions', 'currency', 'lineItems', 'deliveries', 'deliveries.shippingMethod']
+        $order = $this->orderRepository->getOrderByOrderNumber(
+            $orderNumber,
+            $context,
+            ['transactions', 'currency', 'lineItems', 'deliveries', 'deliveries.shippingMethod']
+        );
+
+        if (is_null($order)) {
+            throw new CaptureException(
+                'Order with order_number ' . $orderNumber . ' not found.'
             );
+        }
 
-            if (is_null($order)) {
-                throw new CaptureException(
-                    'Order with order_number ' . $orderNumber . ' not found.'
-                );
-            }
-            $orderTransaction = $this->orderTransactionRepository
-                ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
+        $orderTransaction = $this->orderTransactionRepository
+            ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
 
-            if (!$orderTransaction) {
-                $error = 'Unable to find original authorized transaction.';
-                $this->logger->error($error, ['orderNumber' => $order->getOrderNumber()]);
-                throw new CaptureException($error);
-            }
+        if (!$orderTransaction) {
+            $error = 'Unable to find original authorized transaction.';
+            $this->logger->error($error, ['orderNumber' => $order->getOrderNumber()]);
+            throw new CaptureException($error);
+        }
+
+        $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+
+        if ($this->isManualCapture($paymentMethodHandler)) {
+            $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
 
             $customFields = $orderTransaction->getCustomFields();
             if (empty($customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE])) {
@@ -121,40 +125,42 @@ class CaptureService
 
             $results = [];
             foreach ($deliveries as $delivery) {
-                if ($delivery->getStateMachineState()->getId() === $this->configurationService->getOrderState()) {
-                    $lineItems = $order->getLineItems();
-                    $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
-
-                    $additionalData = array_merge($lineItemsArray, [
-                        'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
-                        'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
-                    ]);
-
-                    $request = $this->buildCaptureRequest(
-                        $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
-                        $captureAmount,
-                        $currencyIso,
-                        $order->getSalesChannelId(),
-                        $additionalData
-                    );
-
-                    $response = $this->sendCaptureRequest($client, $request);
-                    if ('[capture-received]' === $response['response']) {
-                        $this->saveCaptureRequest(
-                            $orderTransaction,
-                            $response['pspReference'],
-                            PaymentCaptureEntity::SOURCE_SHOPWARE,
-                            PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
-                            intval($captureAmount),
-                            $context
-                        );
-                    }
-                    $results[] = $response;
-                } else {
+                if ($this->requiresCaptureOnShipment($paymentMethodHandler, $order->getSalesChannelId()) &&
+                    $delivery->getStateMachineState()->getId() !== $this->configurationService->getOrderState()) {
                     $exception = new CaptureException('Order delivery status does not match configuration');
                     $exception->reason = self::REASON_DELIVERY_STATE_MISMATCH;
+
                     throw $exception;
                 }
+
+                $lineItems = $order->getLineItems();
+                $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
+
+                $additionalData = array_merge($lineItemsArray, [
+                    'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
+                    'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
+                ]);
+
+                $request = $this->buildCaptureRequest(
+                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
+                    $captureAmount,
+                    $currencyIso,
+                    $order->getSalesChannelId(),
+                    $additionalData
+                );
+
+                $response = $this->sendCaptureRequest($client, $request);
+                if ('[capture-received]' === $response['response']) {
+                    $this->saveCaptureRequest(
+                        $orderTransaction,
+                        $response['pspReference'],
+                        PaymentCaptureEntity::SOURCE_SHOPWARE,
+                        PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
+                        intval($captureAmount),
+                        $context
+                    );
+                }
+                $results[] = $response;
             }
             $this->logger->info('Capture for order_number ' . $order->getOrderNumber() . ' end.');
 
@@ -178,9 +184,34 @@ class CaptureService
         return $dateTime;
     }
 
-    public function requiresManualCapture($handlerIdentifier)
+    /**
+     * @param $handlerIdentifier
+     * @return bool
+     */
+    public function isManualCapture($handlerIdentifier): bool
     {
-        return $this->configurationService->isManualCaptureActive() && $handlerIdentifier::$isOpenInvoice;
+        if ($handlerIdentifier::$isOpenInvoice) {
+            if ($this->configurationService->isAutoCaptureActiveForOpenInvoices()) {
+                // Open invoice payment methods can be auto capture if the merchant account is authorised.
+                return false;
+            } else {
+                // Open invoice payment methods are manual capture by default.
+                return true;
+            }
+        } else {
+            return $this->configurationService->isManualCaptureActive() && $handlerIdentifier::$supportsManualCapture;
+        }
+    }
+
+    /**
+     * @param $handlerIdentifier
+     * @return bool
+     */
+    public function requiresCaptureOnShipment($handlerIdentifier, $salesChannelId): bool
+    {
+        // Only open invoice payments can be captured on shipment.
+        return $this->configurationService->isCaptureOnShipmentEnabled($salesChannelId) &&
+            $handlerIdentifier::$isOpenInvoice;
     }
 
     public function saveCaptureRequest(
