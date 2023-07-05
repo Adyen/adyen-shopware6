@@ -52,7 +52,7 @@ use Shopware\Storefront\Page\Checkout\Register\CheckoutRegisterPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -89,9 +89,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $paymentMethodsService;
 
     /**
-     * @var SessionInterface $session
+     * @var RequestStack $requestStack
      */
-    private $session;
+    private $requestStack;
 
     /**
      * @var AbstractCartPersister
@@ -133,7 +133,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
-     * @param SessionInterface $session
+     * @param RequestStack $requestStack
      * @param AbstractCartPersister $cartPersister
      * @param CartCalculator $cartCalculator
      * @param AbstractContextSwitchRoute $contextSwitchRoute
@@ -148,7 +148,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
-        SessionInterface $session,
+        RequestStack $requestStack,
         AbstractCartPersister $cartPersister,
         CartCalculator $cartCalculator,
         AbstractContextSwitchRoute $contextSwitchRoute,
@@ -161,7 +161,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
-        $this->session = $session;
+        $this->requestStack = $requestStack;
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
         $this->contextSwitchRoute = $contextSwitchRoute;
@@ -273,10 +273,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'giftcardDiscountDisplay' => $giftcardDiscount / $minorUnitsQuotient,
                     'giftcardBalance' => $giftcardBalance,
                     'checkBalanceUrl' => $this->router
-                        ->generate('store-api.action.adyen.payment-methods.balance'),
-                    'setGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard'),
-                    'removeGiftcardUrl' => $this->router->generate('store-api.action.adyen.giftcard.remove'),
-                    'switchContextUrl' => $this->router->generate('store-api.switch-context'),
+                        ->generate('payment.adyen.proxy-check-balance'),
+                    'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
+                    'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
+                    'switchContextUrl' => $this->router->generate('payment.adyen.proxy-switch-context'),
                     'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
                 ])
             )
@@ -294,8 +294,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $selectedPaymentMethod = $salesChannelContext->getPaymentMethod();
         $page = $event->getPage();
         $orderId = '';
-        $affiliateCode = $this->session->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
-        $campaignCode = $this->session->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+        $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
 
         if (method_exists($page, 'getOrder')) {
             $orderId = $page->getOrder()->getId();
@@ -367,11 +367,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 array_merge(
                     $this->getComponentData($salesChannelContext),
                     [
-                        'paymentStatusUrl' => $this->router->generate('store-api.action.adyen.payment-status'),
-                        'createOrderUrl' => $this->router->generate('store-api.action.adyen.orders'),
-                        'checkoutOrderUrl' => $this->router->generate('store-api.checkout.cart.order'),
-                        'paymentHandleUrl' => $this->router->generate('store-api.payment.handle'),
-                        'paymentDetailsUrl' => $this->router->generate('store-api.action.adyen.payment-details'),
+                        'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
+                        'createOrderUrl' => $this->router->generate('payment.adyen.proxy-create-adyen-order'),
+                        'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                        'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
+                        'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
+                        'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
                         'paymentFinishUrl' => $this->router->generate(
                             'frontend.checkout.finish.page',
                             ['orderId' => '']
@@ -384,11 +385,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'updatePaymentUrl' => $this->router->generate(
-                            'store-api.action.adyen.set-payment'
-                        ),
                         'cancelOrderTransactionUrl' => $this->router->generate(
-                            'store-api.action.adyen.cancel-order-transaction',
+                            'payment.adyen.proxy-cancel-order-transaction',
                         ),
                         'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                         'currency' => $currency,
@@ -433,7 +431,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     ]
                 ),
                 $this->salesChannelContextFactory->create(
-                    $this->session->get('sw-context-token'),
+                    $this->requestStack->getSession()->get('sw-context-token'),
                     $request->attributes->get('sw-sales-channel-id')
                 )
             );

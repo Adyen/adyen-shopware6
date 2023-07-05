@@ -114,12 +114,13 @@ class DonateController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        $payload = $request->request->get('payload');
+        $orderId = $request->request->get('orderId');
+        $returnUrl = $request->request->get('returnUrl');
+        $stateData = $request->request->get('stateData');
+        $payload = json_decode($stateData, true);
 
-        $orderId = $payload['orderId'];
         $currency = $payload['amount']['currency'];
         $value = $payload['amount']['value'];
-        $returnUrl = $payload['returnUrl'];
 
         $transaction = $this->adyenOrderTransactionRepository
             ->getFirstAdyenOrderTransactionByStates($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);

@@ -100,10 +100,10 @@ class OrderApiController
      */
     public function getPaymentMethodsBalance(SalesChannelContext $context, Request $request): JsonResponse
     {
-        $paymentMethodData = $request->request->get('paymentMethod');
-
+        $paymentMethod = json_decode($request->request->get('paymentMethod', ''), true);
+        $amount = json_decode($request->request->get('amount', ''), true);
         return new JsonResponse(
-            $this->paymentMethodsBalanceService->getPaymentMethodsBalance($context, (array) $paymentMethodData)
+            $this->paymentMethodsBalanceService->getPaymentMethodsBalance($context, $paymentMethod, $amount)
         );
     }
 
@@ -159,7 +159,7 @@ class OrderApiController
     public function giftcardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
         // store giftcard state data for context
-        $stateData = $request->request->get('stateData');
+        $stateData = json_decode($request->request->get('stateData', ''), true);
         if ('giftcard' !== $stateData['paymentMethod']['type']) {
             throw new ValidationException('Only giftcard state data is allowed to be stored.');
         }

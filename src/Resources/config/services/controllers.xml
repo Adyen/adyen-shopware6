@@ -16,11 +16,21 @@
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="controller.service_arguments"/>
         </service>
-        <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController" autowire="true">
+        <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController">
             <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <tag name="controller.service_arguments"/>
         </service>
-        <service id="Adyen\Shopware\Storefront\Controller\RedirectResultController" autowire="true">
+        <service id="Adyen\Shopware\Storefront\Controller\FrontendProxyController">
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Payment\PaymentController"/>
+            <argument type="service" id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController"/>
+            <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Controller\AdminController" autowire="true">

@@ -22,12 +22,12 @@
 
 import Plugin from 'src/plugin-system/plugin.class';
 import DomAccess from 'src/helper/dom-access.helper';
-import StoreApiClient from 'src/service/store-api-client.service';
+import HttpClient from 'src/service/http-client.service';
 import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 
 export default class AdyenGivingPlugin extends Plugin {
     init() {
-        this._client = new StoreApiClient();
+        this._client = new HttpClient();
         this.adyenCheckout = Promise;
         this.initializeCheckoutComponent().bind(this);
     }
@@ -35,7 +35,7 @@ export default class AdyenGivingPlugin extends Plugin {
     async initializeCheckoutComponent () {
         const { locale, clientKey, environment } = adyenCheckoutConfiguration;
         const { currency, values, backgroundUrl,
-            logoUrl, name, description, url} = adyenGivingConfiguration;
+            logoUrl, name, description, url } = adyenGivingConfiguration;
 
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
@@ -66,12 +66,12 @@ export default class AdyenGivingPlugin extends Plugin {
 
     handleOnDonate(state, component) {
         const orderId = adyenGivingConfiguration.orderId;
-        let payload = {...state.data, orderId};
+        let payload = {stateData: JSON.stringify(state.data), orderId};
         payload.returnUrl = window.location.href;
 
         this._client.post(
             `${adyenGivingConfiguration.donationEndpointUrl}`,
-            JSON.stringify({payload: payload}),
+            JSON.stringify({...payload}),
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     component.setStatus("error");
