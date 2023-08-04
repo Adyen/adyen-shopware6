@@ -137,12 +137,7 @@ export default class CartPlugin extends Plugin {
                     reject(response.resultCode);
                 } else {
                     // 0. compare balance to total amount to be paid
-                    if (response.transactionLimit) {
-                        const consumableBalance = parseFloat(response.transactionLimit.value);
-                    } else {
-                        const consumableBalance = parseFloat(response.balance.value);
-                    }
-
+                    const consumableBalance = response.transactionLimit ? parseFloat(response.transactionLimit.value) : parseFloat(response.balance.value);
                     let remainingGiftcardBalanceMinorUnits = (consumableBalance - adyenGiftcardsConfiguration.totalInMinorUnits);
                     if (consumableBalance >= adyenGiftcardsConfiguration.totalInMinorUnits) {
                         this.remainingGiftcardBalance = (remainingGiftcardBalanceMinorUnits / this.minorUnitsQuotient).toFixed(2);
