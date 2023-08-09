@@ -137,14 +137,14 @@ export default class CartPlugin extends Plugin {
                     reject(response.resultCode);
                 } else {
                     // 0. compare balance to total amount to be paid
-                    const balance = parseFloat(response.balance.value);
-                    let remainingGiftcardBalanceMinorUnits = (balance - adyenGiftcardsConfiguration.totalInMinorUnits);
-                    if (balance >= adyenGiftcardsConfiguration.totalInMinorUnits) {
+                    const consumableBalance = response.transactionLimit ? parseFloat(response.transactionLimit.value) : parseFloat(response.balance.value);
+                    let remainingGiftcardBalanceMinorUnits = (consumableBalance - adyenGiftcardsConfiguration.totalInMinorUnits);
+                    if (consumableBalance >= adyenGiftcardsConfiguration.totalInMinorUnits) {
                         this.remainingGiftcardBalance = (remainingGiftcardBalanceMinorUnits / this.minorUnitsQuotient).toFixed(2);
                         this.setGiftcardAsPaymentMethod(data, remainingGiftcardBalanceMinorUnits);
                     } else {
-                        this.remainingAmount = ((adyenGiftcardsConfiguration.totalInMinorUnits - balance) / this.minorUnitsQuotient).toFixed(2);
-                        this.saveGiftcardStateData(data, balance.toString(), 0, this.selectedGiftcard.id);
+                        this.remainingAmount = ((adyenGiftcardsConfiguration.totalInMinorUnits - consumableBalance) / this.minorUnitsQuotient).toFixed(2);
+                        this.saveGiftcardStateData(data, consumableBalance.toString(), 0, this.selectedGiftcard.id);
                     }
 
                     this.remainingBalanceField.style.display = 'block';
