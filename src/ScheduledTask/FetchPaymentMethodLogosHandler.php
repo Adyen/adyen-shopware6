@@ -26,7 +26,6 @@ namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
 use Adyen\Shopware\PaymentMethods\PaymentMethods;
-use Adyen\Shopware\Service\ConfigurationService;
 use Exception;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
@@ -43,10 +42,6 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
 {
     use LoggerAwareTrait;
 
-    /**
-     * @var ConfigurationService
-     */
-    private $configurationService;
     /**
      * @var MediaService
      */
@@ -66,14 +61,12 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
 
     public function __construct(
         EntityRepository $scheduledTaskRepository,
-        ConfigurationService $configurationService,
         MediaService $mediaService,
         EntityRepository $paymentMethodRepository,
         EntityRepository $mediaRepository,
         bool $enableUrlUploadFeature = true
     ) {
         parent::__construct($scheduledTaskRepository);
-        $this->configurationService = $configurationService;
         $this->mediaService = $mediaService;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->mediaRepository = $mediaRepository;
@@ -93,7 +86,7 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         }
 
         $context = Context::createDefaultContext();
-        $environment = $this->configurationService->getEnvironment();
+
         foreach (PaymentMethods::PAYMENT_METHODS as $identifier) {
             /** @var PaymentMethodInterface $paymentMethod */
             $paymentMethod = new $identifier();
@@ -112,7 +105,7 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 continue;
             }
 
-            $media = $this->fetchLogoFromUrl($paymentMethod, $environment);
+            $media = $this->fetchLogoFromUrl($paymentMethod);
             // Skip if the remote file is temporarily unavailable.
             if (!$media) {
                 continue;
@@ -135,11 +128,10 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         }
     }
 
-    private function fetchLogoFromUrl(PaymentMethodInterface $paymentMethod, string $environment): ?MediaFile
+    private function fetchLogoFromUrl(PaymentMethodInterface $paymentMethod): ?MediaFile
     {
         $source = sprintf(
-            'https://checkoutshopper-%s.adyen.com/checkoutshopper/images/logos/medium/%s',
-            $environment,
+            'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/medium/%s',
             $paymentMethod->getLogo()
         );
         $media = null;
