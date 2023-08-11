@@ -24,6 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
+use Adyen\Client;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
@@ -129,7 +130,20 @@ class PaymentMethodsService
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannelId())
             );
+
+            $this->clientService->logRequest(
+                $requestData,
+                Client::API_CHECKOUT_VERSION,
+                '/paymentMethods',
+                $context->getSalesChannelId()
+            );
+
             $responseData = $checkoutService->paymentMethods($requestData);
+
+            $this->clientService->logResponse(
+                $responseData,
+                $context->getSalesChannelId()
+            );
 
             $paymentMethodsResponseCache->set(CacheValueCompressor::compress($responseData));
             $this->cache->save($paymentMethodsResponseCache);

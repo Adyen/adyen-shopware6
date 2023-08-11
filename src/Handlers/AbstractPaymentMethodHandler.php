@@ -26,6 +26,7 @@
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
+use Adyen\Client;
 use Adyen\Service\Builder\Address;
 use Adyen\Service\Builder\Browser;
 use Adyen\Service\Builder\Customer;
@@ -324,7 +325,19 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         try {
+            $this->clientService->logRequest(
+                $request,
+                Client::API_CHECKOUT_VERSION,
+                '/payments',
+                $salesChannelContext->getSalesChannelId()
+            );
+
             $response = $this->checkoutService->payments($request);
+
+            $this->clientService->logResponse(
+                $response,
+                $salesChannelContext->getSalesChannelId()
+            );
         } catch (AdyenException $exception) {
             $message = sprintf(
                 "There was an error with the /payments request. Order number %s: %s",

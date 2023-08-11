@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Client;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Psr\Log\LoggerInterface;
 
@@ -65,7 +66,20 @@ class PaymentMethodsBalanceService
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
+
+            $this->clientService->logRequest(
+                $requestData,
+                Client::API_CHECKOUT_VERSION,
+                '/paymentMethods/balance',
+                $context->getSalesChannelId()
+            );
+
             $responseData = $checkoutService->paymentMethodsBalance($requestData);
+
+            $this->clientService->logResponse(
+                $responseData,
+                $context->getSalesChannelId()
+            );
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }

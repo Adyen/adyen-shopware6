@@ -23,6 +23,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
+use Adyen\Client;
 use Adyen\Service\Modification;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
@@ -153,7 +154,21 @@ class RefundService
                 $this->clientService->getClient($order->getSalesChannelId())
             );
 
-            return $modificationService->refund($params, ['idempotencyKey' => $idempotencyKey]);
+            $this->clientService->logRequest(
+                $params,
+                Client::API_PAYMENT_VERSION,
+                '/pal/servlet/Payment/{version}/refund',
+                $order->getSalesChannelId()
+            );
+
+            $response = $modificationService->refund($params, ['idempotencyKey' => $idempotencyKey]);
+
+            $this->clientService->logResponse(
+                $response,
+                $order->getSalesChannelId()
+            );
+
+            return $response;
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
             throw $e;

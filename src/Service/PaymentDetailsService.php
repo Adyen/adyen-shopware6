@@ -24,6 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
+use Adyen\Client;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandlerResult;
@@ -79,7 +80,21 @@ class PaymentDetailsService
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
             );
+
+            $this->clientService->logRequest(
+                $requestData,
+                Client::API_CHECKOUT_VERSION,
+                '/payments/details',
+                $orderTransaction->getOrder()->getSalesChannelId()
+            );
+
             $response = $checkoutService->paymentsDetails($requestData);
+
+            $this->clientService->logResponse(
+                $response,
+                $orderTransaction->getOrder()->getSalesChannelId()
+            );
+
             return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
