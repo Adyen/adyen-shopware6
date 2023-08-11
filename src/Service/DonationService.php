@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Client;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -101,7 +102,20 @@ class DonationService
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
+
+            $this->clientService->logRequest(
+                $requestData,
+                Client::API_CHECKOUT_VERSION,
+                '/donations',
+                $context->getSalesChannelId()
+            );
+
             $responseData = $checkoutService->donations($requestData);
+
+            $this->clientService->logResponse(
+                $responseData,
+                $context->getSalesChannelId()
+            );
         }
 
         return $responseData;

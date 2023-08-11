@@ -149,7 +149,20 @@ class CaptureService
                     $additionalData
                 );
 
+                $this->clientService->logRequest(
+                    $request,
+                    Client::API_PAYMENT_VERSION,
+                    '/pal/servlet/Payment/{version}/capture',
+                    $order->getSalesChannelId()
+                );
+
                 $response = $this->sendCaptureRequest($client, $request);
+
+                $this->clientService->logResponse(
+                    $response,
+                    $order->getSalesChannelId()
+                );
+
                 if ('[capture-received]' === $response['response']) {
                     $this->saveCaptureRequest(
                         $orderTransaction,
