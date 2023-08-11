@@ -82,7 +82,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     async initializeCheckoutComponent () {
-        const { locale, clientKey, environment } = adyenCheckoutConfiguration;
+        const { locale, clientKey, environment, merchantAccount } = adyenCheckoutConfiguration;
         const paymentMethodsResponse = adyenCheckoutOptions.paymentMethodsResponse;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
@@ -96,9 +96,14 @@ export default class ConfirmOrderPlugin extends Plugin {
             paymentMethodsConfiguration: {
                 card: {
                     hasHolderName: true,
+                    clickToPayConfiguration: {
+                        merchantDisplayName: merchantAccount,
+                        shopperEmail: shopperDetails.shopperEmail
+                    }
                 }
             },
         };
+
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
