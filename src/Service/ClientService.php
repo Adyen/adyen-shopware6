@@ -208,7 +208,7 @@ class ClientService
      */
     private function filterReferences(array $data): array
     {
-        return array_filter($data, function($value, $key) {
+        return array_filter($data, function ($value, $key) {
             // Keep only reference keys, e.g. reference, pspReference, merchantReference etc.
             return false !== strpos(strtolower($key), 'reference');
         }, ARRAY_FILTER_USE_BOTH);
