@@ -258,7 +258,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             }
         }
 
-        $minorUnitsQuotient = $amountInMinorUnits / $page->getCart()->getPrice()->getTotalPrice();
+        $minorUnitsQuotient = 1;
+        if (0 < $page->getCart()->getPrice()->getTotalPrice()) {
+            $minorUnitsQuotient = $amountInMinorUnits / $page->getCart()->getPrice()->getTotalPrice();
+        }
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
