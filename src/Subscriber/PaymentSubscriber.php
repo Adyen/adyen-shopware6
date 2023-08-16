@@ -193,6 +193,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             'clientKey' => $this->configurationService->getClientKey($salesChannelId),
             'locale' => $this->salesChannelRepository->getSalesChannelLocale($salesChannelContext),
             'environment' => $this->configurationService->getEnvironment($salesChannelId),
+            'merchantAccount' => $this->configurationService->getMerchantAccount($salesChannelId)
         ];
     }
 
@@ -258,7 +259,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             }
         }
 
-        $minorUnitsQuotient = $amountInMinorUnits / $page->getCart()->getPrice()->getTotalPrice();
+        $minorUnitsQuotient = 1;
+        if (0 < $page->getCart()->getPrice()->getTotalPrice()) {
+            $minorUnitsQuotient = $amountInMinorUnits / $page->getCart()->getPrice()->getTotalPrice();
+        }
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
