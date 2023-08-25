@@ -136,7 +136,6 @@ class WebhookHandlerFactory
             case EventCodes::OFFER_CLOSED:
                 $handler = new OfferClosedWebhookHandler(self::$orderTransactionStateHandler);
                 break;
-            case EventCodes::CANCELLED:
             case EventCodes::CANCELLATION:
                 $handler = new CancellationWebhookHandler(self::$orderTransactionStateHandler);
                 break;
