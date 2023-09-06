@@ -36,6 +36,7 @@ use Adyen\Model\Checkout\Address;
 use Adyen\Model\Checkout\Amount;
 use Adyen\Model\Checkout\BrowserInfo;
 use Adyen\Model\Checkout\Name;
+use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
@@ -328,7 +329,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         try {
-            $response = $this->checkoutService->payments($request);
+            $response = new PaymentResponse($this->checkoutService->payments($request));
         } catch (AdyenException $exception) {
             $message = sprintf(
                 "There was an error with the /payments request. Order number %s: %s",

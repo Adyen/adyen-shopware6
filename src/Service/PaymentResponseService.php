@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
@@ -90,7 +91,7 @@ class PaymentResponseService
     }
 
     public function insertPaymentResponse(
-        array $paymentResponse,
+        PaymentResponse $paymentResponse,
         OrderTransactionEntity $orderTransaction,
         bool $upsert = true
     ): void {
@@ -100,8 +101,8 @@ class PaymentResponseService
         }
 
         $fields['orderTransactionId'] = $orderTransaction->getId();
-        $fields['resultCode'] = $paymentResponse["resultCode"];
-        $fields['response'] = json_encode($paymentResponse);
+        $fields['resultCode'] = $paymentResponse->getResultCode();
+        $fields['response'] = $paymentResponse->jsonSerialize();
 
         $this->repository->upsert(
             [$fields],
