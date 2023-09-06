@@ -26,12 +26,16 @@
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
-use Adyen\Service\Builder\Address;
-use Adyen\Service\Builder\Browser;
-use Adyen\Service\Builder\Customer;
-use Adyen\Service\Builder\Payment;
-use Adyen\Service\Builder\OpenInvoice;
-use Adyen\Service\Validator\CheckoutStateDataValidator;
+
+use Adyen\Model\Checkout\AdditionalData3DSecure;
+use Adyen\Model\Checkout\CheckoutPaymentMethod;
+use Adyen\Model\Checkout\EncryptedOrderData;
+use Adyen\Model\Checkout\LineItem;
+use Adyen\Model\Checkout\PaymentRequest;
+use Adyen\Model\Checkout\Address;
+use Adyen\Model\Checkout\Amount;
+use Adyen\Model\Checkout\BrowserInfo;
+use Adyen\Model\Checkout\Name;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
@@ -408,34 +412,32 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         array $request = [],
         ?int $partialAmount = null,
         ?array $adyenOrderData = []
-    ): array {
+    ): PaymentRequest {
+
+        $paymentRequest = new PaymentRequest();
+
         if (!empty($request['additionalData'])) {
+            // Where is this used?
             $stateDataAdditionalData = $request['additionalData'];
         }
 
         //Validate state.data for payment and build request object
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
 
-        //Setting payment method type if not present in statedata
-        if (empty($request['paymentMethod']['type'])) {
-            $paymentMethodType = static::getPaymentMethodCode();
-        } else {
-            $paymentMethodType = $request['paymentMethod']['type'];
-        }
-
         if (static::$isGiftCard) {
-            $request['paymentMethod']['brand'] = static::getBrand();
+             $paymentRequest->setSelectedBrand(static::getBrand());
         }
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
-            $request['recurringProcessingModel'] = 'CardOnFile';
+            $paymentRequest->setRecurringProcessingModel('CardOnFile');
         }
 
         if (static::class === OneClickPaymentMethodHandler::class) {
-            $request['shopperInteraction'] = self::SHOPPER_INTERACTION_CONTAUTH;
-            $request['recurringProcessingModel'] = 'CardOnFile';
+            $paymentRequest->setShopperInteraction(self::SHOPPER_INTERACTION_CONTAUTH);
+            $paymentRequest->setRecurringProcessingModel('CardOnFile');
+
         } else {
-            $request['shopperInteraction'] = self::SHOPPER_INTERACTION_ECOMMERCE;
+            $paymentRequest->setShopperInteraction(self::SHOPPER_INTERACTION_ECOMMERCE);
         }
 
         //Setting browser info if not present in statedata
@@ -462,15 +464,17 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $shippingStreetAddress = $this->getSplitStreetAddressHouseNumber(
                 $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
             );
-            $request = $this->addressBuilder->buildDeliveryAddress(
-                $shippingStreetAddress['street'],
-                $shippingStreetAddress['houseNumber'],
-                $salesChannelContext->getShippingLocation()->getAddress()->getZipcode(),
-                $salesChannelContext->getShippingLocation()->getAddress()->getCity(),
-                $shippingState,
-                $salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso(),
-                $request
-            );
+
+            $addressInfo = new Address([
+                "street" => $shippingStreetAddress['street'],
+                "houseNumberOrName" => $shippingStreetAddress['houseNumber'],
+                "postalCode" => $salesChannelContext->getShippingLocation()->getAddress()->getZipcode(),
+                "city" => $salesChannelContext->getShippingLocation()->getAddress()->getCity(),
+                "stateOrProvince" => $shippingState,
+                "country" => $salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso()
+            ]);
+
+            $paymentRequest->setDeliveryAddress($addressInfo);
         }
 
         //Setting billing address info if not present in statedata
@@ -485,15 +489,17 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $billingStreetAddress = $this->getSplitStreetAddressHouseNumber(
                 $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
             );
-            $request = $this->addressBuilder->buildBillingAddress(
-                $billingStreetAddress['street'],
-                $billingStreetAddress['houseNumber'],
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode(),
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity(),
-                $billingState,
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso(),
-                $request
-            );
+
+            $addressInfo = new Address([
+                "street" => $billingStreetAddress['street'],
+                "houseNumberOrName" => $billingStreetAddress['houseNumber'],
+                "postalCode" => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode(),
+                "city" => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity(),
+                "stateOrProvince" => $billingState,
+                "country" => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso(),
+            ]);
+
+            $paymentRequest->setBillingAddress($addressInfo);
         }
 
         //Setting customer data if not present in statedata
@@ -553,52 +559,53 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $countryCode = $request['countryCode'];
         }
 
-        $request = $this->browserBuilder->buildBrowserData(
-            $userAgent,
-            $acceptHeader,
-            isset($request['browserInfo']['screenWidth']) ? $request['browserInfo']['screenWidth'] : null,
-            isset($request['browserInfo']['screenHeight']) ? $request['browserInfo']['screenHeight'] : null,
-            isset($request['browserInfo']['colorDepth']) ? $request['browserInfo']['colorDepth'] : null,
-            isset($request['browserInfo']['timeZoneOffset']) ? $request['browserInfo']['timeZoneOffset'] : null,
-            isset($request['browserInfo']['language']) ? $request['browserInfo']['language'] : null,
-            isset($request['browserInfo']['javaEnabled']) ? $request['browserInfo']['javaEnabled'] : null,
-            $request
-        );
+        $browserInfo = new BrowserInfo();
+        $browserInfo->setUserAgent($userAgent);
+        $browserInfo->setAcceptHeader($acceptHeader);
+        $browserInfo->setScreenWidth($request['browserInfo']['screenWidth']);
+        $browserInfo->setScreenHeight($request['browserInfo']['screenHeight']);
+        $browserInfo->setColorDepth($request['browserInfo']['colorDepth']);
+        $browserInfo->setTimeZoneOffset($request['browserInfo']['timeZoneOffset']);
+        $browserInfo->setLanguage($request['browserInfo']['language']);
+        $browserInfo->setJavaEnabled($request['browserInfo']['javaEnabled']);
 
-        $request = $this->customerBuilder->buildCustomerData(
-            false,
-            $shopperEmail,
-            $shopperPhone,
-            '',
-            $shopperDob,
-            $shopperFirstName,
-            $shopperLastName,
-            $countryCode,
-            $shopperLocale,
-            $shopperIp,
-            $shopperReference,
-            $request
-        );
+        $paymentRequest->setBrowserInfo($browserInfo);
+
+        $shopperName = new Name([
+            "firstName" => $shopperFirstName,
+            "lastName" => $shopperLastName
+        ]);
+
+        $paymentRequest->setShopperName($shopperName);
+        $paymentRequest->setShopperEmail($shopperEmail);
+        $paymentRequest->setTelephoneNumber($shopperPhone);
+        $paymentRequest->setDateOfBirth($shopperDob);
+        $paymentRequest->setCountryCode($countryCode);
+        $paymentRequest->setShopperLocale($shopperLocale);
+        $paymentRequest->setShopperIP($shopperIp);
+        $paymentRequest->setShopperReference($shopperReference);
 
         //Building payment data
         $amount = $partialAmount ?: $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
-        $request = $this->paymentBuilder->buildPaymentData(
-            $salesChannelContext->getCurrency()->getIsoCode(),
-            $amount,
-            $transaction->getOrder()->getOrderNumber(),
-            $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
-            $transaction->getReturnUrl(),
-            $request
-        );
 
-        $request = $this->paymentBuilder->buildAlternativePaymentMethodData(
-            $paymentMethodType,
-            '',
-            $request
+        $amountInfo = new Amount([
+            "currency"=>$salesChannelContext->getCurrency()->getIsoCode(),
+            "value="=>$amount
+        ]);
+
+        $paymentRequest->setAmount($amountInfo);
+        $paymentRequest->setOrderReference($transaction->getOrder()->getOrderNumber());
+        $paymentRequest->setMerchantAccount(
+            $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
+        $paymentRequest->setReturnUrl($transaction->getReturnUrl());
+
+        $paymentMethod = new CheckoutPaymentMethod();
+        $paymentMethod->setType($request['paymentMethod']['type'] ?? 'zip');
+        $paymentRequest->setPaymentMethod($paymentMethod);
 
         if (static::$isOpenInvoice) {
             $orderLines = $transaction->getOrder()->getLineItems();
@@ -654,51 +661,59 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 }
 
                 //Building open invoice line
-                $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
-                    $productName,
-                    $this->currency->sanitize(
-                        $price->getUnitPrice() -
-                        ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
-                        $currency
-                    ),
-                    $this->currency->sanitize(
-                        $lineTax,
-                        $currency
-                    ),
-                    $taxRate * 100,
-                    $orderLine->getQuantity(),
-                    '',
-                    $productNumber,
-                    $productUrl,
-                    $imageUrl,
-                    $this->currency->sanitize(
-                        $price->getUnitPrice(),
-                        $currency
-                    ),
-                    $productCategory
-                );
+                $lineItem = new LineItem();
+
+                $lineItem->setDescription($productName);
+                $lineItem->setAmountExcludingTax($this->currency->sanitize(
+                    $price->getUnitPrice() -
+                    ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
+                    $currency->getIsoCode()
+                ));
+                $lineItem->setTaxAmount($this->currency->sanitize(
+                    $lineTax,
+                    $currency->getIsoCode()
+                ));
+                $lineItem->setTaxPercentage($taxRate * 100);
+                $lineItem->setQuantity($orderLine->getQuantity());
+                $lineItem->setId($productNumber);
+                $lineItem->setProductUrl($productUrl);
+                $lineItem->setImageUrl($imageUrl);
+                $lineItem->setAmountIncludingTax( $this->currency->sanitize(
+                    $price->getUnitPrice(),
+                    $currency->getIsoCode()
+                ));
+                $lineItem->setItemCategory($productCategory);
+
+                $lineItems[] = $lineItem;
             }
 
-            $request['lineItems'] = $lineItems;
+            $paymentRequest->setLineItems($lineItems);
         }
 
         //Setting info from statedata additionalData if present
         if (!empty($stateDataAdditionalData['origin'])) {
-            $request['origin'] = $stateDataAdditionalData['origin'];
+            $origin = $stateDataAdditionalData['origin'];
         } else {
             $origin = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
-            $request['origin'] = $origin;
         }
+        $paymentRequest->setOrigin($origin);
 
-        $request['additionalData']['allow3DS2'] = true;
+//        $request['additionalData']['allow3DS2'] = true;
+        $additinalData3DSecure = new AdditionalData3DSecure();
+//        TODO: allow3ds setter is deprecated, where do I set it now?
+//        $additinalData3DSecure->allow3DS2(true);
 
-        $request['channel'] = 'web';
 
+        $paymentRequest->setChannel('web');
         if (!empty($adyenOrderData)) {
-            $request['order'] = $adyenOrderData;
+//            $request['order'] = $adyenOrderData;
+//            TODO: how to set the order data - $adyenOrderData is an array, and setOrderData expects a string
+            $encryptedOrderData = new EncryptedOrderData();
+//            $encryptedOrderData->setOrderData(['orderDate' => $adyenOrderData]);
+            $paymentRequest->setOrder($encryptedOrderData);
         }
 
-        return $request;
+        return $paymentRequest;
     }
 
     /**
