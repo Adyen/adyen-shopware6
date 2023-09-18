@@ -27,7 +27,6 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
 
-use Adyen\Model\Checkout\AdditionalData3DSecure;
 use Adyen\Model\Checkout\CheckoutPaymentMethod;
 use Adyen\Model\Checkout\EncryptedOrderData;
 use Adyen\Model\Checkout\LineItem;
@@ -37,9 +36,10 @@ use Adyen\Model\Checkout\Amount;
 use Adyen\Model\Checkout\BrowserInfo;
 use Adyen\Model\Checkout\Name;
 use Adyen\Model\Checkout\PaymentResponse;
+use Adyen\Service\Checkout\PaymentsApi;
+use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
-use Adyen\Shopware\Service\CheckoutService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
@@ -99,26 +99,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     protected $clientService;
 
     /**
-     * @var Browser
-     */
-    protected $browserBuilder;
-
-    /**
-     * @var Address
-     */
-    protected $addressBuilder;
-
-    /**
-     * @var Payment
-     */
-    protected $paymentBuilder;
-
-    /**
-     * @var OpenInvoice
-     */
-    protected $openInvoiceBuilder;
-
-    /**
      * @var Currency
      */
     protected $currency;
@@ -127,11 +107,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @var ConfigurationService
      */
     protected $configurationService;
-
-    /**
-     * @var Customer
-     */
-    protected $customerBuilder;
 
     /**
      * @var CheckoutStateDataValidator
@@ -193,7 +168,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      */
     private $contextSwitchRoute;
 
-    private $checkoutService;
+    private $paymentsApiService;
 
     private $paymentResults = [];
 
@@ -206,12 +181,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      *
      * @param ConfigurationService $configurationService
      * @param ClientService $clientService
-     * @param Browser $browserBuilder
-     * @param Address $addressBuilder
-     * @param Payment $paymentBuilder
-     * @param OpenInvoice $openInvoiceBuilder
      * @param Currency $currency
-     * @param Customer $customerBuilder
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
@@ -228,12 +198,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     public function __construct(
         ConfigurationService $configurationService,
         ClientService $clientService,
-        Browser $browserBuilder,
-        Address $addressBuilder,
-        Payment $paymentBuilder,
-        OpenInvoice $openInvoiceBuilder,
         Currency $currency,
-        Customer $customerBuilder,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
@@ -248,13 +213,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         LoggerInterface $logger
     ) {
         $this->clientService = $clientService;
-        $this->browserBuilder = $browserBuilder;
-        $this->addressBuilder = $addressBuilder;
-        $this->openInvoiceBuilder = $openInvoiceBuilder;
         $this->currency = $currency;
         $this->configurationService = $configurationService;
-        $this->customerBuilder = $customerBuilder;
-        $this->paymentBuilder = $paymentBuilder;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
@@ -288,9 +248,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): RedirectResponse {
-        $this->checkoutService = new CheckoutService(
+
+        $this->paymentsApiService = new PaymentsApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );
+
         $requestStateData = $dataBag->get('stateData');
         if ($requestStateData) {
             $requestStateData = json_decode($requestStateData, true);
@@ -329,7 +291,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         try {
-            $response = new PaymentResponse($this->checkoutService->payments($request));
+            $response = $this->paymentsApiService->payments($request);
         } catch (AdyenException $exception) {
             $message = sprintf(
                 "There was an error with the /payments request. Order number %s: %s",
@@ -405,7 +367,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param array $request
      * @param int|null $partialAmount
      * @param array|null $adyenOrderData
-     * @return array
+     * @return PaymentRequest
      */
     protected function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
@@ -418,7 +380,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest = new PaymentRequest();
 
         if (!empty($request['additionalData'])) {
-            // Where is this used?
             $stateDataAdditionalData = $request['additionalData'];
         }
 
@@ -426,7 +387,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
 
         if (static::$isGiftCard) {
-             $paymentRequest->setSelectedBrand(static::getBrand());
+//            TODO: could not find a setter for brand
+             $paymentRequest->getPaymentMethod()->setBrand(static::getBrand());
         }
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
@@ -466,14 +428,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
             );
 
-            $addressInfo = new Address([
-                "street" => $shippingStreetAddress['street'],
-                "houseNumberOrName" => $shippingStreetAddress['houseNumber'],
-                "postalCode" => $salesChannelContext->getShippingLocation()->getAddress()->getZipcode(),
-                "city" => $salesChannelContext->getShippingLocation()->getAddress()->getCity(),
-                "stateOrProvince" => $shippingState,
-                "country" => $salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso()
-            ]);
+            $addressInfo = new Address();
+
+            $addressInfo->setStreet($shippingStreetAddress['street']);
+            $addressInfo->setHouseNumberOrName($shippingStreetAddress['houseNumber']);
+            $addressInfo->setPostalCode($salesChannelContext->getShippingLocation()->getAddress()->getZipcode());
+            $addressInfo->setCity($salesChannelContext->getShippingLocation()->getAddress()->getCity());
+            $addressInfo->setStateOrProvince($shippingState);
+            $addressInfo->setCountry($salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso());
 
             $paymentRequest->setDeliveryAddress($addressInfo);
         }
@@ -491,15 +453,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
             );
 
-            $addressInfo = new Address([
-                "street" => $billingStreetAddress['street'],
-                "houseNumberOrName" => $billingStreetAddress['houseNumber'],
-                "postalCode" => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode(),
-                "city" => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity(),
-                "stateOrProvince" => $billingState,
-                "country" => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso(),
-            ]);
+            $addressInfo = new Address();
 
+            $addressInfo->setStreet($billingStreetAddress['street']);
+            $addressInfo->setHouseNumberOrName($billingStreetAddress['houseNumber']);
+            $addressInfo->setPostalCode($salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode());
+            $addressInfo->setCity($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity());
+            $addressInfo->setStateOrProvince($billingState);
+            $addressInfo->setCountry($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso());
             $paymentRequest->setBillingAddress($addressInfo);
         }
 
@@ -572,10 +533,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         $paymentRequest->setBrowserInfo($browserInfo);
 
-        $shopperName = new Name([
-            "firstName" => $shopperFirstName,
-            "lastName" => $shopperLastName
-        ]);
+        $shopperName = new Name();
+        $shopperName->setFirstName($shopperFirstName);
+        $shopperName->setLastName($shopperLastName);
 
         $paymentRequest->setShopperName($shopperName);
         $paymentRequest->setShopperEmail($shopperEmail);
@@ -592,10 +552,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $salesChannelContext->getCurrency()->getIsoCode()
         );
 
-        $amountInfo = new Amount([
-            "currency"=>$salesChannelContext->getCurrency()->getIsoCode(),
-            "value="=>$amount
-        ]);
+        $amountInfo = new Amount();
+
+        $amountInfo->setCurrency($salesChannelContext->getCurrency()->getIsoCode());
+        $amountInfo->setValue($amount);
 
         $paymentRequest->setAmount($amountInfo);
         $paymentRequest->setOrderReference($transaction->getOrder()->getOrderNumber());
@@ -697,20 +657,15 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         } else {
             $origin = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
         }
+
         $paymentRequest->setOrigin($origin);
-
-//        $request['additionalData']['allow3DS2'] = true;
-        $additinalData3DSecure = new AdditionalData3DSecure();
-//        TODO: allow3ds setter is deprecated, where do I set it now?
-//        $additinalData3DSecure->allow3DS2(true);
-
+        $paymentRequest->setAdditionaldata(['allow3DS2' => true]);
 
         $paymentRequest->setChannel('web');
         if (!empty($adyenOrderData)) {
-//            $request['order'] = $adyenOrderData;
-//            TODO: how to set the order data - $adyenOrderData is an array, and setOrderData expects a string
             $encryptedOrderData = new EncryptedOrderData();
-//            $encryptedOrderData->setOrderData(['orderDate' => $adyenOrderData]);
+            $encryptedOrderData->setOrderData($adyenOrderData['orderData']);
+            $encryptedOrderData->setPspReference($adyenOrderData['pspReference']);
             $paymentRequest->setOrder($encryptedOrderData);
         }
 
@@ -852,7 +807,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         try {
-            $giftcardPaymentResponse = $this->checkoutService->payments($giftcardPaymentRequest);
+            $giftcardPaymentResponse = $this->paymentsApiService->payments($giftcardPaymentRequest);
+
         } catch (AdyenException $exception) {
             $message = sprintf(
                 "There was an error with the giftcard payment request. Order number %s: %s",

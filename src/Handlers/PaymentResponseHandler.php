@@ -120,8 +120,9 @@ class PaymentResponseHandler
     }
 
     /**
-     * @param array $response
+     * @param PaymentResponse $response
      * @param OrderTransactionEntity $orderTransaction
+     * @param bool $upsertResponse
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
