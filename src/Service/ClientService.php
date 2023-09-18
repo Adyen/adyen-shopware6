@@ -112,7 +112,8 @@ class ClientService
             $client->setExternalPlatform(self::EXTERNAL_PLATFORM_NAME, $this->shopwareVersion);
             $client->setEnvironment($environment, $liveEndpointUrlPrefix);
 
-            $client->setLogger($this->apiLogger);
+            //todo: was this removed?
+//            $client->setLogger($this->apiLogger);
 
             return $client;
         } catch (\Exception $e) {

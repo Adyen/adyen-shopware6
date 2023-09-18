@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Model\Checkout\PaymentMethod;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
@@ -185,7 +186,11 @@ class PaymentMethodsFilterService
         }
 
         $giftcards = $this->filterAdyenPaymentMethodsByType($adyenPaymentMethods, 'giftcard');
-        $brands = array_column($giftcards, 'brand');
+//        $brands = array_column($giftcards, 'brand');
+
+        $brands = array_map(function (PaymentMethod $method) {
+            return $method->getBrand();
+        }, $giftcards);
 
         foreach ($paymentMethods as $entity) {
             $methodHandler = $entity->getHandlerIdentifier();
@@ -209,9 +214,9 @@ class PaymentMethodsFilterService
         return $paymentMethods;
     }
 
-    public function filterAdyenPaymentMethodsByType(array $paymentMethodsResponse, string $type): array
+    public function filterAdyenPaymentMethodsByType(array $paymentMethods, string $type): array
     {
-        return array_filter($paymentMethodsResponse['paymentMethods'], function ($item) use ($type) {
+        return array_filter($paymentMethods, function ($item) use ($type) {
             return $item['type'] === $type;
         });
     }

@@ -24,6 +24,9 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
+use Adyen\Model\Checkout\PaymentMethodsRequest;
+use Adyen\Model\Checkout\PaymentMethodsResponse;
+use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
@@ -112,7 +115,7 @@ class PaymentMethodsService
      * @param string $orderId
      * @return array
      */
-    public function getPaymentMethods(SalesChannelContext $context, $orderId = ''): array
+    public function getPaymentMethods(SalesChannelContext $context, $orderId = ''): PaymentMethodsResponse
     {
         $requestData = $this->buildPaymentMethodsRequestData($context, $orderId);
 
@@ -126,10 +129,13 @@ class PaymentMethodsService
 
         $responseData = [];
         try {
-            $checkoutService = new CheckoutService(
+            $paymentsApiService = new PaymentsApi(
                 $this->clientService->getClient($context->getSalesChannelId())
             );
-            $responseData = $checkoutService->paymentMethods($requestData);
+//            $checkoutService = new CheckoutService(
+//                $this->clientService->getClient($context->getSalesChannelId())
+//            );
+            $responseData = $paymentsApiService->paymentMethods(new PaymentMethodsRequest($requestData));
 
             $paymentMethodsResponseCache->set(CacheValueCompressor::compress($responseData));
             $this->cache->save($paymentMethodsResponseCache);

@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\Payment;
 
+use Adyen\Model\Checkout\PaymentDetailsRequest;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
@@ -225,7 +226,8 @@ class PaymentController
 
         try {
             $result = $this->paymentDetailsService->getPaymentDetails(
-                $stateData,
+//TODO: check whether this works.
+                new PaymentDetailsRequest($stateData),
                 $paymentResponse->getOrderTransaction()
             );
         } catch (PaymentFailedException $exception) {

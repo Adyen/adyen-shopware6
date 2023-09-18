@@ -119,8 +119,10 @@ class DonationService
             $this->clientService->getClient($context->getSalesChannel()->getId())
         );
 
-        // todo: checkout service seems deprecated, what to do here? (because it asks for array, not DonationPaymentRequest)
-        // todo: response is returned but never used, do I still have to make a DonationPaymentResponse ?
+        // TODO: checkout service seems deprecated, what to do here? (because it asks for array, not DonationPaymentRequest)
+        // TODO: response is returned but never used, do I still have to make a DonationPaymentResponse ?
+
+//        TODO: PaymentsAPI class returns a DonationPaymentResponse onject so we might not need to create that here
         return new DonationPaymentResponse($checkoutService->donations($request));
     }
 }

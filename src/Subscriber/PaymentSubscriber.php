@@ -219,7 +219,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
         $giftcards = $this->paymentMethodsFilterService->getAvailableGiftcards(
             $salesChannelContext,
-            $paymentMethods,
+            $paymentMethods->getPaymentMethods(),
             $this->adyenPluginProvider->getAdyenPluginId(),
             $shopwarePaymentMethods
         );
@@ -340,7 +340,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $page->getPaymentMethods(),
             $salesChannelContext,
             $adyenPluginId,
-            $paymentMethodsResponse,
+            $paymentMethodsResponse->getPaymentMethods(),
             $giftcardSelectedId
         );
 

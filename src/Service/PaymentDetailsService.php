@@ -24,6 +24,8 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
+use Adyen\Model\Checkout\PaymentDetailsRequest;
+use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandlerResult;
@@ -65,21 +67,27 @@ class PaymentDetailsService
     }
 
     /**
-     * @param array $requestData
+     * @param PaymentDetailsRequest $requestData
      * @param OrderTransactionEntity $orderTransaction
      * @return PaymentResponseHandlerResult
      * @throws PaymentFailedException
      */
     public function getPaymentDetails(
-        array $requestData,
+        //todo: check if this is okay, not sure if $requestData can be an object or not, param type is not clear
+        PaymentDetailsRequest $requestData,
         OrderTransactionEntity $orderTransaction
     ): PaymentResponseHandlerResult {
 
         try {
-            $checkoutService = new CheckoutService(
+//            $checkoutService = new CheckoutService(
+//                $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
+//            );
+            $paymentsApiObj = new PaymentsApi(
                 $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
             );
-            $response = $checkoutService->paymentsDetails($requestData);
+
+            // TODO: Confirm: the paymentDetails returns 'mixed', considering we need the response to be paymentDetailsResponse type for handlePaymentResponse, I am assuming this $response will still work
+            $response = $paymentsApiObj->paymentsDetails($requestData);
             return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
