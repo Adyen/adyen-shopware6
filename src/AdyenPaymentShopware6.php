@@ -25,6 +25,7 @@
 
 namespace Adyen\Shopware;
 
+use Adyen\Shopware\DependencyInjection\AdyenPaymentCompilerPass;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
@@ -46,9 +47,15 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AdyenPaymentShopware6 extends Plugin
 {
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+        $container->addCompilerPass(new AdyenPaymentCompilerPass());
+    }
 
     public function install(InstallContext $installContext): void
     {
