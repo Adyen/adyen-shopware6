@@ -77,7 +77,7 @@ class PaymentMethodsFilterService
         }
 
         // If the /paymentMethods response returns empty, remove all Adyen payment methods from the list and return
-        if (empty($adyenPaymentMethods['paymentMethods'])) {
+        if (empty($adyenPaymentMethods)) {
             return $originalPaymentMethods->filter(
                 function (PaymentMethodEntity $item) use ($adyenPluginId) {
                     return $item->getPluginId() !== $adyenPluginId;
@@ -108,7 +108,7 @@ class PaymentMethodsFilterService
                 } else {
                     // For all other PMs, search in /paymentMethods response for payment method with matching `type`
                     $paymentMethodFoundInResponse = array_filter(
-                        $adyenPaymentMethods['paymentMethods'],
+                        $adyenPaymentMethods,
                         function ($value) use ($pmCode) {
                             return $value['type'] == $pmCode;
                         }
@@ -120,7 +120,7 @@ class PaymentMethodsFilterService
                         $paymentMethodFoundInResponse = array_merge(
                             $paymentMethodFoundInResponse,
                             array_filter(
-                                $adyenPaymentMethods['paymentMethods'],
+                                $adyenPaymentMethods,
                                 function ($value) use ($paywithgoogleTxvariant) {
                                     return $value['type'] == $paywithgoogleTxvariant;
                                 }

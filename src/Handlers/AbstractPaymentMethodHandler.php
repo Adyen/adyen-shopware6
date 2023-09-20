@@ -387,7 +387,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
 
         if (static::$isGiftCard) {
-//            TODO: could not find a setter for brand
              $paymentRequest->getPaymentMethod()->setBrand(static::getBrand());
         }
 
@@ -521,17 +520,20 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $countryCode = $request['countryCode'];
         }
 
-        $browserInfo = new BrowserInfo();
-        $browserInfo->setUserAgent($userAgent);
-        $browserInfo->setAcceptHeader($acceptHeader);
-        $browserInfo->setScreenWidth($request['browserInfo']['screenWidth']);
-        $browserInfo->setScreenHeight($request['browserInfo']['screenHeight']);
-        $browserInfo->setColorDepth($request['browserInfo']['colorDepth']);
-        $browserInfo->setTimeZoneOffset($request['browserInfo']['timeZoneOffset']);
-        $browserInfo->setLanguage($request['browserInfo']['language']);
-        $browserInfo->setJavaEnabled($request['browserInfo']['javaEnabled']);
+        if(!empty($request['browserInfo'])){
 
-        $paymentRequest->setBrowserInfo($browserInfo);
+            $browserInfo = new BrowserInfo();
+            $browserInfo->setUserAgent($userAgent);
+            $browserInfo->setAcceptHeader($acceptHeader);
+            $browserInfo->setScreenWidth($request['browserInfo']['screenWidth']);
+            $browserInfo->setScreenHeight($request['browserInfo']['screenHeight']);
+            $browserInfo->setColorDepth($request['browserInfo']['colorDepth']);
+            $browserInfo->setTimeZoneOffset($request['browserInfo']['timeZoneOffset']);
+            $browserInfo->setLanguage($request['browserInfo']['language']);
+            $browserInfo->setJavaEnabled($request['browserInfo']['javaEnabled']);
+
+            $paymentRequest->setBrowserInfo($browserInfo);
+        }
 
         $shopperName = new Name();
         $shopperName->setFirstName($shopperFirstName);
@@ -539,7 +541,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         $paymentRequest->setShopperName($shopperName);
         $paymentRequest->setShopperEmail($shopperEmail);
-        $paymentRequest->setTelephoneNumber($shopperPhone);
+//        TODO: for card, telephone number is empty, so is this okay now?
+        if(!empty($shopperPhone)){
+            $paymentRequest->setTelephoneNumber($shopperPhone);
+        }
         $paymentRequest->setDateOfBirth($shopperDob);
         $paymentRequest->setCountryCode($countryCode);
         $paymentRequest->setShopperLocale($shopperLocale);
@@ -558,7 +563,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $amountInfo->setValue($amount);
 
         $paymentRequest->setAmount($amountInfo);
-        $paymentRequest->setOrderReference($transaction->getOrder()->getOrderNumber());
+        $paymentRequest->setReference($transaction->getOrder()->getOrderNumber());
         $paymentRequest->setMerchantAccount(
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
@@ -661,7 +666,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setOrigin($origin);
         $paymentRequest->setAdditionaldata(['allow3DS2' => true]);
 
-        $paymentRequest->setChannel('web');
+        $paymentRequest->setChannel('Web');
         if (!empty($adyenOrderData)) {
             $encryptedOrderData = new EncryptedOrderData();
             $encryptedOrderData->setOrderData($adyenOrderData['orderData']);
