@@ -49,7 +49,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
 class AdyenPaymentShopware6 extends Plugin
 {
-
     public function install(InstallContext $installContext): void
     {
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
