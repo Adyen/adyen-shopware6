@@ -53,10 +53,10 @@ class AdyenPaymentShopware6 extends Plugin
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);
-        $this->installStorefrontBuild($container->getParameter('kernel.shopware_version'));
+        $this->installJsAssets($container->getParameter('kernel.shopware_version'));
     }
 
-    public function installStorefrontBuild($shopwareVersion)
+    public function installJsAssets($shopwareVersion)
     {
         $storefrontAssetPath = __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware6.js';
         $adminAssetPath = __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware6.js';
@@ -81,12 +81,14 @@ class AdyenPaymentShopware6 extends Plugin
         }
 
         if (!$resultStorefront) {
-            // add notice: Unable to install your storefront javascript assets, please run the command `bin/build-storefront.sh`
+            // @todo: add notice:
+            // Unable to install your storefront javascript assets, please run the command `bin/build-storefront.sh`
             // from your Shopware web directory
         }
 
         if (!$resultAdmin) {
-            // add notice: Unable to install your admin javascript assets, please run the command `bin/build-administration.sh`
+            // @todo: add notice:
+            // Unable to install your admin javascript assets, please run the command `bin/build-administration.sh`
             // from your Shopware web directory
         }
     }
