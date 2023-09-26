@@ -46,9 +46,53 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AdyenPaymentShopware6 extends Plugin
 {
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+        $this->installJsAssets($container->getParameter('kernel.shopware_version'));
+    }
+
+    public function installJsAssets($shopwareVersion)
+    {
+        $storefrontAssetPath = __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware6.js';
+        $adminAssetPath = __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware6.js';
+        if (\version_compare($shopwareVersion, '6.5.0.0', '<')) {
+            $resultStorefront = copy(
+                __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware64.js.dist',
+                $storefrontAssetPath
+            );
+            $resultAdmin = copy(
+                __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
+                $adminAssetPath
+            );
+        } else {
+            $resultStorefront = copy(
+                __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware65.js.dist',
+                $storefrontAssetPath
+            );
+            $resultAdmin = copy(
+                __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
+                $adminAssetPath
+            );
+        }
+
+        if (!$resultStorefront) {
+            // @todo: add notice:
+            // Unable to install your storefront javascript assets, please run the command `bin/build-storefront.sh`
+            // from your Shopware web directory
+        }
+
+        if (!$resultAdmin) {
+            // @todo: add notice:
+            // Unable to install your admin javascript assets, please run the command `bin/build-administration.sh`
+            // from your Shopware web directory
+        }
+    }
+
     public function install(InstallContext $installContext): void
     {
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
