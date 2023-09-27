@@ -102,7 +102,7 @@ class PaymentResponseService
 
         $fields['orderTransactionId'] = $orderTransaction->getId();
         $fields['resultCode'] = $paymentResponse->getResultCode();
-        $fields['response'] = $paymentResponse->jsonSerialize();
+        $fields['response'] = $paymentResponse->__toString();
 
         $this->repository->upsert(
             [$fields],
