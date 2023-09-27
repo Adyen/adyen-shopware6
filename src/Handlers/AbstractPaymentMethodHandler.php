@@ -377,7 +377,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         ?array $adyenOrderData = []
     ): PaymentRequest {
 
-        $paymentRequest = new PaymentRequest();
+        $paymentRequest = new PaymentRequest($request);
 
         if (!empty($request['additionalData'])) {
             $stateDataAdditionalData = $request['additionalData'];
@@ -541,7 +541,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         $paymentRequest->setShopperName($shopperName);
         $paymentRequest->setShopperEmail($shopperEmail);
-//        TODO: for card, telephone number is empty, so is this okay now?
         if(!empty($shopperPhone)){
             $paymentRequest->setTelephoneNumber($shopperPhone);
         }
@@ -569,8 +568,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
         $paymentRequest->setReturnUrl($transaction->getReturnUrl());
 
-        $paymentMethod = new CheckoutPaymentMethod();
+        $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
         $paymentMethod->setType($request['paymentMethod']['type'] ?? 'zip');
+
         $paymentRequest->setPaymentMethod($paymentMethod);
 
         if (static::$isOpenInvoice) {
