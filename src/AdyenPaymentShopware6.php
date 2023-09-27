@@ -95,6 +95,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function install(InstallContext $installContext): void
     {
+        $this->installJsAssets($installContext->getCurrentShopwareVersion());
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->addPaymentMethod(new $paymentMethod(), $installContext->getContext());
         }
@@ -135,6 +136,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function update(UpdateContext $updateContext): void
     {
+        $this->installJsAssets($updateContext->getCurrentShopwareVersion());
         $currentVersion = $updateContext->getCurrentPluginVersion();
 
         if (\version_compare($currentVersion, '1.2.0', '<')) {
