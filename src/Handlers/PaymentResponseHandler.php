@@ -130,15 +130,17 @@ class PaymentResponseHandler
         OrderTransactionEntity $orderTransaction,
         bool $upsertResponse = true
     ): PaymentResponseHandlerResult {
-        $resultCode = $response->getAdditionalData();
-        $paymentResponseHandlerResult = new PaymentResponseHandlerResult();
 
+        // Retrieve result code from response array
+        $resultCode = $response->getResultCode();
+
+        $paymentResponseHandlerResult = new PaymentResponseHandlerResult();
         $paymentResponseHandlerResult->setRefusalReason($response->getRefusalReason());
         $paymentResponseHandlerResult->setRefusalReasonCode($response->getRefusalReasonCode());
-        $paymentResponseHandlerResult->setResultCode($response->getResultCode());
+        $paymentResponseHandlerResult->setResultCode($resultCode);
         $paymentResponseHandlerResult->setPspReference($response->getPspReference());
         $paymentResponseHandlerResult->setAction($response->getAction()->jsonSerialize());
-        $paymentResponseHandlerResult->setAdditionalData($resultCode);
+        $paymentResponseHandlerResult->setAdditionalData($response->getAdditionalData());
 
         /*
          * If this payment is a part of an Adyen order,
@@ -146,6 +148,7 @@ class PaymentResponseHandler
          */
         $isGiftcardOrderResponse = false;
         if (!empty($method = $response->getPaymentMethod()) &&
+            !empty($method->getType()) &&
             $method->getType() === 'giftcard' &&
             !empty($response->getOrder())) {
             $isGiftcardOrderResponse = true;
@@ -171,7 +174,8 @@ class PaymentResponseHandler
                 // Log Refused, no further steps needed
                 $this->logger->error(
                     "The payment was refused, order transaction merchant reference: " .
-                    $response[self::MERCHANT_REFERENCE]
+//                    $response[self::MERCHANT_REFERENCE]
+                    $response->getMerchantReference()
                 );
 
                 break;
