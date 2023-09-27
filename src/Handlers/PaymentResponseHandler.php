@@ -137,7 +137,7 @@ class PaymentResponseHandler
         $paymentResponseHandlerResult->setRefusalReasonCode($response->getRefusalReasonCode());
         $paymentResponseHandlerResult->setResultCode($response->getResultCode());
         $paymentResponseHandlerResult->setPspReference($response->getPspReference());
-        $paymentResponseHandlerResult->setAction($response->getAction());
+        $paymentResponseHandlerResult->setAction($response->getAction()->jsonSerialize());
         $paymentResponseHandlerResult->setAdditionalData($resultCode);
 
         /*
