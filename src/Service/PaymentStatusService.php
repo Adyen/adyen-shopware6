@@ -24,6 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\Exception\MissingDataException;
+use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use JsonException;
@@ -102,8 +103,9 @@ class PaymentStatusService
             );
         }
 
+        $checkoutPaymentResponse = new PaymentResponse($responseData);
         $result = $this->paymentResponseHandler->handlePaymentResponse(
-            $responseData,
+            $checkoutPaymentResponse,
             $paymentResponse->getOrderTransaction()
         );
 

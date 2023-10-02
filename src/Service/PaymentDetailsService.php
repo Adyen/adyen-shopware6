@@ -25,6 +25,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Model\Checkout\PaymentDetailsRequest;
+use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
@@ -73,7 +74,6 @@ class PaymentDetailsService
      * @throws PaymentFailedException
      */
     public function getPaymentDetails(
-        //todo: check if this is okay, not sure if $requestData can be an object or not, param type is not clear
         PaymentDetailsRequest $requestData,
         OrderTransactionEntity $orderTransaction
     ): PaymentResponseHandlerResult {
@@ -82,13 +82,48 @@ class PaymentDetailsService
 //            $checkoutService = new CheckoutService(
 //                $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
 //            );
-            $paymentsApiObj = new PaymentsApi(
+            $paymentsApi = new PaymentsApi(
                 $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
             );
 
-            // TODO: Confirm: the paymentDetails returns 'mixed', considering we need the response to be paymentDetailsResponse type for handlePaymentResponse, I am assuming this $response will still work
-            $response = $paymentsApiObj->paymentsDetails($requestData);
-            return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
+            $paymentDetailsResponse = $paymentsApi->paymentsDetails($requestData);
+
+//            // instantiate a PaymentResponse object from the values of paymentDetailsResponse object
+//            $response = new PaymentResponse();
+//
+//            if(!is_null($paymentDetailsResponse->getAdditionalData())){
+//                $response->setAdditionalData($paymentDetailsResponse->getAdditionalData());
+//            }
+//            if(!is_null($paymentDetailsResponse->getPaymentMethod())){
+//                $response->setPaymentMethod($paymentDetailsResponse->getPaymentMethod());
+//            }
+//            if(!is_null($paymentDetailsResponse->getAmount())){
+//                $response->setAmount($paymentDetailsResponse->getAmount());
+//            }
+//            if(!is_null($paymentDetailsResponse->getPspReference())){
+//                $response->setPspReference($paymentDetailsResponse->getPspReference());
+//            }
+//            if(!is_null($paymentDetailsResponse->getRefusalReason())){
+//                $response->setRefusalReason($paymentDetailsResponse->getRefusalReason());
+//            }
+//            if(!is_null($paymentDetailsResponse->getResultCode())){
+//                $response->setResultCode($paymentDetailsResponse->getResultCode());
+//            }
+//            if(!is_null($paymentDetailsResponse->getDonationToken())) {
+//                $response->setDonationToken($paymentDetailsResponse->getDonationToken());
+//            }
+//            if(!is_null($paymentDetailsResponse->getFraudResult())){
+//                $response->setFraudResult($paymentDetailsResponse->getFraudResult());
+//            }
+//            if(!is_null($paymentDetailsResponse->getMerchantReference())){
+//                $response->setMerchantReference($paymentDetailsResponse->getMerchantReference());
+//            }
+//            if(!is_null($paymentDetailsResponse->getOrder())){
+//                $response->setOrder($paymentDetailsResponse->getOrder());
+//            }
+
+            return $this->paymentResponseHandler->handlePaymentResponse($paymentDetailsResponse, $orderTransaction);
+
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
             throw new PaymentFailedException($exception->getMessage());

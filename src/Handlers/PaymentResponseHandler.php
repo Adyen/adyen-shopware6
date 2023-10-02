@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Model\Checkout\PaymentDetailsResponse;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
@@ -120,13 +121,13 @@ class PaymentResponseHandler
     }
 
     /**
-     * @param PaymentResponse $response
+     * @param PaymentResponse|PaymentDetailsResponse $response
      * @param OrderTransactionEntity $orderTransaction
      * @param bool $upsertResponse
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
-        PaymentResponse $response,
+        PaymentResponse|PaymentDetailsResponse $response,
         OrderTransactionEntity $orderTransaction,
         bool $upsertResponse = true
     ): PaymentResponseHandlerResult {
@@ -138,8 +139,18 @@ class PaymentResponseHandler
         $paymentResponseHandlerResult->setRefusalReason($response->getRefusalReason());
         $paymentResponseHandlerResult->setRefusalReasonCode($response->getRefusalReasonCode());
         $paymentResponseHandlerResult->setResultCode($resultCode);
+
+        if(method_exists($response,'getAction') && !empty($response->getAction())){
+            if(is_array($response->getAction())){
+                // this is the case when handlePaymentResponse is being called in AbstractPaymentMethodHandler with $giftcardPaymentResponse
+                // in this use-case, (for the moment) $giftcardPaymentResponse->action is an array and not an object
+                $paymentResponseHandlerResult->setAction($response->getAction());
+            } else {
+                $paymentResponseHandlerResult->setAction($response->getAction()->jsonSerialize());
+            }
+        }
+
         $paymentResponseHandlerResult->setPspReference($response->getPspReference());
-        $paymentResponseHandlerResult->setAction($response->getAction()->jsonSerialize());
         $paymentResponseHandlerResult->setAdditionalData($response->getAdditionalData());
 
         /*
@@ -147,7 +158,8 @@ class PaymentResponseHandler
          * payment response contains `order` object.
          */
         $isGiftcardOrderResponse = false;
-        if (!empty($method = $response->getPaymentMethod()) &&
+        $method = $response->getPaymentMethod();
+        if (!empty($method) &&
             !empty($method->getType()) &&
             $method->getType() === 'giftcard' &&
             !empty($response->getOrder())) {
@@ -207,7 +219,106 @@ class PaymentResponseHandler
 
         return $paymentResponseHandlerResult;
     }
-
+//    /**
+//     * @param PaymentDetailsResponse $paymentDetailsResponse
+//     * @param OrderTransactionEntity $orderTransaction
+//     * @param bool $upsertResponse
+//     * @return PaymentResponseHandlerResult
+//     */
+//    public function handlePaymentDetailsResponse(
+//        PaymentDetailsResponse $paymentDetailsResponse,
+//        OrderTransactionEntity $orderTransaction,
+//        bool $upsertResponse = true
+//    ): PaymentResponseHandlerResult {
+//
+//        // Retrieve result code from response array
+//        $resultCode = $paymentDetailsResponse->getResultCode();
+//
+//        $paymentResponseHandlerResult = new PaymentResponseHandlerResult();
+//        $paymentResponseHandlerResult->setRefusalReason($paymentDetailsResponse->getRefusalReason());
+//        $paymentResponseHandlerResult->setRefusalReasonCode($paymentDetailsResponse->getRefusalReasonCode());
+//        $paymentResponseHandlerResult->setResultCode($resultCode);
+//
+////        TODO: paymentDetail response might not have the action part- check and remove
+////        if(!empty($paymentDetailsResponse->getAction())){
+////            if(is_array($paymentDetailsResponse->getAction())){
+////                // this is the case when handlePaymentResponse is being called in AbstractPaymentMethodHandler with $giftcardPaymentResponse
+////                // in this use-case, (for the moment) $giftcardPaymentResponse->action is an array and not an object
+////                $paymentResponseHandlerResult->setAction($paymentDetailsResponse->getAction());
+////            } else {
+////                $paymentResponseHandlerResult->setAction($paymentDetailsResponse->getAction()->jsonSerialize());
+////            }
+////        }
+//
+//        $paymentResponseHandlerResult->setPspReference($paymentDetailsResponse->getPspReference());
+//        $paymentResponseHandlerResult->setAdditionalData($paymentDetailsResponse->getAdditionalData());
+//
+//        /*
+//         * If this payment is a part of an Adyen order,
+//         * payment response contains `order` object.
+//         */
+//        $isGiftcardOrderResponse = false;
+//        $method = $response->getPaymentMethod();
+//        if (!empty($method) &&
+//            !empty($method->getType()) &&
+//            $method->getType() === 'giftcard' &&
+//            !empty($response->getOrder())) {
+//            $isGiftcardOrderResponse = true;
+//        }
+//
+//        $paymentResponseHandlerResult->setIsGiftcardOrder($isGiftcardOrderResponse);
+//
+//        // Set Donation Token if response contains it, except for giftcards
+//        if (!empty($donationToken = $response->getDonationToken()) && !$isGiftcardOrderResponse) {
+//            $paymentResponseHandlerResult->setDonationToken($donationToken);
+//        }
+//
+//        // Store response for cart until the payment is finalised
+//        $this->paymentResponseService->insertPaymentResponse(
+//            $response,
+//            $orderTransaction,
+//            $upsertResponse
+//        );
+//
+//        // Based on the result code start different payment flows
+//        switch ($resultCode) {
+//            case self::REFUSED:
+//                // Log Refused, no further steps needed
+//                $this->logger->error(
+//                    "The payment was refused, order transaction merchant reference: " .
+////                    $response[self::MERCHANT_REFERENCE]
+//                    $response->getMerchantReference()
+//                );
+//
+//                break;
+//            case self::CANCELLED:
+//            case self::AUTHORISED:
+//            case self::REDIRECT_SHOPPER:
+//            case self::IDENTIFY_SHOPPER:
+//            case self::CHALLENGE_SHOPPER:
+//            case self::RECEIVED:
+//            case self::PRESENT_TO_SHOPPER:
+//            case self::PENDING:
+//                // Do nothing here
+//                break;
+//            case self::ERROR:
+//                // Log error
+//                $this->logger->error(
+//                    'There was an error with the payment method. ' .
+//                    ' Result code "Error" in response: ' . print_r($response, true)
+//                );
+//
+//                break;
+//            default:
+//                // Log unsupported resultCode
+//                $this->logger->error(
+//                    "There was an error with the payment method. id:  " .
+//                    ' Unsupported result code in response: ' . print_r($response, true)
+//                );
+//        }
+//
+//        return $paymentResponseHandlerResult;
+//    }
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
