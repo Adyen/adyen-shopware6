@@ -27,7 +27,7 @@ use Adyen\Model\Checkout\Amount;
 use Adyen\Model\Checkout\CheckoutPaymentMethod;
 use Adyen\Model\Checkout\DonationPaymentRequest;
 use Adyen\Model\Checkout\DonationPaymentResponse;
-use Adyen\Model\Checkout\PaymentMethod;
+use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -78,7 +78,7 @@ class DonationService
      * @param $returnUrl
      * @param $pspReference
      * @param $paymentMethodCode
-     * @return array|mixed
+     * @return DonationPaymentResponse
      * @throws \Adyen\AdyenException
      */
     public function donate(
@@ -89,7 +89,8 @@ class DonationService
         $returnUrl,
         $pspReference,
         $paymentMethodCode
-    ) {
+    ): DonationPaymentResponse {
+
         if (isset(self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode])) {
             $paymentMethodCode = self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode];
         }
@@ -115,14 +116,12 @@ class DonationService
             'returnUrl' => $returnUrl
         ]);
 
-        $checkoutService = new CheckoutService(
+        $paymentsApi = new PaymentsApi(
             $this->clientService->getClient($context->getSalesChannel()->getId())
         );
 
-        // TODO: checkout service seems deprecated, what to do here? (because it asks for array, not DonationPaymentRequest)
-        // TODO: response is returned but never used, do I still have to make a DonationPaymentResponse ?
+        $donationResponse = $paymentsApi->donations($request);
 
-//        TODO: PaymentsAPI class returns a DonationPaymentResponse onject so we might not need to create that here
-        return new DonationPaymentResponse($checkoutService->donations($request));
+        return ($donationResponse);
     }
 }

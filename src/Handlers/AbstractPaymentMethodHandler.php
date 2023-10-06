@@ -386,9 +386,26 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         //Validate state.data for payment and build request object
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
 
-        if (static::$isGiftCard) {
-             $paymentRequest->getPaymentMethod()->setBrand(static::getBrand());
+        /********** New 6th oct *************/
+
+        //Setting payment method type if not present in statedata
+        if (empty($request['paymentMethod']['type'])) {
+            $paymentMethodType = static::getPaymentMethodCode();
+        } else {
+            $paymentMethodType = $request['paymentMethod']['type'];
         }
+
+        $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
+        $paymentMethod->setType($paymentMethodType ?? 'zip');
+
+        /************  ends ***********/
+
+//        TODO: donation token is null for ideal in case of partial payments which should not be the case - check where the donation token is being set for this payment method and debug from there- start from PaymentResponseHandler
+        if (static::$isGiftCard) {
+            $paymentMethod->setBrand(static::getBrand());
+        }
+
+        $paymentRequest->setPaymentMethod($paymentMethod);
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
             $paymentRequest->setRecurringProcessingModel('CardOnFile');
@@ -568,10 +585,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
         $paymentRequest->setReturnUrl($transaction->getReturnUrl());
 
-        $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
-        $paymentMethod->setType($request['paymentMethod']['type'] ?? 'zip');
-
-        $paymentRequest->setPaymentMethod($paymentMethod);
+//        $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
+//        $paymentMethod->setType($request['paymentMethod']['type'] ?? 'zip');
+//
+//        $paymentRequest->setPaymentMethod($paymentMethod);
 
         if (static::$isOpenInvoice) {
             $orderLines = $transaction->getOrder()->getLineItems();
