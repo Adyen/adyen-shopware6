@@ -386,7 +386,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         //Validate state.data for payment and build request object
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
 
-        /********** New 6th oct *************/
+        //set payment method
+        if(!empty($request)){
+            $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
+        }
+        else{
+            $paymentMethod = new CheckoutPaymentMethod();
+        }
 
         //Setting payment method type if not present in statedata
         if (empty($request['paymentMethod']['type'])) {
@@ -395,12 +401,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $paymentMethodType = $request['paymentMethod']['type'];
         }
 
-        $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
         $paymentMethod->setType($paymentMethodType ?? 'zip');
 
-        /************  ends ***********/
-
-//        TODO: donation token is null for ideal in case of partial payments which should not be the case - check where the donation token is being set for this payment method and debug from there- start from PaymentResponseHandler
         if (static::$isGiftCard) {
             $paymentMethod->setBrand(static::getBrand());
         }
@@ -431,6 +433,20 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $userAgent = $request['browserInfo']['userAgent'];
         }
 
+        if(!empty($request['browserInfo'])){
+            $browserInfo = new BrowserInfo();
+            $browserInfo->setUserAgent($userAgent);
+            $browserInfo->setAcceptHeader($acceptHeader);
+            $browserInfo->setScreenWidth($request['browserInfo']['screenWidth']);
+            $browserInfo->setScreenHeight($request['browserInfo']['screenHeight']);
+            $browserInfo->setColorDepth($request['browserInfo']['colorDepth']);
+            $browserInfo->setTimeZoneOffset($request['browserInfo']['timeZoneOffset']);
+            $browserInfo->setLanguage($request['browserInfo']['language']);
+            $browserInfo->setJavaEnabled($request['browserInfo']['javaEnabled']);
+
+            $paymentRequest->setBrowserInfo($browserInfo);
+        }
+
         //Setting delivery address info if not present in statedata
         if (empty($request['deliveryAddress'])) {
             if ($salesChannelContext->getShippingLocation()->getAddress()->getCountryState()) {
@@ -445,7 +461,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
 
             $addressInfo = new Address();
-
             $addressInfo->setStreet($shippingStreetAddress['street']);
             $addressInfo->setHouseNumberOrName($shippingStreetAddress['houseNumber']);
             $addressInfo->setPostalCode($salesChannelContext->getShippingLocation()->getAddress()->getZipcode());
@@ -470,7 +485,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
 
             $addressInfo = new Address();
-
             $addressInfo->setStreet($billingStreetAddress['street']);
             $addressInfo->setHouseNumberOrName($billingStreetAddress['houseNumber']);
             $addressInfo->setPostalCode($salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode());
@@ -495,20 +509,20 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $shopperEmail = $request['shopperEmail'];
         }
 
-        if (empty($request['paymentMethod']['personalDetails']['telephoneNumber'])) {
+        if (empty($request['telephoneNumber'])) {
             $shopperPhone = $salesChannelContext->getShippingLocation()->getAddress()->getPhoneNumber();
         } else {
-            $shopperPhone = $request['paymentMethod']['personalDetails']['telephoneNumber'];
+            $shopperPhone = $request['telephoneNumber'];
         }
 
-        if (empty($request['paymentMethod']['personalDetails']['dateOfBirth'])) {
+        if (empty($request['dateOfBirth'])) {
             if ($salesChannelContext->getCustomer()->getBirthday()) {
                 $shopperDob = $salesChannelContext->getCustomer()->getBirthday()->format('Y-m-d');
             } else {
                 $shopperDob = '';
             }
         } else {
-            $shopperDob = $request['paymentMethod']['personalDetails']['dateOfBirth'];
+            $shopperDob = $request['dateOfBirth'];
         }
 
         if (empty($request['shopperLocale'])) {
@@ -537,21 +551,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $countryCode = $request['countryCode'];
         }
 
-        if(!empty($request['browserInfo'])){
-
-            $browserInfo = new BrowserInfo();
-            $browserInfo->setUserAgent($userAgent);
-            $browserInfo->setAcceptHeader($acceptHeader);
-            $browserInfo->setScreenWidth($request['browserInfo']['screenWidth']);
-            $browserInfo->setScreenHeight($request['browserInfo']['screenHeight']);
-            $browserInfo->setColorDepth($request['browserInfo']['colorDepth']);
-            $browserInfo->setTimeZoneOffset($request['browserInfo']['timeZoneOffset']);
-            $browserInfo->setLanguage($request['browserInfo']['language']);
-            $browserInfo->setJavaEnabled($request['browserInfo']['javaEnabled']);
-
-            $paymentRequest->setBrowserInfo($browserInfo);
-        }
-
         $shopperName = new Name();
         $shopperName->setFirstName($shopperFirstName);
         $shopperName->setLastName($shopperLastName);
@@ -568,13 +567,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setShopperReference($shopperReference);
 
         //Building payment data
+        //Building payment data
         $amount = $partialAmount ?: $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
 
         $amountInfo = new Amount();
-
         $amountInfo->setCurrency($salesChannelContext->getCurrency()->getIsoCode());
         $amountInfo->setValue($amount);
 
@@ -584,11 +583,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
         $paymentRequest->setReturnUrl($transaction->getReturnUrl());
-
-//        $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
-//        $paymentMethod->setType($request['paymentMethod']['type'] ?? 'zip');
-//
-//        $paymentRequest->setPaymentMethod($paymentMethod);
 
         if (static::$isOpenInvoice) {
             $orderLines = $transaction->getOrder()->getLineItems();
@@ -691,7 +685,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $paymentRequest->setOrder($encryptedOrderData);
         }
 
-        return $paymentRequest;
+         return $paymentRequest;
     }
 
     /**
