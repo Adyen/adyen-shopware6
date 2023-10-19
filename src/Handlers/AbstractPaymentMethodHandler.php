@@ -567,7 +567,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setShopperReference($shopperReference);
 
         //Building payment data
-        //Building payment data
         $amount = $partialAmount ?: $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()

@@ -170,8 +170,8 @@ class PaymentResponseHandler
 
         $paymentResponseHandlerResult->setIsGiftcardOrder($isGiftcardOrderResponse);
 
-//        TODO: donation token is null in response in case of ideal payments - Ask Can what to do about it
         $donationToken = $response->getDonationToken();
+
         // Set Donation Token if response contains it, except for giftcards
         if (!empty($donationToken) && !$isGiftcardOrderResponse) {
             $paymentResponseHandlerResult->setDonationToken($donationToken);
