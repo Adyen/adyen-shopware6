@@ -26,7 +26,10 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Client;
-use Adyen\Service\Modification;
+use Adyen\Model\Checkout\Amount;
+use Adyen\Model\Checkout\PaymentCaptureRequest;
+use Adyen\Model\Checkout\PaymentCaptureResponse;
+use Adyen\Service\Checkout\ModificationsApi;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
@@ -136,31 +139,34 @@ class CaptureService
                 $lineItems = $order->getLineItems();
                 $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
 
-                $additionalData = array_merge($lineItemsArray, [
+                $additionalData =  [
                     'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
                     'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
-                ]);
+                ];
 
                 $request = $this->buildCaptureRequest(
-                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
                     $captureAmount,
                     $currencyIso,
                     $order->getSalesChannelId(),
-                    $additionalData
+                    $lineItemsArray,
                 );
 
-                $response = $this->sendCaptureRequest($client, $request);
-                if ('[capture-received]' === $response['response']) {
+                $response = $this->sendCaptureRequest($client,
+                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
+                    $request,
+                    $additionalData);
+
+                if($response->getStatus() == "received"){
                     $this->saveCaptureRequest(
                         $orderTransaction,
-                        $response['pspReference'],
+                        $response->getPspReference(),
                         PaymentCaptureEntity::SOURCE_SHOPWARE,
                         PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
                         intval($captureAmount),
                         $context
                     );
                 }
-                $results[] = $response;
+                $results[] = $response->__toString();
             }
             $this->logger->info('Capture for order_number ' . $order->getOrderNumber() . ' end.');
 
@@ -348,21 +354,22 @@ class CaptureService
     }
 
     private function buildCaptureRequest(
-        string $originalReference,
         $captureAmountInMinorUnits,
         string $currency,
         string $salesChannelId,
-        ?array $additionalData = null
-    ): array {
-        return [
-            'originalReference' => $originalReference,
-            'modificationAmount' => [
-                'value' => $captureAmountInMinorUnits,
-                'currency' => $currency,
-            ],
-            'merchantAccount' => $this->configurationService->getMerchantAccount($salesChannelId),
-            'additionalData' => $additionalData
-        ];
+        array $lineItemsArray,
+    ): PaymentCaptureRequest {
+
+        $amount = new Amount();
+        $amount->setValue($captureAmountInMinorUnits);
+        $amount->setCurrency($currency);
+
+        $request = new PaymentCaptureRequest();
+        $request->setAmount($amount);
+        $request->setMerchantAccount($this->configurationService->getMerchantAccount($salesChannelId));
+        $request->setLineItems($lineItemsArray);
+
+        return$request;
     }
 
     /**
@@ -380,17 +387,26 @@ class CaptureService
     }
 
     /**
+     * @param PaymentCaptureRequest $request
+     * @param string $pspReference
+     * @param array $additionalData
+     * @return PaymentCaptureResponse $response
      * @throws CaptureException
      */
     private function sendCaptureRequest(
         Client $client,
-        array $request
-    ) {
+        string $pspReference,
+        PaymentCaptureRequest $request,
+        array $additionalData
+    ) : PaymentCaptureResponse {
+
         try {
-            $modification = new Modification($client);
-            $response = $modification->capture($request);
+            $modification = new ModificationsApi($client);
+
+            $response = $modification->captureAuthorisedPayment($pspReference, $request, $additionalData);
         } catch (AdyenException $e) {
-            $this->logger->error('Capture failed', $request);
+//            TODO: Is there a better way?
+            $this->logger->error('Capture failed', ["Error message" => $e->getMessage()]);
             throw new CaptureException(
                 'Capture failed.',
                 0,

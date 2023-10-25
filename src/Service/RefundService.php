@@ -23,13 +23,15 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
-use Adyen\Service\Modification;
+use Adyen\Model\Checkout\Amount;
+use Adyen\Model\Checkout\PaymentRefundRequest;
+use Adyen\Model\Checkout\PaymentRefundResponse;
+use Adyen\Service\Checkout\ModificationsApi;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
-use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -110,57 +112,6 @@ class RefundService
     }
 
     /**
-     * Process a refund on the Adyen platform
-     *
-     * @param OrderEntity $order
-     * @return array
-     * @throws AdyenException
-     */
-    public function refund(OrderEntity $order, $refundAmount): array
-    {
-        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
-
-        $merchantAccount = $this->configurationService->getMerchantAccount($order->getSalesChannelId());
-
-        if (!$merchantAccount) {
-            $message = 'No Merchant Account set. ' .
-                'Go to the Adyen plugin configuration panel and finish the required setup.';
-            $this->logger->error($message);
-            throw new AdyenException($message);
-        }
-
-        $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE];
-        $currencyIso = $order->getCurrency()->getIsoCode();
-
-        $params = [
-            'originalReference' => $pspReference,
-            'modificationAmount' => [
-                'value' => $refundAmount,
-                'currency' => $currencyIso
-            ],
-            'merchantAccount' => $merchantAccount
-        ];
-
-        // Set idempotency key to avoid duplicated requests
-        $idempotencyKey = $orderTransaction->getId();
-        $refunds = $this->adyenRefundRepository->getRefundsByOrderId($order->getId());
-        if ($refunds->count() > 0 && $this->isAmountRefundable($order, $refundAmount)) {
-            // Use last saved refund as idempotency key to allow legitimate multiple refunds
-            $idempotencyKey = $refunds->last()->getId();
-        }
-        try {
-            $modificationService = new Modification(
-                $this->clientService->getClient($order->getSalesChannelId())
-            );
-
-            return $modificationService->refund($params, ['idempotencyKey' => $idempotencyKey]);
-        } catch (AdyenException $e) {
-            $this->logger->error($e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
      * Handle refund notification, by either creating a new adyen_refund entry OR
      * updating the status of an existing adyen_refund which was initiated on shopware
      *
@@ -217,6 +168,60 @@ class RefundService
                 'amount' => $refundAmount
             ]
         ], Context::createDefaultContext());
+    }
+
+    /**
+     * Process a refund on the Adyen platform
+     *
+     * @param OrderEntity $order
+     * @param $refundAmount
+     * @return PaymentRefundResponse
+     * @throws AdyenException
+     */
+    public function refund(OrderEntity $order, $refundAmount): PaymentRefundResponse
+    {
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
+
+        $merchantAccount = $this->configurationService->getMerchantAccount($order->getSalesChannelId());
+
+        if (!$merchantAccount) {
+            $message = 'No Merchant Account set. ' .
+                'Go to the Adyen plugin configuration panel and finish the required setup.';
+            $this->logger->error($message);
+            throw new AdyenException($message);
+        }
+
+        $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE];
+        $currencyIso = $order->getCurrency()->getIsoCode();
+
+        $modificationAmount = new Amount();
+        $modificationAmount->setValue($refundAmount);
+        $modificationAmount->setCurrency($currencyIso);
+
+        $refundRequest = new PaymentRefundRequest();
+        $refundRequest->setMerchantAccount($merchantAccount);
+        $refundRequest->setAmount($modificationAmount);
+
+        // Set idempotency key to avoid duplicated requests
+        $idempotencyKey = $orderTransaction->getId();
+        $refunds = $this->adyenRefundRepository->getRefundsByOrderId($order->getId());
+        if ($refunds->count() > 0 && $this->isAmountRefundable($order, $refundAmount)) {
+            // Use last saved refund as idempotency key to allow legitimate multiple refunds
+            $idempotencyKey = $refunds->last()->getId();
+        }
+        try {
+            $modification = new ModificationsApi($this->clientService->getClient($order->getSalesChannelId()));
+
+            return $modification->refundCapturedPayment(
+                $pspReference,
+                $refundRequest,
+                ['idempotencyKey' => $idempotencyKey]
+            );
+
+        } catch (AdyenException $e) {
+            $this->logger->error($e->getMessage());
+            throw $e;
+        }
     }
 
     /**
