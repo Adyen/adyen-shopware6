@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Service\Checkout\OrdersApi;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -67,10 +68,13 @@ class OrdersCancelService
 
         try {
             $requestData = $this->buildOrdersCancelRequestData($context, $orderData, $pspReference);
-            $checkoutService = new CheckoutService(
+//           TODO: Update here
+
+            $OrderService = new OrdersApi(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
-            $responseData = $checkoutService->ordersCancel($requestData);
+            $responseData = $OrderService->CancelOrder($requestData);
+
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }
@@ -96,6 +100,7 @@ class OrdersCancelService
             "merchantAccount" => $merchantAccount
         );
 
+//        TODO:
         return $requestData;
     }
 }
