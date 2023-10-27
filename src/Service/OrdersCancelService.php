@@ -23,6 +23,8 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Model\Checkout\CancelOrderRequest;
+use Adyen\Model\Checkout\EncryptedOrderData;
 use Adyen\Service\Checkout\OrdersApi;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Psr\Log\LoggerInterface;
@@ -68,7 +70,6 @@ class OrdersCancelService
 
         try {
             $requestData = $this->buildOrdersCancelRequestData($context, $orderData, $pspReference);
-//           TODO: Update here
 
             $OrderService = new OrdersApi(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
@@ -82,25 +83,25 @@ class OrdersCancelService
         return $responseData;
     }
 
-    private function buildOrdersCancelRequestData(SalesChannelContext $context, $orderData, $pspReference): array
+    private function buildOrdersCancelRequestData(SalesChannelContext $context, $orderData, $pspReference): CancelOrderRequest
     {
+        $request = new CancelOrderRequest();
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
             $this->logger->error('No Merchant Account has been configured. ' .
                 'Go to the Adyen plugin configuration panel and finish the required setup.');
-            return [];
+           // TODO: confirm this approach
+            return $request;
         }
 
-        $requestData = array(
-            "order" => [
-                "pspReference" => $pspReference,
-                "orderData" => $orderData
-            ],
-            "merchantAccount" => $merchantAccount
-        );
+        $order = new EncryptedOrderData();
+        $order->setOrderData($orderData);
+        $order->setPspReference($pspReference);
 
-//        TODO:
-        return $requestData;
+        $request->setMerchantAccount($merchantAccount);
+        $request->setOrder($order);
+
+        return $request;
     }
 }

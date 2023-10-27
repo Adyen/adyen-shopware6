@@ -62,12 +62,8 @@ class OrdersService
         $responseData = new CreateOrderResponse();
 
         try {
-            // TODO: checkout is now deprecated, and OrdersAPI is model based too, update this section
             $requestData = $this->buildOrdersRequestData($context, $uuid, $orderAmount, $currency);
-//            $checkoutService = new CheckoutService(
-//                $this->clientService->getClient($context->getSalesChannel()->getId())
-//            );
-//
+
             $orderService = new OrdersApi($this->clientService->getClient($context->getSalesChannel()->getId()));
             $responseData = $orderService->orders($requestData);
 
@@ -84,19 +80,20 @@ class OrdersService
         $orderAmount,
         $currency
     ): CreateOrderRequest {
+
+        $request = new CreateOrderRequest();
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
             $this->logger->error('No Merchant Account has been configured. ' .
                 'Go to the Adyen plugin configuration panel and finish the required setup.');
-            return [];
+            return $request;
         }
 
         $amount = new Amount();
         $amount->setValue($orderAmount);
         $amount->setCurrency($currency);
 
-        $request = new CreateOrderRequest();
         $request->setAmount($amount);
         $request->setMerchantAccount($merchantAccount);
         $request->setReference($uuid);
