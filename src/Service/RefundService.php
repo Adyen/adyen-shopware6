@@ -194,13 +194,14 @@ class RefundService
         $pspReference = $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE];
         $currencyIso = $order->getCurrency()->getIsoCode();
 
-        $modificationAmount = new Amount();
-        $modificationAmount->setValue($refundAmount);
-        $modificationAmount->setCurrency($currencyIso);
+        // set refund amount
+        $amount = new Amount();
+        $amount->setValue($refundAmount);
+        $amount->setCurrency($currencyIso);
 
         $refundRequest = new PaymentRefundRequest();
         $refundRequest->setMerchantAccount($merchantAccount);
-        $refundRequest->setAmount($modificationAmount);
+        $refundRequest->setAmount($amount);
 
         // Set idempotency key to avoid duplicated requests
         $idempotencyKey = $orderTransaction->getId();
