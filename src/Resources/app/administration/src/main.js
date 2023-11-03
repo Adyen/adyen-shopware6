@@ -27,6 +27,7 @@ import './component/adyen-refund';
 import './component/adyen-notifications';
 import './component/adyen-partial-payments';
 import './sw-order-detail-general-override/index';
+import './sw-order-detail-base-override/index';
 import './sw-order-user-card-override/index';
 import './component/entity/sw-entity-single-select-override';
 

@@ -1,4 +1,4 @@
-{% block sw_order_detail_general_line_items_card %}
+{% block sw_order_detail_base_custom_fields %}
     {% parent %}
     <adyen-payment-capture :order="order"></adyen-payment-capture>
     <adyen-refund :order="order"></adyen-refund>
