@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Environment;
 use Psr\Log\LoggerInterface;
@@ -96,11 +97,14 @@ class ClientService
         $this->shopwareVersion = $shopwareVersion;
     }
 
+    /**
+     * @throws AdyenException
+     */
     public function getClient($salesChannelId)
     {
         try {
             if (empty($salesChannelId)) {
-                throw new \Adyen\AdyenException('The sales channel ID has not been configured.');
+                throw new AdyenException('The sales channel ID has not been configured.');
             }
             $environment = $this->configurationService->getEnvironment($salesChannelId);
             $apiKey = $this->configurationService->getApiKey($salesChannelId);
@@ -111,9 +115,6 @@ class ClientService
             $client->setMerchantApplication(self::MERCHANT_APPLICATION_NAME, $this->getModuleVersion());
             $client->setExternalPlatform(self::EXTERNAL_PLATFORM_NAME, $this->shopwareVersion);
             $client->setEnvironment($environment, $liveEndpointUrlPrefix);
-
-            //todo: was this removed?
-//            $client->setLogger($this->apiLogger);
 
             return $client;
         } catch (\Exception $e) {
@@ -158,5 +159,58 @@ class ClientService
         }
 
         return $pluginVersion;
+    }
+
+    /**
+     * @param array $request
+     * @param string $apiVersion
+     * @param string $endpoint
+     * @param string $salesChannelId
+     * @return void
+     */
+    public function logRequest(array $request, string $apiVersion, string $endpoint, string $salesChannelId)
+    {
+        $environment = $this->configurationService->getEnvironment($salesChannelId);
+        $context = ['apiVersion' => $apiVersion];
+
+        if ($environment === Environment::TEST) {
+            $context['body'] = $request;
+        } else {
+            $context['livePrefix'] = $this->configurationService->getLiveEndpointUrlPrefix($salesChannelId);
+            $context['body'] = $this->filterReferences($request);
+        }
+
+        $this->apiLogger->info('Request to Adyen API ' . $endpoint, $context);
+    }
+
+    /**
+     * @param array $response
+     * @param string $salesChannelId
+     * @return void
+     */
+    public function logResponse(array $response, string $salesChannelId)
+    {
+        $environment = $this->configurationService->getEnvironment($salesChannelId);
+        $context = [];
+
+        if ($environment === Environment::TEST) {
+            $context['body'] = $response;
+        } else {
+            $context['body'] = $this->filterReferences($response);
+        }
+
+        $this->apiLogger->info('Response from Adyen API', $context);
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    private function filterReferences(array $data): array
+    {
+        return array_filter($data, function ($value, $key) {
+            // Keep only reference keys, e.g. reference, pspReference, merchantReference etc.
+            return false !== strpos(strtolower($key), 'reference');
+        }, ARRAY_FILTER_USE_BOTH);
     }
 }

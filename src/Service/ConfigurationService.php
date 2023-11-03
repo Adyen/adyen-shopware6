@@ -40,7 +40,7 @@ class ConfigurationService
     private $systemConfigService;
 
     /**
-     * @var EntityRepository
+     * @var EntityRepository|\Shopware\Core\Content\Media\DataAbstractionLayer\MediaRepositoryDecorator
      */
     private $mediaRepository;
 
@@ -48,11 +48,12 @@ class ConfigurationService
      * ConfigurationService constructor.
      *
      * @param SystemConfigService $systemConfigService
-     * @param EntityRepository $mediaRepository
+     * @param mixed $mediaRepository
+     * @note `media.repository` service is decorated in Shopware 6.4 and does not return EntityRepository object
      */
     public function __construct(
         SystemConfigService $systemConfigService,
-        EntityRepository $mediaRepository
+        $mediaRepository
     ) {
         $this->systemConfigService = $systemConfigService;
         $this->mediaRepository = $mediaRepository;

@@ -194,6 +194,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
                 $state = $processor->process();
 
+                $this->logger->info('Processed ' . $notification->getEventCode() . ' notification.', [
+                    'eventCode' => $notification->getEventCode(),
+                    'originalState' => $currentTransactionState,
+                    'newState' => $state
+                ]);
+
                 $webhookHandler->handleWebhook(
                     $orderTransaction,
                     $notification,
@@ -264,8 +270,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
             return ProcessorFactory::create(
                 $notificationItem,
-                $currentTransactionState,
-                $this->logger
+                $currentTransactionState
             );
         } catch (InvalidDataException $exception) {
             $logContext['notification'] = $notification->getVars();
