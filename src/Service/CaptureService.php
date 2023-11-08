@@ -138,18 +138,19 @@ class CaptureService
 
                 $lineItems = $order->getLineItems();
                 $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
-
-                $additionalData =  [
-                    'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
-                    'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
-                ];
-
+//                TODO: Probably need to build the line item array here
+//                TODO : I think capture timout is fucking testing up
                 $request = $this->buildCaptureRequest(
                     $captureAmount,
                     $currencyIso,
                     $order->getSalesChannelId(),
-                    $lineItemsArray,
+//                    $lineItemsArray
                 );
+
+                $additionalData = array_merge($lineItemsArray, [
+                    'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
+                    'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
+                ]);
 
                 $response = $this->sendCaptureRequest($client,
                     $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
@@ -357,7 +358,7 @@ class CaptureService
         $captureAmountInMinorUnits,
         string $currency,
         string $salesChannelId,
-        array $lineItemsArray,
+        array $lineItems = [],
     ): PaymentCaptureRequest {
 
         $amount = new Amount();
@@ -367,7 +368,7 @@ class CaptureService
         $request = new PaymentCaptureRequest();
         $request->setAmount($amount);
         $request->setMerchantAccount($this->configurationService->getMerchantAccount($salesChannelId));
-        $request->setLineItems($lineItemsArray);
+        $request->setLineItems($lineItems);
 
         return$request;
     }
