@@ -1,9 +1,59 @@
-<ul v-if="showWidget">
-    <dt>{{ $tc('adyen.authorisedPayments') }}</dt>
-    <dd v-for="payment in partialPayments">
-        <a v-bind:href="payment.caLink" target="_blank">{{ payment.pspReference }}</a> -
-        <span>{{ payment.method }}</span> -
-        <span>{{ payment.amount }}</span>
-    </dd>
-    <dd>{{ errorMessage }}</dd>
-</ul>
+<div v-if="showWidget">
+    <ul v-if="isVersionOlderThan65">
+        <dt>{{ $tc('adyen.authorisedPayments') }}</dt>
+        <dd v-for="payment in partialPayments">
+            <a v-bind:href="payment.caLink" target="_blank">{{ payment.pspReference }}</a> -
+            <span>{{ payment.method }}</span> -
+            <span>{{ payment.amount }}</span>
+        </dd>
+        <dd>{{ errorMessage }}</dd>
+    </ul>
+    <ul v-else>
+        <label>{{ $tc('adyen.authorisedPayments') }}</label>
+        <div class="sw-data-grid is--compact sw-data-grid--plain-appearance">
+            <div class="sw-data-grid__wrapper">
+                <table class="sw-data-grid__table">
+                    <thead class="sw-data-grid__header">
+                    <tr class="sw-data-grid__rx ow">
+                        <th class="sw-data-grid__cell sw-data-grid__cell--header sw-data-grid__cell--property sw-data-grid__cell--sortable sw-data-grid__cell--align-left">
+                            <div class="sw-data-grid__cell-content">
+                                PSP Reference
+                            </div>
+                        </th>
+                        <th class="sw-data-grid__cell sw-data-grid__cell--header sw-data-grid__cell--property sw-data-grid__cell--sortable sw-data-grid__cell--align-left">
+                            <div class="sw-data-grid__cell-content">
+                                Payment Method
+                            </div>
+                        </th>
+                        <th class="sw-data-grid__cell sw-data-grid__cell--header sw-data-grid__cell--property sw-data-grid__cell--sortable sw-data-grid__cell--align-left">
+                            <div class="sw-data-grid__cell-content">
+                                Amount
+                            </div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody class="sw-data-grid__body">
+                    <tr v-for="payment in partialPayments" class="sw-data-grid__row">
+                        <td class="sw-data-grid__cell sw-data-grid__cell--order sw-data-grid__cell--align-left">
+                            <div class="sw-data-grid__cell-content">
+                                <a v-bind:href="payment.caLink" target="_blank">{{ payment.pspReference }}</a>
+                            </div>
+                        </td>
+                        <td class="sw-data-grid__cell sw-data-grid__cell--order sw-data-grid__cell--align-left">
+                            <div class="sw-data-grid__cell-content">
+                                {{ payment.method }}
+                            </div>
+                        </td>
+                        <td class="sw-data-grid__cell sw-data-grid__cell--order sw-data-grid__cell--align-left">
+                            <div class="sw-data-grid__cell-content">
+                                {{ payment.amount }}
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <span>{{ errorMessage }}</span>
+    </ul>
+</div>
