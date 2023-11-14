@@ -1,0 +1,5 @@
+{% block sw_order_detail_details_payment_method_select %}
+    {% parent %}
+
+    <adyen-partial-payments :order="order"></adyen-partial-payments>
+{% endblock %}

@@ -22,6 +22,7 @@
 
 const { Component } = Shopware;
 import template from './adyen-partial-payments.html.twig';
+import VersionHelper from '../../helper/versionHelper';
 
 Component.register('adyen-partial-payments', {
     template,
@@ -52,11 +53,14 @@ Component.register('adyen-partial-payments', {
             errorMessage: "",
             partialPayments: [],
             showWidget: false,
+            isVersionOlderThan65: false
         }
     },
 
     beforeMount() {
+        this.isVersionOlderThan65 = VersionHelper.isVersionOlderThan65();
         this.showWidget = this.adyenService.isAdyenOrder(this.order);
+
         if (this.showWidget) {
             this.fetchAdyenPartialPayments();
         }
