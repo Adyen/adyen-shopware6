@@ -140,7 +140,8 @@ class ContextSubscriber implements EventSubscriberInterface
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
                     [
-                        SalesChannelContextService::PAYMENT_METHOD_ID => $decodedStateData['additionalData']['paymentMethodId']
+                        SalesChannelContextService::PAYMENT_METHOD_ID =>
+                            $decodedStateData['additionalData']['paymentMethodId']
                     ]
                 ),
                 $context
