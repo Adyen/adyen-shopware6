@@ -117,7 +117,7 @@ class ContextSubscriber implements EventSubscriberInterface
 
     private function setGiftcardPaymentMethodAfterContextRestored(
         SalesChannelContext $context,
-        PaymentStateDataEntity $stateData,
+        PaymentStateDataEntity $stateData
     ): void {
         $currency = $context->getCurrency()->getIsoCode();
         $decodedStateData = json_decode($stateData->getStateData(), true);
