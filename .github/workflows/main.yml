@@ -32,3 +32,6 @@ jobs:
 
       - name: Run PHPUnit
         run: vendor/bin/phpunit
+
+      - name: Run PHPStan
+          run: composer phpstan
