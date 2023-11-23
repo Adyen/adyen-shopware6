@@ -188,7 +188,9 @@ class OrderApiController
      */
     public function deleteGiftCardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
-        $this->paymentStateDataService->deletePaymentStateDataFromContextToken($context->getToken());
+        $stateData = json_decode($request->request->get('stateData', ''), true);
+        $Id = $stateData['id'];
+        $this->paymentStateDataService->deletePaymentStateData($Id);
 
         return new JsonResponse(['token' => $context->getToken()]);
     }
