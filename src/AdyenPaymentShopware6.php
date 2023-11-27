@@ -71,7 +71,7 @@ class AdyenPaymentShopware6 extends Plugin
             );
         } else {
             $resultStorefront = copy(
-                __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware65.js.dist',
+                __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware65-old.js.dist',
                 $storefrontAssetPath
             );
             $resultAdmin = copy(
