@@ -137,14 +137,14 @@ class CaptureService
                 }
 
                 $lineItems = $order->getLineItems();
+
                 $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
-//                TODO: Probably need to build the line item array here
-//                TODO : I think capture timout is fucking testing up
+
                 $request = $this->buildCaptureRequest(
                     $captureAmount,
                     $currencyIso,
                     $order->getSalesChannelId(),
-//                    $lineItemsArray
+                    $lineItems->getElements()
                 );
 
                 $additionalData = array_merge($lineItemsArray, [
@@ -358,19 +358,24 @@ class CaptureService
         $captureAmountInMinorUnits,
         string $currency,
         string $salesChannelId,
-        array $lineItems = [],
+        $lineItems,
     ): PaymentCaptureRequest {
 
         $amount = new Amount();
         $amount->setValue($captureAmountInMinorUnits);
         $amount->setCurrency($currency);
 
+//       Todo: create lineItems
+//        for request the lineItems need to be of type \Adyen\Model\Checkout\LineItem[] right now it is of type
+//        OrderLineItemCollection need to either convert it or set value on by one into the new checkout array/object'?'
+//        values manually.
+
         $request = new PaymentCaptureRequest();
         $request->setAmount($amount);
         $request->setMerchantAccount($this->configurationService->getMerchantAccount($salesChannelId));
         $request->setLineItems($lineItems);
 
-        return$request;
+        return $request;
     }
 
     /**
