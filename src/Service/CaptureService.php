@@ -144,7 +144,7 @@ class CaptureService
                     $captureAmount,
                     $currencyIso,
                     $order->getSalesChannelId(),
-                    $lineItems->getElements()
+                    $lineItems->jsonSerialize()
                 );
 
                 $additionalData = array_merge($lineItemsArray, [
@@ -411,7 +411,6 @@ class CaptureService
 
             $response = $modification->captureAuthorisedPayment($pspReference, $request, $additionalData);
         } catch (AdyenException $e) {
-//            TODO: Is there a better way?
             $this->logger->error('Capture failed', ["Error message" => $e->getMessage()]);
             throw new CaptureException(
                 'Capture failed.',
