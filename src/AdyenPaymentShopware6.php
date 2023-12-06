@@ -50,12 +50,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AdyenPaymentShopware6 extends Plugin
 {
-    public function build(ContainerBuilder $container): void
-    {
-        parent::build($container);
-        $this->installJsAssets($container->getParameter('kernel.shopware_version'));
-    }
-
     public function installJsAssets($shopwareVersion)
     {
         $storefrontAssetPath = __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware6.js';
@@ -103,6 +97,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function activate(ActivateContext $activateContext): void
     {
+        $this->installJsAssets($activateContext->getCurrentShopwareVersion());
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(true, $activateContext->getContext(), new $paymentMethod());
         }
