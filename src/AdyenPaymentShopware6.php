@@ -569,7 +569,7 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
-    private function safeCopyAsset ($source, $destination): bool
+    private function safeCopyAsset($source, $destination): bool
     {
         try {
             return copy($source, $destination);
