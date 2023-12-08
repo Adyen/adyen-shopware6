@@ -91,11 +91,22 @@ class PaymentResponseService
             ->first();
     }
 
+    /**
+     * @param PaymentResponse|PaymentDetailsResponse $paymentResponse
+     * @param OrderTransactionEntity $orderTransaction
+     * @param bool $upsert
+     * @return void
+     */
+//    PaymentResponse|PaymentDetailsResponse
     public function insertPaymentResponse(
-        PaymentResponse|PaymentDetailsResponse $paymentResponse,
+        $paymentResponse,
         OrderTransactionEntity $orderTransaction,
         bool $upsert = true
     ): void {
+        if (!($paymentResponse instanceof PaymentResponse) && !($paymentResponse instanceof PaymentDetailsResponse)) {
+            throw new \InvalidArgumentException('Invalid $paymentDetailsResponse type.');
+        }
+
         $storedPaymentResponse = $this->getWithOrderTransaction($orderTransaction);
         if ($storedPaymentResponse && $upsert) {
             $fields['id'] = $storedPaymentResponse->getId();
