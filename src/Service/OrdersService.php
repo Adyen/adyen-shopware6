@@ -23,10 +23,6 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Model\Checkout\Amount;
-use Adyen\Model\Checkout\CreateOrderRequest;
-use Adyen\Model\Checkout\CreateOrderResponse;
-use Adyen\Service\Checkout\OrdersApi;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -57,16 +53,16 @@ class OrdersService
         $this->logger = $logger;
     }
 
-    public function createOrder(SalesChannelContext $context, $uuid, $orderAmount, $currency): CreateOrderResponse
+    public function createOrder(SalesChannelContext $context, $uuid, $orderAmount, $currency): array
     {
-        $responseData = new CreateOrderResponse();
+        $responseData = [];
 
         try {
             $requestData = $this->buildOrdersRequestData($context, $uuid, $orderAmount, $currency);
-
-            $orderService = new OrdersApi($this->clientService->getClient($context->getSalesChannel()->getId()));
-            $responseData = $orderService->orders($requestData);
-
+            $checkoutService = new CheckoutService(
+                $this->clientService->getClient($context->getSalesChannel()->getId())
+            );
+            $responseData = $checkoutService->orders($requestData);
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }
@@ -76,28 +72,27 @@ class OrdersService
 
     private function buildOrdersRequestData(
         SalesChannelContext $context,
-        $uuid,
-        $orderAmount,
-        $currency
-    ): CreateOrderRequest {
-
-        $request = new CreateOrderRequest();
+                            $uuid,
+                            $orderAmount,
+                            $currency
+    ): array {
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
             $this->logger->error('No Merchant Account has been configured. ' .
                 'Go to the Adyen plugin configuration panel and finish the required setup.');
-            return $request;
+            return [];
         }
 
-        $amount = new Amount();
-        $amount->setValue($orderAmount);
-        $amount->setCurrency($currency);
+        $requestData = array(
+            "reference" => $uuid,
+            "amount" => [
+                "value" => $orderAmount,
+                "currency" => $currency
+            ],
+            "merchantAccount" => $merchantAccount
+        );
 
-        $request->setAmount($amount);
-        $request->setMerchantAccount($merchantAccount);
-        $request->setReference($uuid);
-
-        return $request;
+        return $requestData;
     }
 }
