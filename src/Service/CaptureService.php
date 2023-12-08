@@ -360,9 +360,8 @@ class CaptureService
         $captureAmountInMinorUnits,
         string $currency,
         string $salesChannelId,
-        $lineItems,
+        $lineItems
     ): PaymentCaptureRequest {
-
         $amount = new Amount();
         $amount->setValue($captureAmountInMinorUnits);
         $amount->setCurrency($currency);
