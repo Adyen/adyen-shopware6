@@ -431,7 +431,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $userAgent = $request['browserInfo']['userAgent'];
         }
 
-        if(!empty($request['browserInfo'])){
+        if (!empty($request['browserInfo'])) {
             $browserInfo = new BrowserInfo();
             $browserInfo->setUserAgent($userAgent);
             $browserInfo->setAcceptHeader($acceptHeader);
@@ -488,7 +488,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $addressInfo->setPostalCode($salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode());
             $addressInfo->setCity($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity());
             $addressInfo->setStateOrProvince($billingState);
-            $addressInfo->setCountry($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso());
+            $addressInfo->setCountry(
+                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso()
+            );
             $paymentRequest->setBillingAddress($addressInfo);
         }
 
@@ -555,7 +557,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         $paymentRequest->setShopperName($shopperName);
         $paymentRequest->setShopperEmail($shopperEmail);
-        if(!empty($shopperPhone)){
+        if (!empty($shopperPhone)) {
             $paymentRequest->setTelephoneNumber($shopperPhone);
         }
         $paymentRequest->setDateOfBirth($shopperDob);

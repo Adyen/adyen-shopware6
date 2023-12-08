@@ -159,7 +159,7 @@ class CaptureService
                     $additionalData
                 );
 
-                if ($response->getStatus() == "received"){
+                if ($response->getStatus() == "received") {
                     $this->saveCaptureRequest(
                         $orderTransaction,
                         $response->getPspReference(),

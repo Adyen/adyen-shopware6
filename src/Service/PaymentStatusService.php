@@ -107,17 +107,17 @@ class PaymentStatusService
 
         $checkoutPaymentResponse = new PaymentResponse($responseData);
 
-        if (array_key_exists('action', $responseData)){
+        if (array_key_exists('action', $responseData)) {
             $action = new PaymentResponseAction($responseData['action']);
             $checkoutPaymentResponse->setAction($action);
         }
 
-        if (array_key_exists('amount', $responseData)){
+        if (array_key_exists('amount', $responseData)) {
             $amount = new Amount($responseData['amount']);
             $checkoutPaymentResponse->setAmount($amount);
         }
 
-        if (array_key_exists('paymentMethod', $responseData)){
+        if (array_key_exists('paymentMethod', $responseData)) {
             $paymentMethod = new ResponsePaymentMethod($responseData['paymentMethod']);
             $checkoutPaymentResponse->setPaymentMethod($paymentMethod);
         }
