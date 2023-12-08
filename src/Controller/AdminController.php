@@ -495,7 +495,6 @@ class AdminController
      */
     private function buildResponseData(array $entities)
     {
-//        TODO: check this too
         $context = Context::createDefaultContext();
         $result = [];
         /** @var Entity $entity */

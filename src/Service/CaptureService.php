@@ -365,15 +365,10 @@ class CaptureService
         $amount->setValue($captureAmountInMinorUnits);
         $amount->setCurrency($currency);
 
-//       Todo: create lineItems
-//        for request the lineItems need to be of type \Adyen\Model\Checkout\LineItem[] right now it is of type
-//        OrderLineItemCollection need to either convert it or set value on by one into the new checkout array/object'?'
-//        values manually.
-
         $request = new PaymentCaptureRequest();
         $request->setAmount($amount);
         $request->setMerchantAccount($this->configurationService->getMerchantAccount($salesChannelId));
-        $request->setLineItems($lineItems);
+//        $request->setLineItems($lineItems);
 
         return $request;
     }
