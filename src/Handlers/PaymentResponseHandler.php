@@ -127,10 +127,14 @@ class PaymentResponseHandler
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
-        PaymentResponse|PaymentDetailsResponse $response,
+        $response,
         OrderTransactionEntity $orderTransaction,
         bool $upsertResponse = true
     ): PaymentResponseHandlerResult {
+
+        if (!($response instanceof PaymentResponse) && !($response instanceof PaymentDetailsResponse)) {
+            throw new \InvalidArgumentException('Invalid $paymentDetailsResponse type.');
+        }
 
         // Retrieve result code from response array
         $resultCode = $response->getResultCode();
