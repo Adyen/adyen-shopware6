@@ -141,9 +141,10 @@ class PaymentResponseHandler
         $paymentResponseHandlerResult->setResultCode($resultCode);
 
         // when this method is called from PaymentDetailsResponse, $response would not have the action part
-        if(method_exists($response,'getAction') && !empty($response->getAction())){
-            if(is_array($response->getAction())){
-                // this is the case when handlePaymentResponse is being called in AbstractPaymentMethodHandler with $giftcardPaymentResponse
+        if (method_exists($response, 'getAction') && !empty($response->getAction())) {
+            if (is_array($response->getAction())) {
+                // this is the case when handlePaymentResponse is being called
+                // in AbstractPaymentMethodHandler with $giftcardPaymentResponse
                 // in this use-case, $giftcardPaymentResponse->action is an array and not an object
                 $paymentResponseHandlerResult->setAction($response->getAction());
             } else {

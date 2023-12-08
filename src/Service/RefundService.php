@@ -219,7 +219,6 @@ class RefundService
                 $refundRequest,
                 ['idempotencyKey' => $idempotencyKey]
             );
-
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
             throw $e;

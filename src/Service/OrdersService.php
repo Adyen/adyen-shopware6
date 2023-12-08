@@ -72,9 +72,9 @@ class OrdersService
 
     private function buildOrdersRequestData(
         SalesChannelContext $context,
-                            $uuid,
-                            $orderAmount,
-                            $currency
+        $uuid,
+        $orderAmount,
+        $currency
     ): array {
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 

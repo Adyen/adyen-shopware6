@@ -387,10 +387,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $request = $this->checkoutStateDataValidator->getValidatedAdditionalData($request);
 
         //set payment method
-        if(!empty($request)){
+        if (!empty($request)) {
             $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
-        }
-        else{
+        } else {
             $paymentMethod = new CheckoutPaymentMethod();
         }
 
@@ -416,7 +415,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         if (static::class === OneClickPaymentMethodHandler::class) {
             $paymentRequest->setShopperInteraction(self::SHOPPER_INTERACTION_CONTAUTH);
             $paymentRequest->setRecurringProcessingModel('CardOnFile');
-
         } else {
             $paymentRequest->setShopperInteraction(self::SHOPPER_INTERACTION_ECOMMERCE);
         }
@@ -654,7 +652,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $lineItem->setId($productNumber);
                 $lineItem->setProductUrl($productUrl);
                 $lineItem->setImageUrl($imageUrl);
-                $lineItem->setAmountIncludingTax( $this->currency->sanitize(
+                $lineItem->setAmountIncludingTax($this->currency->sanitize(
                     $price->getUnitPrice(),
                     $currency->getIsoCode()
                 ));
@@ -823,7 +821,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         try {
             $giftcardPaymentResponse = $this->paymentsApiService->payments($giftcardPaymentRequest);
-
         } catch (AdyenException $exception) {
             $message = sprintf(
                 "There was an error with the giftcard payment request. Order number %s: %s",

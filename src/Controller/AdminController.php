@@ -366,7 +366,7 @@ class AdminController
         try {
             $result = $this->refundService->refund($order, $amountInMinorUnit);
             // If response does not contain pspReference
-            if(empty($result->getPspReference())){
+            if (empty($result->getPspReference())) {
                 $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
                 throw new AdyenException($message);
             }

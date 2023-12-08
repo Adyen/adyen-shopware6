@@ -86,7 +86,6 @@ class PaymentDetailsService
             $paymentDetailsResponse = $paymentsApi->paymentsDetails($requestData);
 
             return $this->paymentResponseHandler->handlePaymentResponse($paymentDetailsResponse, $orderTransaction);
-
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
             throw new PaymentFailedException($exception->getMessage());

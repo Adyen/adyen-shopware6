@@ -152,12 +152,14 @@ class CaptureService
                     'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
                 ]);
 
-                $response = $this->sendCaptureRequest($client,
+                $response = $this->sendCaptureRequest(
+                    $client,
                     $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
                     $request,
-                    $additionalData);
+                    $additionalData
+                );
 
-                if($response->getStatus() == "received"){
+                if ($response->getStatus() == "received"){
                     $this->saveCaptureRequest(
                         $orderTransaction,
                         $response->getPspReference(),
