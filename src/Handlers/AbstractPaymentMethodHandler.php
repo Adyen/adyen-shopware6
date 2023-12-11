@@ -321,7 +321,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         if ($storedStateData) {
             // Remove the used state.data
-            $this->paymentStateDataService->deletePaymentStateData($storedStateData['id']);        }
+            $this->paymentStateDataService->deletePaymentStateData($storedStateData['id']);
+        }
 
         try {
             $this->clientService->logRequest(
@@ -869,7 +870,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         ) - $partialAmount;
 
         // Remove the used state.data
-        $this->paymentStateDataService->deletePaymentStateData($storedStateData['id']);    }
+        $this->paymentStateDataService->deletePaymentStateData($storedStateData['id']);
+    }
 
     /**
      * @param SalesChannelContext $salesChannelContext
