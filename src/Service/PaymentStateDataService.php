@@ -115,24 +115,13 @@ class PaymentStateDataService
     /**
      * @param PaymentStateDataEntity $stateData
      */
-    public function deletePaymentStateData(PaymentStateDataEntity $stateData): void
+    public function deletePaymentStateData(string $Id): void
     {
         $this->paymentStateDataRepository->delete(
             [
-                ['id' => $stateData->getId()],
+                ['id' => $Id],
             ],
             Context::createDefaultContext()
         );
-    }
-
-    /**
-     * @param string $contextToken
-     */
-    public function deletePaymentStateDataFromContextToken(string $contextToken): void
-    {
-        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
-        if (!empty($stateData)) {
-            $this->deletePaymentStateData($stateData);
-        }
     }
 }
