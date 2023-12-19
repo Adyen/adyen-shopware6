@@ -28,7 +28,6 @@ import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-l
 export default class CartPlugin extends Plugin {
     init() {
         let self = this;
-
         this._client = new HttpClient();
         this.adyenCheckout = Promise;
         this.paymentMethodInstance = null;
@@ -38,6 +37,7 @@ export default class CartPlugin extends Plugin {
         }.bind(this));
         this.adyenGiftcard = DomAccess.querySelectorAll(document, '.adyen-giftcard');
         this.giftcardHeader = DomAccess.querySelector(document, '.adyen-giftcard-header');
+        this.giftcardItem = DomAccess.querySelector(document, '.adyen-giftcard-item');
         this.giftcardComponentClose = DomAccess.querySelector(document, '.adyen-close-giftcard-component');
         this.removeGiftcardButton =  DomAccess.querySelector(document, '.adyen-remove-giftcard');
         this.remainingBalanceField = DomAccess.querySelector(document, '.adyen-remaining-balance');
@@ -53,6 +53,7 @@ export default class CartPlugin extends Plugin {
         this.giftcardComponentClose.onclick = function (event) {
             event.currentTarget.style.display = 'none';
             self.selectedGiftcard = null;
+            self.giftcardItem.innerHTML = '';
             self.giftcardHeader.innerHTML = ' ';
             if (self.paymentMethodInstance) {
                 self.paymentMethodInstance.unmount();
@@ -86,16 +87,33 @@ export default class CartPlugin extends Plugin {
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
+    // observeGiftcardSelection() {
+    //     let self = this;
+    //     debugger; console.log(this.adyenGiftcard);
+    //     for (let i=0; i < this.adyenGiftcard.length; i++) {
+    //         this.adyenGiftcard[i].onchange = function() {
+    //             debugger; console.log('fgjd');
+    //             self.selectedGiftcard = JSON.parse(event.currentTarget.dataset.giftcard);
+    //             self.mountGiftcardComponent(self.selectedGiftcard.extensions.adyenGiftcardData[0]);
+    //         }
+    //     }
+    // }
+
     observeGiftcardSelection() {
         let self = this;
+        let giftcardDropdown = document.getElementById('giftcardDropdown');
 
-        for (let i=0; i < this.adyenGiftcard.length; i++) {
-            this.adyenGiftcard[i].onclick = function() {
-                self.selectedGiftcard = JSON.parse(event.currentTarget.dataset.giftcard);
+        // Add a change event listener to the dropdown
+        giftcardDropdown.addEventListener('change', function () {
+            // Check if a gift card is selected
+            if (giftcardDropdown.value) {
+                self.selectedGiftcard = JSON.parse(event.currentTarget.options[event.currentTarget.selectedIndex].dataset.giftcard);
                 self.mountGiftcardComponent(self.selectedGiftcard.extensions.adyenGiftcardData[0]);
             }
-        }
+        });
     }
+
+
 
     mountGiftcardComponent(giftcard) {
         if (this.giftcardDiscount > 0) {
@@ -105,6 +123,11 @@ export default class CartPlugin extends Plugin {
             this.paymentMethodInstance.unmount();
         }
         ElementLoadingIndicatorUtil.create(DomAccess.querySelector(document, '#adyen-giftcard-component'));
+
+        var imgElement = document.createElement('img');
+        imgElement.src = 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/'+giftcard.brand+'.svg';
+
+        this.giftcardItem.insertBefore(imgElement, this.giftcardItem.firstChild);
         this.giftcardHeader.innerHTML = giftcard.name;
         this.giftcardComponentClose.style.display = 'block';
         const giftcardConfiguration = Object.assign({}, giftcard, {
@@ -165,6 +188,8 @@ export default class CartPlugin extends Plugin {
             if ('paymentMethodId' in response) {
                 this.giftcardDiscount = (amountInMinorUnits / this.minorUnitsQuotient).toFixed(2);
                 this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
+                debugger;
+                console.log(stateData);
                 this.onGiftcardSelected();
                 ElementLoadingIndicatorUtil.remove(document.body);
             }
@@ -179,14 +204,15 @@ export default class CartPlugin extends Plugin {
 
     removeGiftcard() {
         ElementLoadingIndicatorUtil.create(document.body);
+
         this._client.post(adyenGiftcardsConfiguration.removeGiftcardUrl, new FormData, function(response) {
             response = JSON.parse(response);
             if ('token' in response) {
                 this.giftcardDiscount = 0;
                 this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
-
                 if (this.shoppingCartSummaryBlock.length) {
                     let giftcardSummary = this.shoppingCartSummaryBlock[0].querySelectorAll('.adyen-giftcard-summary');
+                    console.log(giftcardSummary);
                     for (let i = 0; i < giftcardSummary.length; i++) {
                         giftcardSummary[i].remove();
                     }
@@ -197,6 +223,7 @@ export default class CartPlugin extends Plugin {
                 for(var i=0;i<this.adyenGiftcard.length;i++){
                     this.adyenGiftcard[i].style.display = '';
                 }
+                this.giftcardItem.innerHTML = ' ';
                 ElementLoadingIndicatorUtil.remove(document.body);
             }
         }.bind(this));
@@ -226,7 +253,7 @@ export default class CartPlugin extends Plugin {
             this.adyenGiftcard[i].style.display = 'none';
         }
 
-        this.giftcardHeader.innerHTML = ' ';
+        //this.giftcardHeader.innerHTML = ' ';
 
         this.appendGiftcardSummary();
         // Show Remove button
