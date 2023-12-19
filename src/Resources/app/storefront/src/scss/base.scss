@@ -49,11 +49,12 @@
 
 .adyen-remove-giftcard {
     display: none;
+    float: right;
+    margin-left: auto;
 }
 
-.adyen-remaining-balance {
+.adyen-deducted-balance {
     display: none;
-    text-align: center;
 }
 
 .adyen-voucher-details {

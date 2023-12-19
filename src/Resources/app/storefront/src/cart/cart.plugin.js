@@ -40,7 +40,7 @@ export default class CartPlugin extends Plugin {
         this.giftcardItem = DomAccess.querySelector(document, '.adyen-giftcard-item');
         this.giftcardComponentClose = DomAccess.querySelector(document, '.adyen-close-giftcard-component');
         this.removeGiftcardButton =  DomAccess.querySelector(document, '.adyen-remove-giftcard');
-        this.remainingBalanceField = DomAccess.querySelector(document, '.adyen-remaining-balance');
+        this.deductedBalanceField = DomAccess.querySelector(document, '.adyen-deducted-balance');
         this.minorUnitsQuotient = adyenGiftcardsConfiguration.totalInMinorUnits/adyenGiftcardsConfiguration.totalPrice;
         this.giftcardDiscount = (adyenGiftcardsConfiguration.giftcardDiscount / this.minorUnitsQuotient).toFixed(2);
         this.remainingAmount = (adyenGiftcardsConfiguration.totalPrice - this.giftcardDiscount).toFixed(2);
@@ -126,6 +126,8 @@ export default class CartPlugin extends Plugin {
 
         var imgElement = document.createElement('img');
         imgElement.src = 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/'+giftcard.brand+'.svg';
+        imgElement.height = 50;
+        imgElement.width = 77;
 
         this.giftcardItem.insertBefore(imgElement, this.giftcardItem.firstChild);
         this.giftcardHeader.innerHTML = giftcard.name;
@@ -170,11 +172,11 @@ export default class CartPlugin extends Plugin {
                         this.saveGiftcardStateData(data, consumableBalance.toString(), 0, this.selectedGiftcard.id);
                     }
 
-                    this.remainingBalanceField.style.display = 'block';
-                    let innerHtmlBalance = adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingBalance + ': ' +
-                        adyenGiftcardsConfiguration.currencySymbol + this.remainingGiftcardBalance;
+                    this.deductedBalanceField.style.display = 'block';
+                    let innerHtmlBalance = adyenGiftcardsConfiguration.translationAdyenGiftcardDeductedBalance + ': ' +
+                        adyenGiftcardsConfiguration.currencySymbol + this.giftcardDiscount;
 
-                    this.remainingBalanceField.innerHTML = innerHtmlBalance;
+                    this.deductedBalanceField.innerHTML = innerHtmlBalance;
                 }
             }.bind(this)
         );
@@ -218,7 +220,7 @@ export default class CartPlugin extends Plugin {
                     }
                 }
                 this.removeGiftcardButton.style.display = 'none';
-                this.remainingBalanceField.style.display = 'none';
+                this.deductedBalanceField.style.display = 'none';
                 // Show giftcards
                 for(var i=0;i<this.adyenGiftcard.length;i++){
                     this.adyenGiftcard[i].style.display = '';
@@ -258,11 +260,11 @@ export default class CartPlugin extends Plugin {
         this.appendGiftcardSummary();
         // Show Remove button
         this.removeGiftcardButton.style.display = 'block';
-        this.remainingBalanceField.style.display = 'block'
+        this.deductedBalanceField.style.display = 'block'
 
-        let balanceInnerHtml = adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingBalance + ': ' +
-            adyenGiftcardsConfiguration.currencySymbol + this.remainingGiftcardBalance
+        let balanceInnerHtml = adyenGiftcardsConfiguration.translationAdyenGiftcardDeductedBalance + ': ' +
+            adyenGiftcardsConfiguration.currencySymbol + this.giftcardDiscount;
 
-        this.remainingBalanceField.innerHTML = balanceInnerHtml;
+        this.deductedBalanceField.innerHTML = balanceInnerHtml;
     }
 }
