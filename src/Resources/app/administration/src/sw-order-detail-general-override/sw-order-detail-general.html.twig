@@ -1,0 +1,6 @@
+{% block sw_order_detail_general_line_items_card %}
+    {% parent %}
+    <adyen-payment-capture :order="order"></adyen-payment-capture>
+    <adyen-refund :order="order"></adyen-refund>
+    <adyen-notifications :order="order"></adyen-notifications>
+{% endblock %}

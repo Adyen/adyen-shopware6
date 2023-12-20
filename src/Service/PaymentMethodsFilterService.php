@@ -211,7 +211,7 @@ class PaymentMethodsFilterService
 
     public function filterAdyenPaymentMethodsByType(array $paymentMethodsResponse, string $type): array
     {
-        return array_filter($paymentMethodsResponse['paymentMethods'], function ($item) use ($type) {
+        return array_filter($paymentMethodsResponse['paymentMethods'] ?? [], function ($item) use ($type) {
             return $item['type'] === $type;
         });
     }

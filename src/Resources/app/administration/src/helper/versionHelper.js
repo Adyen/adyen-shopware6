@@ -14,24 +14,31 @@
  *
  * Adyen plugin for Shopware 6
  *
- * Copyright (c) 2021 Adyen B.V.
+ * Copyright (c) 2023 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  */
+let exports = {};
 
-import './service/adyenService';
-import './component/adyen-config-check-button';
-import './component/adyen-payment-capture';
-import './component/adyen-refund';
-import './component/adyen-notifications';
-import './component/adyen-partial-payments';
-import './sw-order-detail-general-override/index';
-import './sw-order-detail-base-override/index';
-import './sw-order-user-card-override/index';
-import './sw-order-detail-details-override/index';
-import './component/entity/sw-entity-single-select-override';
+exports.isVersionOlderThan65 = () => {
+    function semverCompare(a, b) {
+        if (a.startsWith(b + "-")) {
+            return -1
+        } else if (b.startsWith(a + "-")) {
+            return  1
+        }
 
-import localeEnGb from './snippet/en_GB.json';
+        return a.localeCompare(b, undefined, { numeric: true, sensitivity: "case", caseFirst: "upper" })
+    };
 
-Shopware.Locale.extend('en-GB', localeEnGb);
+    const version = Shopware.Context.app.config.version;
+
+    if (semverCompare(version, "6.5.0.0") === -1) {
+        return true
+    } else {
+        return false;
+    }
+};
+
+export default exports;
