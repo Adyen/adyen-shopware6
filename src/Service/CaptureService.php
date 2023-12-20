@@ -324,7 +324,7 @@ class CaptureService
     }
 
     private function getLineItemsObjectArray(
-        ?OrderLineItemCollection $lineItems,
+        ?OrderLineItemCollection $lineItems
     ): array {
         $lineItemObjects = [];
         foreach ($lineItems as $lineItem) {
