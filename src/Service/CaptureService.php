@@ -137,26 +137,19 @@ class CaptureService
                 }
 
                 $lineItems = $order->getLineItems();
-
-                $lineItemsArray = $this->getLineItemsArray($lineItems, $order->getCurrency()->getIsoCode());
+                $lineItemsObjectArray = $this->getLineItemsObjectArray($lineItems);
 
                 $request = $this->buildCaptureRequest(
                     $captureAmount,
                     $currencyIso,
                     $order->getSalesChannelId(),
-                    $lineItems->jsonSerialize()
+                    $lineItemsObjectArray
                 );
-
-                $additionalData = array_merge($lineItemsArray, [
-                    'openinvoicedata.shippingCompany' => $delivery->getShippingMethod()->getName(),
-                    'openinvoicedata.trackingNumber' => $delivery->getTrackingCodes(),
-                ]);
 
                 $response = $this->sendCaptureRequest(
                     $client,
                     $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE],
-                    $request,
-                    $additionalData
+                    $request
                 );
 
                 if ($response->getStatus() == "received") {
@@ -330,30 +323,28 @@ class CaptureService
         return $requiredCaptureAmount;
     }
 
-    private function getLineItemsArray(
+    private function getLineItemsObjectArray(
         ?OrderLineItemCollection $lineItems,
-        string $currencyCode
     ): array {
-        $lineItemsArray = [];
-        $lineIndex = 0;
+        $lineItemObjects = [];
         foreach ($lineItems as $lineItem) {
             // Skip non-product line items.
             if (!in_array($lineItem->getType(), AbstractPaymentMethodHandler::ALLOWED_LINE_ITEM_TYPES)) {
                 continue;
             }
 
-            $key = 'openinvoicedata.line' . ++$lineIndex;
-            $lineItemsArray[$key . '.itemAmount'] = ceil($lineItem->getPrice()->getTotalPrice() * 100);
-            $lineItemsArray[$key . '.itemVatPercentage'] = $lineItem->getPrice()->getTaxRules()
-                    ->highestRate()->getPercentage() * 10;
-            $lineItemsArray[$key . '.description'] = $lineItem->getLabel();
-            $lineItemsArray[$key . '.itemVatAmount'] =
-                intval($lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100);
-            $lineItemsArray[$key . '.currencyCode'] = $currencyCode;
-            $lineItemsArray[$key . '.numberOfItems'] = $lineItem->getQuantity();
+            $lineItemData = [
+                'amountIncludingTax' => ceil($lineItem->getPrice()->getTotalPrice() * 100),
+                'description' => $lineItem->getLabel(),
+                'taxAmount' => intval($lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100),
+                'taxPercentage' => $lineItem->getPrice()->getTaxRules()->highestRate()->getPercentage() * 10,
+                'quantity' => $lineItem->getQuantity(),
+                'id' => $lineItem->getId()
+            ];
+
+            $lineItemObjects[] = new \Adyen\Model\Checkout\LineItem($lineItemData);
         }
-        $lineItemsArray['openinvoicedata.numberOfLines'] = $lineIndex;
-        return $lineItemsArray;
+        return $lineItemObjects;
     }
 
     private function buildCaptureRequest(
@@ -369,7 +360,7 @@ class CaptureService
         $request = new PaymentCaptureRequest();
         $request->setAmount($amount);
         $request->setMerchantAccount($this->configurationService->getMerchantAccount($salesChannelId));
-//        $request->setLineItems($lineItems);
+        $request->setLineItems($lineItems);
 
         return $request;
     }
@@ -398,14 +389,13 @@ class CaptureService
     private function sendCaptureRequest(
         Client $client,
         string $pspReference,
-        PaymentCaptureRequest $request,
-        array $additionalData
+        PaymentCaptureRequest $request
     ) : PaymentCaptureResponse {
 
         try {
             $modification = new ModificationsApi($client);
 
-            $response = $modification->captureAuthorisedPayment($pspReference, $request, $additionalData);
+            $response = $modification->captureAuthorisedPayment($pspReference, $request);
         } catch (AdyenException $e) {
             $this->logger->error('Capture failed', ["Error message" => $e->getMessage()]);
             throw new CaptureException(
