@@ -365,10 +365,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $page->setPaymentMethods($filteredPaymentMethods);
 
-        $smethods = $paymentMethodsResponse->getStoredPaymentMethods();
-        if (!empty($smethods)){
-            foreach($smethods as $storedMethod){
-                $storedPaymentMethods[] = $storedMethod->jsonSerialize();
+        $storedMethods = $paymentMethodsResponse->getStoredPaymentMethods();
+        if (!empty($storedMethods)){
+            foreach($storedMethods as $paymentMethod){
+                $storedPaymentMethods[] = (array) $paymentMethod->jsonSerialize();
             }
         }
 
