@@ -132,9 +132,7 @@ class PaymentMethodsService
             $paymentsApiService = new PaymentsApi(
                 $this->clientService->getClient($context->getSalesChannelId())
             );
-//            $checkoutService = new CheckoutService(
-//                $this->clientService->getClient($context->getSalesChannelId())
-//            );
+
             $responseData = $paymentsApiService->paymentMethods(new PaymentMethodsRequest($requestData));
 
             $paymentMethodsResponseCache->set(CacheValueCompressor::compress($responseData));

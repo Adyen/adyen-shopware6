@@ -365,6 +365,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $page->setPaymentMethods($filteredPaymentMethods);
 
+        $smethods = $paymentMethodsResponse->getStoredPaymentMethods();
+        if (!empty($smethods)){
+            foreach($smethods as $storedMethod){
+                $storedPaymentMethods[] = $storedMethod->jsonSerialize();
+            }
+        }
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -403,7 +410,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'currencySymbol' => $currencySymbol,
                         'payInFullWithGiftcard' => (int) isset($giftcardSelectedId),
                         'adyenGiftcardSelected' => (int) $adyenGiftcardSelected,
-                        'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
+                        'storedPaymentMethods' =>  $storedPaymentMethods ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
                         'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),
                         'displaySaveCreditCardOption' => $displaySaveCreditCardOption,

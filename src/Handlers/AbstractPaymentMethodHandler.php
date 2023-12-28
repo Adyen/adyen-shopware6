@@ -409,6 +409,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setPaymentMethod($paymentMethod);
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
+            $paymentRequest->setStorePaymentMethod($request['storePaymentMethod']);
             $paymentRequest->setRecurringProcessingModel('CardOnFile');
         }
 
