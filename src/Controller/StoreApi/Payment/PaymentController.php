@@ -180,6 +180,7 @@ class PaymentController
      */
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
+//        TODO: update to an array
         return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
     }
 

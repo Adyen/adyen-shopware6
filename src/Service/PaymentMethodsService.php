@@ -113,7 +113,7 @@ class PaymentMethodsService
     /**
      * @param SalesChannelContext $context
      * @param string $orderId
-     * @return array
+     * @return PaymentMethodsResponse
      */
     public function getPaymentMethods(SalesChannelContext $context, $orderId = ''): PaymentMethodsResponse
     {
@@ -144,6 +144,29 @@ class PaymentMethodsService
         return $responseData;
     }
 
+    /**
+     * @param PaymentMethodsResponse $paymentMethodsResponse
+     * @return array
+     */
+    public function getPaymentMethodsArray(PaymentMethodsResponse $paymentMethodsResponse): array
+    {
+        $allPaymentMethods = [];
+        /** @var PaymentMethodsResponse $paymentMethods */
+        $paymentMethods = $paymentMethodsResponse->getPaymentMethods();
+        if (!empty($paymentMethods)) {
+            foreach ($paymentMethods as $paymentMethod) {
+                $allPaymentMethods['paymentMethods'][] = (array) $paymentMethod->jsonSerialize();
+            }
+        }
+        $storedMethods = $paymentMethodsResponse->getStoredPaymentMethods();
+        if (!empty($storedMethods)) {
+            foreach ($storedMethods as $paymentMethod) {
+                $allPaymentMethods['storedPaymentMethods'][] = (array) $paymentMethod->jsonSerialize();
+            }
+        }
+
+        return $allPaymentMethods;
+    }
     /**
      * @param string $address
      * @return array
