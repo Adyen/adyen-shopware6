@@ -186,14 +186,15 @@ class OrderApiController
      * @param Request $request
      * @return JsonResponse
      */
-    public function deleteGiftCardStateData(SalesChannelContext $context, Request $request)
+    public function deleteGiftCardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
         $stateData = json_decode($request->request->get('stateData', ''), true);
-        if (!empty($stateData)) {
+        if (is_array($stateData) && array_key_exists('id', $stateData)) {
             $Id = $stateData['id'];
             $this->paymentStateDataService->deletePaymentStateData($Id);
             return new JsonResponse(['token' => $context->getToken()]);
         }
+        //return exception
         else
             return new JsonResponse('StateData is not available.');
     }

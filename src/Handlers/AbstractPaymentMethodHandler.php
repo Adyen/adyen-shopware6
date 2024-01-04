@@ -813,7 +813,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         // order has been created, use state data from db as the first payment
         $transactionId = $transaction->getOrderTransaction()->getId();
         $storedStateData = $this->getStoredStateData($salesChannelContext, $transactionId);
-        if (!$storedStateData) {
+        if (is_null($storedStateData)) {
             $message = sprintf(
                 "There was an error with the giftcard payment. Order number: %s; Missing: giftcard data",
                 $transaction->getOrder()->getOrderNumber()
