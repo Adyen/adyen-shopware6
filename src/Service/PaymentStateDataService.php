@@ -27,10 +27,12 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntity;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class PaymentStateDataService
 {
@@ -102,6 +104,14 @@ class PaymentStateDataService
         )->first();
     }
 
+    public function getPaymentStateDataFromId(string $stateDataId): ?PaymentStateDataEntity
+    {
+        return $this->paymentStateDataRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('id', $stateDataId)),
+            Context::createDefaultContext()
+        )->first();
+    }
+
     public function updateStateDataContextToken(PaymentStateDataEntity $stateData, $newToken): void
     {
         $this->paymentStateDataRepository->update([
@@ -128,11 +138,25 @@ class PaymentStateDataService
     /**
      * @param string $contextToken
      */
-    public function deletePaymentStateDataFromContextToken(string $contextToken): void
+    public function deletePaymentStateDataFromId(string $stateDataId): void
     {
-        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
+        $stateData = $this->getPaymentStateDataFromId($stateDataId);
         if (!empty($stateData)) {
             $this->deletePaymentStateData($stateData);
         }
     }
+
+    public function fetchRedeemedGiftCardsFromContextToken(string $contextToken)
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('token', $contextToken));
+        $criteria->addSorting(new FieldSorting('createdAt')); // Sorting by 'created_at' in ascending order
+
+        return $this->paymentStateDataRepository->search(
+            $criteria,
+            Context::createDefaultContext()
+        );
+
+    }
+
 }

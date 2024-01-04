@@ -11,11 +11,13 @@
                  data-check-balance-url="{{ adyenFrontendData.checkBalanceUrl }}"
                  data-set-giftcard-url="{{ adyenFrontendData.setGiftcardUrl }}"
                  data-remove-giftcard-url="{{ adyenFrontendData.removeGiftcardUrl }}"
+                 data-fetch-redeemed-giftcards-url="{{ adyenFrontendData.fetchRedeemedGiftcardsUrl }}"
                  data-switch-context-url="{{ adyenFrontendData.switchContextUrl }}"
                  data-translation-adyen-giftcard-remaining-balance="{{ "adyen.giftcard.remainingBalance" | trans }}"
                  data-translation-adyen-giftcard-deducted-balance="{{ "adyen.giftcard.deductedAmount" | trans }}"
                  data-translation-adyen-giftcard-discount="{{ "adyen.giftcard.discount" | trans }}"
                  data-translation-adyen-giftcard-remaining-amount="{{ "adyen.giftcard.remainingAmount" | trans }}"
+                 data-translation-adyen-giftcard-remove="{{ "adyen.giftcard.removeGiftcard" | trans }}"
             ></div>
             <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
             <hr>
@@ -33,15 +35,15 @@
 
             <div class="clearfix"></div>
             <span class="adyen-close-giftcard-component" title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
-            <div class="adyen-giftcard-item">
-                <span class="adyen-giftcard-header"></span>
-                <a href="javascript:void(0)" class="adyen-remove-giftcard">
-                    {{ "adyen.giftcard.removeGiftcard" | trans }}
-                </a>
-                <p class="adyen-deducted-balance"></p>
+            <span class="adyen-giftcard-item">
+            </span>
+            <h6 class="adyen-giftcard-header"></h6>
+            <div id="adyen-giftcard-component"></div>
+            <hr>
+            <div id="giftcardsContainer">
+
             </div>
 
-            <div id="adyen-giftcard-component"></div>
             <hr>
 
         </div>

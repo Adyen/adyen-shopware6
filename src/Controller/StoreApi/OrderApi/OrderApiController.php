@@ -35,6 +35,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 
 /**
  * Class OrderApiController
@@ -59,10 +60,16 @@ class OrderApiController
      * @var PaymentStateDataService
      */
     private $paymentStateDataService;
+
     /**
      * @var LoggerInterface
      */
     private $logger;
+
+    /**
+     * @var CartService
+     */
+    private $cartService;
 
     /**
      * StoreApiController constructor.
@@ -72,19 +79,22 @@ class OrderApiController
      * @param OrdersCancelService $ordersCancelService
      * @param PaymentStateDataService $paymentStateDataService
      * @param LoggerInterface $logger
+     * @param CartService $cartService
      */
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
         OrdersService $ordersService,
         OrdersCancelService $ordersCancelService,
         PaymentStateDataService $paymentStateDataService,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        CartService $cartService,
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->logger = $logger;
+        $this->cartService = $cartService;
     }
 
     /**
@@ -163,17 +173,17 @@ class OrderApiController
         if ('giftcard' !== $stateData['paymentMethod']['type']) {
             throw new ValidationException('Only giftcard state data is allowed to be stored.');
         }
+
         $this->paymentStateDataService->insertPaymentStateData(
             $context->getToken(),
             json_encode($stateData),
             [
-                'amount' => (int) $request->request->get('amount'),
-                'paymentMethodId' => $request->request->get('paymentMethodId'),
-                'balance' => (int) $request->request->get('balance'),
+                'remainingOrderAmount' => $request->request->get('remainingOrderAmount'),
+                'paymentMethodId' => $request->request->get('paymentMethodId')
             ]
         );
 
-        return new JsonResponse(['paymentMethodId' => $request->request->get('paymentMethodId')]);
+        return new JsonResponse(['token' => $context->getToken()]);
     }
 
     /**
@@ -188,8 +198,88 @@ class OrderApiController
      */
     public function deleteGiftCardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
-        $this->paymentStateDataService->deletePaymentStateDataFromContextToken($context->getToken());
+        $stateDateId = $request->request->get('stateDataId');
+        $this->paymentStateDataService->deletePaymentStateDataFromId($stateDateId);
 
         return new JsonResponse(['token' => $context->getToken()]);
+    }
+
+    /**
+     * @Route(
+     *     "/store-api/adyen/giftcard",
+     *     name="store-api.action.adyen.giftcard.fetch",
+     *     methods={"POST"}
+     * )
+     * @param SalesChannelContext $context
+     * @param Request $request
+     * @return JsonResponse
+     * @throws ValidationException
+     * @throws \Adyen\AdyenException
+     */
+    public function fetchRedeemedGiftcards(SalesChannelContext $context): JsonResponse
+    {
+        $fetchedRedeemedGiftcards = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken($context->getToken());
+
+        $remainingOrderAmount = $this->cartService->getCart($context->getToken(), $context)->getPrice()->getTotalPrice();
+        $totalDiscount = $this->getGiftcardTotalDiscount($fetchedRedeemedGiftcards, $context);
+
+        $responseArray = [
+            'giftcards' => $this->filterGiftcardStateData($fetchedRedeemedGiftcards, $context),
+            'remainingAmount' => $remainingOrderAmount - $totalDiscount,
+            'totalDiscount' => $totalDiscount
+        ];
+
+
+        return new JsonResponse(['redeemedGiftcards' => $responseArray]);
+    }
+
+    private function getGiftcardTotalDiscount($fetchedRedeemedGiftcards, $salesChannelContext)
+    {
+        $totalGiftcardBalance = 0;
+        //$remainingAmountInMinorUnits = $currency->sanitize($this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)->getPrice()->getTotalPrice(), $currency);
+        $remainingAmountInMinorUnits = $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)->getPrice()->getTotalPrice();
+
+        foreach ($fetchedRedeemedGiftcards->getElements() as $fetchedRedeemedGiftcard) {
+            $stateData = json_decode($fetchedRedeemedGiftcard->getStateData(), true);
+            if (isset($stateData['paymentMethod']['type']) ||
+                isset($stateData['paymentMethod']['brand']) ||
+                $stateData['paymentMethod']['type'] === 'giftcard') {
+                $totalGiftcardBalance += $stateData['giftcard']['value'];
+            }
+        }
+
+        if ($totalGiftcardBalance > 0) {
+            return min($totalGiftcardBalance, $remainingAmountInMinorUnits);
+        } else {
+            return 0;
+        }
+    }
+
+    private function filterGiftcardStateData($fetchedRedeemedGiftcards, $salesChannelContext): array
+    {
+        $responseArray = array();
+        $remainingOrderAmount = $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)->getPrice()->getTotalPrice();
+
+        foreach ($fetchedRedeemedGiftcards->getElements() as $fetchedRedeemedGiftcard) {
+            $stateData = json_decode($fetchedRedeemedGiftcard->getStateData(), true);
+            if (!isset($stateData['paymentMethod']['type']) ||
+                !isset($stateData['paymentMethod']['brand']) ||
+                $stateData['paymentMethod']['type'] !== 'giftcard') {
+                unset($fetchedRedeemedGiftcards);
+                continue;
+            }
+            $deductedAmount = min($remainingOrderAmount, $stateData['giftcard']['value']);
+
+            $responseArray[] = [
+                'stateDataId' => $fetchedRedeemedGiftcard->getId(),
+                'brand' => $stateData['paymentMethod']['brand'],
+                'title' => $stateData['giftcard']['title'],
+                'balance' => $stateData['giftcard']['value'],
+                'deductedAmount' => $deductedAmount
+            ];
+
+            $remainingOrderAmount -= $deductedAmount;
+        }
+        return $responseArray;
     }
 }
