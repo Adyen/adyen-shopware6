@@ -194,7 +194,7 @@ class OrderApiController
             $this->paymentStateDataService->deletePaymentStateData($Id);
             return new JsonResponse(['token' => $context->getToken()]);
         } else {
-            return new JsonResponse('StateData is not available.',404);
+            return new JsonResponse('StateData is not available.', 404);
         }
     }
 }
