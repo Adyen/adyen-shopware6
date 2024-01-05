@@ -195,7 +195,8 @@ class OrderApiController
             return new JsonResponse(['token' => $context->getToken()]);
         }
         //return exception
-        else
+        else {
             return new JsonResponse('StateData is not available.');
+        }
     }
-}
+} 
