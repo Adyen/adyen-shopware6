@@ -75,11 +75,12 @@ class OrderApiController
      */
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
-        OrdersService $ordersService,
-        OrdersCancelService $ordersCancelService,
-        PaymentStateDataService $paymentStateDataService,
-        LoggerInterface $logger
-    ) {
+        OrdersService                $ordersService,
+        OrdersCancelService          $ordersCancelService,
+        PaymentStateDataService      $paymentStateDataService,
+        LoggerInterface              $logger
+    )
+    {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
@@ -167,9 +168,9 @@ class OrderApiController
             $context->getToken(),
             json_encode($stateData),
             [
-                'amount' => (int) $request->request->get('amount'),
+                'amount' => (int)$request->request->get('amount'),
                 'paymentMethodId' => $request->request->get('paymentMethodId'),
-                'balance' => (int) $request->request->get('balance'),
+                'balance' => (int)$request->request->get('balance'),
             ]
         );
 
@@ -199,4 +200,4 @@ class OrderApiController
             return new JsonResponse('StateData is not available.');
         }
     }
-} 
+}
