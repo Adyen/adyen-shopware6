@@ -79,8 +79,7 @@ class OrderApiController
         OrdersCancelService          $ordersCancelService,
         PaymentStateDataService      $paymentStateDataService,
         LoggerInterface              $logger
-    )
-    {
+    ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
@@ -194,9 +193,8 @@ class OrderApiController
             $Id = $stateData['id'];
             $this->paymentStateDataService->deletePaymentStateData($Id);
             return new JsonResponse(['token' => $context->getToken()]);
-        }
-        //return exception
-        else {
+        } else {
+            //return exception
             return new JsonResponse('StateData is not available.');
         }
     }
