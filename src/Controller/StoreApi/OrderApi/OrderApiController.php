@@ -173,13 +173,13 @@ class OrderApiController
         if ('giftcard' !== $stateData['paymentMethod']['type']) {
             throw new ValidationException('Only giftcard state data is allowed to be stored.');
         }
-
         $this->paymentStateDataService->insertPaymentStateData(
             $context->getToken(),
             json_encode($stateData),
             [
-                'remainingOrderAmount' => $request->request->get('remainingOrderAmount'),
-                'paymentMethodId' => $request->request->get('paymentMethodId')
+                'amount' => (int)$request->request->get('amount'),
+                'paymentMethodId' => $request->request->get('paymentMethodId'),
+                'balance' => (int)$request->request->get('balance'),
             ]
         );
 
