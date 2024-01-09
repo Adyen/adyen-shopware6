@@ -23,29 +23,26 @@
             <hr>
             {# loop through giftcards and display logo #}
             <select id="giftcardDropdown">
-                <option value="" disabled selected>Select Giftcard</option>
+                <option value="" disabled selected>{{ "Please select a giftcard..." | trans }}</option>
                 {% for giftcard in adyenFrontendData.giftcards %}
-                    <option  class="adyen-giftcard"
-                             value="{{ giftcard.translated.name }}"
-                             data-giftcard = "{{ giftcard|json_encode }}">
+                    <option class="adyen-giftcard"
+                            value="{{ giftcard.translated.name }}"
+                            data-giftcard="{{ giftcard|json_encode|e('html_attr') }}"
+                    >
                         {{ giftcard.translated.name }}
                     </option>
                 {% endfor %}
             </select>
-
             <div class="clearfix"></div>
-            <span class="adyen-close-giftcard-component" title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
-            <span class="adyen-giftcard-item">
-            </span>
-            <h6 class="adyen-giftcard-header"></h6>
-            <div id="adyen-giftcard-component"></div>
-            <hr>
-            <div id="giftcardsContainer">
 
+            <div id="adyen-giftcard-component">
+                <span class="adyen-close-giftcard-component" title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
+                <span class="adyen-giftcard-item"></span>
+                <h6 class="adyen-giftcard-header"></h6>
             </div>
+            <div id="giftcardsContainer"></div>
 
             <hr>
-
         </div>
     {% endif %}
 {% endblock %}
