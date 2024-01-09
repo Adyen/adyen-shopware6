@@ -75,10 +75,10 @@ class OrderApiController
      */
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
-        OrdersService $ordersService,
-        OrdersCancelService $ordersCancelService,
-        PaymentStateDataService $paymentStateDataService,
-        LoggerInterface $logger
+        OrdersService                $ordersService,
+        OrdersCancelService          $ordersCancelService,
+        PaymentStateDataService      $paymentStateDataService,
+        LoggerInterface              $logger
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
@@ -167,9 +167,9 @@ class OrderApiController
             $context->getToken(),
             json_encode($stateData),
             [
-                'amount' => (int) $request->request->get('amount'),
+                'amount' => (int)$request->request->get('amount'),
                 'paymentMethodId' => $request->request->get('paymentMethodId'),
-                'balance' => (int) $request->request->get('balance'),
+                'balance' => (int)$request->request->get('balance'),
             ]
         );
 
@@ -188,8 +188,13 @@ class OrderApiController
      */
     public function deleteGiftCardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
-        $this->paymentStateDataService->deletePaymentStateDataFromContextToken($context->getToken());
-
-        return new JsonResponse(['token' => $context->getToken()]);
+        $stateData = json_decode($request->request->get('stateData', ''), true);
+        if (is_array($stateData) && array_key_exists('id', $stateData)) {
+            $Id = $stateData['id'];
+            $this->paymentStateDataService->deletePaymentStateData($Id);
+            return new JsonResponse(['token' => $context->getToken()]);
+        } else {
+            return new JsonResponse('StateData is not available.', 404);
+        }
     }
 }
