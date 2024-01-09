@@ -228,6 +228,9 @@ export default class CartPlugin extends Plugin {
             //Compare the new total gift card balance with the order amount
             if (this.remainingAmount > 0.00) {
                 //allow adding new giftcards
+                if (this.adyenGiftcardDropDown.length > 0) {
+                    this.adyenGiftcardDropDown[0].style.display = 'block';
+                }
             } else {
                 // Hide giftcards dropdown
                 if (this.adyenGiftcardDropDown.length > 0) {
