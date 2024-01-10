@@ -87,7 +87,7 @@ class OrderApiController
         OrdersCancelService $ordersCancelService,
         PaymentStateDataService $paymentStateDataService,
         LoggerInterface $logger,
-        CartService $cartService,
+        CartService $cartService
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
