@@ -219,8 +219,9 @@ class OrderApiController
     public function fetchRedeemedGiftcards(SalesChannelContext $context): JsonResponse
     {
         $fetchedRedeemedGiftcards = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken($context->getToken());
-
-        $remainingOrderAmount = $this->cartService->getCart($context->getToken(), $context)->getPrice()->getTotalPrice();
+        $remainingOrderAmount = $this->cartService->getCart(
+            $context->getToken(),
+            $context)->getPrice()->getTotalPrice();
         $totalDiscount = $this->getGiftcardTotalDiscount($fetchedRedeemedGiftcards, $context);
 
         $responseArray = [
@@ -236,8 +237,9 @@ class OrderApiController
     private function getGiftcardTotalDiscount($fetchedRedeemedGiftcards, $salesChannelContext)
     {
         $totalGiftcardBalance = 0;
-        //$remainingAmountInMinorUnits = $currency->sanitize($this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)->getPrice()->getTotalPrice(), $currency);
-        $remainingAmountInMinorUnits = $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)->getPrice()->getTotalPrice();
+        $remainingAmountInMinorUnits = $this->cartService->getCart(
+            $salesChannelContext->getToken(),
+            $salesChannelContext)->getPrice()->getTotalPrice();
 
         foreach ($fetchedRedeemedGiftcards->getElements() as $fetchedRedeemedGiftcard) {
             $stateData = json_decode($fetchedRedeemedGiftcard->getStateData(), true);
@@ -258,7 +260,9 @@ class OrderApiController
     private function filterGiftcardStateData($fetchedRedeemedGiftcards, $salesChannelContext): array
     {
         $responseArray = array();
-        $remainingOrderAmount = $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)->getPrice()->getTotalPrice();
+        $remainingOrderAmount = $this->cartService->getCart(
+            $salesChannelContext->getToken(),
+            $salesChannelContext)->getPrice()->getTotalPrice();
 
         foreach ($fetchedRedeemedGiftcards->getElements() as $fetchedRedeemedGiftcard) {
             $stateData = json_decode($fetchedRedeemedGiftcard->getStateData(), true);
