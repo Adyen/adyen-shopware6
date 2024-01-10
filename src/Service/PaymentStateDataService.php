@@ -80,13 +80,8 @@ class PaymentStateDataService
 
         $fields['token'] = $contextToken;
         $fields['statedata'] = json_encode($stateDataArray);
-        $stateData = $this->getPaymentStateDataFromContextToken($contextToken);
 
-        if ($stateData) {
-            $fields['id'] = $stateData->getId();
-        }
-
-        $this->paymentStateDataRepository->upsert(
+        $this->paymentStateDataRepository->create(
             [$fields],
             Context::createDefaultContext()
         );

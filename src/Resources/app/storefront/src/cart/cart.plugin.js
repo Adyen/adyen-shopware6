@@ -88,7 +88,7 @@ export default class CartPlugin extends Plugin {
             amount: {
                 currency: adyenGiftcardsConfiguration.currency,
                 value: adyenGiftcardsConfiguration.totalInMinorUnits,
-            }
+            },
         };
 
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
@@ -98,12 +98,11 @@ export default class CartPlugin extends Plugin {
         let self = this;
         let giftcardDropdown = document.getElementById('giftcardDropdown');
 
-        // Add a change event listener to the dropdown
         giftcardDropdown.addEventListener('change', function () {
-            // Check if a gift card is selected
             if (giftcardDropdown.value) {
                 self.selectedGiftcard = JSON.parse(event.currentTarget.options[event.currentTarget.selectedIndex].dataset.giftcard);
                 self.mountGiftcardComponent(self.selectedGiftcard.extensions.adyenGiftcardData[0]);
+                giftcardDropdown.value = "";
             }
         });
     }
@@ -118,8 +117,7 @@ export default class CartPlugin extends Plugin {
         //Add Giftcard image and name
         var imgElement = document.createElement('img');
         imgElement.src = 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/'+giftcard.brand+'.svg';
-        imgElement.height = 50;
-        imgElement.width = 77;
+        imgElement.classList.add('adyen-giftcard-logo');
 
         this.giftcardItem.insertBefore(imgElement, this.giftcardItem.firstChild);
         this.giftcardHeader.innerHTML = giftcard.name;
@@ -157,10 +155,6 @@ export default class CartPlugin extends Plugin {
                 } else {
                     // 0. compare balance to total amount to be paid
                     const consumableBalance = (response.transactionLimit ? parseFloat(response.transactionLimit.value) : parseFloat(response.balance.value));
-                    // this.remainingGiftcardBalance = consumableBalance - this.remainingAmount;
-                    // this.remainingAmount -= consumableBalance;
-                    // this.remainingAmount = (this.remainingAmount < 0) ? 0 : this.remainingAmount;
-                    // adyenGiftcardsConfiguration.giftcardDiscount = (parseFloat(adyenGiftcardsConfiguration.giftcardDiscount) + (consumableBalance - this.remainingGiftcardBalance));
 
                     //Saving Currency and the remaining Cart amount and Giftcard Title
                     data.giftcard = {
@@ -193,8 +187,7 @@ export default class CartPlugin extends Plugin {
                 let giftcardElement = document.createElement('div');
                 var imgElement = document.createElement('img');
                 imgElement.src = 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/'+giftcard.brand+'.svg';
-                imgElement.height = 50;
-                imgElement.width = 77;
+                imgElement.classList.add('adyen-giftcard-logo');
 
                 let removeElement = document.createElement('a');
                 removeElement.href = 'javascript:void(0)'; // Set the href attribute to '#' or your desired link
@@ -206,7 +199,7 @@ export default class CartPlugin extends Plugin {
                 giftcardElement.appendChild(imgElement);
                 giftcardElement.innerHTML += `<span>${giftcard.title}</span>`;
                 giftcardElement.appendChild(removeElement);
-                giftcardElement.innerHTML += `<p>${balanceInnerHtml}</p> <hr>`;
+                giftcardElement.innerHTML += `<p class="adyen-giftcard-summary">${balanceInnerHtml}</p> <hr>`;
 
                 // Append the gift card element to the container
                 giftcardsContainer.appendChild(giftcardElement);
