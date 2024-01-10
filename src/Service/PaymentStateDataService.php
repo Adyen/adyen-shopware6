@@ -151,7 +151,5 @@ class PaymentStateDataService
             $criteria,
             Context::createDefaultContext()
         );
-
     }
-
 }
