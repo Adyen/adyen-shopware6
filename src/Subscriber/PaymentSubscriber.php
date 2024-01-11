@@ -231,9 +231,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $giftcardBalance = 0;
         if ($giftcardData) {
             $stateData = $giftcardData->getStateData();
-            $giftcardDiscount = json_decode($stateData, true)['additionalData']['amount'] ?? 0;
+            $giftcardValue = json_decode($stateData, true)['giftcard']['value'] ?? 0;
             $selectedPaymentMethodId = json_decode($stateData, true)['additionalData']['paymentMethodId'] ?? 0;
-            $giftcardBalance = json_decode($stateData, true)['additionalData']['balance'] ?? 0;
+            $giftcardDiscount = min($amountInMinorUnits, $giftcardValue);
+            $giftcardBalance = $giftcardValue - $giftcardDiscount;
 
             // update discount amount if total becomes less than discount
             if ((int) $giftcardDiscount > $amountInMinorUnits) {
@@ -282,6 +283,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
                     'switchContextUrl' => $this->router->generate('payment.adyen.proxy-switch-context'),
                     'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
+                    'fetchRedeemedGiftcardsUrl' => $this->router
+                        ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
                 ])
             )
         );

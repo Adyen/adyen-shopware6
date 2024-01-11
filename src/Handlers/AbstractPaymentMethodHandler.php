@@ -321,7 +321,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         if ($storedStateData) {
             // Remove the used state.data
-            $this->paymentStateDataService->deletePaymentStateData($storedStateData['id']);        }
+            $this->paymentStateDataService->deletePaymentStateData($storedStateData['id']);
+        }
 
         try {
             $this->clientService->logRequest(
@@ -812,7 +813,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         // order has been created, use state data from db as the first payment
         $transactionId = $transaction->getOrderTransaction()->getId();
         $storedStateData = $this->getStoredStateData($salesChannelContext, $transactionId);
-        if (!$storedStateData) {
+        if (is_null($storedStateData)) {
             $message = sprintf(
                 "There was an error with the giftcard payment. Order number: %s; Missing: giftcard data",
                 $transaction->getOrder()->getOrderNumber()
@@ -869,7 +870,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         ) - $partialAmount;
 
         // Remove the used state.data
-        $this->paymentStateDataService->deletePaymentStateData($storedStateData['id']);    }
+        $this->paymentStateDataService->deletePaymentStateData($storedStateData['id']);
+    }
 
     /**
      * @param SalesChannelContext $salesChannelContext
