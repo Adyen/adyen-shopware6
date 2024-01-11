@@ -254,6 +254,20 @@ class FrontendProxyController extends StorefrontController
 
     /**
      * @Route(
+     *     "/adyen/proxy-fetch-redeemed-giftcards",
+     *     name="payment.adyen.proxy-fetch-redeemed-giftcards",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"GET"}
+     * )
+     *
+     */
+    public function fetchRedeemedGiftcards(SalesChannelContext $context): JsonResponse
+    {
+        return $this->orderApiController->fetchRedeemedGiftcards($context);
+    }
+
+    /**
+     * @Route(
      *     "/adyen/proxy-donate",
      *     name="payment.adyen.proxy-donate",
      *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
