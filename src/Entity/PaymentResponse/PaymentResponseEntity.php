@@ -67,6 +67,11 @@ class PaymentResponseEntity extends Entity
     protected $createdAt;
 
     /**
+     * @var string
+     */
+    protected $pspreference;
+
+    /**
      * @return string
      */
     public function getOrderTransactionId(): string
@@ -160,5 +165,21 @@ class PaymentResponseEntity extends Entity
     public function setResponse(string $response): void
     {
         $this->response = $response;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPspreference(): string
+    {
+        return $this->pspreference;
+    }
+
+    /**
+     * @param string $pspreference
+     */
+    public function setPspreference(string $pspreference): void
+    {
+        $this->pspreference = $pspreference;
     }
 }
