@@ -112,7 +112,7 @@ class PaymentResponseService
         $fields['orderTransactionId'] = $orderTransaction->getId();
         $fields['resultCode'] = $paymentResponse["resultCode"];
         $fields['response'] = json_encode($paymentResponse);
-        $fields['pspreference'] = $paymentResponse["pspReference"];
+        $fields['pspreference'] = $paymentResponse["pspReference"] ?? null;
 
         $this->repository->upsert(
             [$fields],

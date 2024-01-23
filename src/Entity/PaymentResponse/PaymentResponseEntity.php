@@ -168,17 +168,17 @@ class PaymentResponseEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getPspreference(): string
+    public function getPspreference(): ?string
     {
         return $this->pspreference;
     }
 
     /**
-     * @param string $pspreference
+     * @param string|null $pspreference
      */
-    public function setPspreference(string $pspreference): void
+    public function setPspreference(?string $pspreference): void
     {
         $this->pspreference = $pspreference;
     }
