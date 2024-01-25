@@ -1,6 +1,6 @@
 <?php
 
-namespace src\PaymentMethods;
+namespace Adyen\Shopware\PaymentMethods;
 
 use Adyen\Shopware\Handlers\GiftCardPaymentMethodHandler;
 

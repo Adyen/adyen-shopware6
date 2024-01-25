@@ -173,6 +173,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.10.0', '<')) {
             $this->updateTo3100($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.15.0', '<')) {
+            $this->updateTo3110($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -562,6 +566,20 @@ class AdyenPaymentShopware6 extends Plugin
                 $method
             );
         }
+    }
+
+    private function updateTo3110(UpdateContext $updateContext): void
+    {
+        //Version 3.11.0 introduces MultiGiftcards
+        $this->addPaymentMethod(
+            new PaymentMethods\GiftCardPaymentMethod(),
+            $updateContext->getContext()
+        );
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            new PaymentMethods\GiftcardPaymentMethod()
+        );
     }
 
     private function safeCopyAsset($source, $destination): bool
