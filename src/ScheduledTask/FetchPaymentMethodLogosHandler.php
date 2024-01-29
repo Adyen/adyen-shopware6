@@ -51,7 +51,7 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
      */
     private $paymentMethodRepository;
     /**
-     * @var EntityRepository
+     * @var EntityRepository|\Shopware\Core\Content\Media\DataAbstractionLayer\MediaRepositoryDecorator
      */
     private $mediaRepository;
     /**
@@ -63,7 +63,7 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         EntityRepository $scheduledTaskRepository,
         MediaService $mediaService,
         EntityRepository $paymentMethodRepository,
-        EntityRepository $mediaRepository,
+        $mediaRepository,
         bool $enableUrlUploadFeature = true
     ) {
         parent::__construct($scheduledTaskRepository);
