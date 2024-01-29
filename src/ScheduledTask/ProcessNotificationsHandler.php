@@ -129,7 +129,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         EntityRepository $scheduledTaskRepository,
         NotificationService $notificationService,
         OrderRepository $orderRepository,
-        EntityRepository $paymentMethodRepository,
+        $paymentMethodRepository,
         OrderTransactionRepository $orderTransactionRepository,
         AdyenPaymentService $adyenPaymentService,
         CaptureService $captureService,
