@@ -48,7 +48,7 @@ export default class CartPlugin extends Plugin {
         this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
         this.offCanvasSummaryDetails = null;
         this.shoppingCartSummaryDetails = null;
-
+debugger;
         this.giftcardComponentClose.onclick = function (event) {
             event.currentTarget.style.display = 'none';
             self.selectedGiftcard = null;
@@ -275,7 +275,6 @@ export default class CartPlugin extends Plugin {
                 giftcardSummary[i].remove();
             }
         }
-        console.log(this.giftcardDiscount);
         if (this.shoppingCartSummaryBlock.length) {
             this.shoppingCartSummaryBlock[0].innerHTML += '';
             let innerHtmlShoppingCartSummaryDetails = '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.translationAdyenGiftcardDiscount + '</dt>' +

@@ -44,7 +44,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.responseHandler = this.handlePaymentAction;
         this.adyenCheckout = Promise;
         this.initializeCheckoutComponent().then(function () {
-
+debugger;
+console.log(adyenCheckoutOptions.giftcardDiscount);
+console.log(this.giftcardDiscount );
             // Non adyen payment method selected
             // this can not happen, because this js plugin is registered only if adyen methods selected
             // PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '#adyen-payment-checkout-mask');

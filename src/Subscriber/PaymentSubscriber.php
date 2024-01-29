@@ -164,7 +164,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,
         Currency $currency,
-        EntityRepository $paymentMethodRepository
+        $paymentMethodRepository
     ) {
         $this->adyenPluginProvider = $adyenPluginProvider;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
@@ -315,10 +315,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         );
 
         $giftcardDetails = $this->getGiftcardTotalDiscount($salesChannelContext,$totalPrice);
-
-        if ($giftcardDetails['giftcardDiscount'] >= $totalPrice) {
-            // Set the gift card payment method
-            $paymentMethodId = $this->getGiftCardPaymentMethodId($salesChannelContext);
+        $paymentMethodId = $this->getGiftCardPaymentMethodId($salesChannelContext);
+        $payInFullWithGiftcard = 0;
+        $adyenGiftcardSelected = 0;
+        if ($giftcardDetails['giftcardDiscount'] >= $totalPrice) { //if full amount is covered
             $this->contextSwitchRoute->switchContext(
                 new RequestDataBag(
                     [
@@ -327,7 +327,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 ),
                 $salesChannelContext
             );
+            $payInFullWithGiftcard = 1;
         }
+        else { //if there is any giftcard discount added
+            $filteredPaymentMethods->remove($paymentMethodId); //Remove the PM from the list
+        }
+
+//        if($giftcardDetails['giftcardDiscount'] > 0) $adyenGiftcardSelected = 1;
 
 
         $page->setPaymentMethods($filteredPaymentMethods);
@@ -368,8 +374,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'totalPrice' => $totalPrice,
                         'giftcardDiscount' => $giftcardDetails['giftcardDiscount'],
                         'currencySymbol' => $currencySymbol,
-                        'payInFullWithGiftcard' => (int) isset($giftcardSelectedId),
-                       // 'adyenGiftcardSelected' => (int) $adyenGiftcardSelected,
+                        'payInFullWithGiftcard' => $payInFullWithGiftcard,
+                        //'adyenGiftcardSelected' => (int) $adyenGiftcardSelected,
                         'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
                         'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),
