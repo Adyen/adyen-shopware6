@@ -218,7 +218,8 @@ class PaymentMethodsFilterService
         foreach ($paymentMethods as $entity) {
             $methodHandler = $entity->getHandlerIdentifier();
             /** @var AbstractPaymentMethodHandler $methodHandler */
-            if (method_exists($methodHandler, 'getPaymentMethodCode') && $methodHandler::getPaymentMethodCode() === 'giftcard') {
+            if (method_exists($methodHandler, 'getPaymentMethodCode')
+                && $methodHandler::getPaymentMethodCode() === 'giftcard') {
                 // Remove giftcards from the actual collection
                 $paymentMethods->remove($entity->getId());
             }

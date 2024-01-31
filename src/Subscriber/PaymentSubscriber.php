@@ -243,7 +243,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $shopwarePaymentMethods
         );
 
-        $giftcardDetails = $this->getGiftcardTotalDiscount($salesChannelContext,$page->getCart()->getPrice()->getTotalPrice());
+        $giftcardDetails = $this->getGiftcardTotalDiscount(
+            $salesChannelContext,
+            $page->getCart()->getPrice()->getTotalPrice());
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -320,7 +322,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $paymentMethodsResponse
         );
 
-        $giftcardDetails = $this->getGiftcardTotalDiscount($salesChannelContext,$totalPrice);
+        $giftcardDetails = $this->getGiftcardTotalDiscount($salesChannelContext, $totalPrice);
         $paymentMethodId = $this->getGiftCardPaymentMethodId($salesChannelContext);
         $payInFullWithGiftcard = 0;
         if ($giftcardDetails['giftcardDiscount'] >= $totalPrice) { //if full amount is covered
@@ -333,8 +335,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 $salesChannelContext
             );
             $payInFullWithGiftcard = 1;
-        }
-        else {
+        } else {
             $filteredPaymentMethods->remove($paymentMethodId); //Remove the PM from the list
         }
 
@@ -431,7 +432,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $totalGiftcardBalance = 0;
 
-        foreach($data->getElements() as $statedataArray) {
+        foreach ($data->getElements() as $statedataArray) {
             $stateData = json_decode($statedataArray->getStateData(), true);
             if (isset($stateData['paymentMethod']['type']) ||
                 isset($stateData['paymentMethod']['brand']) ||
