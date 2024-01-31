@@ -111,6 +111,7 @@ debugger;
         if (this.paymentMethodInstance) {
             this.paymentMethodInstance.unmount();
         }
+        debugger;
         this.giftcardItem.innerHTML = '';
         ElementLoadingIndicatorUtil.create(DomAccess.querySelector(document, '#adyen-giftcard-component'));
 

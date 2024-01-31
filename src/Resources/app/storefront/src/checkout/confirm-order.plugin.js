@@ -34,19 +34,18 @@ export default class ConfirmOrderPlugin extends Plugin {
     init() {
         this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
+        debugger;
+        console.log(this.selectedAdyenPaymentMethod);
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
         this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
 
         this.minorUnitsQuotient = adyenCheckoutOptions.amount/adyenCheckoutOptions.totalPrice;
-        this.giftcardDiscount = (adyenCheckoutOptions.giftcardDiscount / this.minorUnitsQuotient).toFixed(2);
-        this.remainingAmount = (adyenCheckoutOptions.totalPrice - this.giftcardDiscount).toFixed(2);
+        this.giftcardDiscount = adyenCheckoutOptions.giftcardDiscount;
+        this.remainingAmount = adyenCheckoutOptions.totalPrice - this.giftcardDiscount;
         this.responseHandler = this.handlePaymentAction;
         this.adyenCheckout = Promise;
         this.initializeCheckoutComponent().then(function () {
-debugger;
-console.log(adyenCheckoutOptions.giftcardDiscount);
-console.log(this.giftcardDiscount );
             // Non adyen payment method selected
             // this can not happen, because this js plugin is registered only if adyen methods selected
             // PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '#adyen-payment-checkout-mask');
@@ -65,7 +64,9 @@ console.log(this.giftcardDiscount );
                 // replaces confirm button with adyen pay button for paywithgoogle, applepay etc.
                 this.initializeCustomPayButton();
             }
-
+debugger;
+            console.log(this.selectedAdyenPaymentMethod);
+            console.log(this.stateData);
             if (adyenConfiguration.updatablePaymentMethods.includes(this.selectedAdyenPaymentMethod) && !this.stateData) {
                 // create inline component for cards etc. and set event listener for submit button to confirm payment component
                 this.renderPaymentComponent(this.selectedAdyenPaymentMethod);
@@ -74,8 +75,8 @@ console.log(this.giftcardDiscount );
             }
         }.bind(this));
 
-        if (parseInt(adyenCheckoutOptions.payInFullWithGiftcard, 10)) {
-            if (parseInt(adyenCheckoutOptions.adyenGiftcardSelected, 10)) {
+        if (adyenCheckoutOptions.payInFullWithGiftcard == 1) {
+            if (parseInt(adyenCheckoutOptions.giftcardDiscount, 10)) {
                 this.appendGiftcardSummary();
             }
         } else {
@@ -138,6 +139,9 @@ console.log(this.giftcardDiscount );
     renderPaymentComponent(type) {
         if (type === 'oneclick') {
             this.renderStoredPaymentMethodComponents();
+            return;
+        }
+        if(type === 'giftcard') {
             return;
         }
 
@@ -520,6 +524,11 @@ console.log(this.giftcardDiscount );
     }
 
     getSelectedPaymentMethodKey() {
+        debugger;
+        console.log( Object.keys(
+            adyenConfiguration.paymentMethodTypeHandlers));
+        console.log(adyenCheckoutOptions.selectedPaymentMethodHandler);
+     console.log(adyenConfiguration.paymentMethodTypeHandlers['scheme']);
         return Object.keys(
             adyenConfiguration.paymentMethodTypeHandlers).find(
                 key => adyenConfiguration.paymentMethodTypeHandlers[key] ===
