@@ -1,11 +1,14 @@
 name: Shopware Plugin Release Workflow
 
 on:
-  pull_request:
-    branches: 
-      - main
-    paths:
-      - 'src/AdyenPaymentShopware6.php'
+  push:
+    branches:
+    
+  # pull_request:
+  #   branches: 
+  #     - main
+  #   paths:
+  #     - 'src/AdyenPaymentShopware6.php'
 
 jobs:
   build:
