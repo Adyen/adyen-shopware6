@@ -245,7 +245,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $giftcardDetails = $this->getGiftcardTotalDiscount(
             $salesChannelContext,
-            $page->getCart()->getPrice()->getTotalPrice());
+            $page->getCart()->getPrice()->getTotalPrice()
+        );
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
