@@ -1,0 +1,60 @@
+name: Shopware Plugin Release Workflow
+
+on:
+  pull_request:
+    branches: 
+      - main
+    paths:
+      - 'src/AdyenPaymentShopware6.php'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Initiate dockware
+      run: |
+        docker pull dockware/dev:6.5.2.1
+        # Stop and remove any existing container named 'shopware6'
+        docker stop shopware6 || true
+        docker rm shopware6 || true
+
+        # Check if the 'localnetwork' network exists
+        if [ $(docker network ls | grep -c localnetwork) -eq 0 ]; then
+          docker network create localnetwork
+        fi
+
+        # Now run the new container
+        docker run --rm -p 443:443 --name shopware6 \
+          --mount type=bind,source="$(pwd)",target=/var/www/html/custom/plugins/AdyenPaymentShopware6 \
+          --env PHP_VERSION=8.2 -d dockware/dev:6.5.2.1
+        sleep 30
+        docker logs shopware6
+
+        # Additional configuration for Shopware
+        docker exec shopware6 bash -c "sudo mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
+        docker exec shopware6 bash -c \
+          "sudo mysql -u root -proot shopware -e \"SELECT @RULE_ID := id FROM rule WHERE name = 'All customers'; UPDATE shipping_method SET availability_rule_id = @RULE_ID;\""
+        
+        # Connect to the network if not already connected
+        docker network connect --alias local.shopware.shop localnetwork shopware6 || true
+
+
+    - name: Install and Build Adyen Plugin
+      run: |
+        # Install the plugin
+        docker exec shopware6 bash -c "cd /var/www/html && ./bin/console plugin:install --activate AdyenPaymentShopware6"
+
+    - name: Build Storefront
+      run: |
+        docker exec shopware6 bash -c "cd /var/www/html/  && ./bin/build-js.sh && cd vendor/ && ls -la"
+    - name: list directory
+      run: |
+        docker exec shopware6 bash -c "cd /var/www/html/  && ls -la"
+
+  
+    # 
+
+    # Additional steps for committing files, preparing release, and uploading artifacts can be added here if needed
