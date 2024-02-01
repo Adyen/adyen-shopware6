@@ -62,9 +62,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 // replaces confirm button with adyen pay button for paywithgoogle, applepay etc.
                 this.initializeCustomPayButton();
             }
-debugger;
-            console.log(this.selectedAdyenPaymentMethod);
-            console.log(this.stateData);
+
             if (adyenConfiguration.updatablePaymentMethods.includes(this.selectedAdyenPaymentMethod) && !this.stateData) {
                 // create inline component for cards etc. and set event listener for submit button to confirm payment component
                 this.renderPaymentComponent(this.selectedAdyenPaymentMethod);
