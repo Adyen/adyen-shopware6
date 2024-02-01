@@ -175,7 +175,7 @@ class AdyenPaymentShopware6 extends Plugin
         }
 
         if (\version_compare($currentVersion, '3.15.0', '<')) {
-            $this->updateTo3110($updateContext);
+            $this->updateTo3150($updateContext);
         }
     }
 
@@ -568,7 +568,7 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
-    private function updateTo3110(UpdateContext $updateContext): void
+    private function updateTo3150(UpdateContext $updateContext): void
     {
         //Version 3.11.0 introduces MultiGiftcards
         $this->addPaymentMethod(

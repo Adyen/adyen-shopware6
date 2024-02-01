@@ -34,8 +34,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     init() {
         this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
-        debugger;
-        console.log(this.selectedAdyenPaymentMethod);
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
         this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
@@ -524,11 +522,6 @@ debugger;
     }
 
     getSelectedPaymentMethodKey() {
-        debugger;
-        console.log( Object.keys(
-            adyenConfiguration.paymentMethodTypeHandlers));
-        console.log(adyenCheckoutOptions.selectedPaymentMethodHandler);
-     console.log(adyenConfiguration.paymentMethodTypeHandlers['scheme']);
         return Object.keys(
             adyenConfiguration.paymentMethodTypeHandlers).find(
                 key => adyenConfiguration.paymentMethodTypeHandlers[key] ===

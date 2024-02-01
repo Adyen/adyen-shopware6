@@ -48,7 +48,6 @@ export default class CartPlugin extends Plugin {
         this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
         this.offCanvasSummaryDetails = null;
         this.shoppingCartSummaryDetails = null;
-debugger;
         this.giftcardComponentClose.onclick = function (event) {
             event.currentTarget.style.display = 'none';
             self.selectedGiftcard = null;
@@ -64,7 +63,6 @@ debugger;
             giftcardsList.addEventListener('click', (event) => {
                 if (event.target.classList.contains('adyen-remove-giftcard')) {
                     const storeId = event.target.getAttribute('dataid');
-                    console.log(storeId);
                     this.removeGiftcard(storeId);
                 }
             });
@@ -111,7 +109,6 @@ debugger;
         if (this.paymentMethodInstance) {
             this.paymentMethodInstance.unmount();
         }
-        debugger;
         this.giftcardItem.innerHTML = '';
         ElementLoadingIndicatorUtil.create(DomAccess.querySelector(document, '#adyen-giftcard-component'));
 
@@ -171,7 +168,6 @@ debugger;
 
     fetchRedeemedGiftcards() {
         this._client.get(`${adyenGiftcardsConfiguration.fetchRedeemedGiftcardsUrl}`, function (response) {
-            debugger;
             response = JSON.parse(response);
             let totalBalance =0;
             let giftcardsContainer = document.getElementById('giftcardsContainer');
@@ -208,9 +204,6 @@ debugger;
 
             });
             //Update calculations
-            debugger;
-            console.log(this.giftcardDiscount);
-            console.log(response.redeemedGiftcards.totalDiscount);
             this.remainingAmount = response.redeemedGiftcards.remainingAmount;
             this.giftcardDiscount = response.redeemedGiftcards.totalDiscount;
 
