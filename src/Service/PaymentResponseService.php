@@ -78,6 +78,16 @@ class PaymentResponseService
         return $this->getWithOrderTransaction($orderTransaction);
     }
 
+    public function getWithPspreference(string $pspreference): ?PaymentResponseEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter((new EqualsFilter('pspreference', $pspreference)));
+
+        return $this->repository
+            ->search($criteria, Context::createDefaultContext())
+            ->first();
+    }
+
     public function getWithOrderTransaction(OrderTransactionEntity $orderTransaction): ?PaymentResponseEntity
     {
         return $this->repository
@@ -113,8 +123,10 @@ class PaymentResponseService
         }
 
         $fields['orderTransactionId'] = $orderTransaction->getId();
+
         $fields['resultCode'] = $paymentResponse->getResultCode();
         $fields['response'] = $paymentResponse->__toString();
+        $fields['pspreference'] = $paymentResponse->getPspReference() ?? null;
 
         $this->repository->upsert(
             [$fields],

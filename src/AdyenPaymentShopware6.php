@@ -50,31 +50,25 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AdyenPaymentShopware6 extends Plugin
 {
-    public function build(ContainerBuilder $container): void
-    {
-        parent::build($container);
-        $this->installJsAssets($container->getParameter('kernel.shopware_version'));
-    }
-
     public function installJsAssets($shopwareVersion)
     {
         $storefrontAssetPath = __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware6.js';
         $adminAssetPath = __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware6.js';
         if (\version_compare($shopwareVersion, '6.5.0.0', '<')) {
-            $resultStorefront = copy(
+            $resultStorefront = $this->safeCopyAsset(
                 __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware64.js.dist',
                 $storefrontAssetPath
             );
-            $resultAdmin = copy(
+            $resultAdmin = $this->safeCopyAsset(
                 __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
                 $adminAssetPath
             );
         } else {
-            $resultStorefront = copy(
+            $resultStorefront = $this->safeCopyAsset(
                 __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware65.js.dist',
                 $storefrontAssetPath
             );
-            $resultAdmin = copy(
+            $resultAdmin = $this->safeCopyAsset(
                 __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
                 $adminAssetPath
             );
@@ -103,6 +97,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function activate(ActivateContext $activateContext): void
     {
+        $this->installJsAssets($activateContext->getCurrentShopwareVersion());
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(true, $activateContext->getContext(), new $paymentMethod());
         }
@@ -566,6 +561,15 @@ class AdyenPaymentShopware6 extends Plugin
                 $updateContext->getContext(),
                 $method
             );
+        }
+    }
+
+    private function safeCopyAsset($source, $destination): bool
+    {
+        try {
+            return copy($source, $destination);
+        } catch (\Exception $e) {
+            return false;
         }
     }
 }
