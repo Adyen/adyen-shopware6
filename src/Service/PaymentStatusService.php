@@ -78,8 +78,10 @@ class PaymentStatusService
             );
         }
 
+        $checkoutPaymentResponse = $this->transformResponseData($responseData);
+
         $result = $this->paymentResponseHandler->handlePaymentResponse(
-            $responseData,
+            $checkoutPaymentResponse,
             $orderTransaction
         );
 
@@ -105,6 +107,18 @@ class PaymentStatusService
             );
         }
 
+        $checkoutPaymentResponse = $this->transformResponseData($responseData);
+
+        $result = $this->paymentResponseHandler->handlePaymentResponse(
+            $checkoutPaymentResponse,
+            $paymentResponse->getOrderTransaction()
+        );
+
+        return $this->paymentResponseHandler->handleAdyenApis($result);
+    }
+
+    private function transformResponseData(array $responseData): PaymentResponse
+    {
         $checkoutPaymentResponse = new PaymentResponse($responseData);
 
         if (array_key_exists('action', $responseData)) {
@@ -122,11 +136,7 @@ class PaymentStatusService
             $checkoutPaymentResponse->setPaymentMethod($paymentMethod);
         }
 
-        $result = $this->paymentResponseHandler->handlePaymentResponse(
-            $checkoutPaymentResponse,
-            $paymentResponse->getOrderTransaction()
-        );
-
-        return $this->paymentResponseHandler->handleAdyenApis($result);
+        return $checkoutPaymentResponse;
     }
+
 }
