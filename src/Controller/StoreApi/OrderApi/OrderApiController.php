@@ -176,11 +176,7 @@ class OrderApiController
 
         $this->paymentStateDataService->insertPaymentStateData(
             $context->getToken(),
-            json_encode($stateData),
-            [
-                'remainingOrderAmount' => $request->request->get('remainingOrderAmount'),
-                'paymentMethodId' => $request->request->get('paymentMethodId')
-            ]
+            json_encode($stateData)
         );
 
         return new JsonResponse(['token' => $context->getToken()]);
@@ -230,7 +226,6 @@ class OrderApiController
             'remainingAmount' => $remainingOrderAmount - $totalDiscount,
             'totalDiscount' => $totalDiscount
         ];
-
 
         return new JsonResponse(['redeemedGiftcards' => $responseArray]);
     }

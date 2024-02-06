@@ -60,6 +60,7 @@ class PaymentMethods
         AfterpayDefaultPaymentMethod::class,
         TrustlyPaymentMethod::class,
         PaysafecardPaymentMethod::class,
+        GiftCardPaymentMethod::class,
         GivexGiftCardPaymentMethod::class,
         WebshopGiftCardPaymentMethod::class,
         KadowereldGiftCardPaymentMethod::class,
