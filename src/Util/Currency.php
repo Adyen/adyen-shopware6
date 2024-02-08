@@ -10,7 +10,7 @@ class Currency
      * @param string $currency The transaction currency, as a 3 letter string
      * @return int
      */
-    public function sanitize(float $amount, string $currency): int
+    public function sanitize(float $amount, ?string $currency): int
     {
         switch ($currency) {
             case "CVE":
