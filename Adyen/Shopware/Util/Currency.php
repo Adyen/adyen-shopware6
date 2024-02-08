@@ -1,6 +1,6 @@
 <?php
 
-namespace src\Util;
+namespace Adyen\Shopware\Util;
 
 class Currency
 {

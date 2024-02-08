@@ -31,7 +31,7 @@ use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Shopware\Test\Common\AdyenTestCase;
-use src\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Monolog\Logger;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;

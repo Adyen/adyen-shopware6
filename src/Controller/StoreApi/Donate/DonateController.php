@@ -30,7 +30,7 @@ use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\DonationService;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
-use src\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
