@@ -660,7 +660,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $imageUrl = null;
                 }
 
-                if (isset($product) && !is_null($product->getCategories())) {
+                if (isset($product) && !is_null($product->getCategories()) && $product->getCategories()->count() > 0) {
                     $productCategory = $product->getCategories()->first()->getName();
                 } else {
                     $productCategory = null;
