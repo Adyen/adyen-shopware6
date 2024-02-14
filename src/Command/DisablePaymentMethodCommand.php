@@ -45,7 +45,7 @@ class DisablePaymentMethodCommand extends Command
         $this->handler = $handler;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Finds the payment method according to given PM handler and disables it');
 
@@ -64,7 +64,7 @@ class DisablePaymentMethodCommand extends Command
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $isAllSelected = $input->getOption('all');
@@ -81,6 +81,6 @@ class DisablePaymentMethodCommand extends Command
         }
 
         $output->writeln($message);
-        return 0;
+        return Command::SUCCESS;
     }
 }
