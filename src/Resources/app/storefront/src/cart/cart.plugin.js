@@ -177,9 +177,10 @@ export default class CartPlugin extends Plugin {
 
             // Iterate through the redeemed gift cards and display them
             response.redeemedGiftcards.giftcards.forEach(function(giftcard) {
-
+                let deductedAmount = parseFloat(giftcard.deductedAmount);
+                deductedAmount = (deductedAmount).toFixed(2);
                 let balanceInnerHtml = adyenGiftcardsConfiguration.translationAdyenGiftcardDeductedBalance + ': ' +
-                    adyenGiftcardsConfiguration.currencySymbol + giftcard.deductedAmount;
+                    adyenGiftcardsConfiguration.currencySymbol + deductedAmount;
 
                 //Create a new HTML element for each gift card
                 let giftcardElement = document.createElement('div');
@@ -270,11 +271,14 @@ export default class CartPlugin extends Plugin {
             }
         }
         if (this.shoppingCartSummaryBlock.length) {
+            let giftcardDiscount = parseFloat(this.giftcardDiscount).toFixed(2);
+            let remainingAmount = parseFloat(this.remainingAmount).toFixed(2);
+
             this.shoppingCartSummaryBlock[0].innerHTML += '';
             let innerHtmlShoppingCartSummaryDetails = '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.translationAdyenGiftcardDiscount + '</dt>' +
-                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.giftcardDiscount + '</dd>' +
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + giftcardDiscount + '</dd>' +
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.translationAdyenGiftcardRemainingAmount + '</dt>' +
-                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + this.remainingAmount + '</dd>';
+                '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' + adyenGiftcardsConfiguration.currencySymbol + remainingAmount + '</dd>';
 
             this.shoppingCartSummaryBlock[0].innerHTML += innerHtmlShoppingCartSummaryDetails;
         }

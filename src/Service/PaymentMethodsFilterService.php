@@ -24,6 +24,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
+use Adyen\Shopware\Handlers\GiftCardPaymentMethodHandler;
 use Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
@@ -96,7 +97,7 @@ class PaymentMethodsFilterService
                     if (empty($adyenPaymentMethods[OneClickPaymentMethodHandler::getPaymentMethodCode()])) {
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
-                } elseif ($pmHandlerIdentifier::$isGiftCard) {
+                } elseif ($pmCode == 'giftcard' && $pmHandlerIdentifier != GiftCardPaymentMethodHandler::class) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     // Remove ApplePay PM if the browser is not Safari
                 } elseif ($pmCode == ApplePayPaymentMethodHandler::getPaymentMethodCode() && $isSafari !== 1) {
@@ -187,11 +188,15 @@ class PaymentMethodsFilterService
 
         foreach ($filteredPaymentMethods as $entity) {
             $methodHandler = $entity->getHandlerIdentifier();
+
             /** @var AbstractPaymentMethodHandler $methodHandler */
             if ($entity->getPluginId() !== $adyenPluginId) {
                 // Remove non-Adyen payment methods
                 $filteredPaymentMethods->remove($entity->getId());
-            } elseif (!$methodHandler::$isGiftCard || !in_array($methodHandler::getBrand(), $brands)) {
+            } elseif (
+                (method_exists($methodHandler, 'getPaymentMethodCode') &&
+                    $methodHandler::getPaymentMethodCode() != 'giftcard') ||
+                !in_array($methodHandler::getBrand(), $brands)) {
                 // Remove non-giftcards and giftcards that are not in /paymentMethods response
                 $filteredPaymentMethods->remove($entity->getId());
             } else {
