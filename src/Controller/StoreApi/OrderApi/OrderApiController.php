@@ -189,7 +189,10 @@ class OrderApiController
         $remainingOrderAmount = $this->cartService
             ->getCart($context->getToken(), $context)
             ->getPrice()->getTotalPrice();
-        $giftcardDetails = $this->paymentStateDataService->getGiftcardTotalDiscountAndBalance($context, $remainingOrderAmount);
+        $giftcardDetails = $this->paymentStateDataService->getGiftcardTotalDiscountAndBalance(
+            $context,
+            $remainingOrderAmount
+        );
 
         $responseArray = [
             'giftcards' => $this->filterGiftcardStateData($fetchedRedeemedGiftcards, $context),
@@ -216,7 +219,6 @@ class OrderApiController
                 continue;
             }
             $deductedAmount = min($remainingOrderAmount, $stateData['giftcard']['value']);
-            //$deductedAmount = $this->currency->sanitize($deductedAmount, $salesChannelContext->getCurrency()->getIsoCode());
             $responseArray[] = [
                 'stateDataId' => $fetchedRedeemedGiftcard->getId(),
                 'brand' => $stateData['paymentMethod']['brand'],

@@ -144,7 +144,8 @@ class PaymentStateDataService
         }
     }
 
-    public function fetchRedeemedGiftCardsFromContextToken(string $contextToken): \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult
+    public function fetchRedeemedGiftCardsFromContextToken(string $contextToken):
+    \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('token', $contextToken));
@@ -181,7 +182,8 @@ class PaymentStateDataService
         ];
     }
 
-    public function countStoredStateData($salesChannelContext): int {
+    public function countStoredStateData($salesChannelContext): int
+    {
         $stateData = $this->fetchRedeemedGiftCardsFromContextToken(
             $salesChannelContext->getToken()
         );

@@ -193,8 +193,7 @@ class PaymentMethodsFilterService
             if ($entity->getPluginId() !== $adyenPluginId) {
                 // Remove non-Adyen payment methods
                 $filteredPaymentMethods->remove($entity->getId());
-            } elseif (
-                (method_exists($methodHandler, 'getPaymentMethodCode') &&
+            } elseif ((method_exists($methodHandler, 'getPaymentMethodCode') &&
                     $methodHandler::getPaymentMethodCode() != 'giftcard') ||
                 !in_array($methodHandler::getBrand(), $brands)) {
                 // Remove non-giftcards and giftcards that are not in /paymentMethods response

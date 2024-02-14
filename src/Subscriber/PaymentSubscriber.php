@@ -324,7 +324,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         );
 
         $giftcardDetails = $this->paymentStateDataService->getGiftcardTotalDiscountAndBalance(
-            $salesChannelContext, $totalPrice);
+            $salesChannelContext,
+            $totalPrice
+        );
         $paymentMethodId = $this->getGiftCardPaymentMethodId($salesChannelContext);
 
         $payInFullWithGiftcard = 0;

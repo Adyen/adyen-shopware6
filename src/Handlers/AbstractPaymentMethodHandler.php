@@ -300,7 +300,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $countStoredStateData = $this->paymentStateDataService->countStoredStateData($salesChannelContext);
         $countStateData += $countStoredStateData;
         //If condition to check more than 1 PM
-        if($countStateData > 1) {
+        if ($countStateData > 1) {
             $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction);
             $this->handleAdyenOrderPayment($transaction, $adyenOrderResponse, $salesChannelContext);
         }
@@ -309,7 +309,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $storedStateData = $this->paymentStateDataService->getStoredStateData($salesChannelContext, $transactionId);
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
-        if(isset($stateData)) {
+        if (isset($stateData)) {
             $request = $this->getPaymentRequest(
                 $salesChannelContext,
                 $transaction,
@@ -358,13 +358,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         return new RedirectResponse($transaction->getReturnUrl());
     }
 
-    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction) {
+    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction)
+    {
         $uuid = Uuid::randomHex();
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
-            );
+        );
         return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
     }
 
@@ -691,10 +692,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     private function getPaymentRequest(
         $salesChannelContext,
-       $transaction,
-       $stateData,
-       $partialAmount,
-       $orderRequestData
+        $transaction,
+        $stateData,
+        $partialAmount,
+        $orderRequestData
     ) {
         $transactionId = $transaction->getOrderTransaction()->getId();
         try {
@@ -720,7 +721,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
     }
 
-    private function paymentsCall($salesChannelContext, $request, $transaction) {
+    private function paymentsCall($salesChannelContext, $request, $transaction)
+    {
         $transactionId = $transaction->getOrderTransaction()->getId();
         try {
             $this->clientService->logRequest(
@@ -830,7 +832,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         //New Multi-Gift-card implementation
         $remainingOrderAmount = $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
-            $salesChannelContext->getCurrency()->getIsoCode());
+            $salesChannelContext->getCurrency()->getIsoCode()
+        );
 
         $this->orderRequestData = [
             'orderData' => $adyenOrderResponse['orderData'],
@@ -845,7 +848,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $storedStateData = json_decode($statedataArray->getStateData(), true);
             $giftcardValue = $this->currency->sanitize(
                 $storedStateData['giftcard']['value'],
-                $salesChannelContext->getCurrency()->getIsoCode());
+                $salesChannelContext->getCurrency()->getIsoCode()
+            );
             $partialAmount = min($remainingOrderAmount, $giftcardValue); //convert to integer from float
 
             $giftcardPaymentRequest = $this->getPaymentRequest(
