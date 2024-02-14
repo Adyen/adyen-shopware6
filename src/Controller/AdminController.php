@@ -53,10 +53,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * @Route(defaults={"_routeScope"={"administration"}})
- *
  * Class AdminController
  * @package Adyen\Shopware\Controller
+ * @Route(defaults={"_routeScope"={"administration"}})
  */
 class AdminController
 {

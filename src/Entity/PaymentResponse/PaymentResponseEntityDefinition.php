@@ -32,8 +32,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -67,6 +65,7 @@ class PaymentResponseEntityDefinition extends EntityDefinition
                 OrderTransactionDefinition::class
             ))->addFlags(new Required()),
             new StringField('result_code', 'resultCode'),
+            new StringField('pspreference', 'pspreference'),
             new LongTextField('response', 'response'),
             new CreatedAtField(),
             new UpdatedAtField(),
