@@ -56,7 +56,7 @@ class PaymentStateDataService
      */
     public function __construct(
         EntityRepository $paymentStateDataRepository,
-        LoggerInterface $logger,
+        LoggerInterface $logger
     ) {
         $this->paymentStateDataRepository = $paymentStateDataRepository;
         $this->logger = $logger;
