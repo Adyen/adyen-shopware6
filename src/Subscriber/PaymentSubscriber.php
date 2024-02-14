@@ -339,7 +339,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             );
             $payInFullWithGiftcard = 1;
         } else {
-            //$filteredPaymentMethods->remove($paymentMethodId); //Remove the PM from the list
+            $filteredPaymentMethods->remove($paymentMethodId); //Remove the PM from the list
         }
 
         $page->setPaymentMethods($filteredPaymentMethods);

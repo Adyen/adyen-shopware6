@@ -32,7 +32,7 @@ import adyenConfiguration from '../configuration/adyen';
 export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
-        debugger;
+        this._client = new HttpClient();
         this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
@@ -48,7 +48,6 @@ export default class ConfirmOrderPlugin extends Plugin {
             // Non adyen payment method selected
             // this can not happen, because this js plugin is registered only if adyen methods selected
             // PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '#adyen-payment-checkout-mask');
-            debugger;
             if (adyenCheckoutOptions.selectedPaymentMethodPluginId !==
                 adyenCheckoutOptions.adyenPluginId) {
                 return;
@@ -71,7 +70,6 @@ export default class ConfirmOrderPlugin extends Plugin {
                 this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
             }
         }.bind(this));
-        debugger;
         if (adyenCheckoutOptions.payInFullWithGiftcard > 0) {
             if (parseInt(adyenCheckoutOptions.giftcardDiscount, 10)) {
                 this.appendGiftcardSummary();
@@ -199,7 +197,6 @@ export default class ConfirmOrderPlugin extends Plugin {
         const orderId = adyenCheckoutOptions.orderId;
         formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
         formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
-        debugger;
         if (!!orderId) { //Only used if the order is being edited
             this.updatePayment(formData, orderId, extraParams)
         } else {
