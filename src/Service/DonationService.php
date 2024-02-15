@@ -23,7 +23,11 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Client;
+use Adyen\Model\Checkout\Amount;
+use Adyen\Model\Checkout\CheckoutPaymentMethod;
+use Adyen\Model\Checkout\DonationPaymentRequest;
+use Adyen\Model\Checkout\DonationPaymentResponse;
+use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -74,7 +78,7 @@ class DonationService
      * @param $returnUrl
      * @param $pspReference
      * @param $paymentMethodCode
-     * @return array|mixed
+     * @return DonationPaymentResponse
      * @throws \Adyen\AdyenException
      */
     public function donate(
@@ -85,70 +89,17 @@ class DonationService
         $returnUrl,
         $pspReference,
         $paymentMethodCode
-    ) {
-        $responseData = [];
+    ): DonationPaymentResponse {
 
-        $requestData = $this->buildDonationRequest(
-            $context,
-            $donationToken,
-            $currency,
-            $value,
-            $returnUrl,
-            $pspReference,
-            $paymentMethodCode
-        );
-
-        if (!empty($requestData)) {
-            $checkoutService = new CheckoutService(
-                $this->clientService->getClient($context->getSalesChannel()->getId())
-            );
-
-            $this->clientService->logRequest(
-                $requestData,
-                Client::API_CHECKOUT_VERSION,
-                '/donations',
-                $context->getSalesChannelId()
-            );
-
-            $responseData = $checkoutService->donations($requestData);
-
-            $this->clientService->logResponse(
-                $responseData,
-                $context->getSalesChannelId()
-            );
-        }
-
-        return $responseData;
-    }
-
-    /**
-     * @param SalesChannelContext $context
-     * @param $donationToken
-     * @param $currency
-     * @param $value
-     * @param $returnUrl
-     * @param $pspReference
-     * @param $paymentMethodCode
-     * @return array
-     */
-    public function buildDonationRequest(
-        SalesChannelContext $context,
-        $donationToken,
-        $currency,
-        $value,
-        $returnUrl,
-        $pspReference,
-        $paymentMethodCode
-    ) : array {
         if (isset(self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode])) {
             $paymentMethodCode = self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode];
         }
 
-        return [
-            'amount' => [
+        $request = new DonationPaymentRequest([
+            'amount' => new Amount([
                 'currency' => $currency,
                 'value' => $value
-            ],
+            ]),
             'reference' => Uuid::randomHex(),
             'donationToken' => $donationToken,
             'donationOriginalPspReference' => $pspReference,
@@ -158,11 +109,19 @@ class DonationService
             'merchantAccount' => $this->configurationService->getMerchantAccount(
                 $context->getSalesChannel()->getId()
             ),
-            'paymentMethod' => [
+            'paymentMethod' => new CheckoutPaymentMethod([
                 'type' => $paymentMethodCode
-            ],
+            ]),
             'shopperInteraction' => AbstractPaymentMethodHandler::SHOPPER_INTERACTION_CONTAUTH,
             'returnUrl' => $returnUrl
-        ];
+        ]);
+
+        $paymentsApi = new PaymentsApi(
+            $this->clientService->getClient($context->getSalesChannel()->getId())
+        );
+
+        $donationResponse = $paymentsApi->donations($request);
+
+        return ($donationResponse);
     }
 }

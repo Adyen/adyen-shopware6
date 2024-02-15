@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\Payment;
 
+use Adyen\Model\Checkout\PaymentDetailsRequest;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
@@ -179,7 +180,8 @@ class PaymentController
      */
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
-        return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
+        $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($context);
+        return new JsonResponse($this->paymentMethodsService->getPaymentMethodsArray($paymentMethodsResponse));
     }
 
     /**
@@ -225,7 +227,8 @@ class PaymentController
 
         try {
             $result = $this->paymentDetailsService->getPaymentDetails(
-                $stateData,
+//TODO: check whether this works.
+                new PaymentDetailsRequest($stateData),
                 $paymentResponse->getOrderTransaction()
             );
         } catch (PaymentFailedException $exception) {
@@ -286,6 +289,7 @@ class PaymentController
         }
 
         try {
+            /** add request here too ? **/
             return new JsonResponse(
                 $this->paymentStatusService->getWithOrderId($orderId)
             );

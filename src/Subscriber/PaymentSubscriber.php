@@ -220,7 +220,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
         $giftcards = $this->paymentMethodsFilterService->getAvailableGiftcards(
             $salesChannelContext,
-            $paymentMethods,
+            $paymentMethods->getPaymentMethods(),
             $this->adyenPluginProvider->getAdyenPluginId(),
             $shopwarePaymentMethods
         );
@@ -326,7 +326,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             OneClickPaymentMethodHandler::getPaymentMethodCode(),
             $adyenPluginId,
         );
-        $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, $orderId);
         $giftcardData = $this->paymentStateDataService
             ->getPaymentStateDataFromContextToken($salesChannelContext->getToken());
         $giftcardDiscount = 0;
@@ -340,6 +339,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 $giftcardSelectedId = json_decode($stateData, true)['additionalData']['paymentMethodId'];
             }
         }
+
+        $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, $orderId);
         $filteredPaymentMethods = $this->paymentMethodsFilterService->filterShopwarePaymentMethods(
             $page->getPaymentMethods(),
             $salesChannelContext,
@@ -364,6 +365,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
 
         $page->setPaymentMethods($filteredPaymentMethods);
+        $paymentMethodsArray = $this->paymentMethodsService->getPaymentMethodsArray($paymentMethodsResponse);
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -403,7 +405,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'currencySymbol' => $currencySymbol,
                         'payInFullWithGiftcard' => (int) isset($giftcardSelectedId),
                         'adyenGiftcardSelected' => (int) $adyenGiftcardSelected,
-                        'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
+                        'storedPaymentMethods' =>  $paymentMethodsArray['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
                         'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),
                         'displaySaveCreditCardOption' => $displaySaveCreditCardOption,

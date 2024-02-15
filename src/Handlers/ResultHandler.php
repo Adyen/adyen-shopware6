@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Model\Checkout\PaymentCompletionDetails;
+use Adyen\Model\Checkout\PaymentDetailsRequest;
 use Adyen\Service\Validator\DataArrayValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentException;
@@ -134,8 +136,11 @@ class ResultHandler
             }
 
             // Validate the return
+
+            $paymentDetailRequest = new PaymentDetailsRequest(['details'=>$details]);
+
             $result = $this->paymentDetailsService->getPaymentDetails(
-                ['details' => $details],
+                $paymentDetailRequest,
                 $transaction->getOrderTransaction()
             );
         }

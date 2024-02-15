@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Subscriber\Response;
 
+use Adyen\Model\Checkout\PaymentMethodsResponse;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\PaymentMethodsFilterService;
 use Adyen\Shopware\Service\PaymentMethodsService;
@@ -58,7 +59,7 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
     private $paymentMethodsFilterService;
 
     /**
-     * @var array
+     * @var PaymentMethodsResponse
      */
     private $paymentMethodsResponse;
 
@@ -154,11 +155,11 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
     private function getPaymentMethodConfigByType(SalesChannelContext $context, string $type)
     {
         $paymentMethodsResponse = $this->getPaymentMethodsResponse($context);
-        if (empty($paymentMethodsResponse['paymentMethods'])) {
+        if (empty($paymentMethodsResponse->getPaymentMethods())) {
             return null;
         }
-        foreach ($paymentMethodsResponse['paymentMethods'] as $paymentMethodConfig) {
-            if (($paymentMethodConfig['type'] ?? null) == $type) {
+        foreach ($paymentMethodsResponse->getPaymentMethods() as $paymentMethodConfig) {
+            if (($paymentMethodConfig->getType() ?? null) == $type) {
                 return $paymentMethodConfig;
             }
         }
@@ -176,7 +177,7 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         return call_user_func($callable);
     }
 
-    private function getPaymentMethodsResponse(SalesChannelContext $context): array
+    private function getPaymentMethodsResponse(SalesChannelContext $context): PaymentMethodsResponse
     {
         if (isset($this->paymentMethodsResponse)) {
             return $this->paymentMethodsResponse;
