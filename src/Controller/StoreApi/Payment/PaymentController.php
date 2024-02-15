@@ -42,7 +42,6 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader;
@@ -92,9 +91,7 @@ class PaymentController
      * @var OrderService
      */
     private $orderService;
-    /**
-     * @var EntityRepository
-     */
+
     private $orderTransactionRepository;
     /**
      * @var StateMachineRegistry
@@ -131,7 +128,7 @@ class PaymentController
      * @param StateMachineRegistry $stateMachineRegistry
      * @param InitialStateIdLoader $initialStateIdLoader
      * @param LoggerInterface $logger
-     * @param EntityRepository $orderTransactionRepository
+     * @param $orderTransactionRepository
      * @param ConfigurationService $configurationService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
      */
@@ -147,7 +144,7 @@ class PaymentController
         StateMachineRegistry $stateMachineRegistry,
         InitialStateIdLoader $initialStateIdLoader,
         LoggerInterface $logger,
-        EntityRepository $orderTransactionRepository,
+        $orderTransactionRepository,
         ConfigurationService $configurationService,
         OrderTransactionStateHandler $orderTransactionStateHandler
     ) {

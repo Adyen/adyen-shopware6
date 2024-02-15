@@ -33,7 +33,6 @@ use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,9 +50,7 @@ class DonateController
      * @var OrderTransactionRepository
      */
     private $adyenOrderTransactionRepository;
-    /**
-     * @var EntityRepository
-     */
+
     private $orderTransactionRepository;
     /**
      * @var DonationService
@@ -79,14 +76,14 @@ class DonateController
      *
      * @param DonationService $donationService
      * @param OrderTransactionRepository $adyenOrderTransactionRepository
-     * @param EntityRepository $orderTransactionRepository
+     * @param $orderTransactionRepository
      * @param ConfigurationService $configurationService
      * @param LoggerInterface $logger
      */
     public function __construct(
         DonationService $donationService,
         OrderTransactionRepository $adyenOrderTransactionRepository,
-        EntityRepository $orderTransactionRepository,
+        $orderTransactionRepository,
         ConfigurationService $configurationService,
         Currency $currency,
         LoggerInterface $logger
