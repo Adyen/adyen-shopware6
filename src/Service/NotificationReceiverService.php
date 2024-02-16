@@ -158,7 +158,7 @@ class NotificationReceiverService
         $hmacKey = $this->configurationService->getHmacKey($salesChannelId);
 
         // validate the notification
-        if ($this->notificationReceiver->validateHmac($notificationItem, $hmacKey)) {
+        if (!$this->notificationReceiver->validateHmac($notificationItem, $hmacKey)) {
             // log the notification
             $this->logger->info('The content of the notification item is: ' .
                 print_r($notificationItem, true));
@@ -186,6 +186,6 @@ class NotificationReceiverService
             }
         }
 
-        return true;  //hardcoding just to skip it, we need to revisit this for not validating the hmac if not set.
+        return false;  //we need to revisit this for not validating the hmac if not set.
     }
 }
