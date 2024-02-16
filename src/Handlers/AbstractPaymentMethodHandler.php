@@ -200,8 +200,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * AbstractPaymentMethodHandler constructor.
      *
-     * @param ConfigurationService $configurationService
      * @param ClientService $clientService
+     * @param ConfigurationService $configurationService
      * @param Browser $browserBuilder
      * @param Address $addressBuilder
      * @param Payment $paymentBuilder
@@ -243,26 +243,26 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         AbstractContextSwitchRoute $contextSwitchRoute,
         LoggerInterface $logger
     ) {
-        $this->configurationService = $configurationService;
         $this->clientService = $clientService;
         $this->browserBuilder = $browserBuilder;
         $this->addressBuilder = $addressBuilder;
-        $this->paymentBuilder = $paymentBuilder;
         $this->openInvoiceBuilder = $openInvoiceBuilder;
         $this->currency = $currency;
+        $this->configurationService = $configurationService;
         $this->customerBuilder = $customerBuilder;
+        $this->paymentBuilder = $paymentBuilder;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->resultHandler = $resultHandler;
+        $this->logger = $logger;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->symfonyRouter = $symfonyRouter;
         $this->requestStack = $requestStack;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
         $this->contextSwitchRoute = $contextSwitchRoute;
-        $this->logger = $logger;
     }
 
     abstract public static function getPaymentMethodCode();
