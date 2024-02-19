@@ -5,7 +5,6 @@
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <service id="Adyen\Shopware\Controller\StoreApi\Payment\PaymentController" autowire="true">
-            <argument type="service" id="order_transaction.repository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="controller.service_arguments"/>
         </service>
