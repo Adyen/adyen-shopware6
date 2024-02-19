@@ -149,7 +149,7 @@ class PaymentController
         EntityRepository $orderTransactionRepository,
         ConfigurationService $configurationService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
-        LoggerInterface $logger,
+        LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
