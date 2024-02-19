@@ -44,15 +44,15 @@ class FetchPaymentMethodLogosCommand extends Command
         $this->handler = $handler;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Fetch and update logos for Adyen payment methods.');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->handler->run();
         $output->writeln('All available logos have been updated.');
-        return 0;
+        return Command::SUCCESS;
     }
 }
