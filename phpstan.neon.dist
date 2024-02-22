@@ -1,0 +1,49 @@
+includes:
+    - %ShopwareRoot%/vendor/phpstan/phpstan/conf/bleedingEdge.neon
+
+parameters:
+    phpVersion: 80100
+    level: 8
+    tmpDir: var/cache/phpstan
+    inferPrivatePropertyTypeFromConstructor: true
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+    reportUnmatchedIgnoredErrors: false
+
+    paths:
+        -   src
+    excludePaths:
+        -   src/Resources
+        -   src/DevOps/Rector
+        -   src/Test
+
+    ignoreErrors:
+        # We won't type all arrays/iterables for now
+        -   '#no value type specified in iterable type#'
+
+        -   # ignore attributes, since we have to support PHP 7.4 for Shopware 6.4
+            message: '#use the .* attribute instead#'
+
+        -   # ignore Plus deprecations
+            message: '#deprecated.*(Plus|PLUS|_PAYMENT_|MERCHANT_LOCATION)#'
+
+        -   # ignore Symfony 6 message queue deprecations
+            message: '#AsMessageHandler#'
+
+        -   # ignore param type coverage
+            message: '#.*Add more param types to get over.*#'
+
+        -   # ignore lineItemPayloadDeprecation deprecations
+            message: '#Call to deprecated method setPayloadValue\(\) of class .*LineItem#'
+
+        -   # ignore DomainException deprecations
+            message: '#use .*Exception::.* instead#'
+
+        -   # ignore deprecated StockUpdater (PPI-805)
+            message : '#deprecated class Shopware\\Core\\Content\\Product\\DataAbstractionLayer\\StockUpdater#'
+
+        -   # ignore deprecated UrlGenerator
+            message : '#Use AbstractMediaUrlGenerator instead#'
+
+    bootstrapFiles:
+        -   bin/static-analyze-autoloader.php
