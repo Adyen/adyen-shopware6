@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Subscriber;
 
-use Adyen\Shopware\Handlers\GiftCardPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -37,8 +36,6 @@ use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
@@ -148,7 +145,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
      * @param Currency $currency
-     * @param EntityRepository $paymentMethodRepository
      */
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
@@ -163,8 +159,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         CartCalculator $cartCalculator,
         AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,
-        Currency $currency,
-        $paymentMethodRepository
+        Currency $currency
     ) {
         $this->adyenPluginProvider = $adyenPluginProvider;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
@@ -179,7 +174,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->contextSwitchRoute = $contextSwitchRoute;
         $this->salesChannelContextFactory = $salesChannelContextFactory;
         $this->currency = $currency;
-        $this->paymentMethodRepository = $paymentMethodRepository;
     }
 
     /**
@@ -263,7 +257,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         ->generate('payment.adyen.proxy-check-balance'),
                     'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
                     'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
-                    'switchContextUrl' => $this->router->generate('payment.adyen.proxy-switch-context'),
                     'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
                     'fetchRedeemedGiftcardsUrl' => $this->router
                         ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
@@ -324,17 +317,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         );
 
         $giftcardDetails = $this->getGiftcardTotalDiscount($salesChannelContext, $totalPrice);
-        $paymentMethodId = $this->getGiftCardPaymentMethodId($salesChannelContext);
+
+        $paymentMethodId = $this->paymentMethodsFilterService->getGiftCardPaymentMethodId($salesChannelContext);
+
         $payInFullWithGiftcard = 0;
         if ($giftcardDetails['giftcardDiscount'] >= $totalPrice) { //if full amount is covered
-            $this->contextSwitchRoute->switchContext(
-                new RequestDataBag(
-                    [
-                        SalesChannelContextService::PAYMENT_METHOD_ID => $paymentMethodId
-                    ]
-                ),
-                $salesChannelContext
-            );
             $payInFullWithGiftcard = 1;
         } else {
             $filteredPaymentMethods->remove($paymentMethodId); //Remove the PM from the list
@@ -452,19 +439,5 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             'giftcardDiscount' => $totalDiscount,
             'giftcardBalance' => $totalGiftcardBalance,
         ];
-    }
-
-    private function getGiftCardPaymentMethodId(SalesChannelContext $context): ?string
-    {
-        $paymentMethodHandler =  GiftCardPaymentMethodHandler::class;
-
-        $criteria = (new Criteria())->addFilter(new EqualsFilter(
-            'handlerIdentifier',
-            $paymentMethodHandler
-        ));
-        $paymentMethod = $this->paymentMethodRepository->search($criteria, $context->getContext())->first();
-
-        // Return the payment method ID or null if not found
-        return $paymentMethod ? $paymentMethod->getId() : null;
     }
 }

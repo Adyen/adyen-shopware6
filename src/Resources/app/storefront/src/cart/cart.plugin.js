@@ -58,6 +58,14 @@ export default class CartPlugin extends Plugin {
             }
         };
 
+        document.getElementById("showGiftcardButton").addEventListener("click", function() {
+            // Hide the anchor tag
+            this.style.display = "none";
+
+            // Show the select dropdown
+            document.getElementById("giftcardDropdown").style.display = "block";
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
             const giftcardsList = document.getElementById('giftcardsContainer');
             giftcardsList.addEventListener('click', (event) => {
@@ -95,12 +103,14 @@ export default class CartPlugin extends Plugin {
     observeGiftcardSelection() {
         let self = this;
         let giftcardDropdown = document.getElementById('giftcardDropdown');
+        let addButton = document.querySelector('.btn-outline-info');
 
         giftcardDropdown.addEventListener('change', function () {
             if (giftcardDropdown.value) {
                 self.selectedGiftcard = JSON.parse(event.currentTarget.options[event.currentTarget.selectedIndex].dataset.giftcard);
                 self.mountGiftcardComponent(self.selectedGiftcard.extensions.adyenGiftcardData[0]);
                 giftcardDropdown.value = "";
+                addButton.style.display = "none";
             }
         });
     }
@@ -229,7 +239,7 @@ export default class CartPlugin extends Plugin {
                 }
             }
             let giftcardContainerElement = document.getElementById('giftcardsContainer'); // Replace with your actual container ID
-
+            document.getElementById("showGiftcardButton").style.display = 'none';
         }.bind(this));
     }
 
