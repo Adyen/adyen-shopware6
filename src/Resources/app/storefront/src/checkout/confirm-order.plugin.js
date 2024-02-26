@@ -33,6 +33,7 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new HttpClient();
+        this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
@@ -62,7 +63,6 @@ export default class ConfirmOrderPlugin extends Plugin {
                 // replaces confirm button with adyen pay button for paywithgoogle, applepay etc.
                 this.initializeCustomPayButton();
             }
-
             if (adyenConfiguration.updatablePaymentMethods.includes(this.selectedAdyenPaymentMethod) && !this.stateData) {
                 // create inline component for cards etc. and set event listener for submit button to confirm payment component
                 this.renderPaymentComponent(this.selectedAdyenPaymentMethod);
@@ -70,8 +70,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
             }
         }.bind(this));
-
-        if (adyenCheckoutOptions.payInFullWithGiftcard == 1) {
+        if (adyenCheckoutOptions.payInFullWithGiftcard > 0) {
             if (parseInt(adyenCheckoutOptions.giftcardDiscount, 10)) {
                 this.appendGiftcardSummary();
             }
@@ -198,7 +197,6 @@ export default class ConfirmOrderPlugin extends Plugin {
         const orderId = adyenCheckoutOptions.orderId;
         formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
         formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
-
         if (!!orderId) { //Only used if the order is being edited
             this.updatePayment(formData, orderId, extraParams)
         } else {
@@ -217,37 +215,11 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     createOrder(formData, extraParams) {
-        if (
-            parseInt(adyenCheckoutOptions.giftcardDiscount, 10) &&
-            !parseInt(adyenCheckoutOptions.payInFullWithGiftcard, 10)
-        ) {
-            // create Adyen order for partial payments
-            this._client.post(
-                adyenCheckoutOptions.createOrderUrl,
-                JSON.stringify({orderAmount: adyenCheckoutOptions.amount, currency: adyenCheckoutOptions.currency}),
-                function (response) {
-                    const adyenOrder = JSON.parse(response);
-                    if (adyenOrder.resultCode === 'Success') {
-                        extraParams = Object.assign(extraParams, {
-                            order: adyenOrder
-                        });
-                    }
-
-                    // create shopware order
-                    this._client.post(
-                        adyenCheckoutOptions.checkoutOrderUrl,
-                        formData,
-                        this.afterCreateOrder.bind(this, extraParams)
-                    );
-                }.bind(this)
-            )
-        } else {
-            this._client.post(
-                adyenCheckoutOptions.checkoutOrderUrl,
-                formData,
-                this.afterCreateOrder.bind(this, extraParams)
-            );
-        }
+        this._client.post(
+            adyenCheckoutOptions.checkoutOrderUrl,
+            formData,
+            this.afterCreateOrder.bind(this, extraParams)
+        );
     }
 
     afterCreateOrder(extraParams={}, response) {
@@ -591,18 +563,21 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     appendGiftcardSummary() {
         if(parseInt(adyenCheckoutOptions.giftcardDiscount, 10) && this.shoppingCartSummaryBlock.length) {
+            let giftcardDiscount = parseFloat(this.giftcardDiscount).toFixed(2);
+            let remainingAmount = parseFloat(this.remainingAmount).toFixed(2);
+
             let shoppingCartSummaryDetails =
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
                     adyenCheckoutOptions.translationAdyenGiftcardDiscount +
                 '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.currencySymbol + this.giftcardDiscount +
+                    adyenCheckoutOptions.currencySymbol + giftcardDiscount +
                 '</dd>' +
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
                     adyenCheckoutOptions.translationAdyenGiftcardRemainingAmount +
                 '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.currencySymbol + this.remainingAmount +
+                    adyenCheckoutOptions.currencySymbol + remainingAmount +
                 '</dd>';
 
             this.shoppingCartSummaryBlock[0].innerHTML += shoppingCartSummaryDetails;

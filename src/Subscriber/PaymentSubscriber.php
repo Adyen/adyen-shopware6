@@ -243,7 +243,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $shopwarePaymentMethods
         );
 
-        $giftcardDetails = $this->getGiftcardTotalDiscount(
+        $giftcardDetails = $this->paymentStateDataService->getGiftcardTotalDiscountAndBalance(
             $salesChannelContext,
             $page->getCart()->getPrice()->getTotalPrice()
         );
@@ -323,8 +323,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $paymentMethodsResponse
         );
 
-        $giftcardDetails = $this->getGiftcardTotalDiscount($salesChannelContext, $totalPrice);
+        $giftcardDetails = $this->paymentStateDataService->getGiftcardTotalDiscountAndBalance(
+            $salesChannelContext,
+            $totalPrice
+        );
         $paymentMethodId = $this->getGiftCardPaymentMethodId($salesChannelContext);
+
         $payInFullWithGiftcard = 0;
         if ($giftcardDetails['giftcardDiscount'] >= $totalPrice) { //if full amount is covered
             $this->contextSwitchRoute->switchContext(
@@ -424,34 +428,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 )
             );
         }
-    }
-
-    private function getGiftcardTotalDiscount($salesChannelContext, $amountInMinorUnits)
-    {
-        $data = $this->paymentStateDataService
-            ->fetchRedeemedGiftCardsFromContextToken($salesChannelContext->getToken());
-
-        $totalGiftcardBalance = 0;
-
-        foreach ($data->getElements() as $statedataArray) {
-            $stateData = json_decode($statedataArray->getStateData(), true);
-            if (isset($stateData['paymentMethod']['type']) ||
-                isset($stateData['paymentMethod']['brand']) ||
-                $stateData['paymentMethod']['type'] === 'giftcard') {
-                $totalGiftcardBalance += $stateData['giftcard']['value'];
-            }
-        }
-
-        if ($totalGiftcardBalance > 0) {
-            $totalDiscount =  min($totalGiftcardBalance, $amountInMinorUnits);
-        } else {
-            $totalDiscount = 0;
-        }
-
-        return [
-            'giftcardDiscount' => $totalDiscount,
-            'giftcardBalance' => $totalGiftcardBalance,
-        ];
     }
 
     private function getGiftCardPaymentMethodId(SalesChannelContext $context): ?string

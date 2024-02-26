@@ -5,6 +5,7 @@
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <service id="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler" abstract="true">
+            <argument type="service" id="Adyen\Shopware\Service\OrdersService"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Service\Builder\Browser"/>

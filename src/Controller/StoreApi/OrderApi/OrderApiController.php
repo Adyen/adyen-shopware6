@@ -29,10 +29,10 @@ use Adyen\Shopware\Service\PaymentMethodsBalanceService;
 use Adyen\Shopware\Service\OrdersService;
 use Adyen\Shopware\Service\OrdersCancelService;
 use Adyen\Shopware\Service\PaymentStateDataService;
+use Adyen\Util\Currency;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Shopware\Core\Framework\Uuid\Uuid;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
@@ -48,52 +48,40 @@ class OrderApiController
      * @var PaymentMethodsBalanceService
      */
     private $paymentMethodsBalanceService;
-    /**
-     * @var OrdersService
-     */
-    private $ordersService;
+
     /**
      * @var OrdersService
      */
     private $ordersCancelService;
+
     /**
      * @var PaymentStateDataService
      */
     private $paymentStateDataService;
 
     /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
      * @var CartService
      */
     private $cartService;
+
 
     /**
      * StoreApiController constructor.
      *
      * @param PaymentMethodsBalanceService $paymentMethodsBalanceService
-     * @param OrdersService $ordersService
      * @param OrdersCancelService $ordersCancelService
      * @param PaymentStateDataService $paymentStateDataService
-     * @param LoggerInterface $logger
      * @param CartService $cartService
      */
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
-        OrdersService $ordersService,
         OrdersCancelService $ordersCancelService,
         PaymentStateDataService $paymentStateDataService,
-        LoggerInterface $logger,
         CartService $cartService
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
-        $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
         $this->paymentStateDataService = $paymentStateDataService;
-        $this->logger = $logger;
         $this->cartService = $cartService;
     }
 
@@ -119,31 +107,13 @@ class OrderApiController
 
     /**
      * @Route(
-     *     "/store-api/adyen/orders",
-     *     name="store-api.action.adyen.orders",
-     *     methods={"POST"}
-     * )
-     *
-     * @param SalesChannelContext $context
-     * @return JsonResponse
-     */
-    public function createOrder(SalesChannelContext $context, Request $request): JsonResponse
-    {
-        $uuid = Uuid::randomHex();
-        $orderAmount = $request->request->get('orderAmount');
-        $currency = $request->request->get('currency');
-
-        return new JsonResponse($this->ordersService->createOrder($context, $uuid, $orderAmount, $currency));
-    }
-
-    /**
-     * @Route(
      *     "/store-api/adyen/orders/cancel",
      *     name="store-api.action.adyen.orders.cancel",
      *     methods={"POST"}
      * )
      *
      * @param SalesChannelContext $context
+     * @param Request $request
      * @return JsonResponse
      */
     public function cancelOrder(SalesChannelContext $context, Request $request): JsonResponse
@@ -219,38 +189,18 @@ class OrderApiController
         $remainingOrderAmount = $this->cartService
             ->getCart($context->getToken(), $context)
             ->getPrice()->getTotalPrice();
-        $totalDiscount = $this->getGiftcardTotalDiscount($fetchedRedeemedGiftcards, $context);
+        $giftcardDetails = $this->paymentStateDataService->getGiftcardTotalDiscountAndBalance(
+            $context,
+            $remainingOrderAmount
+        );
 
         $responseArray = [
             'giftcards' => $this->filterGiftcardStateData($fetchedRedeemedGiftcards, $context),
-            'remainingAmount' => $remainingOrderAmount - $totalDiscount,
-            'totalDiscount' => $totalDiscount
+            'remainingAmount' => $remainingOrderAmount - $giftcardDetails['giftcardDiscount'],
+            'totalDiscount' => $giftcardDetails['giftcardDiscount']
         ];
 
         return new JsonResponse(['redeemedGiftcards' => $responseArray]);
-    }
-
-    private function getGiftcardTotalDiscount($fetchedRedeemedGiftcards, $salesChannelContext)
-    {
-        $totalGiftcardBalance = 0;
-        $remainingAmountInMinorUnits = $this->cartService
-            ->getCart($salesChannelContext->getToken(), $salesChannelContext)
-            ->getPrice()->getTotalPrice();
-
-        foreach ($fetchedRedeemedGiftcards->getElements() as $fetchedRedeemedGiftcard) {
-            $stateData = json_decode($fetchedRedeemedGiftcard->getStateData(), true);
-            if (isset($stateData['paymentMethod']['type']) ||
-                isset($stateData['paymentMethod']['brand']) ||
-                $stateData['paymentMethod']['type'] === 'giftcard') {
-                $totalGiftcardBalance += $stateData['giftcard']['value'];
-            }
-        }
-
-        if ($totalGiftcardBalance > 0) {
-            return min($totalGiftcardBalance, $remainingAmountInMinorUnits);
-        } else {
-            return 0;
-        }
     }
 
     private function filterGiftcardStateData($fetchedRedeemedGiftcards, $salesChannelContext): array
@@ -269,13 +219,12 @@ class OrderApiController
                 continue;
             }
             $deductedAmount = min($remainingOrderAmount, $stateData['giftcard']['value']);
-
             $responseArray[] = [
                 'stateDataId' => $fetchedRedeemedGiftcard->getId(),
                 'brand' => $stateData['paymentMethod']['brand'],
                 'title' => $stateData['giftcard']['title'],
                 'balance' => $stateData['giftcard']['value'],
-                'deductedAmount' => $deductedAmount
+                'deductedAmount' =>  $deductedAmount
             ];
 
             $remainingOrderAmount -= $deductedAmount;

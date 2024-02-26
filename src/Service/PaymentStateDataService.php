@@ -26,25 +26,28 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntity;
+use JetBrains\PhpStorm\ArrayShape;
+use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentStateDataService
 {
     /**
      * @var EntityRepository
      */
-    protected $paymentStateDataRepository;
+    protected EntityRepository $paymentStateDataRepository;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
+
 
     /**
      * PaymentStateDataService constructor.
@@ -141,7 +144,8 @@ class PaymentStateDataService
         }
     }
 
-    public function fetchRedeemedGiftCardsFromContextToken(string $contextToken)
+    public function fetchRedeemedGiftCardsFromContextToken(string $contextToken):
+    \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('token', $contextToken));
@@ -151,5 +155,59 @@ class PaymentStateDataService
             $criteria,
             Context::createDefaultContext()
         );
+    }
+
+    #[ArrayShape(['giftcardDiscount' => "int|mixed", 'giftcardBalance' => "int|mixed"])]
+    public function getGiftcardTotalDiscountAndBalance($salesChannelContext, $remainingOrderAmount): array
+    {
+        $fetchedRedeemedGiftcards = $this->fetchRedeemedGiftCardsFromContextToken($salesChannelContext->getToken());
+        $totalGiftcardBalance = 0;
+        foreach ($fetchedRedeemedGiftcards->getElements() as $fetchedRedeemedGiftcard) {
+            $stateData = json_decode($fetchedRedeemedGiftcard->getStateData(), true);
+            if (isset($stateData['paymentMethod']['type']) ||
+                isset($stateData['paymentMethod']['brand']) ||
+                $stateData['paymentMethod']['type'] === 'giftcard') {
+                $totalGiftcardBalance += $stateData['giftcard']['value'];
+            }
+        }
+
+        if ($totalGiftcardBalance > 0) {
+            $totalDiscount = min($totalGiftcardBalance, $remainingOrderAmount);
+        } else {
+            $totalDiscount = 0;
+        }
+        return [
+            'giftcardDiscount' => $totalDiscount,
+            'giftcardBalance' => $totalGiftcardBalance
+        ];
+    }
+
+    public function countStoredStateData($salesChannelContext): int
+    {
+        $stateData = $this->fetchRedeemedGiftCardsFromContextToken(
+            $salesChannelContext->getToken()
+        );
+        return $stateData->getTotal();
+    }
+
+    public function getStoredStateData($salesChannelContext, string $transactionId): ?array
+    {
+        // Check for state.data in db using the context token
+        $storedStateData = null;
+        $stateDataEntity = $this->getPaymentStateDataFromContextToken(
+            $salesChannelContext->getToken()
+        );
+        if ($stateDataEntity) {
+            $storedStateData = json_decode($stateDataEntity->getStateData(), true);
+            $storedStateData['id'] = $stateDataEntity->getId();
+        }
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new AsyncPaymentProcessException(
+                $transactionId,
+                'Invalid payment state data.'
+            );
+        }
+        return $storedStateData;
     }
 }
