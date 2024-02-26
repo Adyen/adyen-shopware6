@@ -39,12 +39,11 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
 
         this.minorUnitsQuotient = adyenCheckoutOptions.amount/adyenCheckoutOptions.totalPrice;
-        this.giftcardDiscount = (adyenCheckoutOptions.giftcardDiscount / this.minorUnitsQuotient).toFixed(2);
-        this.remainingAmount = (adyenCheckoutOptions.totalPrice - this.giftcardDiscount).toFixed(2);
+        this.giftcardDiscount = adyenCheckoutOptions.giftcardDiscount;
+        this.remainingAmount = adyenCheckoutOptions.totalPrice - this.giftcardDiscount;
         this.responseHandler = this.handlePaymentAction;
         this.adyenCheckout = Promise;
         this.initializeCheckoutComponent().then(function () {
-
             // Non adyen payment method selected
             // this can not happen, because this js plugin is registered only if adyen methods selected
             // PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '#adyen-payment-checkout-mask');
@@ -72,8 +71,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             }
         }.bind(this));
 
-        if (parseInt(adyenCheckoutOptions.payInFullWithGiftcard, 10)) {
-            if (parseInt(adyenCheckoutOptions.adyenGiftcardSelected, 10)) {
+        if (adyenCheckoutOptions.payInFullWithGiftcard == 1) {
+            if (parseInt(adyenCheckoutOptions.giftcardDiscount, 10)) {
                 this.appendGiftcardSummary();
             }
         } else {
@@ -136,6 +135,9 @@ export default class ConfirmOrderPlugin extends Plugin {
     renderPaymentComponent(type) {
         if (type === 'oneclick') {
             this.renderStoredPaymentMethodComponents();
+            return;
+        }
+        if(type === 'giftcard') {
             return;
         }
 

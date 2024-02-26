@@ -146,6 +146,7 @@ export default {
         'afterpay_default': 'handler_adyen_afterpaydefaultpaymentmethodhandler',
         'trustly': 'handler_adyen_trustlypaymentmethodhandler',
         'paysafecard': 'handler_adyen_paysafecardpaymentmethodhandler',
+        'giftcard': 'handler_adyen_giftcardpaymentmethodhandler',
         'givex': 'handler_adyen_givexgiftcardpaymentmethodhandler',
         'webshopgiftcard': 'handler_adyen_webshopgiftcardpaymentmethodhandler',
         'kadowereld': 'handler_adyen_kadowereldgiftcardpaymentmethodhandler',
