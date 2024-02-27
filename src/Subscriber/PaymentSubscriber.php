@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Subscriber;
 
-use Adyen\Shopware\Handlers\GiftCardPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -37,8 +36,6 @@ use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
@@ -418,19 +415,5 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 )
             );
         }
-    }
-
-    private function getGiftCardPaymentMethodId(SalesChannelContext $context): ?string
-    {
-        $paymentMethodHandler =  GiftCardPaymentMethodHandler::class;
-
-        $criteria = (new Criteria())->addFilter(new EqualsFilter(
-            'handlerIdentifier',
-            $paymentMethodHandler
-        ));
-        $paymentMethod = $this->paymentMethodRepository->search($criteria, $context->getContext())->first();
-
-        // Return the payment method ID or null if not found
-        return $paymentMethod ? $paymentMethod->getId() : null;
     }
 }
