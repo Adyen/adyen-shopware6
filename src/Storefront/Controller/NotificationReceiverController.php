@@ -30,13 +30,11 @@ use Adyen\Shopware\Exception\HMACKeyValidationException;
 use Adyen\Shopware\Exception\MerchantAccountCodeException;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
 use Adyen\Shopware\Service\NotificationReceiverService;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * @Route(defaults={"_routeScope"={"storefront"}})
- */
+#[Route(defaults: ['_routeScope' => ['storefront']])]
 class NotificationReceiverController extends StorefrontController
 {
     /** @var NotificationReceiverService */

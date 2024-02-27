@@ -50,13 +50,9 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * Class AdminController
- * @package Adyen\Shopware\Controller
- * @Route(defaults={"_routeScope"={"administration"}})
- */
+#[Route(defaults: ['_routeScope' => ['administration']])]
 class AdminController
 {
     const ADMIN_DATETIME_FORMAT = 'Y-m-d H:i (e)';
