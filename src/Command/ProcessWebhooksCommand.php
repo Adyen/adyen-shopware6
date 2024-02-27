@@ -25,14 +25,14 @@
 namespace Adyen\Shopware\Command;
 
 use Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'adyen:process-webhooks', description: 'Processes scheduled webhooks')]
 class ProcessWebhooksCommand extends Command
 {
-    protected static $defaultName = 'adyen:process-webhooks';
-
     /**
      * @var ProcessNotificationsHandler
      */

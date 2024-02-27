@@ -25,15 +25,15 @@
 namespace Adyen\Shopware\Command;
 
 use Adyen\Shopware\Handlers\Command\EnablePaymentMethodHandler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'adyen:payment-method:enable', description: 'Enables Adyen payment methods')]
 class EnablePaymentMethodCommand extends Command
 {
-    protected static $defaultName = 'adyen:payment-method:enable';
-
     /**
      * @var EnablePaymentMethodHandler
      */
