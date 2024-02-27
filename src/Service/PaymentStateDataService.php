@@ -133,9 +133,6 @@ class PaymentStateDataService
         );
     }
 
-    /**
-     * @param string $contextToken
-     */
     public function deletePaymentStateDataFromId(string $stateDataId): void
     {
         $stateData = $this->getPaymentStateDataFromId($stateDataId);

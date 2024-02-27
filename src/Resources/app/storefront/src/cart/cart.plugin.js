@@ -58,6 +58,14 @@ export default class CartPlugin extends Plugin {
             }
         };
 
+        document.getElementById("showGiftcardButton").addEventListener("click", function() {
+            // Hide the anchor tag
+            this.style.display = "none";
+
+            // Show the select dropdown
+            document.getElementById("giftcardDropdown").style.display = "block";
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
             const giftcardsList = document.getElementById('giftcardsContainer');
             giftcardsList.addEventListener('click', (event) => {
@@ -95,12 +103,14 @@ export default class CartPlugin extends Plugin {
     observeGiftcardSelection() {
         let self = this;
         let giftcardDropdown = document.getElementById('giftcardDropdown');
+        let addButton = document.querySelector('.btn-outline-info');
 
         giftcardDropdown.addEventListener('change', function () {
             if (giftcardDropdown.value) {
                 self.selectedGiftcard = JSON.parse(event.currentTarget.options[event.currentTarget.selectedIndex].dataset.giftcard);
                 self.mountGiftcardComponent(self.selectedGiftcard.extensions.adyenGiftcardData[0]);
                 giftcardDropdown.value = "";
+                addButton.style.display = "none";
             }
         });
     }
@@ -171,6 +181,7 @@ export default class CartPlugin extends Plugin {
             response = JSON.parse(response);
             let totalBalance =0;
             let giftcardsContainer = document.getElementById('giftcardsContainer');
+            let addButton = document.querySelector('.btn-outline-info');
 
             // Clear the container before adding new content
             giftcardsContainer.innerHTML = '';
@@ -220,14 +231,16 @@ export default class CartPlugin extends Plugin {
             //Compare the new total gift card balance with the order amount
             if (this.remainingAmount > 0.00) {
                 //allow adding new giftcards
-                if (this.adyenGiftcardDropDown.length > 0) {
-                    this.adyenGiftcardDropDown[0].style.display = 'block';
-                }
+                // if (this.adyenGiftcardDropDown.length > 0) {
+                //     this.adyenGiftcardDropDown[0].style.display = 'block';
+                // }
+                addButton.style.display = "block";
             } else {
-                // Hide giftcards dropdown
+                // Hide giftcards dropdown and Add giftcards option
                 if (this.adyenGiftcardDropDown.length > 0) {
                     this.adyenGiftcardDropDown[0].style.display = 'none';
                 }
+                addButton.style.display = "none";
             }
             let giftcardContainerElement = document.getElementById('giftcardsContainer'); // Replace with your actual container ID
 

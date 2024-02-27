@@ -28,8 +28,11 @@ use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\PaymentMethodsBalanceService;
 use Adyen\Shopware\Service\OrdersService;
 use Adyen\Shopware\Service\OrdersCancelService;
+use Adyen\Shopware\Service\PaymentMethodsFilterService;
 use Adyen\Shopware\Service\PaymentStateDataService;
-use Adyen\Util\Currency;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -63,26 +66,40 @@ class OrderApiController
      * @var CartService
      */
     private $cartService;
-
+    private $logger;
+    private $contextSwitchRoute;
+    private $paymentMethodsFilterService;
 
     /**
      * StoreApiController constructor.
      *
      * @param PaymentMethodsBalanceService $paymentMethodsBalanceService
+     * @param OrdersService $ordersService
      * @param OrdersCancelService $ordersCancelService
      * @param PaymentStateDataService $paymentStateDataService
      * @param CartService $cartService
+     * @param PaymentMethodsFilterService $paymentMethodsFilterService
+     * @param AbstractContextSwitchRoute $contextSwitchRoute
+     * @param LoggerInterface $logger
      */
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
+        OrdersService $ordersService,
         OrdersCancelService $ordersCancelService,
         PaymentStateDataService $paymentStateDataService,
-        CartService $cartService
+        CartService $cartService,
+        PaymentMethodsFilterService $paymentMethodsFilterService,
+        AbstractContextSwitchRoute $contextSwitchRoute,
+        LoggerInterface $logger
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
+        $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->cartService = $cartService;
+        $this->paymentMethodsFilterService = $paymentMethodsFilterService;
+        $this->contextSwitchRoute = $contextSwitchRoute;
+        $this->logger = $logger;
     }
 
     /**
@@ -193,6 +210,18 @@ class OrderApiController
             $context,
             $remainingOrderAmount
         );
+        $paymentMethodId = $this->paymentMethodsFilterService->getGiftCardPaymentMethodId($context);
+
+        if ($giftcardDetails['giftcardDiscount'] >= $remainingOrderAmount) { //if full amount is covered
+            $this->contextSwitchRoute->switchContext(
+                new RequestDataBag(
+                    [
+                        SalesChannelContextService::PAYMENT_METHOD_ID => $paymentMethodId
+                    ]
+                ),
+                $context
+            );
+        }
 
         $responseArray = [
             'giftcards' => $this->filterGiftcardStateData($fetchedRedeemedGiftcards, $context),
