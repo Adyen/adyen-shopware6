@@ -31,7 +31,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class FetchPaymentMethodLogosCommand extends Command
 {
-    protected static $defaultName = 'adyen:fetch-logos';
+    protected static string $defaultName = 'adyen:fetch-logos';
 
     /**
      * @var FetchPaymentMethodLogosHandler
@@ -49,7 +49,7 @@ class FetchPaymentMethodLogosCommand extends Command
         $this->setDescription('Fetch and update logos for Adyen payment methods.');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->handler->run();
         $output->writeln('All available logos have been updated.');

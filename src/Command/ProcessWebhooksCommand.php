@@ -49,7 +49,7 @@ class ProcessWebhooksCommand extends Command
         $this->setDescription('Process webhook notifications.');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->handler->run();
         $output->writeln('Webhook notifications have been processed.');
