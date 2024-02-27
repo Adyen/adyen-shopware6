@@ -34,7 +34,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentStateDataService
 {
@@ -133,9 +132,6 @@ class PaymentStateDataService
         );
     }
 
-    /**
-     * @param string $contextToken
-     */
     public function deletePaymentStateDataFromId(string $stateDataId): void
     {
         $stateData = $this->getPaymentStateDataFromId($stateDataId);

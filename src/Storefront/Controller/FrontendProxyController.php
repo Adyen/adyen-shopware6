@@ -79,19 +79,6 @@ class FrontendProxyController extends StorefrontController
 
     /**
      * @Route(
-     *     "/adyen/proxy-switch-context",
-     *     name="payment.adyen.proxy-switch-context",
-     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *     methods={"PATCH"}
-     * )
-     */
-    public function switchContext(RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
-    {
-        return $this->contextSwitchRoute->switchContext($data, $context);
-    }
-
-    /**
-     * @Route(
      *     "/adyen/proxy-checkout-order",
      *     name="payment.adyen.proxy-checkout-order",
      *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
@@ -117,19 +104,6 @@ class FrontendProxyController extends StorefrontController
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
         return new JsonResponse($routeResponse->getObject());
-    }
-
-    /**
-     * @Route(
-     *     "/adyen/proxy-payment-methods",
-     *     name="payment.adyen.proxy-payment-methods",
-     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *     methods={"GET"}
-     * )
-     */
-    public function paymentMethods(SalesChannelContext $context): JsonResponse
-    {
-        return $this->paymentController->getPaymentMethods($context);
     }
 
     /**
@@ -195,32 +169,6 @@ class FrontendProxyController extends StorefrontController
     public function checkBalance(Request $request, SalesChannelContext $context): JsonResponse
     {
         return $this->orderApiController->getPaymentMethodsBalance($context, $request);
-    }
-
-    /**
-     * @Route(
-     *    "/adyen/proxy-create-adyen-order",
-     *    name="payment.adyen.proxy-create-adyen-order",
-     *    defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *    methods={"POST"}
-     * )
-     */
-    public function createAdyenOrder(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        return $this->orderApiController->createOrder($context, $request);
-    }
-
-    /**
-     * @Route(
-     *    "/adyen/proxy-cancel-adyen-order",
-     *    name="payment.adyen.proxy-cancel-adyen-order",
-     *    defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *    methods={"POST"}
-     * )
-     */
-    public function cancelAdyenOrder(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        return $this->orderApiController->cancelOrder($context, $request);
     }
 
     /**

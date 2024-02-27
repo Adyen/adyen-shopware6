@@ -31,7 +31,9 @@ use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,13 +49,24 @@ class PaymentMethodsFilterService
      * @var AbstractPaymentMethodRoute
      */
     private $paymentMethodRoute;
+    private $paymentMethodRepository;
+
+    /**
+     * PaymentMethodsFilterService constructor.
+     *
+     * @param PaymentMethodsService $paymentMethodsService
+     * @param AbstractPaymentMethodRoute $paymentMethodRoute
+     * @param EntityRepository $paymentMethodRepository
+     */
 
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
-        AbstractPaymentMethodRoute $paymentMethodRoute
+        AbstractPaymentMethodRoute $paymentMethodRoute,
+        $paymentMethodRepository
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentMethodRoute = $paymentMethodRoute;
+        $this->paymentMethodRepository = $paymentMethodRepository;
     }
 
     /**
@@ -243,5 +256,19 @@ class PaymentMethodsFilterService
         $request->query->set('onlyAvailable', '1');
 
         return $this->paymentMethodRoute->load($request, $context, new Criteria())->getPaymentMethods();
+    }
+
+    public function getGiftCardPaymentMethodId(SalesChannelContext $context): ?string
+    {
+        $paymentMethodHandler =  GiftCardPaymentMethodHandler::class;
+
+        $criteria = (new Criteria())->addFilter(new EqualsFilter(
+            'handlerIdentifier',
+            $paymentMethodHandler
+        ));
+        $paymentMethod = $this->paymentMethodRepository->search($criteria, $context->getContext())->first();
+
+        // Return the payment method ID or null if not found
+        return $paymentMethod ? $paymentMethod->getId() : null;
     }
 }
