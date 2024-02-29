@@ -28,7 +28,7 @@ use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntity;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Struct\AdyenContextDataStruct;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;

@@ -14,6 +14,6 @@
         <service id="Adyen\Service\Builder\Customer"/>
         <service id="Adyen\Service\Builder\OpenInvoice"/>
         <service id="Adyen\Service\Builder\Payment"/>
-        <service id="Adyen\Util\Currency" autowire="true"/>
+        <service id="Adyen\Shopware\Util\Currency"/>
     </services>
 </container>
