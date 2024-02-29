@@ -672,11 +672,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $this->currency->sanitize(
                         $price->getUnitPrice() -
                         ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
-                        $currency
+                        $currency->getIsoCode()
                     ),
                     $this->currency->sanitize(
                         $lineTax,
-                        $currency
+                        $currency->getIsoCode()
                     ),
                     $taxRate * 100,
                     $orderLine->getQuantity(),
@@ -686,7 +686,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $imageUrl,
                     $this->currency->sanitize(
                         $price->getUnitPrice(),
-                        $currency
+                        $currency->getIsoCode()
                     ),
                     $productCategory
                 );
