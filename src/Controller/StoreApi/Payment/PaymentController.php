@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\Payment;
 
+use Adyen\Exception\MissingDataException;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
@@ -33,6 +34,7 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use JsonException;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
@@ -50,7 +52,6 @@ use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use OpenApi\Annotations as OA;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(defaults: ['_routeScope' => ['store-api']])]
@@ -164,31 +165,21 @@ class PaymentController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/payment-methods",
-     *     name="store-api.action.adyen.payment-methods",
-     *     methods={"GET"}
-     * )
-     *
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/payment-methods', name: 'store-api.action.adyen.payment-methods', methods: ['GET'])]
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
         return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/payment-details",
-     *     name="store-api.action.adyen.payment-details",
-     *     methods={"POST"}
-     * )
-     *
      * @param Request $request
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/payment-details', name: 'store-api.action.adyen.payment-details', methods: ['POST'])]
     public function postPaymentDetails(
         Request $request,
         SalesChannelContext $context
@@ -264,16 +255,11 @@ class PaymentController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/payment-status",
-     *     name="store-api.action.adyen.payment-status",
-     *     methods={"POST"}
-     * )
-     *
      * @param Request $request
      * @param SalesChannelContext $context
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/payment-status', name: 'store-api.action.adyen.payment-status', methods: ['POST'])]
     public function getPaymentStatus(Request $request, SalesChannelContext $context): JsonResponse
     {
         $orderId = $request->request->get('orderId');
@@ -292,38 +278,11 @@ class PaymentController
     }
 
     /**
-     * @OA\Post(
-     *      path="/adyen/set-payment",
-     *      summary="set payment for an order",
-     *      operationId="orderSetPayment",
-     *      tags={"Store API", "Account"},
-     *      @OA\RequestBody(
-     *          required=true,
-     *          @OA\JsonContent(
-     *              @OA\Property(
-     *                  property="paymentMethodId",
-     *                  description="The ID of the new paymentMethod",
-     *                  type="string"
-     *              ),
-     *              @OA\Property(property="orderId", description="The ID of the order", type="string")
-     *          )
-     *      ),
-     *      @OA\Response(
-     *          response="200",
-     *          description="Successfully set a payment",
-     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
-     *     )
-     * )
-     * @Route(
-     *     "/store-api/adyen/set-payment",
-     *     name="store-api.action.adyen.set-payment",
-     *     methods={"POST"}
-     * )
-     *
      * @param Request $request
      * @param SalesChannelContext $context
      * @return SetPaymentOrderRouteResponse
      */
+    #[Route('/store-api/adyen/set-payment', name: 'store-api.action.adyen.set-payment', methods: ['POST'])]
     public function updatePaymentMethod(Request $request, SalesChannelContext $context): SetPaymentOrderRouteResponse
     {
         $this->setPaymentMethod(
@@ -381,18 +340,13 @@ class PaymentController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/cancel-order-transaction",
-     *     name="store-api.action.adyen.cancel-order-transaction",
-     *     methods={"POST"}
-     * )
-     *
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
      * @return JsonResponse
-     * @throws \Adyen\Exception\MissingDataException
-     * @throws \JsonException
+     * @throws MissingDataException
+     * @throws JsonException
      */
+    #[Route('/store-api/adyen/cancel-order-transaction', name: 'store-api.action.adyen.cancel-order-transaction', methods: ['POST'])]
     public function cancelOrderTransaction(
         Request $request,
         SalesChannelContext $salesChannelContext

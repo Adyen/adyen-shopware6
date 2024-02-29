@@ -24,10 +24,6 @@
 
 namespace Adyen\Shopware\Storefront\Controller;
 
-use Adyen\AdyenException;
-use Adyen\Shopware\Exception\AuthenticationException;
-use Adyen\Shopware\Exception\HMACKeyValidationException;
-use Adyen\Shopware\Exception\MerchantAccountCodeException;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\NotificationReceiverService;
@@ -50,20 +46,7 @@ class NotificationReceiverController extends StorefrontController
         $this->notificationReceiverService = $notificationReceiverService;
     }
 
-    /**
-     * @Route(
-     *     "/adyen/notification",
-     *     name="payment.adyen.notification",
-     *     defaults={"csrf_protected": false}, methods={"POST"}
-     * )
-     *
-     * @param Request $request
-     * @return JsonResponse
-     * @throws AdyenException
-     * @throws AuthenticationException
-     * @throws HMACKeyValidationException
-     * @throws MerchantAccountCodeException
-     */
+    #[Route('/adyen/notification', name: 'payment.adyen.notification', defaults: ['csrf_protected' => false], methods: ['POST'])]
     public function execute(Request $request): JsonResponse
     {
         return $this->notificationReceiverService->process($request);
