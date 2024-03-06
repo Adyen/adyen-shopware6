@@ -137,13 +137,21 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         );
     }
 
+    /**
+     * @param array $frontendData
+     * @param OrderEntity $order
+     * @param SalesChannelContext $salesChannelContext
+     * @return array
+     */
     private function buildAdyenGivingData(
         array $frontendData,
         OrderEntity $order,
         SalesChannelContext $salesChannelContext
     ): array {
-        $orderTransaction = $order->getTransactions()
-            ->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
+        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+            $order->getId(),
+            [OrderTransactionStates::STATE_AUTHORIZED]
+        );
 
         if (is_null($orderTransaction)) {
             return $frontendData;
