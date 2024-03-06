@@ -58,40 +58,40 @@ class AdminController
     const ADMIN_DATETIME_FORMAT = 'Y-m-d H:i (e)';
 
     /** @var LoggerInterface */
-    private $logger;
+    private LoggerInterface $logger;
 
     /** @var OrderRepository */
-    private $orderRepository;
+    private OrderRepository $orderRepository;
 
     /** @var RefundService */
-    private $refundService;
+    private RefundService $refundService;
 
     /** @var AdyenRefundRepository */
-    private $adyenRefundRepository;
+    private AdyenRefundRepository $adyenRefundRepository;
 
     /** @var NotificationService */
-    private $notificationService;
+    private NotificationService $notificationService;
 
     /** @var CurrencyFormatter */
-    private $currencyFormatter;
+    private CurrencyFormatter $currencyFormatter;
 
     /** @var Currency */
-    private $currencyUtil;
+    private Currency $currencyUtil;
 
     /** @var CaptureService  */
-    private $captureService;
+    private CaptureService $captureService;
 
     /** @var AdyenPaymentCaptureRepository */
-    private $adyenPaymentCaptureRepository;
+    private AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository;
 
     /** @var ConfigurationService */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /** @var AdyenPaymentService */
-    private $adyenPaymentService;
+    private AdyenPaymentService $adyenPaymentService;
 
     /** @var OrderTransactionRepository */
-    private $orderTransactionRepository;
+    private OrderTransactionRepository $orderTransactionRepository;
 
     /**
      * AdminController constructor.
@@ -138,11 +138,10 @@ class AdminController
     }
 
     /**
-     * @Route(path="/api/_action/adyen/verify")
-     *
      * @param RequestDataBag $dataBag
      * @return JsonResponse
      */
+    #[Route('/api/_action/adyen/verify', name: 'api.action.adyen.verify', methods: ['POST', 'GET'])]
     public function check(RequestDataBag $dataBag): JsonResponse
     {
         try {
@@ -176,16 +175,11 @@ class AdminController
     /**
      * Send a capture request to the Adyen platform
      *
-     * @Route(
-     *     "/api/adyen/capture",
-     *     name="api.adyen_payment_capture.post",
-     *     methods={"POST"}
-     * )
-     *
      * @param Request $request
      * @return JsonResponse
      */
-    public function sendCaptureRequest(Request $request)
+    #[Route('/api/adyen/capture', name: 'api.adyen_payment_capture.post', methods: ['POST'])]
+    public function sendCaptureRequest(Request $request): JsonResponse
     {
         $context = Context::createDefaultContext();
         $orderId = $request->request->get('orderId');
@@ -233,15 +227,11 @@ class AdminController
     /**
      * Get payment capture requests by order
      *
-     * @Route(
-     *     "/api/adyen/orders/{orderId}/captures",
-     *     name="api.adyen_payment_capture.get",
-     *     methods={"GET"}
-     * )
      * @param string $orderId
      * @return JsonResponse
      */
-    public function getCaptureRequests(string $orderId)
+    #[Route('/api/adyen/orders/{orderId}/captures', name: 'api.adyen_payment_capture.get', methods: ['GET'])]
+    public function getCaptureRequests(string $orderId): JsonResponse
     {
         $captureRequests = $this->adyenPaymentCaptureRepository->getCaptureRequestsByOrderId($orderId);
 
@@ -251,15 +241,11 @@ class AdminController
     /**
      * Get payment capture requests by order
      *
-     * @Route(
-     *     "/api/adyen/orders/{orderId}/is-capture-allowed",
-     *     name="api.adyen_payment_capture_allowed.get",
-     *     methods={"GET"}
-     * )
      * @param string $orderId
      * @return JsonResponse
      */
-    public function isCaptureAllowed(string $orderId)
+    #[Route('/api/adyen/orders/{orderId}/is-capture-allowed', name: 'api.adyen_payment_capture_allowed.get', methods: ['GET'])]
+    public function isCaptureAllowed(string $orderId): JsonResponse
     {
         $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
             $orderId,
@@ -286,15 +272,11 @@ class AdminController
     }
 
     /**
-     * @Route(
-     *     "/api/adyen/orders/{orderId}/is-manual-capture-enabled",
-     *     name="api.adyen_payment_capture_enabled.get",
-     *     methods={"GET"}
-     * )
      * @param string $orderId
      * @return JsonResponse
      */
-    public function isManualCaptureEnabled(string $orderId)
+    #[Route('/api/adyen/orders/{orderId}/is-manual-capture-enabled', name: 'api.adyen_payment_capture_enabled.get', methods: ['GET'])]
+    public function isManualCaptureEnabled(string $orderId): JsonResponse
     {
         try {
             $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId);
@@ -311,15 +293,10 @@ class AdminController
     /**
      * Send a refund operation to the Adyen platform
      *
-     * @Route(
-     *     "/api/adyen/refunds",
-     *     name="api.adyen_refund.post",
-     *     methods={"POST"}
-     * )
-     *
      * @param Request $request
      * @return JsonResponse
      */
+    #[Route('/api/adyen/refunds', name: 'api.adyen_refund.post', methods: ['POST'])]
     public function postRefund(Request $request): JsonResponse
     {
         $context = Context::createDefaultContext();
@@ -394,15 +371,10 @@ class AdminController
     }
 
     /**
-     * @Route(
-     *     "/api/adyen/orders/{orderId}/refunds",
-     *     name="api.adyen_refund.get",
-     *     methods={"GET"}
-     * )
-     *
      * @param string $orderId
      * @return JsonResponse
      */
+    #[Route('/api/adyen/orders/{orderId}/refunds', name: 'api.adyen_refund.get', methods: ['GET'])]
     public function getRefunds(string $orderId): JsonResponse
     {
         $refunds = $this->adyenRefundRepository->getRefundsByOrderId($orderId);
@@ -413,13 +385,10 @@ class AdminController
     /**
      * Get all the notifications for an order.
      *
-     * @Route(
-     *     "/api/adyen/orders/{orderId}/notifications",
-     *      methods={"GET"}
- *     )
      * @param string $orderId
      * @return JsonResponse
      */
+    #[Route('/api/adyen/orders/{orderId}/notifications', name: 'api.adyen_notifications.get', methods: ['GET'])]
     public function getOrderNotifications(string $orderId): JsonResponse
     {
         $order = $this->orderRepository->getOrder($orderId, Context::createDefaultContext());
@@ -453,13 +422,10 @@ class AdminController
     /**
      * Get all the authorised payments of an order from adyen_payment table.
      *
-     * @Route(
-     *     "/api/adyen/orders/{orderId}/partial-payments",
-     *      methods={"GET"}
-     *     )
      * @param string $orderId
      * @return JsonResponse
      */
+    #[Route('/api/adyen/orders/{orderId}/partial-payments', name: 'api.adyen_partial_payments.get', methods: ['GET'])]
     public function getPartialPayments(string $orderId): JsonResponse
     {
         $order = $this->orderRepository->getOrder($orderId, Context::createDefaultContext());
@@ -517,15 +483,10 @@ class AdminController
     }
 
     /**
-     * @Route(
-     *     "/api/adyen/reschedule-notification/{notificationId}",
-     *     name="admin.action.adyen.reschedule-notification",
-     *     methods={"GET"}
-     * )
-     *
      * @param string $notificationId
      * @return JsonResponse
      */
+    #[Route('/api/adyen/reschedule-notification/{notificationId}', name: 'admin.action.adyen.reschedule-notification', methods: ['GET'])]
     public function rescheduleNotification(string $notificationId): JsonResponse
     {
         $notification = $this->notificationService->getNotificationById($notificationId);

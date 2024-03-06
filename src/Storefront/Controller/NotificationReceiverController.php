@@ -34,7 +34,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class NotificationReceiverController extends StorefrontController
 {
     /** @var NotificationReceiverService */
-    private $notificationReceiverService;
+    private NotificationReceiverService $notificationReceiverService;
 
     /**
      * NotificationReceiverController constructor.

@@ -60,59 +60,67 @@ class PaymentController
     /**
      * @var PaymentMethodsService
      */
-    private $paymentMethodsService;
+    private PaymentMethodsService $paymentMethodsService;
+
     /**
      * @var PaymentDetailsService
      */
-    private $paymentDetailsService;
+    private PaymentDetailsService $paymentDetailsService;
+
     /**
      * @var CheckoutStateDataValidator
      */
-    private $checkoutStateDataValidator;
+    private CheckoutStateDataValidator $checkoutStateDataValidator;
+
     /**
      * @var PaymentStatusService
      */
-    private $paymentStatusService;
+    private PaymentStatusService $paymentStatusService;
+
     /**
      * @var PaymentResponseHandler
      */
-    private $paymentResponseHandler;
+    private PaymentResponseHandler $paymentResponseHandler;
+
     /**
      * @var PaymentResponseService
      */
-    private $paymentResponseService;
+    private PaymentResponseService $paymentResponseService;
+
     /**
      * @var OrderRepository
      */
-    private $orderRepository;
-    /**
-     * @var OrderService
-     */
-    private $orderService;
+    private OrderRepository $orderRepository;
+
     /**
      * @var EntityRepository
      */
     private EntityRepository $orderTransactionRepository;
+
     /**
      * @var StateMachineRegistry
      */
-    private $stateMachineRegistry;
+    private StateMachineRegistry $stateMachineRegistry;
+
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
+
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
+
     /**
      * @var OrderTransactionStateHandler
      */
-    private $orderTransactionStateHandler;
+    private OrderTransactionStateHandler $orderTransactionStateHandler;
+
     /**
      * @var InitialStateIdLoader
      */
-    private $initialStateIdLoader;
+    private InitialStateIdLoader $initialStateIdLoader;
 
     /**
      * StoreApiController constructor.
@@ -124,7 +132,6 @@ class PaymentController
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param PaymentResponseService $paymentResponseService
      * @param OrderRepository $orderRepository
-     * @param OrderService $orderService
      * @param StateMachineRegistry $stateMachineRegistry
      * @param InitialStateIdLoader $initialStateIdLoader
      * @param EntityRepository $orderTransactionRepository
@@ -140,7 +147,6 @@ class PaymentController
         PaymentResponseHandler $paymentResponseHandler,
         PaymentResponseService $paymentResponseService,
         OrderRepository $orderRepository,
-        OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
         InitialStateIdLoader $initialStateIdLoader,
         EntityRepository $orderTransactionRepository,
@@ -155,7 +161,6 @@ class PaymentController
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->paymentResponseService = $paymentResponseService;
         $this->orderRepository = $orderRepository;
-        $this->orderService = $orderService;
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;

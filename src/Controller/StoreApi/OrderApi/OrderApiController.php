@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\OrderApi;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\PaymentMethodsBalanceService;
 use Adyen\Shopware\Service\OrdersService;
@@ -33,7 +34,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(defaults: ['_routeScope' => ['store-api']])]
@@ -42,23 +42,22 @@ class OrderApiController
     /**
      * @var PaymentMethodsBalanceService
      */
-    private $paymentMethodsBalanceService;
+    private PaymentMethodsBalanceService $paymentMethodsBalanceService;
+
     /**
      * @var OrdersService
      */
-    private $ordersService;
+    private OrdersService $ordersService;
+
     /**
-     * @var OrdersService
+     * @var OrdersService|OrdersCancelService
      */
-    private $ordersCancelService;
+    private OrdersCancelService|OrdersService $ordersCancelService;
+
     /**
      * @var PaymentStateDataService
      */
-    private $paymentStateDataService;
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private PaymentStateDataService $paymentStateDataService;
 
     /**
      * StoreApiController constructor.
@@ -67,33 +66,25 @@ class OrderApiController
      * @param OrdersService $ordersService
      * @param OrdersCancelService $ordersCancelService
      * @param PaymentStateDataService $paymentStateDataService
-     * @param LoggerInterface $logger
      */
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
         OrdersService $ordersService,
         OrdersCancelService $ordersCancelService,
-        PaymentStateDataService $paymentStateDataService,
-        LoggerInterface $logger
+        PaymentStateDataService $paymentStateDataService
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
         $this->paymentStateDataService = $paymentStateDataService;
-        $this->logger = $logger;
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/payment-methods/balance",
-     *     name="store-api.action.adyen.payment-methods.balance",
-     *     methods={"POST"}
-     * )
-     *
      * @param SalesChannelContext $context
      * @param Request $request
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/payment-methods/balance', name: 'store-api.action.adyen.payment-methods.balance', methods: ['POST'])]
     public function getPaymentMethodsBalance(SalesChannelContext $context, Request $request): JsonResponse
     {
         $paymentMethod = json_decode($request->request->get('paymentMethod', ''), true);
@@ -104,15 +95,11 @@ class OrderApiController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/orders",
-     *     name="store-api.action.adyen.orders",
-     *     methods={"POST"}
-     * )
-     *
      * @param SalesChannelContext $context
+     * @param Request $request
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/orders', name: 'store-api.action.adyen.orders', methods: ['POST'])]
     public function createOrder(SalesChannelContext $context, Request $request): JsonResponse
     {
         $uuid = Uuid::randomHex();
@@ -123,15 +110,11 @@ class OrderApiController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/orders/cancel",
-     *     name="store-api.action.adyen.orders.cancel",
-     *     methods={"POST"}
-     * )
-     *
      * @param SalesChannelContext $context
+     * @param Request $request
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/orders/cancel', name: 'store-api.action.adyen.orders.cancel', methods: ['POST'])]
     public function cancelOrder(SalesChannelContext $context, Request $request): JsonResponse
     {
         $orderData = $request->request->get('orderData');
@@ -141,17 +124,13 @@ class OrderApiController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/giftcard",
-     *     name="store-api.action.adyen.giftcard",
-     *     methods={"POST"}
-     * )
      * @param SalesChannelContext $context
      * @param Request $request
      * @return JsonResponse
      * @throws ValidationException
-     * @throws \Adyen\AdyenException
+     * @throws AdyenException
      */
+    #[Route('/store-api/adyen/giftcard', name: 'store-api.action.adyen.giftcard', methods: ['POST'])]
     public function giftcardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
         // store giftcard state data for context
@@ -173,16 +152,11 @@ class OrderApiController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/giftcard/remove",
-     *     name="store-api.action.adyen.giftcard.remove",
-     *     methods={"POST"}
-     * )
      * @param SalesChannelContext $context
-     * @param Request $request
      * @return JsonResponse
      */
-    public function deleteGiftCardStateData(SalesChannelContext $context, Request $request): JsonResponse
+    #[Route('/store-api/adyen/giftcard/remove', name: 'store-api.action.adyen.giftcard.remove', methods: ['POST'])]
+    public function deleteGiftCardStateData(SalesChannelContext $context): JsonResponse
     {
         $this->paymentStateDataService->deletePaymentStateDataFromContextToken($context->getToken());
 
