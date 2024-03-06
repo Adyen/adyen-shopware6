@@ -26,6 +26,7 @@
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Util\Currency"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
         </service>

@@ -25,11 +25,14 @@
 namespace Adyen\Shopware\Subscriber;
 
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Struct\ArrayEntity;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Routing\RouterInterface;
@@ -41,33 +44,39 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var SalesChannelRepository
      */
-    private $salesChannelRepository;
+    private SalesChannelRepository $salesChannelRepository;
 
     /**
      * @var Currency
      */
-    private $currency;
+    private Currency $currency;
 
     /**
      * @var RouterInterface
      */
-    private $router;
+    private RouterInterface $router;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
+
+    /**
+     * @var OrderTransactionRepository
+     */
+    private OrderTransactionRepository $orderTransactionRepository;
 
     /**
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param RouterInterface $router
+     * @param OrderTransactionRepository $orderTransactionRepository
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -75,12 +84,14 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         ConfigurationService $configurationService,
         Currency $currency,
         RouterInterface $router,
+        OrderTransactionRepository $orderTransactionRepository,
         LoggerInterface $logger
     ) {
         $this->configurationService = $configurationService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->currency = $currency;
         $this->router = $router;
+        $this->orderTransactionRepository = $orderTransactionRepository;
         $this->logger = $logger;
     }
 
@@ -97,7 +108,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     /**
      * @param CheckoutFinishPageLoadedEvent $event
      */
-    public function onCheckoutFinishPageLoaded(CheckoutFinishPageLoadedEvent $event)
+    public function onCheckoutFinishPageLoaded(CheckoutFinishPageLoadedEvent $event): void
     {
         $page = $event->getPage();
         $salesChannelContext = $event->getSalesChannelContext();
@@ -126,8 +137,11 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         );
     }
 
-    private function buildAdyenGivingData($frontendData, $order, $salesChannelContext)
-    {
+    private function buildAdyenGivingData(
+        array $frontendData,
+        OrderEntity $order,
+        SalesChannelContext $salesChannelContext
+    ): array {
         $orderTransaction = $order->getTransactions()
             ->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
 
@@ -185,10 +199,17 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         return array_merge($frontendData, $adyenGivingData);
     }
 
-    private function buildVoucherActionData($frontendData, $order)
+    /**
+     * @param array $frontendData
+     * @param OrderEntity $order
+     * @return array
+     */
+    private function buildVoucherActionData(array $frontendData, OrderEntity $order): array
     {
-        $orderTransaction = $order->getTransactions()
-            ->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)->first();
+        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+            $order->getId(),
+            [OrderTransactionStates::STATE_IN_PROGRESS]
+        );
 
         if (is_null($orderTransaction)) {
             return $frontendData;
