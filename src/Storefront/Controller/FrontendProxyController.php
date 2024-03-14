@@ -101,7 +101,9 @@ class FrontendProxyController extends StorefrontController
     public function checkoutOrder(RequestDataBag $data, SalesChannelContext $salesChannelContext): JsonResponse
     {
         $cart = $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext);
-        return new JsonResponse($this->cartOrderRoute->order($cart, $salesChannelContext, $data)->getOrder());
+        $order = $this->cartOrderRoute->order($cart, $salesChannelContext, $data)->getOrder();
+
+        return new JsonResponse(['id' => $order->getId()]);
     }
 
     /**
