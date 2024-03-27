@@ -25,15 +25,15 @@
 namespace Adyen\Shopware\Command;
 
 use Adyen\Shopware\Handlers\Command\DisablePaymentMethodHandler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'adyen:payment-method:disable', description: 'Disables Adyen payment methods')]
 class DisablePaymentMethodCommand extends Command
 {
-    protected static $defaultName = 'adyen:payment-method:disable';
-
     /**
      * @var DisablePaymentMethodHandler
      */
@@ -64,7 +64,7 @@ class DisablePaymentMethodCommand extends Command
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $isAllSelected = $input->getOption('all');

@@ -12,7 +12,6 @@
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
-            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\OrderService"/>
             <argument type="service" id="Shopware\Core\System\StateMachine\StateMachineRegistry"/>
             <argument type="service" id="Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader"/>
             <argument type="service" id="order_transaction.repository"/>
@@ -23,7 +22,6 @@
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController" autowire="true">
-            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController" autowire="true">

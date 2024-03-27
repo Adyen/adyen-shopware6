@@ -112,6 +112,7 @@ class OrderTransactionRepository
         $criteria->addAssociation('order.currency');
         $criteria->addAssociation('paymentMethod');
         $criteria->addAssociation('paymentMethod.plugin');
+        $criteria->addAssociation('stateMachineState');
         $criteria->addFilter(new EqualsFilter('id', $orderTransactionId));
 
         return $this->repository->search($criteria, Context::createDefaultContext())->first();
