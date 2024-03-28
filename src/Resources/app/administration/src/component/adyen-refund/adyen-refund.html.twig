@@ -20,8 +20,12 @@
                         :title="$tc('adyen.refundConfirm') + ': ' + order.orderNumber"
                         variant="small">
                     <div>
-                        <sw-number-field type="refundAmount" numberType="float" :allowEmpty="false" v-model="refundAmount" placeholder="Amount"
-                        ></sw-number-field>
+                        <sw-number-field type="refundAmount"
+                                         numberType="float"
+                                         :allowEmpty="false"
+                                         v-model:value="refundAmount"
+                                         placeholder="Amount">
+                        </sw-number-field>
                     </div>
                     <template #modal-footer>
                         <sw-button @click="onCloseModal" size="small">

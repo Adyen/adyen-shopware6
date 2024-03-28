@@ -29,7 +29,6 @@ use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
 use Adyen\Shopware\Handlers\GenericGiftCardPaymentMethodHandler;
-use Adyen\Shopware\PaymentMethods;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -46,50 +45,11 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AdyenPaymentShopware6 extends Plugin
 {
-    public function installJsAssets($shopwareVersion)
-    {
-        $storefrontAssetPath = __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware6.js';
-        $adminAssetPath = __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware6.js';
-        if (\version_compare($shopwareVersion, '6.5.0.0', '<')) {
-            $resultStorefront = $this->safeCopyAsset(
-                __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware64.js.dist',
-                $storefrontAssetPath
-            );
-            $resultAdmin = $this->safeCopyAsset(
-                __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
-                $adminAssetPath
-            );
-        } else {
-            $resultStorefront = $this->safeCopyAsset(
-                __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware65.js.dist',
-                $storefrontAssetPath
-            );
-            $resultAdmin = $this->safeCopyAsset(
-                __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
-                $adminAssetPath
-            );
-        }
-
-        if (!$resultStorefront) {
-            // @todo: add notice:
-            // Unable to install your storefront javascript assets, please run the command `bin/build-storefront.sh`
-            // from your Shopware web directory
-        }
-
-        if (!$resultAdmin) {
-            // @todo: add notice:
-            // Unable to install your admin javascript assets, please run the command `bin/build-administration.sh`
-            // from your Shopware web directory
-        }
-    }
-
     public function install(InstallContext $installContext): void
     {
-        $this->installJsAssets($installContext->getCurrentShopwareVersion());
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->addPaymentMethod(new $paymentMethod(), $installContext->getContext());
         }
@@ -97,7 +57,6 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function activate(ActivateContext $activateContext): void
     {
-        $this->installJsAssets($activateContext->getCurrentShopwareVersion());
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(true, $activateContext->getContext(), new $paymentMethod());
         }
@@ -131,7 +90,6 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function update(UpdateContext $updateContext): void
     {
-        $this->installJsAssets($updateContext->getCurrentShopwareVersion());
         $currentVersion = $updateContext->getCurrentPluginVersion();
 
         if (\version_compare($currentVersion, '1.2.0', '<')) {
