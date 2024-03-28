@@ -41,8 +41,6 @@ Component.register('adyen-config-check-button', {
 
     computed: {
         pluginConfig() {
-            debugger;
-
             // Plugin config moved up by one level in Shopware >= v6.3.4.1
             // i.e. from this.$parent.$parent.$parent to this.$parent.$parent.$parent.$parent
             // @fixme This is a hack to support all versions
