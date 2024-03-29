@@ -33,7 +33,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -59,10 +58,6 @@ class OrderApiController
      * @var PaymentStateDataService
      */
     private $paymentStateDataService;
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
 
     /**
      * StoreApiController constructor.
@@ -71,20 +66,17 @@ class OrderApiController
      * @param OrdersService $ordersService
      * @param OrdersCancelService $ordersCancelService
      * @param PaymentStateDataService $paymentStateDataService
-     * @param LoggerInterface $logger
      */
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
         OrdersService $ordersService,
         OrdersCancelService $ordersCancelService,
-        PaymentStateDataService $paymentStateDataService,
-        LoggerInterface $logger
+        PaymentStateDataService $paymentStateDataService
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
         $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
         $this->paymentStateDataService = $paymentStateDataService;
-        $this->logger = $logger;
     }
 
     /**

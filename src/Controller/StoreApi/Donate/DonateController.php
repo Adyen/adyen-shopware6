@@ -51,10 +51,12 @@ class DonateController
      * @var OrderTransactionRepository
      */
     private $adyenOrderTransactionRepository;
+
     /**
      * @var EntityRepository
      */
     private $orderTransactionRepository;
+
     /**
      * @var DonationService
      */
@@ -69,6 +71,7 @@ class DonateController
      * @var Currency
      */
     private $currency;
+
     /**
      * @var LoggerInterface
      */
@@ -81,6 +84,7 @@ class DonateController
      * @param OrderTransactionRepository $adyenOrderTransactionRepository
      * @param EntityRepository $orderTransactionRepository
      * @param ConfigurationService $configurationService
+     * @param Currency $currency
      * @param LoggerInterface $logger
      */
     public function __construct(

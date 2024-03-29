@@ -52,7 +52,7 @@ class EnablePaymentMethodHandler
 
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
-        $paymentMethodRepository,
+        EntityRepository $paymentMethodRepository,
         EntityRepository $salesChannelRepository,
         EntityRepository $salesChannelPaymentMethodRepository
     ) {

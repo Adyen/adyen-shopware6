@@ -12,21 +12,20 @@
             <argument key="$orderTransactionRepository" type="service" id="order_transaction.repository"/>
         </service>
         <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
-        <service id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
+        <service id="Adyen\Service\Validator\CheckoutStateDataValidator" autowire="true" />
         <service id="Adyen\Shopware\Service\PaymentResponseService" autowire="true">
-            <argument type="service" id="adyen_payment_response.repository"/>
-            <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" key="$repository" id="adyen_payment_response.repository"/>
+            <argument type="service" key="$orderTransactionRepository" id="order_transaction.repository"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentStatusService" autowire="true">
             <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
         </service>
-        <service id="Adyen\Shopware\Service\ClientService">
-            <argument type="service" id="plugin.repository"/>
-            <argument type="service" id="monolog.logger.adyen_generic"/>
-            <argument type="service" id="monolog.logger.adyen_api"/>
-            <argument>%kernel.shopware_version%</argument>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="cache.tags"/>
+        <service id="Adyen\Shopware\Service\ClientService" autowire="true">
+            <argument type="service" key="$pluginRepository" id="plugin.repository"/>
+            <argument type="service" key="$genericLogger" id="monolog.logger.adyen_generic"/>
+            <argument type="service" key="$apiLogger" id="monolog.logger.adyen_api"/>
+            <argument key="$shopwareVersion">%kernel.shopware_version%</argument>
+            <argument type="service" key="$cache" id="cache.tags"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsService" autowire="true">
             <argument key="$cache" type="service" id="cache.object"/>
@@ -36,14 +35,7 @@
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\RefundService" autowire="true">
-            <argument type="service" id="monolog.logger.adyen_generic"/>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenRefundRepository"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
-            <argument type="service"
-                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" key="$logger" id="monolog.logger.adyen_generic"/>
         </service>
     </services>
 </container>
