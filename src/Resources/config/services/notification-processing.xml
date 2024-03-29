@@ -44,7 +44,7 @@
             <argument key="$scheduledTaskRepository" type="service" id="scheduled_task.repository"/>
             <argument key="$paymentMethodRepository" type="service" id="payment_method.repository"/>
             <argument key="$mediaRepository" type="service" id="media.repository"/>
-            <argument>%shopware.media.enable_url_upload_feature%</argument>
+            <argument key="$enableUrlUploadFeature">%shopware.media.enable_url_upload_feature%</argument>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_cron"/>
