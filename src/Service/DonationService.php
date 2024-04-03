@@ -120,8 +120,6 @@ class DonationService
             $this->clientService->getClient($context->getSalesChannel()->getId())
         );
 
-        $donationResponse = $paymentsApi->donations($request);
-
-        return $donationResponse;
+        return $paymentsApi->donations($request);
     }
 }
