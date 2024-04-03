@@ -227,7 +227,6 @@ class PaymentController
 
         try {
             $result = $this->paymentDetailsService->getPaymentDetails(
-//TODO: check whether this works.
                 new PaymentDetailsRequest($stateData),
                 $paymentResponse->getOrderTransaction()
             );

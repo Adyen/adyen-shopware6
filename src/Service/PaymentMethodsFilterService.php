@@ -190,7 +190,6 @@ class PaymentMethodsFilterService
         }
 
         $giftcards = $this->filterAdyenPaymentMethodsByType($adyenPaymentMethods, 'giftcard');
-//        $brands = array_column($giftcards, 'brand');
 
         $brands = array_map(function (PaymentMethod $method) {
             return $method->getBrand();

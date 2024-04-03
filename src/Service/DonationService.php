@@ -122,6 +122,6 @@ class DonationService
 
         $donationResponse = $paymentsApi->donations($request);
 
-        return ($donationResponse);
+        return $donationResponse;
     }
 }

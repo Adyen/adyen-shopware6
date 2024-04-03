@@ -71,10 +71,10 @@ class OrdersCancelService
         try {
             $requestData = $this->buildOrdersCancelRequestData($context, $orderData, $pspReference);
 
-            $OrderService = new OrdersApi(
+            $orderService = new OrdersApi(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
-            $responseData = $OrderService->CancelOrder($requestData);
+            $responseData = $orderService->CancelOrder($requestData);
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }
