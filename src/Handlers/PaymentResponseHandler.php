@@ -81,9 +81,6 @@ class PaymentResponseHandler
      */
     private $transactionStateHandler;
 
-    /**
-     * @var EntityRepository
-     */
     private $orderTransactionRepository;
 
     /**
@@ -100,7 +97,7 @@ class PaymentResponseHandler
      * @param LoggerInterface $logger
      * @param PaymentResponseService $paymentResponseService
      * @param OrderTransactionStateHandler $transactionStateHandler
-     * @param EntityRepository $orderTransactionRepository
+     * @param $orderTransactionRepository
      * @param CaptureService $captureService
      * @param ConfigurationService $configurationService
      */
@@ -108,7 +105,7 @@ class PaymentResponseHandler
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
-        EntityRepository $orderTransactionRepository,
+        $orderTransactionRepository,
         CaptureService $captureService,
         ConfigurationService $configurationService
     ) {

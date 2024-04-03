@@ -96,7 +96,7 @@ class PaymentController
     /**
      * @var EntityRepository
      */
-    private $orderTransactionRepository;
+    private EntityRepository $orderTransactionRepository;
     /**
      * @var StateMachineRegistry
      */
@@ -131,10 +131,10 @@ class PaymentController
      * @param OrderService $orderService
      * @param StateMachineRegistry $stateMachineRegistry
      * @param InitialStateIdLoader $initialStateIdLoader
-     * @param LoggerInterface $logger
      * @param EntityRepository $orderTransactionRepository
      * @param ConfigurationService $configurationService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param LoggerInterface $logger
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -147,10 +147,10 @@ class PaymentController
         OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
         InitialStateIdLoader $initialStateIdLoader,
-        LoggerInterface $logger,
         EntityRepository $orderTransactionRepository,
         ConfigurationService $configurationService,
-        OrderTransactionStateHandler $orderTransactionStateHandler
+        OrderTransactionStateHandler $orderTransactionStateHandler,
+        LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -161,11 +161,11 @@ class PaymentController
         $this->orderRepository = $orderRepository;
         $this->orderService = $orderService;
         $this->stateMachineRegistry = $stateMachineRegistry;
-        $this->logger = $logger;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->initialStateIdLoader = $initialStateIdLoader;
+        $this->logger = $logger;
     }
 
     /**
