@@ -179,8 +179,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * AbstractPaymentMethodHandler constructor.
      *
-     * @param ConfigurationService $configurationService
      * @param ClientService $clientService
+     * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param PaymentStateDataService $paymentStateDataService
@@ -192,8 +192,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param RequestStack $requestStack
      * @param EntityRepository $currencyRepository
      * @param EntityRepository $productRepository
-     * @param LoggerInterface $logger
      * @param AbstractContextSwitchRoute $contextSwitchRoute
+     * @param LoggerInterface $logger
      */
     public function __construct(
         ConfigurationService $configurationService,
@@ -631,7 +631,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $imageUrl = null;
                 }
 
-                if (isset($product) && !is_null($product->getCategories())) {
+                if (isset($product) && !is_null($product->getCategories()) && $product->getCategories()->count() > 0) {
                     $productCategory = $product->getCategories()->first()->getName();
                 } else {
                     $productCategory = null;
