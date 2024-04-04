@@ -100,4 +100,20 @@ class OrderTransactionRepository
 
         return $this->repository->search($criteria, Context::createDefaultContext())->first();
     }
+
+    /**
+     * @param string $orderTransactionId
+     * @return OrderTransactionEntity|null
+     */
+    public function getWithId(string $orderTransactionId): ?OrderTransactionEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addAssociation('order');
+        $criteria->addAssociation('order.currency');
+        $criteria->addAssociation('paymentMethod');
+        $criteria->addAssociation('paymentMethod.plugin');
+        $criteria->addFilter(new EqualsFilter('id', $orderTransactionId));
+
+        return $this->repository->search($criteria, Context::createDefaultContext())->first();
+    }
 }
