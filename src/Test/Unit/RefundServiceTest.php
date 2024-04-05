@@ -24,7 +24,6 @@
 
 namespace Adyen\Shopware\Test\Unit;
 
-use Adyen\Model\Management\User;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -43,10 +42,6 @@ class RefundServiceTest extends AdyenTestCase
     protected function setUp(): void
     {
         parent::setUp();
-    }
-
-    public function testIfTwoPlusTwoIsFor()
-    {
     }
 
     public function testIsAmountRefundableNoRefunds()
