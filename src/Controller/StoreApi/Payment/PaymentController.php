@@ -288,7 +288,6 @@ class PaymentController
         }
 
         try {
-            /** add request here too ? **/
             return new JsonResponse(
                 $this->paymentStatusService->getWithOrderId($orderId)
             );
