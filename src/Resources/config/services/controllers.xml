@@ -28,6 +28,7 @@
         </service>
         <service id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <argument key="$orderTransactionRepository" type="service" id="order_transaction.repository"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController">
