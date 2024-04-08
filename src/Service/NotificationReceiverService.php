@@ -157,35 +157,35 @@ class NotificationReceiverService
     {
         $hmacKey = $this->configurationService->getHmacKey($salesChannelId);
 
-        // validate the notification
-        if ($this->notificationReceiver->validateHmac($notificationItem, $hmacKey)) {
-            // log the notification
-            $this->logger->info('The content of the notification item is: ' .
-                print_r($notificationItem, true));
-
-            // check if notification already exists
-            if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
-                try {
-                    $this->notificationService->insertNotification($notificationItem);
-                    return true;
-                } catch (\Exception $exception) {
-                    $this->logger->error(
-                        'Error occurred while saving notification to database',
-                        [
-                            'pspReference' => $notificationItem['pspReference'],
-                            'merchantReference' => $notificationItem['merchantReference']
-                        ]
-                    );
-                    return false;
-                }
-            } else {
-                // duplicated so do nothing but return accepted to Adyen
-                $this->logger->info('Duplicated notification received, skipped.');
-
-                return true;
-            }
+        // validate the notification if HMAC key is configured.
+        if (!empty($hmacKey) && !$this->notificationReceiver->validateHmac($notificationItem, $hmacKey)) {
+            return false;
         }
 
-        return false;
+        // log the notification
+        $this->logger->info('The content of the notification item is: ' .
+            print_r($notificationItem, true));
+
+        // check if notification already exists
+        if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
+            try {
+                $this->notificationService->insertNotification($notificationItem);
+                return true;
+            } catch (\Exception $exception) {
+                $this->logger->error(
+                    'Error occurred while saving notification to database',
+                    [
+                        'pspReference' => $notificationItem['pspReference'],
+                        'merchantReference' => $notificationItem['merchantReference']
+                    ]
+                );
+                return false;
+            }
+        } else {
+            // duplicated so do nothing but return accepted to Adyen
+            $this->logger->info('Duplicated notification received, skipped.');
+
+            return true;
+        }
     }
 }
