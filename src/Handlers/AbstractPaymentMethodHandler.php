@@ -33,6 +33,7 @@ use Adyen\Service\Builder\Customer;
 use Adyen\Service\Builder\Payment;
 use Adyen\Service\Builder\OpenInvoice;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Event\PrePaymentDataBuildEvent;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CheckoutService;
@@ -62,6 +63,7 @@ use Adyen\Shopware\Exception\CurrencyNotFoundException;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -118,6 +120,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @var Currency
      */
     protected $currency;
+
+    /**
+     * @var EventDispatcherInterface
+     */
+    protected $eventDispatcher;
 
     /**
      * @var ConfigurationService
@@ -200,8 +207,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * AbstractPaymentMethodHandler constructor.
      *
-     * @param ClientService $clientService
+     * @param EventDispatcherInterface $eventDispatcher
      * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
      * @param Browser $browserBuilder
      * @param Address $addressBuilder
      * @param Payment $paymentBuilder
@@ -218,10 +226,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param RequestStack $requestStack
      * @param EntityRepository $currencyRepository
      * @param EntityRepository $productRepository
-     * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param LoggerInterface $logger
+     * @param AbstractContextSwitchRoute $contextSwitchRoute
      */
     public function __construct(
+        EventDispatcherInterface $eventDispatcher,
         ConfigurationService $configurationService,
         ClientService $clientService,
         Browser $browserBuilder,
@@ -243,6 +252,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         AbstractContextSwitchRoute $contextSwitchRoute,
         LoggerInterface $logger
     ) {
+        $this->eventDispatcher = $eventDispatcher;
         $this->clientService = $clientService;
         $this->browserBuilder = $browserBuilder;
         $this->addressBuilder = $addressBuilder;
@@ -598,9 +608,17 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $transaction->getOrder()->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
+
+        $prePaymentDataBuildEvent = new PrePaymentDataBuildEvent(
+            $amount,
+            $transaction,
+            $salesChannelContext,
+        );
+        $this->eventDispatcher->dispatch($prePaymentDataBuildEvent);
+
         $request = $this->paymentBuilder->buildPaymentData(
             $salesChannelContext->getCurrency()->getIsoCode(),
-            $amount,
+            $prePaymentDataBuildEvent->amount(),
             $transaction->getOrder()->getOrderNumber(),
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId()),
             $transaction->getReturnUrl(),
@@ -640,8 +658,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
                 $product =
                     !is_null($orderLine->getProductId()) ?
-                    $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext()) :
-                    null;
+                        $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext()) :
+                        null;
 
                 // Add url for only real product and not for the custom cart items.
                 if (!is_null($product->getId())) {
@@ -865,9 +883,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             ->handlePaymentResponse($giftcardPaymentResponse, $transaction->getOrderTransaction(), false);
 
         $this->remainingAmount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
-            $salesChannelContext->getCurrency()->getIsoCode()
-        ) - $partialAmount;
+                $transaction->getOrder()->getPrice()->getTotalPrice(),
+                $salesChannelContext->getCurrency()->getIsoCode()
+            ) - $partialAmount;
 
         // Remove the used state.data
         $this->paymentStateDataService->deletePaymentStateDataFromContextToken($salesChannelContext->getToken());
