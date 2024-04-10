@@ -200,7 +200,7 @@ export default class CartPlugin extends Plugin {
                 imgElement.classList.add('adyen-giftcard-logo');
 
                 let removeElement = document.createElement('a');
-                removeElement.href = 'javascript:void(0)'; // Set the href attribute to '#' or your desired link
+                removeElement.href = '#';
                 removeElement.textContent = adyenGiftcardsConfiguration.translationAdyenGiftcardRemove;
                 removeElement.setAttribute('dataid', giftcard.stateDataId);
                 removeElement.classList.add('adyen-remove-giftcard');
