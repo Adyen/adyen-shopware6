@@ -186,6 +186,6 @@ class NotificationReceiverService
             }
         }
 
-        return false;  //we need to revisit this for not validating the hmac if not set.
+        return false; 
     }
 }
