@@ -78,6 +78,7 @@ class FrontendProxyController extends StorefrontController
     }
 
     /**
+     * @deprecated This method is deprecated and will be removed in future versions.
      * @Route(
      *     "/adyen/proxy-switch-context",
      *     name="payment.adyen.proxy-switch-context",
@@ -120,6 +121,7 @@ class FrontendProxyController extends StorefrontController
     }
 
     /**
+     * @deprecated This method is deprecated and will be removed in future versions.
      * @Route(
      *     "/adyen/proxy-payment-methods",
      *     name="payment.adyen.proxy-payment-methods",
@@ -199,32 +201,6 @@ class FrontendProxyController extends StorefrontController
 
     /**
      * @Route(
-     *    "/adyen/proxy-create-adyen-order",
-     *    name="payment.adyen.proxy-create-adyen-order",
-     *    defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *    methods={"POST"}
-     * )
-     */
-    public function createAdyenOrder(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        return $this->orderApiController->createOrder($context, $request);
-    }
-
-    /**
-     * @Route(
-     *    "/adyen/proxy-cancel-adyen-order",
-     *    name="payment.adyen.proxy-cancel-adyen-order",
-     *    defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *    methods={"POST"}
-     * )
-     */
-    public function cancelAdyenOrder(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        return $this->orderApiController->cancelOrder($context, $request);
-    }
-
-    /**
-     * @Route(
      *     "/adyen/proxy-store-giftcard-state-data",
      *     name="payment.adyen.proxy-store-giftcard-state-data",
      *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
@@ -250,6 +226,20 @@ class FrontendProxyController extends StorefrontController
     public function removeGiftcardStateData(Request $request, SalesChannelContext $context): JsonResponse
     {
         return $this->orderApiController->deleteGiftCardStateData($context, $request);
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-fetch-redeemed-giftcards",
+     *     name="payment.adyen.proxy-fetch-redeemed-giftcards",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"GET"}
+     * )
+     *
+     */
+    public function fetchRedeemedGiftcards(SalesChannelContext $context): JsonResponse
+    {
+        return $this->orderApiController->fetchRedeemedGiftcards($context);
     }
 
     /**

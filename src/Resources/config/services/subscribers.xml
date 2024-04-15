@@ -19,6 +19,7 @@
             <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
+            <argument type="service" id="payment_method.repository"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Adyen\Shopware\Subscriber\PostPaymentSubscriber">
