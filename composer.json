@@ -12,8 +12,8 @@
     "require": {
         "shopware/core": "~6.6.0",
         "shopware/storefront": "~6.6.0",
-        "adyen/php-api-library": "^17.0.0",
-        "adyen/php-webhook-module": "0.8.0",
+        "adyen/php-api-library": "^17.4.0",
+        "adyen/php-webhook-module": "^1",
         "ext-json": "*"
     },
     "extra": {

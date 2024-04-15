@@ -25,19 +25,20 @@
 namespace Adyen\Shopware\Command;
 
 use Adyen\Shopware\Handlers\Command\EnablePaymentMethodHandler;
+use Exception;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'adyen:payment-method:enable', description: 'Enables Adyen payment methods')]
 class EnablePaymentMethodCommand extends Command
 {
-    protected static $defaultName = 'adyen:payment-method:enable';
-
     /**
      * @var EnablePaymentMethodHandler
      */
-    protected $handler;
+    protected EnablePaymentMethodHandler $handler;
 
     public function __construct(EnablePaymentMethodHandler $handler)
     {
@@ -45,7 +46,7 @@ class EnablePaymentMethodCommand extends Command
         $this->handler = $handler;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Finds the payment method according to given PM handler and enables it');
 
@@ -64,7 +65,7 @@ class EnablePaymentMethodCommand extends Command
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $isAllSelected = $input->getOption('all');
@@ -73,14 +74,15 @@ class EnablePaymentMethodCommand extends Command
             if ($isAllSelected xor isset($paymentMethodHandlerIdentifier)) {
                 $this->handler->run($isAllSelected, $paymentMethodHandlerIdentifier);
                 $message = 'Payment method is enabled successfully.';
+                $output->writeln($message);
             } else {
-                throw new \Exception('Invalid parameter! For usage please check manual --help.');
+                throw new Exception('Invalid parameter! For usage please check manual --help.');
             }
-        } catch (\Exception $e) {
-            $message = $e->getMessage();
+        } catch (Exception $e) {
+            $output->writeln($e->getMessage());
+            return Command::FAILURE;
         }
 
-        $output->writeln($message);
-        return 0;
+        return Command::SUCCESS;
     }
 }
