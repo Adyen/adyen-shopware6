@@ -26,7 +26,6 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntity;
-use JetBrains\PhpStorm\ArrayShape;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -153,7 +152,13 @@ class PaymentStateDataService
         );
     }
 
-    #[ArrayShape(['giftcardDiscount' => "int|mixed", 'giftcardBalance' => "int|mixed"])]
+    /**
+     * Get the total gift card discount and balance.
+     *
+     * @param mixed $salesChannelContext The sales channel context.
+     * @param int|mixed $remainingOrderAmount The remaining order amount.
+     * @return array Array containing 'giftcardDiscount' and 'giftcardBalance'.
+    */
     public function getGiftcardTotalDiscountAndBalance($salesChannelContext, $remainingOrderAmount): array
     {
         $fetchedRedeemedGiftcards = $this->fetchRedeemedGiftCardsFromContextToken($salesChannelContext->getToken());
