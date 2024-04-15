@@ -58,7 +58,6 @@ class PaymentMethodsFilterService
      * @param AbstractPaymentMethodRoute $paymentMethodRoute
      * @param EntityRepository $paymentMethodRepository
      */
-
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
         AbstractPaymentMethodRoute $paymentMethodRoute,
