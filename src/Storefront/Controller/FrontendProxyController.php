@@ -78,6 +78,20 @@ class FrontendProxyController extends StorefrontController
     }
 
     /**
+     * @deprecated This method is deprecated and will be removed in future versions.
+     * @Route(
+     *     "/adyen/proxy-switch-context",
+     *     name="payment.adyen.proxy-switch-context",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"PATCH"}
+     * )
+     */
+    public function switchContext(RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
+    {
+        return $this->contextSwitchRoute->switchContext($data, $context);
+    }
+
+    /**
      * @Route(
      *     "/adyen/proxy-checkout-order",
      *     name="payment.adyen.proxy-checkout-order",
@@ -104,6 +118,20 @@ class FrontendProxyController extends StorefrontController
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
         return new JsonResponse($routeResponse->getObject());
+    }
+
+    /**
+     * @deprecated This method is deprecated and will be removed in future versions.
+     * @Route(
+     *     "/adyen/proxy-payment-methods",
+     *     name="payment.adyen.proxy-payment-methods",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"GET"}
+     * )
+     */
+    public function paymentMethods(SalesChannelContext $context): JsonResponse
+    {
+        return $this->paymentController->getPaymentMethods($context);
     }
 
     /**
