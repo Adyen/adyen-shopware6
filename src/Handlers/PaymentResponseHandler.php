@@ -30,6 +30,7 @@ use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\Repository\OrderTransactionRepository as AdyenOrderTransactionRepository;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -81,6 +82,8 @@ class PaymentResponseHandler
 
     private $orderTransactionRepository;
 
+    private AdyenOrderTransactionRepository $adyenOrderTransactionRepository;
+
     /**
      * @var ConfigurationService
      */
@@ -105,7 +108,8 @@ class PaymentResponseHandler
         OrderTransactionStateHandler $transactionStateHandler,
         EntityRepository $orderTransactionRepository,
         CaptureService $captureService,
-        ConfigurationService $configurationService
+        ConfigurationService $configurationService,
+        AdyenOrderTransactionRepository $adyenOrderTransactionRepository
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
@@ -113,6 +117,7 @@ class PaymentResponseHandler
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->captureService = $captureService;
         $this->configurationService = $configurationService;
+        $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
     }
 
     /**
@@ -232,7 +237,14 @@ class PaymentResponseHandler
     ): void {
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $context = $salesChannelContext->getContext();
-        $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
+
+        $stateMachineState = $transaction->getOrderTransaction()->getStateMachineState();
+        if (is_null($stateMachineState)) {
+            $orderTransaction = $this->adyenOrderTransactionRepository->getWithId($orderTransactionId);
+            $stateMachineState = $orderTransaction->getStateMachineState();
+        }
+
+        $stateTechnicalName = $stateMachineState->getTechnicalName();
         $requiresManualCapture = $this->captureService
             ->isManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
 
