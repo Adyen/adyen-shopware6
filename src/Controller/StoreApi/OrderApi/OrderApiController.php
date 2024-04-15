@@ -84,7 +84,8 @@ class OrderApiController
      * @param Request $request
      * @return JsonResponse
      */
-    #[Route('/store-api/adyen/payment-methods/balance',
+    #[Route(
+        '/store-api/adyen/payment-methods/balance',
         name: 'store-api.action.adyen.payment-methods.balance',
         methods: ['POST']
     )]

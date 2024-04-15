@@ -72,7 +72,8 @@ class FrontendProxyController extends StorefrontController
         $this->donateController = $donateController;
     }
 
-    #[Route('/adyen/proxy-switch-context',
+    #[Route(
+        '/adyen/proxy-switch-context',
         name: 'payment.adyen.proxy-switch-context',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['PATCH']
@@ -82,7 +83,8 @@ class FrontendProxyController extends StorefrontController
         return $this->contextSwitchRoute->switchContext($data, $context);
     }
 
-    #[Route('/adyen/proxy-checkout-order',
+    #[Route(
+        '/adyen/proxy-checkout-order',
         name: 'payment.adyen.proxy-checkout-order',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -93,7 +95,8 @@ class FrontendProxyController extends StorefrontController
         return new JsonResponse($this->cartOrderRoute->order($cart, $salesChannelContext, $data)->getOrder());
     }
 
-    #[Route('/adyen/proxy-handle-payment',
+    #[Route(
+        '/adyen/proxy-handle-payment',
         name: 'payment.adyen.proxy-handle-payment',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -105,7 +108,8 @@ class FrontendProxyController extends StorefrontController
         return new JsonResponse($routeResponse->getObject());
     }
 
-    #[Route('/adyen/proxy-payment-methods',
+    #[Route(
+        '/adyen/proxy-payment-methods',
         name: 'payment.adyen.proxy-payment-methods',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['GET']
@@ -115,7 +119,8 @@ class FrontendProxyController extends StorefrontController
         return $this->paymentController->getPaymentMethods($context);
     }
 
-    #[Route('/adyen/proxy-payment-status',
+    #[Route(
+        '/adyen/proxy-payment-status',
         name: 'payment.adyen.proxy-payment-status',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -125,7 +130,8 @@ class FrontendProxyController extends StorefrontController
         return $this->paymentController->getPaymentStatus($request, $context);
     }
 
-    #[Route('/adyen/proxy-payment-details',
+    #[Route(
+        '/adyen/proxy-payment-details',
         name: 'payment.adyen.proxy-payment-details',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -135,7 +141,8 @@ class FrontendProxyController extends StorefrontController
         return $this->paymentController->postPaymentDetails($request, $context);
     }
 
-    #[Route('/adyen/proxy-set-payment',
+    #[Route(
+        '/adyen/proxy-set-payment',
         name: 'payment.adyen.proxy-set-payment',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -145,7 +152,8 @@ class FrontendProxyController extends StorefrontController
         return $this->paymentController->updatePaymentMethod($request, $context);
     }
 
-    #[Route('/adyen/proxy-cancel-order-transaction',
+    #[Route(
+        '/adyen/proxy-cancel-order-transaction',
         name: 'payment.adyen.proxy-cancel-order-transaction',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -155,7 +163,8 @@ class FrontendProxyController extends StorefrontController
         return $this->paymentController->cancelOrderTransaction($request, $context);
     }
 
-    #[Route('/adyen/proxy-check-balance',
+    #[Route(
+        '/adyen/proxy-check-balance',
         name: 'payment.adyen.proxy-check-balance',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -165,7 +174,8 @@ class FrontendProxyController extends StorefrontController
         return $this->orderApiController->getPaymentMethodsBalance($context, $request);
     }
 
-    #[Route('/adyen/proxy-create-adyen-order',
+    #[Route(
+        '/adyen/proxy-create-adyen-order',
         name: 'payment.adyen.proxy-create-adyen-order',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -175,7 +185,8 @@ class FrontendProxyController extends StorefrontController
         return $this->orderApiController->createOrder($context, $request);
     }
 
-    #[Route('/adyen/proxy-cancel-adyen-order',
+    #[Route(
+        '/adyen/proxy-cancel-adyen-order',
         name: 'payment.adyen.proxy-cancel-adyen-order',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -185,7 +196,8 @@ class FrontendProxyController extends StorefrontController
         return $this->orderApiController->cancelOrder($context, $request);
     }
 
-    #[Route('/adyen/proxy-store-giftcard-state-data',
+    #[Route(
+        '/adyen/proxy-store-giftcard-state-data',
         name: 'payment.adyen.proxy-store-giftcard-state-data',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -195,7 +207,8 @@ class FrontendProxyController extends StorefrontController
         return $this->orderApiController->giftcardStateData($context, $request);
     }
 
-    #[Route('/adyen/proxy-remove-giftcard-state-data',
+    #[Route(
+        '/adyen/proxy-remove-giftcard-state-data',
         name: 'payment.adyen.proxy-remove-giftcard-state-data',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
@@ -205,7 +218,8 @@ class FrontendProxyController extends StorefrontController
         return $this->orderApiController->deleteGiftCardStateData($context, $request);
     }
 
-    #[Route('/adyen/proxy-donate',
+    #[Route(
+        '/adyen/proxy-donate',
         name: 'payment.adyen.proxy-donate',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']

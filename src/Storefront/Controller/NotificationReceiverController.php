@@ -46,7 +46,8 @@ class NotificationReceiverController extends StorefrontController
         $this->notificationReceiverService = $notificationReceiverService;
     }
 
-    #[Route('/adyen/notification',
+    #[Route(
+        '/adyen/notification',
         name: 'payment.adyen.notification',
         defaults: ['csrf_protected' => false],
         methods: ['POST']

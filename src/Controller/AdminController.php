@@ -246,8 +246,11 @@ class AdminController
      * @param string $orderId
      * @return JsonResponse
      */
-    // phpcs:ignore Generic.Files.LineLength
-    #[Route('/api/adyen/orders/{orderId}/is-capture-allowed', name: 'api.adyen_payment_capture_allowed.get', methods: ['GET'])]
+    #[Route(
+        '/api/adyen/orders/{orderId}/is-capture-allowed',
+        name: 'api.adyen_payment_capture_allowed.get',
+        methods: ['GET']
+    )]
     public function isCaptureAllowed(string $orderId): JsonResponse
     {
         $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
@@ -278,8 +281,11 @@ class AdminController
      * @param string $orderId
      * @return JsonResponse
      */
-    // phpcs:ignore Generic.Files.LineLength
-    #[Route('/api/adyen/orders/{orderId}/is-manual-capture-enabled', name: 'api.adyen_payment_capture_enabled.get', methods: ['GET'])]
+    #[Route(
+        '/api/adyen/orders/{orderId}/is-manual-capture-enabled',
+        name: 'api.adyen_payment_capture_enabled.get',
+        methods: ['GET']
+    )]
     public function isManualCaptureEnabled(string $orderId): JsonResponse
     {
         try {
@@ -490,7 +496,11 @@ class AdminController
      * @param string $notificationId
      * @return JsonResponse
      */
-    #[Route('/api/adyen/reschedule-notification/{notificationId}', name: 'admin.action.adyen.reschedule-notification', methods: ['GET'])]
+    #[Route(
+        '/api/adyen/reschedule-notification/{notificationId}',
+        name: 'admin.action.adyen.reschedule-notification',
+        methods: ['GET']
+    )]
     public function rescheduleNotification(string $notificationId): JsonResponse
     {
         $notification = $this->notificationService->getNotificationById($notificationId);

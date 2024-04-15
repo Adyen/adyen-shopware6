@@ -351,7 +351,8 @@ class PaymentController
      * @throws MissingDataException
      * @throws JsonException
      */
-    #[Route('/store-api/adyen/cancel-order-transaction',
+    #[Route(
+        '/store-api/adyen/cancel-order-transaction',
         name: 'store-api.action.adyen.cancel-order-transaction',
         methods: ['POST']
     )]
