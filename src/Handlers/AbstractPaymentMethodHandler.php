@@ -642,6 +642,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $productCategory = null;
                 }
 
+                $currency = $salesChannelContext->getCurrency();
+
                 //Building open invoice line
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
