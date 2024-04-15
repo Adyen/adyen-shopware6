@@ -146,7 +146,9 @@ class AdminController
     {
         try {
             $client = new Client();
-            $environment = $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.environment') ? 'live' : 'test';
+            $environment = $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.environment') ?
+                'live' :
+                'test';
             $client->setXApiKey(
                 $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.apiKey' . ucfirst($environment))
             );
@@ -244,6 +246,7 @@ class AdminController
      * @param string $orderId
      * @return JsonResponse
      */
+    // phpcs:ignore Generic.Files.LineLength
     #[Route('/api/adyen/orders/{orderId}/is-capture-allowed', name: 'api.adyen_payment_capture_allowed.get', methods: ['GET'])]
     public function isCaptureAllowed(string $orderId): JsonResponse
     {
@@ -275,6 +278,7 @@ class AdminController
      * @param string $orderId
      * @return JsonResponse
      */
+    // phpcs:ignore Generic.Files.LineLength
     #[Route('/api/adyen/orders/{orderId}/is-manual-capture-enabled', name: 'api.adyen_payment_capture_enabled.get', methods: ['GET'])]
     public function isManualCaptureEnabled(string $orderId): JsonResponse
     {

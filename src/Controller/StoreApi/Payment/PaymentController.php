@@ -351,7 +351,10 @@ class PaymentController
      * @throws MissingDataException
      * @throws JsonException
      */
-    #[Route('/store-api/adyen/cancel-order-transaction', name: 'store-api.action.adyen.cancel-order-transaction', methods: ['POST'])]
+    #[Route('/store-api/adyen/cancel-order-transaction',
+        name: 'store-api.action.adyen.cancel-order-transaction',
+        methods: ['POST']
+    )]
     public function cancelOrderTransaction(
         Request $request,
         SalesChannelContext $salesChannelContext
@@ -360,10 +363,17 @@ class PaymentController
         $orderId = $request->request->get('orderId');
         $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
 
-        $transaction = $order->getTransactions()->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)->first();
+        $transaction = $order->getTransactions()
+            ->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)
+            ->first();
 
         $this->stateMachineRegistry->transition(
-            new Transition(OrderTransactionDefinition::ENTITY_NAME, $transaction->getId(), 'cancel', 'stateId'),
+            new Transition(
+                OrderTransactionDefinition::ENTITY_NAME,
+                $transaction->getId(),
+                'cancel',
+                'stateId'
+            ),
             $context
         );
 

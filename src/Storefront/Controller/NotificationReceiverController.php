@@ -46,8 +46,11 @@ class NotificationReceiverController extends StorefrontController
         $this->notificationReceiverService = $notificationReceiverService;
     }
 
-    // phpcs:ignore Generic.Files.LineLength
-    #[Route('/adyen/notification', name: 'payment.adyen.notification', defaults: ['csrf_protected' => false], methods: ['POST'])]
+    #[Route('/adyen/notification',
+        name: 'payment.adyen.notification',
+        defaults: ['csrf_protected' => false],
+        methods: ['POST']
+    )]
     public function execute(Request $request): JsonResponse
     {
         return $this->notificationReceiverService->process($request);

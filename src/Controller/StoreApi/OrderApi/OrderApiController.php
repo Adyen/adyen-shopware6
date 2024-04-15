@@ -84,7 +84,10 @@ class OrderApiController
      * @param Request $request
      * @return JsonResponse
      */
-    #[Route('/store-api/adyen/payment-methods/balance', name: 'store-api.action.adyen.payment-methods.balance', methods: ['POST'])]
+    #[Route('/store-api/adyen/payment-methods/balance',
+        name: 'store-api.action.adyen.payment-methods.balance',
+        methods: ['POST']
+    )]
     public function getPaymentMethodsBalance(SalesChannelContext $context, Request $request): JsonResponse
     {
         $paymentMethod = json_decode($request->request->get('paymentMethod', ''), true);
