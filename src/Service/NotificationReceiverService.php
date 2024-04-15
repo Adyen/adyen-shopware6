@@ -186,6 +186,6 @@ class NotificationReceiverService
             }
         }
 
-        return false; 
+        return false;
     }
 }
