@@ -41,7 +41,7 @@ use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\OrdersService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -642,17 +642,19 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $productCategory = null;
                 }
 
+                $currency = $salesChannelContext->getCurrency();
+
                 //Building open invoice line
                 $lineItems[] = $this->openInvoiceBuilder->buildOpenInvoiceLineItem(
                     $productName,
                     $this->currency->sanitize(
                         $price->getUnitPrice() -
                         ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
-                        $salesChannelContext->getCurrency()->getIsoCode()
+                        $currency->getIsoCode()
                     ),
                     $this->currency->sanitize(
                         $lineTax,
-                        $salesChannelContext->getCurrency()->getIsoCode()
+                        $currency->getIsoCode()
                     ),
                     $taxRate * 100,
                     $orderLine->getQuantity(),
@@ -662,7 +664,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     $imageUrl,
                     $this->currency->sanitize(
                         $price->getUnitPrice(),
-                        $salesChannelContext->getCurrency()->getIsoCode()
+                        $currency->getIsoCode()
                     ),
                     $productCategory
                 );

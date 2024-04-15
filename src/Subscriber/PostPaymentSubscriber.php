@@ -26,7 +26,7 @@ namespace Adyen\Shopware\Subscriber;
 
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Struct\ArrayEntity;
