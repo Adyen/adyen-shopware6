@@ -36,7 +36,7 @@ class ProcessWebhooksCommand extends Command
     /**
      * @var ProcessNotificationsHandler
      */
-    protected $handler;
+    protected ProcessNotificationsHandler $handler;
 
     public function __construct(ProcessNotificationsHandler $handler)
     {
@@ -44,7 +44,7 @@ class ProcessWebhooksCommand extends Command
         $this->handler = $handler;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Process webhook notifications.');
     }
@@ -53,6 +53,6 @@ class ProcessWebhooksCommand extends Command
     {
         $this->handler->run();
         $output->writeln('Webhook notifications have been processed.');
-        return 0;
+        return Command::SUCCESS;
     }
 }
