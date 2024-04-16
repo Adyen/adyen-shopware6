@@ -76,6 +76,7 @@ class AdyenPaymentEntityDefinition extends EntityDefinition
             new StringField('merchant_order_reference', 'merchantOrderReference'),
             new StringField('payment_method', 'paymentMethod'),
             new IntField('amount_value', 'amountValue'),
+            new IntField('total_refunded', 'totalRefunded'),
             new StringField('amount_currency', 'amountCurrency'),
             new LongTextField('additional_data', 'additionalData'),
             new StringField('capture_mode', 'captureMode'),
