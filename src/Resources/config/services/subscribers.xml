@@ -5,44 +5,25 @@
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <!--Event subscribers-->
-        <service id="Adyen\Shopware\Subscriber\PaymentSubscriber">
-            <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsFilterService"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
-            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
-            <argument type="service" id="request_stack"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>
-            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
-            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
+        <service id="Adyen\Shopware\Subscriber\PaymentSubscriber" autowire="true">
+            <argument key="$router" type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument key="$requestStack" type="service" id="request_stack"/>
+            <argument key="$cartPersister" type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
+            <argument key="$contextSwitchRoute" type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <argument key="$salesChannelContextFactory" type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
             <tag name="kernel.event_subscriber"/>
         </service>
-        <service id="Adyen\Shopware\Subscriber\PostPaymentSubscriber">
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
-            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
+        <service id="Adyen\Shopware\Subscriber\PostPaymentSubscriber" autowire="true">
+            <argument key="$router" type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
         </service>
-        <service id="Adyen\Shopware\Subscriber\ContextSubscriber">
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
-            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
+        <service id="Adyen\Shopware\Subscriber\ContextSubscriber" autowire="true">
+            <argument key="$contextSwitchRoute" type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <argument key="$cartPersister" type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
             <tag name="kernel.event_subscriber"/>
         </service>
-        <service id="Adyen\Shopware\Subscriber\Response\PaymentMethodRouteResponseSubscriber">
-            <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsFilterService"/>
+        <service id="Adyen\Shopware\Subscriber\Response\PaymentMethodRouteResponseSubscriber" autowire="true">
             <tag name="kernel.event_subscriber"/>
             <tag name="kernel.reset" method="reset" />
         </service>

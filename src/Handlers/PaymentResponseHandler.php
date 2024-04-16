@@ -98,7 +98,7 @@ class PaymentResponseHandler
      * @param LoggerInterface $logger
      * @param PaymentResponseService $paymentResponseService
      * @param OrderTransactionStateHandler $transactionStateHandler
-     * @param $orderTransactionRepository
+     * @param EntityRepository $orderTransactionRepository
      * @param CaptureService $captureService
      * @param ConfigurationService $configurationService
      */
@@ -106,7 +106,7 @@ class PaymentResponseHandler
         LoggerInterface $logger,
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
-        $orderTransactionRepository,
+        EntityRepository $orderTransactionRepository,
         CaptureService $captureService,
         ConfigurationService $configurationService,
         AdyenOrderTransactionRepository $adyenOrderTransactionRepository
