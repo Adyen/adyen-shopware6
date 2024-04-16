@@ -158,6 +158,29 @@
         </input-field>
     </card>
     <card>
+        <title>Refund Settings</title>
+        <input-field type="single-select">
+            <name>refundStrategyGiftcard</name>
+            <label>Refund strategy for gift cards</label>
+            <helpText>Only relevant if you accept gift cards on Adyen Payments.</helpText>
+            <options>
+                <option>
+                    <id>fifo</id>
+                    <name>Refund from the first payment first</name>
+                </option>
+                <option>
+                    <id>filo</id>
+                    <name>Refund from the last payment first</name>
+                </option>
+                <option>
+                    <id>ratio</id>
+                    <name>Refund based on ratio</name>
+                </option>
+            </options>
+            <defaultValue>fifo</defaultValue>
+        </input-field>
+    </card>
+    <card>
         <title>Adyen Giving</title>
         <input-field type="bool">
             <name>adyenGivingEnabled</name>
