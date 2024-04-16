@@ -364,27 +364,7 @@ class AdminController
         }
 
         try {
-            $result = $this->refundService->refund($order, $amountInMinorUnit);
-            // If response does not contain pspReference
-            if (!array_key_exists('pspReference', $result)) {
-                $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
-                throw new AdyenException($message);
-            }
-
-            $statesToSearch = RefundService::REFUNDABLE_STATES;
-            $orderTransaction = $this->refundService->getAdyenOrderTransactionForRefund($order, $statesToSearch);
-            $adyenRefund = $this->adyenRefundRepository
-                ->getRefundForOrderByPspReference($orderTransaction->getId(), $result['pspReference']);
-
-            if (is_null($adyenRefund)) {
-                $this->refundService->insertAdyenRefund(
-                    $order,
-                    $result['pspReference'],
-                    RefundEntity::SOURCE_SHOPWARE,
-                    RefundEntity::STATUS_PENDING_WEBHOOK,
-                    $amountInMinorUnit
-                );
-            }
+            $this->refundService->refund($order, $amountInMinorUnit);
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
 
