@@ -84,7 +84,14 @@ class AdyenPaymentService
         return $this->adyenPaymentRepository->getMerchantReferenceByMerchantOrderReference($orderReference);
     }
 
-    public function getAdyenPayments(string $orderId): array
+    /**
+     * Returns the Adyen payments for the given order ID.
+     *
+     * @param string $orderId
+     * @param string $sort Sorts the response based on created_at column
+     * @return array
+     */
+    public function getAdyenPayments(string $orderId, string $sort = FieldSorting::DESCENDING): array
     {
         $orderTransaction = $this->orderTransactionRepository
             ->search(
@@ -101,7 +108,7 @@ class AdyenPaymentService
                 (new Criteria())
                     ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
                     ->addAssociation('orderTransaction.order')
-                    ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
+                    ->addSorting(new FieldSorting('createdAt', $sort)),
                 Context::createDefaultContext()
             )
             ->getElements();
