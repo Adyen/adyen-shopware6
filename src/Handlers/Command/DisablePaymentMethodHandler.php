@@ -68,6 +68,10 @@ class DisablePaymentMethodHandler
         $criteria->addFilter(
             new EqualsFilter('pluginId', $this->adyenPluginProvider->getAdyenPluginId())
         );
+        $criteria->addFilter(
+            new EqualsFilter('active', true)
+        );
+
         if (!$isAll) {
             $criteria->addFilter(
                 new ContainsFilter('handlerIdentifier', $paymentMethodHandlerIdentifier)
