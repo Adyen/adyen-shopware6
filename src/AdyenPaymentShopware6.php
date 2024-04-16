@@ -240,12 +240,17 @@ class AdyenPaymentShopware6 extends Plugin
     private function setPaymentMethodIsActive(
         bool $active,
         Context $context,
-        PaymentMethods\PaymentMethodInterface $paymentMethod
+        PaymentMethods\PaymentMethodInterface $paymentMethod = null,
+        string $paymentHandler = null
     ): void {
-        /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
-        $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
+        if (is_null($paymentHandler)) {
+            /** @var EntityRepository $paymentRepository */
+            $paymentHandler = $paymentMethod->getPaymentHandler();
+        }
+
+        $paymentMethodId = $this->getPaymentMethodId($paymentHandler);
 
         // Payment does not even exist, so nothing to (de-)activate here
         if (!$paymentMethodId) {
@@ -570,7 +575,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function updateTo3150(UpdateContext $updateContext): void
     {
-        //Version 3.11.0 introduces MultiGiftcards
+        //Version 3.15.0 introduces MultiGiftcards
         $this->addPaymentMethod(
             new PaymentMethods\GiftCardPaymentMethod(),
             $updateContext->getContext()
@@ -580,6 +585,33 @@ class AdyenPaymentShopware6 extends Plugin
             $updateContext->getContext(),
             new PaymentMethods\GiftcardPaymentMethod()
         );
+
+        $deprecatedGiftcardMethods = [
+            'Adyen\Shopware\Handlers\AlbelliGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\BeautyGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\BijenkorfGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\DeCadeaukaartGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\FashionChequeGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\GallGallGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\GenericGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\GivexGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\HunkemollerLingerieGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\KadowereldGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\SVSGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\TCSTestGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\VVVGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\WebshopGiftCardPaymentMethodHandler'
+        ];
+
+        // Disable deprecated gift card payment methods
+        foreach ($deprecatedGiftcardMethods as $deprecatedGiftcardMethod) {
+            $this->setPaymentMethodIsActive(
+                false,
+                $updateContext->getContext(),
+                null,
+                $deprecatedGiftcardMethod
+            );
+        }
     }
 
     private function safeCopyAsset($source, $destination): bool
