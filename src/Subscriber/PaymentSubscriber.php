@@ -418,4 +418,3 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         }
     }
 }
-

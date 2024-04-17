@@ -278,4 +278,3 @@ class PaymentMethodsFilterService
         return $paymentMethod ? $paymentMethod->getId() : null;
     }
 }
-

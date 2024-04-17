@@ -806,7 +806,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      */
     public function handleAdyenOrderPayment(
         AsyncPaymentTransactionStruct $transaction,
-                                      $adyenOrderResponse,
+        $adyenOrderResponse,
         SalesChannelContext $salesChannelContext
     ): void {
         if (empty($adyenOrderResponse)) {
@@ -863,4 +863,3 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->remainingAmount = $remainingOrderAmount;
     }
 }
-
