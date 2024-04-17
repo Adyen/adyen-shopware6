@@ -27,7 +27,7 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Service\RefundService;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;

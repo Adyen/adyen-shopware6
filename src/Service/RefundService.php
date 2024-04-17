@@ -32,7 +32,7 @@ use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;

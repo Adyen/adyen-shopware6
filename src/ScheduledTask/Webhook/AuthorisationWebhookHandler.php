@@ -31,7 +31,7 @@ use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PluginPaymentMethodsService;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;

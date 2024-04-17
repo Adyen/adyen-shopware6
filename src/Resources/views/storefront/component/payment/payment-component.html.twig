@@ -13,10 +13,13 @@
                         {{ "%s ending in %s" |format(storedPaymentMethod.name, storedPaymentMethod.lastFour) }}
                     </label>
                 </div>
+
                 <div class="col stored-payment-component"
                      data-adyen-stored-payment-method-id="{{ storedPaymentMethod.id }}"></div>
+
             </div>
             {% if loop.last == false %}<hr>{% endif %}
         {% endfor %}
     {% endif %}
 </div>
+

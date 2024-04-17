@@ -70,6 +70,7 @@ class OrdersService
         return $responseData;
     }
 
+
     private function buildOrdersRequestData(
         SalesChannelContext $context,
         $uuid,

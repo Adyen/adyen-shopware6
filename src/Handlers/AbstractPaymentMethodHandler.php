@@ -392,9 +392,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         } else {
             $paymentMethodType = $request['paymentMethod']['type'];
         }
-
+      
         $paymentMethod->setType($paymentMethodType ?? 'zip');
-
         $paymentRequest->setPaymentMethod($paymentMethod);
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
@@ -625,6 +624,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $currency = $salesChannelContext->getCurrency();
 
                 //Building open invoice line
+              
                 $lineItem = new LineItem();
 
                 $lineItem->setDescription($productName);

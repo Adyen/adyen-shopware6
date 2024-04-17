@@ -201,9 +201,7 @@ class PaymentMethodsFilterService
 
         $giftcards = $this->filterAdyenPaymentMethodsByType($adyenPaymentMethods, 'giftcard');
 
-        $brands = array_map(function (PaymentMethod $method) {
-            return $method->getBrand();
-        }, $giftcards);
+        $brands = array_column($giftcards, 'brand');
 
         foreach ($filteredPaymentMethods as $entity) {
             $methodHandler = $entity->getHandlerIdentifier();
@@ -228,6 +226,25 @@ class PaymentMethodsFilterService
         }
 
         return $filteredPaymentMethods;
+    }
+
+    public function getAvailableNonGiftcardsPaymentMethods(
+        SalesChannelContext $context,
+        ?PaymentMethodCollection $paymentMethods = null
+    ) {
+        if (is_null($paymentMethods)) {
+            $paymentMethods = $this->getShopwarePaymentMethods($context);
+        }
+
+        foreach ($paymentMethods as $entity) {
+            $methodHandler = $entity->getHandlerIdentifier();
+            /** @var AbstractPaymentMethodHandler $methodHandler */
+            if (method_exists($methodHandler, 'getPaymentMethodCode')
+                && $methodHandler::getPaymentMethodCode() === 'giftcard') {
+                // Remove giftcards from the actual collection
+                $paymentMethods->remove($entity->getId());
+            }
+        }
     }
 
     public function getAvailableNonGiftcardsPaymentMethods(

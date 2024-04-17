@@ -1,5 +1,4 @@
 <?php declare(strict_types=1);
-
 /**
  *                       ######
  *                       ######
@@ -16,26 +15,44 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2021 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Handlers;
+namespace Adyen\Shopware\Command;
 
-class AlbelliGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
+use Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+class ScheduleWebhooksCommand extends Command
 {
-    public static $isGiftCard = true;
+    protected static $defaultName = 'adyen:schedule-webhooks';
 
-    public static function getPaymentMethodCode()
+    /**
+     * @var ScheduleNotificationsHandler
+     */
+    protected $handler;
+
+    public function __construct(ScheduleNotificationsHandler $handler)
     {
-        return 'giftcard';
+        parent::__construct();
+        $this->handler = $handler;
     }
 
-    public static function getBrand(): string
+    protected function configure(): void
     {
-        return 'albelligiftcard';
+        $this->setDescription('Schedule webhook notifications');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $this->handler->run();
+        $output->writeln('Webhook notifications have been scheduled');
+        return Command::SUCCESS;
     }
 }

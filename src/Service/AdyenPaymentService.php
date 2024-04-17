@@ -27,7 +27,7 @@ namespace Adyen\Shopware\Service;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
