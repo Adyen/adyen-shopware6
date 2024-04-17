@@ -312,7 +312,7 @@ class AdminController
             return new JsonResponse(
                 $this->captureService->isManualCapture($paymentMethodHandlerIdentifier)
             );
-        } catch (Throwable) {
+        } catch (Throwable $t) {
             return new JsonResponse(false);
         }
     }
