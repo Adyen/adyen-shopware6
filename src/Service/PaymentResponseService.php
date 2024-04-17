@@ -107,7 +107,7 @@ class PaymentResponseService
      * @param bool $upsert
      * @return void
      */
-//    PaymentResponse|PaymentDetailsResponse
+
     public function insertPaymentResponse(
         $paymentResponse,
         OrderTransactionEntity $orderTransaction,

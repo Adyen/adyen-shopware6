@@ -162,8 +162,8 @@ class PaymentMethodsService
         $storedMethods = $paymentMethodsResponse->getStoredPaymentMethods();
         if (!empty($storedMethods)) {
             foreach ($storedMethods as $paymentMethod) {
-                $allPaymentMethods['storedPaymentMethods'][] =
-                    json_decode(json_encode($paymentMethod->jsonSerialize()), true);
+                $allPaymentMethods['storedPaymentMethods'][] = $paymentMethod->toArray();
+                //    json_decode(json_encode($paymentMethod->jsonSerialize()), true);
             }
         }
 
