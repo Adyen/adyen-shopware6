@@ -24,7 +24,7 @@
 
 namespace Adyen\Shopware\Command;
 
-use Adyen\Shopware\Handlers\Command\EnablePaymentMethodHandler;
+use Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -35,11 +35,11 @@ class EnablePaymentMethodCommand extends Command
     protected static $defaultName = 'adyen:payment-method:enable';
 
     /**
-     * @var EnablePaymentMethodHandler
+     * @var PaymentMethodStatusHandler
      */
-    protected $handler;
+    protected PaymentMethodStatusHandler $handler;
 
-    public function __construct(EnablePaymentMethodHandler $handler)
+    public function __construct(PaymentMethodStatusHandler $handler)
     {
         parent::__construct();
         $this->handler = $handler;
@@ -71,7 +71,7 @@ class EnablePaymentMethodCommand extends Command
             $paymentMethodHandlerIdentifier = $input->getOption('payment-method');
 
             if ($isAllSelected xor isset($paymentMethodHandlerIdentifier)) {
-                $this->handler->run($isAllSelected, $paymentMethodHandlerIdentifier);
+                $this->handler->run($isAllSelected, true, $paymentMethodHandlerIdentifier);
                 $message = 'Payment method is enabled successfully.';
             } else {
                 throw new \Exception('Invalid parameter! For usage please check manual --help.');
