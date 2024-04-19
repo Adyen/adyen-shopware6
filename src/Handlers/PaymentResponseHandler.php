@@ -117,16 +117,21 @@ class PaymentResponseHandler
     }
 
     /**
-     * @param PaymentDetailsResponse|PaymentResponse $response
+     * @param PaymentResponse|PaymentDetailsResponse $response
      * @param OrderTransactionEntity $orderTransaction
      * @param bool $upsertResponse
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
-        PaymentResponse|PaymentDetailsResponse $response,
-        OrderTransactionEntity                 $orderTransaction,
-        bool                                   $upsertResponse = true
+        $response,
+        OrderTransactionEntity $orderTransaction,
+        bool $upsertResponse = true
     ): PaymentResponseHandlerResult {
+        // TODO Add argument type declaration for response and remove the following block on V4.
+        if (!($response instanceof PaymentResponse) && !($response instanceof PaymentDetailsResponse)) {
+            throw new \InvalidArgumentException('Invalid $paymentDetailsResponse type.');
+        }
+
         // Retrieve result code from response array
         $resultCode = $response->getResultCode();
 
