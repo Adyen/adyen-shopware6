@@ -155,17 +155,13 @@ class PaymentMethodsService
         $paymentMethods = $paymentMethodsResponse->getPaymentMethods();
         if (!empty($paymentMethods)) {
             foreach ($paymentMethods as $paymentMethod) {
-//                $allPaymentMethods['paymentMethods'][] = $paymentMethod->toArray();
-                $allPaymentMethods['paymentMethods'][] =
-                    json_decode(json_encode($paymentMethod->jsonSerialize()), true);
+                $allPaymentMethods['paymentMethods'][] = $paymentMethod->toArray();
             }
         }
         $storedMethods = $paymentMethodsResponse->getStoredPaymentMethods();
         if (!empty($storedMethods)) {
             foreach ($storedMethods as $paymentMethod) {
-//                $allPaymentMethods['storedPaymentMethods'][] = $paymentMethod->toArray();
-                $allPaymentMethods['storedPaymentMethods'][] =
-                    json_decode(json_encode($paymentMethod->jsonSerialize()), true);
+                $allPaymentMethods['storedPaymentMethods'][] = $paymentMethod->toArray();
             }
         }
 

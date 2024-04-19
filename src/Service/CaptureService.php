@@ -162,8 +162,7 @@ class CaptureService
                         $context
                     );
                 }
-                $results[] = $response->__toString();
-//                $results[] = $response->toArray();
+                $results[] = $response->toArray();
             }
             $this->logger->info('Capture for order_number ' . $order->getOrderNumber() . ' end.');
 
