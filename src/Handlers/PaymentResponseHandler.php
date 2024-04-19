@@ -117,21 +117,16 @@ class PaymentResponseHandler
     }
 
     /**
-     * @param PaymentResponse|PaymentDetailsResponse $response
+     * @param PaymentDetailsResponse|PaymentResponse $response
      * @param OrderTransactionEntity $orderTransaction
      * @param bool $upsertResponse
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
-        $response,
-        OrderTransactionEntity $orderTransaction,
-        bool $upsertResponse = true
+        PaymentResponse|PaymentDetailsResponse $response,
+        OrderTransactionEntity                 $orderTransaction,
+        bool                                   $upsertResponse = true
     ): PaymentResponseHandlerResult {
-
-        if (!($response instanceof PaymentResponse) && !($response instanceof PaymentDetailsResponse)) {
-            throw new \InvalidArgumentException('Invalid $paymentDetailsResponse type.');
-        }
-
         // Retrieve result code from response array
         $resultCode = $response->getResultCode();
 
@@ -140,16 +135,8 @@ class PaymentResponseHandler
         $paymentResponseHandlerResult->setRefusalReasonCode($response->getRefusalReasonCode());
         $paymentResponseHandlerResult->setResultCode($resultCode);
 
-        // when this method is called from PaymentDetailsResponse, $response would not have the action part
-        if (method_exists($response, 'getAction') && !empty($response->getAction())) {
-            if (is_array($response->getAction())) {
-                // this is the case when handlePaymentResponse is being called
-                // in AbstractPaymentMethodHandler with $giftcardPaymentResponse
-                // in this use-case, $giftcardPaymentResponse->action is an array and not an object
-                $paymentResponseHandlerResult->setAction($response->getAction());
-            } else {
-                 $paymentResponseHandlerResult->setAction($response->getAction()->toArray());
-            }
+        if (($response instanceof PaymentResponse) && !empty($response->getAction())) {
+            $paymentResponseHandlerResult->setAction($response->getAction()->toArray());
         }
 
         $paymentResponseHandlerResult->setPspReference($response->getPspReference());
