@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Model\Checkout\PaymentDetailsResponse;
+use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\CaptureService;
@@ -115,60 +117,57 @@ class PaymentResponseHandler
     }
 
     /**
-     * @param array $response
+     * @param PaymentResponse|PaymentDetailsResponse $response
      * @param OrderTransactionEntity $orderTransaction
+     * @param bool $upsertResponse
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
-        array $response,
+        $response,
         OrderTransactionEntity $orderTransaction,
         bool $upsertResponse = true
     ): PaymentResponseHandlerResult {
-        $paymentResponseHandlerResult = new PaymentResponseHandlerResult();
+        // TODO Add argument type declaration for response and remove the following block on V4.
+        if (!($response instanceof PaymentResponse) && !($response instanceof PaymentDetailsResponse)) {
+            throw new \InvalidArgumentException('Invalid $paymentDetailsResponse type.');
+        }
+
         // Retrieve result code from response array
-        $resultCode = $response['resultCode'];
-        if (array_key_exists('refusalReason', $response)) {
-            $paymentResponseHandlerResult->setRefusalReason($response['refusalReason']);
-        }
+        $resultCode = $response->getResultCode();
 
-        if (array_key_exists('refusalReasonCode', $response)) {
-            $paymentResponseHandlerResult->setRefusalReasonCode($response['refusalReasonCode']);
-        }
-
+        $paymentResponseHandlerResult = new PaymentResponseHandlerResult();
+        $paymentResponseHandlerResult->setRefusalReason($response->getRefusalReason());
+        $paymentResponseHandlerResult->setRefusalReasonCode($response->getRefusalReasonCode());
         $paymentResponseHandlerResult->setResultCode($resultCode);
 
-        // Retrieve PSP reference from response array if available
-        if (!empty($response[self::PSP_REFERENCE])) {
-            $paymentResponseHandlerResult->setPspReference($response[self::PSP_REFERENCE]);
+        if (($response instanceof PaymentResponse) && !empty($response->getAction())) {
+            $paymentResponseHandlerResult->setAction($response->getAction()->toArray());
         }
 
-        // Set action in result object if available
-        if (!empty($response[self::ACTION])) {
-            $paymentResponseHandlerResult->setAction($response[self::ACTION]);
-        }
-
-        // Set additionalData in result object if available
-        if (!empty($response[self::ADDITIONAL_DATA])) {
-            $paymentResponseHandlerResult->setAdditionalData($response[self::ADDITIONAL_DATA]);
-        }
+        $paymentResponseHandlerResult->setPspReference($response->getPspReference());
+        $paymentResponseHandlerResult->setAdditionalData($response->getAdditionalData());
 
         /*
          * If this payment is a part of an Adyen order,
          * payment response contains `order` object.
          */
         $isGiftcardOrderResponse = false;
-        if (!empty($response['paymentMethod']) &&
-            !empty($response['paymentMethod']['type']) &&
-            $response['paymentMethod']['type'] === 'giftcard' &&
-            array_key_exists('order', $response)) {
+
+        $method = $response->getPaymentMethod();
+
+        if (!empty($method) &&
+            !empty($method->getType()) &&
+            $method->getType() === 'giftcard') {
             $isGiftcardOrderResponse = true;
         }
 
         $paymentResponseHandlerResult->setIsGiftcardOrder($isGiftcardOrderResponse);
 
+        $donationToken = $response->getDonationToken();
+
         // Set Donation Token if response contains it, except for giftcards
-        if (!empty($response[self::DONATION_TOKEN]) && !$isGiftcardOrderResponse) {
-            $paymentResponseHandlerResult->setDonationToken($response[self::DONATION_TOKEN]);
+        if (!empty($donationToken) && !$isGiftcardOrderResponse) {
+            $paymentResponseHandlerResult->setDonationToken($donationToken);
         }
 
         // Store response for cart until the payment is finalised
@@ -184,7 +183,7 @@ class PaymentResponseHandler
                 // Log Refused, no further steps needed
                 $this->logger->error(
                     "The payment was refused, order transaction merchant reference: " .
-                    $response[self::MERCHANT_REFERENCE]
+                    $response->getMerchantReference()
                 );
 
                 break;

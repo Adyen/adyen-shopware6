@@ -24,7 +24,9 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
-use Adyen\Client;
+use Adyen\Model\Checkout\PaymentMethodsRequest;
+use Adyen\Model\Checkout\PaymentMethodsResponse;
+use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
@@ -111,9 +113,9 @@ class PaymentMethodsService
     /**
      * @param SalesChannelContext $context
      * @param string $orderId
-     * @return array
+     * @return PaymentMethodsResponse
      */
-    public function getPaymentMethods(SalesChannelContext $context, $orderId = ''): array
+    public function getPaymentMethods(SalesChannelContext $context, $orderId = ''): PaymentMethodsResponse
     {
         $requestData = $this->buildPaymentMethodsRequestData($context, $orderId);
 
@@ -127,23 +129,11 @@ class PaymentMethodsService
 
         $responseData = [];
         try {
-            $checkoutService = new CheckoutService(
+            $paymentsApiService = new PaymentsApi(
                 $this->clientService->getClient($context->getSalesChannelId())
             );
 
-            $this->clientService->logRequest(
-                $requestData,
-                Client::API_CHECKOUT_VERSION,
-                '/paymentMethods',
-                $context->getSalesChannelId()
-            );
-
-            $responseData = $checkoutService->paymentMethods($requestData);
-
-            $this->clientService->logResponse(
-                $responseData,
-                $context->getSalesChannelId()
-            );
+            $responseData = $paymentsApiService->paymentMethods(new PaymentMethodsRequest($requestData));
 
             $paymentMethodsResponseCache->set(CacheValueCompressor::compress($responseData));
             $this->cache->save($paymentMethodsResponseCache);
@@ -154,6 +144,29 @@ class PaymentMethodsService
         return $responseData;
     }
 
+    /**
+     * @param PaymentMethodsResponse $paymentMethodsResponse
+     * @return array
+     */
+    public function getPaymentMethodsArray(PaymentMethodsResponse $paymentMethodsResponse): array
+    {
+        $allPaymentMethods = [];
+        /** @var PaymentMethodsResponse $paymentMethods */
+        $paymentMethods = $paymentMethodsResponse->getPaymentMethods();
+        if (!empty($paymentMethods)) {
+            foreach ($paymentMethods as $paymentMethod) {
+                $allPaymentMethods['paymentMethods'][] = $paymentMethod->toArray();
+            }
+        }
+        $storedMethods = $paymentMethodsResponse->getStoredPaymentMethods();
+        if (!empty($storedMethods)) {
+            foreach ($storedMethods as $paymentMethod) {
+                $allPaymentMethods['storedPaymentMethods'][] = $paymentMethod->toArray();
+            }
+        }
+
+        return $allPaymentMethods;
+    }
     /**
      * @param string $address
      * @return array

@@ -229,7 +229,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
         $giftcards = $this->paymentMethodsFilterService->getAvailableGiftcards(
             $salesChannelContext,
-            $paymentMethods,
+            $paymentMethods->getPaymentMethods(),
             $this->adyenPluginProvider->getAdyenPluginId(),
             $shopwarePaymentMethods
         );
@@ -333,6 +333,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         }
 
         $page->setPaymentMethods($filteredPaymentMethods);
+        $paymentMethodsArray = $this->paymentMethodsService->getPaymentMethodsArray($paymentMethodsResponse);
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -370,7 +371,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'giftcardDiscount' => $giftcardDetails['giftcardDiscount'],
                         'currencySymbol' => $currencySymbol,
                         'payInFullWithGiftcard' => $payInFullWithGiftcard,
-                        'storedPaymentMethods' => $paymentMethodsResponse['storedPaymentMethods'] ?? [],
+                        'storedPaymentMethods' =>  $paymentMethodsArray['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
                         'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),
                         'displaySaveCreditCardOption' => $displaySaveCreditCardOption,

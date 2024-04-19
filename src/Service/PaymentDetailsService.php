@@ -24,7 +24,9 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
-use Adyen\Client;
+use Adyen\Model\Checkout\PaymentDetailsRequest;
+use Adyen\Model\Checkout\PaymentResponse;
+use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandlerResult;
@@ -66,36 +68,24 @@ class PaymentDetailsService
     }
 
     /**
-     * @param array $requestData
+     * @param PaymentDetailsRequest $requestData
      * @param OrderTransactionEntity $orderTransaction
      * @return PaymentResponseHandlerResult
      * @throws PaymentFailedException
      */
     public function getPaymentDetails(
-        array $requestData,
+        PaymentDetailsRequest $requestData,
         OrderTransactionEntity $orderTransaction
     ): PaymentResponseHandlerResult {
 
         try {
-            $checkoutService = new CheckoutService(
+            $paymentsApi = new PaymentsApi(
                 $this->clientService->getClient($orderTransaction->getOrder()->getSalesChannelId())
             );
 
-            $this->clientService->logRequest(
-                $requestData,
-                Client::API_CHECKOUT_VERSION,
-                '/payments/details',
-                $orderTransaction->getOrder()->getSalesChannelId()
-            );
+            $paymentDetailsResponse = $paymentsApi->paymentsDetails($requestData);
 
-            $response = $checkoutService->paymentsDetails($requestData);
-
-            $this->clientService->logResponse(
-                $response,
-                $orderTransaction->getOrder()->getSalesChannelId()
-            );
-
-            return $this->paymentResponseHandler->handlePaymentResponse($response, $orderTransaction);
+            return $this->paymentResponseHandler->handlePaymentResponse($paymentDetailsResponse, $orderTransaction);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
             throw new PaymentFailedException($exception->getMessage());
