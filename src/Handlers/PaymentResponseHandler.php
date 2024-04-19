@@ -148,8 +148,7 @@ class PaymentResponseHandler
                 // in this use-case, $giftcardPaymentResponse->action is an array and not an object
                 $paymentResponseHandlerResult->setAction($response->getAction());
             } else {
-                 $paymentResponseHandlerResult->setAction($response->getAction()->jsonSerialize());
-//                $paymentResponseHandlerResult->setAction($response->getAction()->toArray());
+                 $paymentResponseHandlerResult->setAction($response->getAction()->toArray());
             }
         }
 
