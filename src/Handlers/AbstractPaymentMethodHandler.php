@@ -26,6 +26,7 @@
 namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
+use Adyen\Client;
 use Adyen\Model\Checkout\CheckoutPaymentMethod;
 use Adyen\Model\Checkout\EncryptedOrderData;
 use Adyen\Model\Checkout\LineItem;
@@ -34,6 +35,7 @@ use Adyen\Model\Checkout\Address;
 use Adyen\Model\Checkout\Amount;
 use Adyen\Model\Checkout\BrowserInfo;
 use Adyen\Model\Checkout\Name;
+use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Service\Validator\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
@@ -706,21 +708,25 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
     }
 
-    private function paymentsCall($salesChannelContext, $request, $transaction)
-    {
+    private function paymentsCall(
+        SalesChannelContext $salesChannelContext,
+        PaymentRequest $request,
+        AsyncPaymentTransactionStruct $transaction
+    ): void {
         $transactionId = $transaction->getOrderTransaction()->getId();
         try {
             $this->clientService->logRequest(
-                $request,
+                $request->toArray(),
                 Client::API_CHECKOUT_VERSION,
                 '/payments',
                 $salesChannelContext->getSalesChannelId()
             );
 
+            /** @var PaymentResponse $response */
             $response = $this->paymentsApiService->payments($request);
 
             $this->clientService->logResponse(
-                $response,
+                $response->toArray(),
                 $salesChannelContext->getSalesChannelId()
             );
         } catch (AdyenException $exception) {
