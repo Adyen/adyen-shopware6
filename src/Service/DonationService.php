@@ -23,11 +23,12 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\AdyenException;
 use Adyen\Model\Checkout\Amount;
 use Adyen\Model\Checkout\CheckoutPaymentMethod;
 use Adyen\Model\Checkout\DonationPaymentRequest;
 use Adyen\Model\Checkout\DonationPaymentResponse;
-use Adyen\Service\Checkout\PaymentsApi;
+use Adyen\Service\Checkout\DonationsApi;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -51,12 +52,12 @@ class DonationService
     /**
      * @var ClientService
      */
-    private $clientService;
+    private ClientService $clientService;
 
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @param ClientService $clientService
@@ -72,23 +73,23 @@ class DonationService
 
     /**
      * @param SalesChannelContext $context
-     * @param $donationToken
-     * @param $currency
-     * @param $value
-     * @param $returnUrl
-     * @param $pspReference
-     * @param $paymentMethodCode
+     * @param string $donationToken
+     * @param string $currency
+     * @param int $value
+     * @param string $returnUrl
+     * @param string $pspReference
+     * @param string $paymentMethodCode
      * @return DonationPaymentResponse
-     * @throws \Adyen\AdyenException
+     * @throws AdyenException
      */
     public function donate(
         SalesChannelContext $context,
-        $donationToken,
-        $currency,
-        $value,
-        $returnUrl,
-        $pspReference,
-        $paymentMethodCode
+        string $donationToken,
+        string $currency,
+        int $value,
+        string $returnUrl,
+        string$pspReference,
+        string $paymentMethodCode
     ): DonationPaymentResponse {
 
         if (isset(self::PAYMENT_METHOD_CODE_MAPPING[$paymentMethodCode])) {
@@ -116,10 +117,10 @@ class DonationService
             'returnUrl' => $returnUrl
         ]);
 
-        $paymentsApi = new PaymentsApi(
+        $donationsApi = new DonationsApi(
             $this->clientService->getClient($context->getSalesChannel()->getId())
         );
 
-        return $paymentsApi->donations($request);
+        return $donationsApi->donations($request);
     }
 }
