@@ -210,7 +210,7 @@ class PaymentMethodsFilterService
     /**
      * Retrieves available gift cards.
      *
-     * @deprecated This method is deprecated and will be removed in future versions. Please use a different method instead.
+     * @deprecated This method is deprecated and will be removed in future versions.
      *
      * @param SalesChannelContext $context The sales channel context.
      * @param array $adyenPaymentMethods Array of Adyen payment methods.
