@@ -533,7 +533,8 @@ class AdyenPaymentShopware6 extends Plugin
         }
         $paymentMethodData = [
             'id' => $paymentMethodId,
-            'active' => false
+            'active' => false,
+            'description' => '@deprecated DO NOT ACTIVATE, use Giftcard instead'
         ];
 
         // Set the payment method to inactive
