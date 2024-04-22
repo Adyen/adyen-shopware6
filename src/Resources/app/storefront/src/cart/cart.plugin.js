@@ -57,10 +57,9 @@ export default class CartPlugin extends Plugin {
                 self.paymentMethodInstance.unmount();
             }
         };
-        debugger;
+        
         document.getElementById("showGiftcardButton").addEventListener("click", function() {
             // Hide the anchor tag
-            console.log('gdjg');
             this.style.display = "none";
 
             // Show the select dropdown
