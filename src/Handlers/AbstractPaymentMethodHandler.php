@@ -274,7 +274,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $storedStateData = $this->paymentStateDataService->getStoredStateData($salesChannelContext, $transactionId);
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
-        if (isset($stateData)) {
+        if (!empty($stateData)) {
             $request = $this->getPaymentRequest(
                 $salesChannelContext,
                 $transaction,

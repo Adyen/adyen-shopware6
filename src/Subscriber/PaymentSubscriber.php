@@ -36,6 +36,8 @@ use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
@@ -227,12 +229,19 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $shopwarePaymentMethods = $page->getPaymentMethods();
         }
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
-        $giftcards = $this->paymentMethodsFilterService->getAvailableGiftcards(
-            $salesChannelContext,
-            $paymentMethods->getPaymentMethods(),
-            $this->adyenPluginProvider->getAdyenPluginId(),
-            $shopwarePaymentMethods
-        );
+        $paymentMethodId = $this->paymentMethodsFilterService->getGiftCardPaymentMethodId($salesChannelContext);
+        $criteria = (new Criteria())->addFilter(new EqualsFilter(
+            'id',
+            $paymentMethodId
+        ));
+        $paymentMethod = $this->paymentMethodRepository->search($criteria, $salesChannelContext->getContext())->first();
+        $giftcards = [];
+        if($paymentMethod && $paymentMethod->getActive()) {
+            $giftcards = $this->paymentMethodsFilterService->filterAdyenPaymentMethodsByType(
+                $paymentMethods->getPaymentMethods(),
+                'giftcard'
+            );
+        }
 
         //Remove giftcards from the Payment Method lists, as this lists gets populated at shipping details on cart page.
         $this->paymentMethodsFilterService->getAvailableNonGiftcardsPaymentMethods(
@@ -249,7 +258,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
                 array_merge($this->getComponentData($salesChannelContext), [
-                    'giftcards' => $giftcards->getElements(),
+                    'giftcards' => $giftcards,
                     'totalPrice' => $page->getCart()->getPrice()->getTotalPrice(),
                     'totalInMinorUnits' => $amountInMinorUnits,
                     'currency' => $currency,

@@ -57,9 +57,10 @@ export default class CartPlugin extends Plugin {
                 self.paymentMethodInstance.unmount();
             }
         };
-
+        debugger;
         document.getElementById("showGiftcardButton").addEventListener("click", function() {
             // Hide the anchor tag
+            console.log('gdjg');
             this.style.display = "none";
 
             // Show the select dropdown
@@ -104,11 +105,10 @@ export default class CartPlugin extends Plugin {
         let self = this;
         let giftcardDropdown = document.getElementById('giftcardDropdown');
         let addButton = document.querySelector('.btn-outline-info');
-
         giftcardDropdown.addEventListener('change', function () {
             if (giftcardDropdown.value) {
                 self.selectedGiftcard = JSON.parse(event.currentTarget.options[event.currentTarget.selectedIndex].dataset.giftcard);
-                self.mountGiftcardComponent(self.selectedGiftcard.extensions.adyenGiftcardData[0]);
+                self.mountGiftcardComponent(self.selectedGiftcard);
                 giftcardDropdown.value = "";
                 addButton.style.display = "none";
             }

@@ -188,46 +188,6 @@ class PaymentMethodsFilterService
         )->first();
     }
 
-    public function getAvailableGiftcards(
-        SalesChannelContext $context,
-        array $adyenPaymentMethods,
-        string $adyenPluginId,
-        ?PaymentMethodCollection $paymentMethods = null
-    ): PaymentMethodCollection {
-        if (is_null($paymentMethods)) {
-            $paymentMethods = $this->getShopwarePaymentMethods($context);
-        }
-        $filteredPaymentMethods = clone $paymentMethods;
-
-        $giftcards = $this->filterAdyenPaymentMethodsByType($adyenPaymentMethods, 'giftcard');
-
-        $brands = array_column($giftcards, 'brand');
-
-        foreach ($filteredPaymentMethods as $entity) {
-            $methodHandler = $entity->getHandlerIdentifier();
-
-            /** @var AbstractPaymentMethodHandler $methodHandler */
-            if ($entity->getPluginId() !== $adyenPluginId) {
-                // Remove non-Adyen payment methods
-                $filteredPaymentMethods->remove($entity->getId());
-            } elseif ((method_exists($methodHandler, 'getPaymentMethodCode') &&
-                    $methodHandler::getPaymentMethodCode() != 'giftcard') ||
-                !in_array($methodHandler::getBrand(), $brands)) {
-                // Remove non-giftcards and giftcards that are not in /paymentMethods response
-                $filteredPaymentMethods->remove($entity->getId());
-            } else {
-                $brand = $methodHandler::getBrand();
-                $entity->addExtension('adyenGiftcardData', new ArrayStruct(
-                    array_filter($giftcards, function ($method) use ($brand) {
-                        return $method['brand'] === $brand;
-                    })
-                ));
-            }
-        }
-
-        return $filteredPaymentMethods;
-    }
-
     public function getAvailableNonGiftcardsPaymentMethods(
         SalesChannelContext $context,
         ?PaymentMethodCollection $paymentMethods = null
@@ -249,6 +209,7 @@ class PaymentMethodsFilterService
 
     public function filterAdyenPaymentMethodsByType(array $paymentMethods, string $type): array
     {
+        //Filter for if giftcard PM is disabled do not allow any giftcard mechanism.
         return array_filter($paymentMethods, function ($item) use ($type) {
             return $item['type'] === $type;
         });
