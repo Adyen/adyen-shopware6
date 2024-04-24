@@ -27,7 +27,7 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\Model\Checkout\PaymentCompletionDetails;
 use Adyen\Model\Checkout\PaymentDetailsRequest;
-use Adyen\Service\Validator\DataArrayValidator;
+use Adyen\Shopware\Util\DataArrayValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
