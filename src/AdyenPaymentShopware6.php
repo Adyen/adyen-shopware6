@@ -50,31 +50,25 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AdyenPaymentShopware6 extends Plugin
 {
-    public function build(ContainerBuilder $container): void
-    {
-        parent::build($container);
-        $this->installJsAssets($container->getParameter('kernel.shopware_version'));
-    }
-
     public function installJsAssets($shopwareVersion)
     {
         $storefrontAssetPath = __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware6.js';
         $adminAssetPath = __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware6.js';
         if (\version_compare($shopwareVersion, '6.5.0.0', '<')) {
-            $resultStorefront = copy(
+            $resultStorefront = $this->safeCopyAsset(
                 __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware64.js.dist',
                 $storefrontAssetPath
             );
-            $resultAdmin = copy(
+            $resultAdmin = $this->safeCopyAsset(
                 __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
                 $adminAssetPath
             );
         } else {
-            $resultStorefront = copy(
+            $resultStorefront = $this->safeCopyAsset(
                 __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware65.js.dist',
                 $storefrontAssetPath
             );
-            $resultAdmin = copy(
+            $resultAdmin = $this->safeCopyAsset(
                 __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
                 $adminAssetPath
             );
@@ -103,6 +97,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function activate(ActivateContext $activateContext): void
     {
+        $this->installJsAssets($activateContext->getCurrentShopwareVersion());
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(true, $activateContext->getContext(), new $paymentMethod());
         }
@@ -159,10 +154,6 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo300($updateContext);
         }
 
-        if (\version_compare($currentVersion, '3.1.0', '<')) {
-            $this->updateTo310($updateContext);
-        }
-
         if (\version_compare($currentVersion, '3.2.0', '<')) {
             $this->updateTo320($updateContext);
         }
@@ -177,6 +168,10 @@ class AdyenPaymentShopware6 extends Plugin
 
         if (\version_compare($currentVersion, '3.10.0', '<')) {
             $this->updateTo3100($updateContext);
+        }
+
+        if (\version_compare($currentVersion, '3.15.0', '<')) {
+            $this->updateTo3150($updateContext);
         }
     }
 
@@ -393,37 +388,7 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
-    private function updateTo310(UpdateContext $updateContext): void
-    {
-        //Version 3.1.0 introduces gift cards
-        foreach ([
-                     new PaymentMethods\GivexGiftCardPaymentMethod,
-                     new PaymentMethods\WebshopGiftCardPaymentMethod,
-                     new PaymentMethods\KadowereldGiftCardPaymentMethod,
-                     new PaymentMethods\TCSTestGiftCardPaymentMethod,
-                     new PaymentMethods\AlbelliGiftCardPaymentMethod,
-                     new PaymentMethods\BijenkorfGiftCardPaymentMethod,
-                     new PaymentMethods\VVVGiftCardPaymentMethod,
-                     new PaymentMethods\GallGallGiftCardPaymentMethod,
-                     new PaymentMethods\HunkemollerLingerieGiftCardPaymentMethod,
-                     new PaymentMethods\BeautyGiftCardPaymentMethod,
-                     new PaymentMethods\SVSGiftCardPaymentMethod,
-                 ] as $method) {
-            $this->addPaymentMethod(
-                $method,
-                $updateContext->getContext()
-            );
-            $this->setPaymentMethodIsActive(
-                true,
-                $updateContext->getContext(),
-                $method
-            );
-        }
-    }
-
     /**
-     * This update will add FashionCheque and DeCadeaukaart
-     * It will also set Savvy to inactive, add it as GenericGiftCard.
      * It will also remove all links of Savvy payment_method in sales_channel_payment_method and recreate these links
      * for the new payment method
      *
@@ -431,75 +396,8 @@ class AdyenPaymentShopware6 extends Plugin
      */
     private function updateTo320(UpdateContext $updateContext): void
     {
-        foreach ([
-                     new PaymentMethods\FashionChequeGiftCardPaymentMethod(),
-                     new PaymentMethods\DeCadeaukaartGiftCardPaymentMethod(),
-                     new PaymentMethods\GenericGiftCardPaymentMethod()
-                 ] as $method) {
-            $this->addPaymentMethod(
-                $method,
-                $updateContext->getContext()
-            );
-            $this->setPaymentMethodIsActive(
-                true,
-                $updateContext->getContext(),
-                $method
-            );
-        }
-
-        // Set the Savvy payment method to inactive
-        /** @var EntityRepository $paymentRepository */
-        $paymentRepository = $this->container->get('payment_method.repository');
-        $salesChannelPaymentRepository = $this->container->get('sales_channel_payment_method.repository');
-        $savvyPaymentMethodId = $this->getPaymentMethodId(
-            'Adyen\Shopware\Handlers\SavvyGiftCardPaymentMethodHandler'
-        );
-        // If savvy payment method is not found, return
-        if (!$savvyPaymentMethodId) {
-            return;
-        }
-        $paymentMethodData = [
-            'id' => $savvyPaymentMethodId,
-            'active' => false
-        ];
-
-        // Set the savvy payment method to inactive
-        $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
-
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('id', $savvyPaymentMethodId));
-        $criteria->addAssociation('salesChannels');
-
-        /** @var PaymentMethodEntity $savvyPaymentMethod */
-        $savvyPaymentMethod = $paymentRepository->search($criteria, $updateContext->getContext())->first();
-
-        $genericPaymentMethodId = $this->getPaymentMethodId(
-            GenericGiftCardPaymentMethodHandler::class
-        );
-
-        $salesChannelIds = [];
-        $salesChannels = $savvyPaymentMethod->getSalesChannels();
-
-        if (count($salesChannels) > 0) {
-            /** @var SalesChannelEntity $savvySalesChannel */
-            foreach ($savvyPaymentMethod->getSalesChannels() as $savvySalesChannel) {
-                $salesChannelIds[] = ['id' => $savvySalesChannel->getId()];
-                $salesChannelPaymentRepository->delete([
-                    [
-                        'salesChannelId' => $savvySalesChannel->getId(),
-                        'paymentMethodId' => $savvyPaymentMethodId
-                    ]
-                ], $updateContext->getContext());
-            }
-
-            // Add new Generic giftcard links to the sales channel
-            $paymentRepository->update([
-                [
-                    'id' => $genericPaymentMethodId,
-                    'salesChannels' => $salesChannelIds
-                ]
-            ], $updateContext->getContext());
-        }
+        $paymentMethodHandler = 'Adyen\Shopware\Handlers\SavvyGiftCardPaymentMethodHandler';
+        $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
     }
 
     private function updateTo350(UpdateContext $updateContext): void
@@ -566,6 +464,99 @@ class AdyenPaymentShopware6 extends Plugin
                 $updateContext->getContext(),
                 $method
             );
+        }
+    }
+
+    private function updateTo3150(UpdateContext $updateContext): void
+    {
+        //Version 3.15.0 introduces MultiGiftcards
+        $this->addPaymentMethod(
+            new PaymentMethods\GiftCardPaymentMethod(),
+            $updateContext->getContext()
+        );
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            new PaymentMethods\GiftcardPaymentMethod()
+        );
+
+        $deprecatedGiftcardMethods = [
+            'Adyen\Shopware\Handlers\AlbelliGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\BeautyGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\BijenkorfGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\DeCadeaukaartGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\FashionChequeGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\GallGallGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\GenericGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\GivexGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\HunkemollerLingerieGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\KadowereldGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\SVSGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\TCSTestGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\VVVGiftCardPaymentMethodHandler',
+            'Adyen\Shopware\Handlers\WebshopGiftCardPaymentMethodHandler'
+        ];
+
+        // Disable deprecated gift card payment methods
+        foreach ($deprecatedGiftcardMethods as $deprecatedGiftcardMethod) {
+            $this->deactivateAndRemovePaymentMethod($updateContext, $deprecatedGiftcardMethod);
+        }
+    }
+
+    private function safeCopyAsset($source, $destination): bool
+    {
+        try {
+            return copy($source, $destination);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * @param UpdateContext $updateContext
+     * @param string $paymentMethodHandler
+     * @return void
+     */
+    private function deactivateAndRemovePaymentMethod(
+        UpdateContext $updateContext,
+        string $paymentMethodHandler
+    ): void {
+        /** @var EntityRepository $paymentRepository */
+        $paymentRepository = $this->container->get('payment_method.repository');
+        /** @var EntityRepository $salesChannelPaymentRepository */
+        $salesChannelPaymentRepository = $this->container->get('sales_channel_payment_method.repository');
+
+        $paymentMethodId = $this->getPaymentMethodId($paymentMethodHandler);
+        // If payment method is not found, return
+        if (!$paymentMethodId) {
+            return;
+        }
+        $paymentMethodData = [
+            'id' => $paymentMethodId,
+            'active' => false
+        ];
+
+        // Set the payment method to inactive
+        $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('id', $paymentMethodId));
+        $criteria->addAssociation('salesChannels');
+
+        /** @var PaymentMethodEntity $paymentMethod */
+        $paymentMethod = $paymentRepository->search($criteria, $updateContext->getContext())->first();
+        $salesChannels = $paymentMethod->getSalesChannels();
+
+        if (count($salesChannels) > 0) {
+            /** @var SalesChannelEntity $savvySalesChannel */
+            foreach ($paymentMethod->getSalesChannels() as $savvySalesChannel) {
+                $salesChannelPaymentRepository->delete([
+                    [
+                        'salesChannelId' => $savvySalesChannel->getId(),
+                        'paymentMethodId' => $paymentMethodId
+                    ]
+                ], $updateContext->getContext());
+            }
         }
     }
 }

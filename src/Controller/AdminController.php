@@ -39,7 +39,7 @@ use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -53,10 +53,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * @Route(defaults={"_routeScope"={"administration"}})
- *
  * Class AdminController
  * @package Adyen\Shopware\Controller
+ * @Route(defaults={"_routeScope"={"administration"}})
  */
 class AdminController
 {
@@ -367,7 +366,7 @@ class AdminController
         try {
             $result = $this->refundService->refund($order, $amountInMinorUnit);
             // If response does not contain pspReference
-            if (!array_key_exists('pspReference', $result)) {
+            if (empty($result->getPspReference())) {
                 $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
                 throw new AdyenException($message);
             }
@@ -375,12 +374,12 @@ class AdminController
             $statesToSearch = RefundService::REFUNDABLE_STATES;
             $orderTransaction = $this->refundService->getAdyenOrderTransactionForRefund($order, $statesToSearch);
             $adyenRefund = $this->adyenRefundRepository
-                ->getRefundForOrderByPspReference($orderTransaction->getId(), $result['pspReference']);
+                ->getRefundForOrderByPspReference($orderTransaction->getId(), $result->getPspReference());
 
             if (is_null($adyenRefund)) {
                 $this->refundService->insertAdyenRefund(
                     $order,
-                    $result['pspReference'],
+                    $result->getPspReference(),
                     RefundEntity::SOURCE_SHOPWARE,
                     RefundEntity::STATUS_PENDING_WEBHOOK,
                     $amountInMinorUnit

@@ -28,8 +28,8 @@ namespace Adyen\Shopware\Handlers;
 
 class Facilypay12xPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-    public static $isOpenInvoice = true;
-    public static $supportsManualCapture = true;
+    public static bool $isOpenInvoice = true;
+    public static bool $supportsManualCapture = true;
 
     public static function getPaymentMethodCode()
     {

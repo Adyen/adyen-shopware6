@@ -30,6 +30,7 @@ use Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\NotificationService;
+use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Webhook\Exception\InvalidDataException;
@@ -72,10 +73,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private OrderRepository $orderRepository;
 
-    /**
-     * @var EntityRepository
-     */
-    private EntityRepository $paymentMethodRepository;
+    private $paymentMethodRepository;
 
     /**
      * @var array|null
@@ -103,6 +101,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private static WebhookHandlerFactory $webhookHandlerFactory;
 
     /**
+     * @var PaymentResponseService $paymentResponseService
+     */
+    private PaymentResponseService $paymentResponseService;
+
+    /**
      * @var array Map Shopware transaction states to payment states in the webhook module.
      */
     const WEBHOOK_MODULE_STATE_MAPPING = [
@@ -119,21 +122,23 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param EntityRepository $scheduledTaskRepository
      * @param NotificationService $notificationService
      * @param OrderRepository $orderRepository
-     * @param EntityRepository $paymentMethodRepository
+     * @param $paymentMethodRepository
      * @param OrderTransactionRepository $orderTransactionRepository
      * @param AdyenPaymentService $adyenPaymentService
      * @param CaptureService $captureService
      * @param WebhookHandlerFactory $webhookHandlerFactory
+     * @param PaymentResponseService $paymentResponseService
      */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
         NotificationService $notificationService,
         OrderRepository $orderRepository,
-        EntityRepository $paymentMethodRepository,
+        $paymentMethodRepository,
         OrderTransactionRepository $orderTransactionRepository,
         AdyenPaymentService $adyenPaymentService,
         CaptureService $captureService,
-        WebhookHandlerFactory $webhookHandlerFactory
+        WebhookHandlerFactory $webhookHandlerFactory,
+        PaymentResponseService $paymentResponseService
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
@@ -142,6 +147,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->adyenPaymentService = $adyenPaymentService;
         $this->captureService = $captureService;
+        $this->paymentResponseService = $paymentResponseService;
         self::$webhookHandlerFactory = $webhookHandlerFactory;
     }
 
@@ -320,10 +326,23 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         NotificationEntity $notification,
         array $logContext
     ): ?OrderTransactionEntity {
-        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
-            $order->getId(),
-            self::WEBHOOK_TRANSACTION_STATES
-        );
+        $orderTransaction = null;
+
+        /* Fetch the related order_transaction entity with the given pspreference.
+         * There might be several order transactions if there have been multiple payment attempts. */
+        $adyenPaymentResponse = $this->paymentResponseService->getWithPspreference($notification->getPspreference());
+        if (isset($adyenPaymentResponse)) {
+            $orderTransaction = $this->orderTransactionRepository->getWithId(
+                $adyenPaymentResponse->getOrderTransactionId()
+            );
+        }
+
+        if (is_null($orderTransaction)) {
+            $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+                $order->getId(),
+                self::WEBHOOK_TRANSACTION_STATES
+            );
+        }
 
         // Skip if orderTransaction not found (non-Adyen)
         if (is_null($orderTransaction)) {

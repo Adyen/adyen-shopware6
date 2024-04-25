@@ -12,7 +12,7 @@
             <argument key="$orderTransactionRepository" type="service" id="order_transaction.repository"/>
         </service>
         <service id="Adyen\Shopware\Handlers\PaymentResponseHandlerResult" autowire="true"/>
-        <service id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
+        <service id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
         <service id="Adyen\Shopware\Service\PaymentResponseService" autowire="true">
             <argument type="service" id="adyen_payment_response.repository"/>
             <argument type="service" id="order_transaction.repository"/>
@@ -40,7 +40,7 @@
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenRefundRepository"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>

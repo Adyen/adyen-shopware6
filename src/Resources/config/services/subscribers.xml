@@ -18,13 +18,14 @@
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
+            <argument type="service" id="payment_method.repository"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Adyen\Shopware\Subscriber\PostPaymentSubscriber">
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
@@ -32,6 +33,10 @@
         <service id="Adyen\Shopware\Subscriber\ContextSubscriber">
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Adyen\Shopware\Subscriber\Response\PaymentMethodRouteResponseSubscriber">

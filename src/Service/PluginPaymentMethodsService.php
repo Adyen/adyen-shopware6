@@ -25,7 +25,6 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
@@ -34,12 +33,11 @@ class PluginPaymentMethodsService
     /** @var AdyenPluginProvider */
     protected $adyenPluginProvider;
 
-    /** @var EntityRepository */
     protected $paymentMethodRepository;
 
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
-        EntityRepository $paymentMethodRepository
+        $paymentMethodRepository
     ) {
         $this->adyenPluginProvider = $adyenPluginProvider;
         $this->paymentMethodRepository = $paymentMethodRepository;
@@ -50,6 +48,11 @@ class PluginPaymentMethodsService
         $criteria = new Criteria();
         $criteria->addFilter(
             new EqualsFilter('pluginId', $this->adyenPluginProvider->getAdyenPluginId())
+        );
+
+        // Skip deprecated payment methods
+        $criteria->addFilter(
+            new EqualsFilter('active', true)
         );
 
         if (isset($identifier)) {

@@ -5,15 +5,37 @@
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <service id="Adyen\Shopware\Controller\StoreApi\Payment\PaymentController" autowire="true">
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentDetailsService"/>
+            <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentStatusService"/>
+            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\OrderService"/>
+            <argument type="service" id="Shopware\Core\System\StateMachine\StateMachineRegistry"/>
+            <argument type="service" id="Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader"/>
+            <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service"
+                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="controller.service_arguments"/>
         </service>
-        <service id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController" autowire="true">
+        <service id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController">
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsBalanceService" />
+            <argument type="service" id="Adyen\Shopware\Service\OrdersService" />
+            <argument type="service" id="Adyen\Shopware\Service\OrdersCancelService" />
+            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService" />
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsFilterService"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <argument key="$orderTransactionRepository" type="service" id="order_transaction.repository"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController">
