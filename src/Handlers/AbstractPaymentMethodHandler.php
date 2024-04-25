@@ -37,7 +37,7 @@ use Adyen\Model\Checkout\BrowserInfo;
 use Adyen\Model\Checkout\Name;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
-use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\ClientService;
