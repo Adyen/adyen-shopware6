@@ -272,9 +272,20 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         $transactionId = $transaction->getOrderTransaction()->getId();
         $storedStateData = $this->paymentStateDataService->getStoredStateData($salesChannelContext, $transactionId);
+
+        /*
+         * For single gift card payments, $storedStateData will be used.
+         * For all other cases, $requestStateData can be used or $stateData can be null.
+         */
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
-        if (!empty($stateData)) {
+        /*
+         * If there are more than one stateData and /payments calls have been completed,
+         * check the remaining order amount for final /payments call.
+         *
+         * remainingAmount is only set if there are multiple payments.
+         */
+        if (is_null($this->remainingAmount) || $this->remainingAmount > 0) {
             $request = $this->getPaymentRequest(
                 $salesChannelContext,
                 $transaction,
