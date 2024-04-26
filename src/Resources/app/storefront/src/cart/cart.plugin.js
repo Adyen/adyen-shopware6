@@ -176,7 +176,7 @@ export default class CartPlugin extends Plugin {
     }
 
     fetchRedeemedGiftcards() {
-        this._client.get(`${adyenGiftcardsConfiguration.fetchRedeemedGiftcardsUrl}`, function (response) {
+        this._client.get(adyenGiftcardsConfiguration.fetchRedeemedGiftcardsUrl, function (response) {
             response = JSON.parse(response);
             let totalBalance =0;
             let giftcardsContainer = document.getElementById('giftcardsContainer');
