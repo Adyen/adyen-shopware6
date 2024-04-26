@@ -28,8 +28,6 @@ namespace Adyen\Shopware;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
-use Adyen\Shopware\Handlers\GenericGiftCardPaymentMethodHandler;
-use Adyen\Shopware\PaymentMethods;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -46,7 +44,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AdyenPaymentShopware6 extends Plugin
 {
