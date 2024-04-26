@@ -499,7 +499,8 @@ class AdyenPaymentShopware6 extends Plugin
 
         // Disable deprecated gift card payment methods
         foreach ($deprecatedGiftcardMethods as $deprecatedGiftcardMethod) {
-            $this->deactivateAndRemovePaymentMethod($updateContext, $deprecatedGiftcardMethod);
+            $description = '@deprecated DO NOT ACTIVATE, use GiftCard instead';
+            $this->deactivateAndRemovePaymentMethod($updateContext, $deprecatedGiftcardMethod, $description);
         }
     }
 
@@ -515,11 +516,13 @@ class AdyenPaymentShopware6 extends Plugin
     /**
      * @param UpdateContext $updateContext
      * @param string $paymentMethodHandler
+     * @param string|null $description
      * @return void
      */
     private function deactivateAndRemovePaymentMethod(
         UpdateContext $updateContext,
-        string $paymentMethodHandler
+        string $paymentMethodHandler,
+        string $description = null
     ): void {
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
@@ -533,9 +536,13 @@ class AdyenPaymentShopware6 extends Plugin
         }
         $paymentMethodData = [
             'id' => $paymentMethodId,
-            'active' => false,
-            'description' => '@deprecated DO NOT ACTIVATE, use Giftcard instead'
+            'active' => false
         ];
+
+        // Update description as deprecation message
+        if (isset($description)) {
+            $paymentMethodData['description'] = $description;
+        }
 
         // Set the payment method to inactive
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
