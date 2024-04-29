@@ -28,8 +28,6 @@ namespace Adyen\Shopware;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
-use Adyen\Shopware\Handlers\GenericGiftCardPaymentMethodHandler;
-use Adyen\Shopware\PaymentMethods;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -46,7 +44,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 class AdyenPaymentShopware6 extends Plugin
 {
@@ -499,7 +496,8 @@ class AdyenPaymentShopware6 extends Plugin
 
         // Disable deprecated gift card payment methods
         foreach ($deprecatedGiftcardMethods as $deprecatedGiftcardMethod) {
-            $this->deactivateAndRemovePaymentMethod($updateContext, $deprecatedGiftcardMethod);
+            $description = '@deprecated DO NOT ACTIVATE, use GiftCard instead';
+            $this->deactivateAndRemovePaymentMethod($updateContext, $deprecatedGiftcardMethod, $description);
         }
     }
 
@@ -515,11 +513,13 @@ class AdyenPaymentShopware6 extends Plugin
     /**
      * @param UpdateContext $updateContext
      * @param string $paymentMethodHandler
+     * @param string|null $description
      * @return void
      */
     private function deactivateAndRemovePaymentMethod(
         UpdateContext $updateContext,
-        string $paymentMethodHandler
+        string $paymentMethodHandler,
+        string $description = null
     ): void {
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
@@ -535,6 +535,11 @@ class AdyenPaymentShopware6 extends Plugin
             'id' => $paymentMethodId,
             'active' => false
         ];
+
+        // Update description as deprecation message
+        if (isset($description)) {
+            $paymentMethodData['description'] = $description;
+        }
 
         // Set the payment method to inactive
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
