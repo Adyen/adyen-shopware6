@@ -29,10 +29,10 @@
                 <option value="" disabled selected>{{ "Please select a giftcard..." | trans }}</option>
                 {% for giftcard in adyenFrontendData.giftcards %}
                     <option class="adyen-giftcard"
-                            value="{{ giftcard.translated.name }}"
+                            value="{{ giftcard.name }}"
                             data-giftcard="{{ giftcard|json_encode|e('html_attr') }}"
                     >
-                        {{ giftcard.translated.name }}
+                        {{ giftcard.name }}
                     </option>
                 {% endfor %}
             </select>

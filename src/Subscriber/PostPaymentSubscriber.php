@@ -29,7 +29,9 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Struct\ArrayEntity;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Routing\RouterInterface;
@@ -126,8 +128,11 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         );
     }
 
-    private function buildAdyenGivingData($frontendData, $order, $salesChannelContext)
-    {
+    private function buildAdyenGivingData(
+        array $frontendData,
+        OrderEntity $order,
+        SalesChannelContext $salesChannelContext
+    ): array {
         $orderTransaction = $order->getTransactions()
             ->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
 

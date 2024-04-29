@@ -50,6 +50,11 @@ class PluginPaymentMethodsService
             new EqualsFilter('pluginId', $this->adyenPluginProvider->getAdyenPluginId())
         );
 
+        // Skip deprecated payment methods
+        $criteria->addFilter(
+            new EqualsFilter('active', true)
+        );
+
         if (isset($identifier)) {
             $criteria->addFilter(
                 new EqualsFilter('pluginId', $this->adyenPluginProvider->getAdyenPluginId())

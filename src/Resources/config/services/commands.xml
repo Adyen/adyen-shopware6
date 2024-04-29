@@ -39,22 +39,16 @@
             <tag name="console.command"/>
         </service>
         <service id="Adyen\Shopware\Command\EnablePaymentMethodCommand">
-            <argument type="service" id="Adyen\Shopware\Handlers\Command\EnablePaymentMethodHandler"/>
+            <argument type="service" id="Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler"/>
             <tag name="console.command"/>
         </service>
         <service id="Adyen\Shopware\Command\DisablePaymentMethodCommand">
-            <argument type="service" id="Adyen\Shopware\Handlers\Command\DisablePaymentMethodHandler"/>
+            <argument type="service" id="Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler"/>
             <tag name="console.command"/>
         </service>
 
         <!--Command handlers-->
-        <service id="Adyen\Shopware\Handlers\Command\EnablePaymentMethodHandler">
-            <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
-            <argument type="service" id="payment_method.repository"/>
-            <argument type="service" id="sales_channel.repository"/>
-            <argument type="service" id="sales_channel_payment_method.repository"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\Command\DisablePaymentMethodHandler">
+        <service id="Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler">
             <argument type="service" id="Adyen\Shopware\Provider\AdyenPluginProvider"/>
             <argument type="service" id="payment_method.repository"/>
             <argument type="service" id="sales_channel.repository"/>

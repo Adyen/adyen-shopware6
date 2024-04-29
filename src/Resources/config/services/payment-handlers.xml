@@ -8,13 +8,8 @@
             <argument type="service" id="Adyen\Shopware\Service\OrdersService"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
-            <argument type="service" id="Adyen\Service\Builder\Browser"/>
-            <argument type="service" id="Adyen\Service\Builder\Address"/>
-            <argument type="service" id="Adyen\Service\Builder\Payment"/>
-            <argument type="service" id="Adyen\Service\Builder\OpenInvoice"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
-            <argument type="service" id="Adyen\Service\Builder\Customer"/>
-            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
+            <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
@@ -202,3 +197,4 @@
         </service>
     </services>
 </container>
+
