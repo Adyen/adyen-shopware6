@@ -190,9 +190,10 @@ class RefundService
         /** @var AdyenPaymentEntity $adyenPayment */
         foreach ($adyenPayments as $adyenPayment) {
             // Adyen payments are already sorted according to strategy above.
-            if (in_array(
-                $refundStrategy,
-                [self::REFUND_STRATEGY_FIRST_PAYMENT_FIRST, self::REFUND_STRATEGY_LAST_PAYMENT_FIRST])) {
+            if (in_array($refundStrategy, [
+                self::REFUND_STRATEGY_FIRST_PAYMENT_FIRST,
+                self::REFUND_STRATEGY_LAST_PAYMENT_FIRST
+            ])) {
                 $refundableAmount = $adyenPayment->getAmountValue() - $adyenPayment->getTotalRefunded();
                 $requestRefundAmount = min([$refundableAmount, $refundAmountInMinorUnit]);
 
