@@ -113,7 +113,7 @@ class RefundWebhookHandler implements WebhookHandlerInterface
         $transactionAmount = $currencyUtil->sanitize($totalPrice, $isoCode);
 
         if ($refundedAmount > $transactionAmount) {
-            throw new Exception('The refunded amount is greater than the transaction amount.');
+            throw new AdyenException('The refunded amount is greater than the transaction amount.');
         }
 
         $this->refundService->handleRefundNotification(
