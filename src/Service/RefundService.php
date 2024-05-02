@@ -49,6 +49,7 @@ class RefundService
     const REFUND_STRATEGY_FIRST_PAYMENT_FIRST = 'fifo';
     const REFUND_STRATEGY_LAST_PAYMENT_FIRST = 'filo';
     const REFUND_STRATEGY_RATIO = 'ratio';
+    const DEFAULT_REFUND_STRATEGY = self::REFUND_STRATEGY_FIRST_PAYMENT_FIRST;
 
     const VALID_REFUND_STRATEGIES = [
         self::REFUND_STRATEGY_RATIO,
@@ -162,8 +163,10 @@ class RefundService
 
         $refundStrategy = $this->configurationService->getRefundStrategyForGiftcards($order->getSalesChannelId());
 
-        // Validate the refund strategy
-        if (!in_array($refundStrategy, self::VALID_REFUND_STRATEGIES)) {
+        // Validate the refund strategy or use default value
+        if (is_null($refundStrategy)) {
+            $refundStrategy = self::DEFAULT_REFUND_STRATEGY;
+        } elseif (!in_array($refundStrategy, self::VALID_REFUND_STRATEGIES)) {
             $message = 'Refund strategy does not have a valid value!';
             $this->logger->error($message);
             throw new AdyenException($message);
