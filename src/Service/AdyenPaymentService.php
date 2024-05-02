@@ -149,4 +149,23 @@ class AdyenPaymentService
 
         return false;
     }
+
+    /**
+     * Updates totalRefunded amount og Adyen Payment Entity
+     *
+     * @param AdyenPaymentEntity $adyenPaymentEntity Entity to be updated
+     * @param int $refundAmount Single request refund amount
+     *
+     * @return void
+     */
+    public function updateTotalRefundedAmount(AdyenPaymentEntity $adyenPaymentEntity, int $refundAmount): void
+    {
+        $refundedAmount = $adyenPaymentEntity->getTotalRefunded() + $refundAmount;
+        $this->adyenPaymentRepository->getRepository()->update([
+            [
+                'id' => $adyenPaymentEntity->getId(),
+                'totalRefunded' => $refundedAmount
+            ]
+        ], Context::createDefaultContext());
+    }
 }

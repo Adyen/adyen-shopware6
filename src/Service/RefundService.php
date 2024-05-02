@@ -24,11 +24,9 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Client;
-use Adyen\Service\Modification;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Model\Checkout\Amount;
 use Adyen\Model\Checkout\PaymentRefundRequest;
-use Adyen\Model\Checkout\PaymentRefundResponse;
 use Adyen\Service\Checkout\ModificationsApi;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
@@ -36,6 +34,7 @@ use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Shopware\Util\Currency;
+use Adyen\Shopware\Util\Idempotency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -50,6 +49,12 @@ class RefundService
     const REFUND_STRATEGY_FIRST_PAYMENT_FIRST = 'fifo';
     const REFUND_STRATEGY_LAST_PAYMENT_FIRST = 'filo';
     const REFUND_STRATEGY_RATIO = 'ratio';
+
+    const VALID_REFUND_STRATEGIES = [
+        self::REFUND_STRATEGY_RATIO,
+        self::REFUND_STRATEGY_FIRST_PAYMENT_FIRST,
+        self::REFUND_STRATEGY_LAST_PAYMENT_FIRST
+    ];
 
     const REFUNDABLE_STATES = [
         OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
@@ -98,6 +103,11 @@ class RefundService
     private AdyenPaymentService $adyenPaymentService;
 
     /**
+     * @var Idempotency
+     */
+    private Idempotency $idempotencyHelper;
+
+    /**
      * RefundService constructor.
      *
      * @param LoggerInterface $logger
@@ -108,6 +118,7 @@ class RefundService
      * @param OrderTransactionRepository $transactionRepository
      * @param OrderTransactionStateHandler $transactionStateHandler
      * @param AdyenPaymentService $adyenPaymentService
+     * @param Idempotency $idempotency
      */
     public function __construct(
         LoggerInterface $logger,
@@ -117,7 +128,8 @@ class RefundService
         Currency $currency,
         OrderTransactionRepository $transactionRepository,
         OrderTransactionStateHandler $transactionStateHandler,
-        AdyenPaymentService $adyenPaymentService
+        AdyenPaymentService $adyenPaymentService,
+        Idempotency $idempotency
     ) {
         $this->logger = $logger;
         $this->configurationService = $configurationService;
@@ -127,17 +139,18 @@ class RefundService
         $this->transactionRepository = $transactionRepository;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->adyenPaymentService = $adyenPaymentService;
+        $this->idempotencyHelper = $idempotency;
     }
 
     /**
      * Process a refund on the Adyen platform
      *
      * @param OrderEntity $order
-     * @param int $refundAmount
+     * @param float $refundAmount
      * @return void
      * @throws AdyenException
      */
-    public function refund(OrderEntity $order, int $refundAmount): void
+    public function refund(OrderEntity $order, float $refundAmount): void
     {
         $merchantAccount = $this->configurationService->getMerchantAccount($order->getSalesChannelId());
         if (!$merchantAccount) {
@@ -148,94 +161,134 @@ class RefundService
         }
 
         $refundStrategy = $this->configurationService->getRefundStrategyForGiftcards($order->getSalesChannelId());
+
+        // Validate the refund strategy
+        if (!in_array($refundStrategy, self::VALID_REFUND_STRATEGIES)) {
+            $message = 'Refund strategy does not have a valid value!';
+            $this->logger->error($message);
+            throw new AdyenException($message);
+        }
+
         $sortAdyenPayments = ($refundStrategy === self::REFUND_STRATEGY_FIRST_PAYMENT_FIRST) ?
             FieldSorting::ASCENDING :
             FieldSorting::DESCENDING;
 
         $adyenPayments = $this->adyenPaymentService->getAdyenPayments($order->getId(), $sortAdyenPayments);
 
+        // Validate Adyen payments
         if (empty($adyenPayments)) {
             $message = 'There is no authorised Adyen payments for this order!';
             $this->logger->error($message);
             throw new AdyenException($message);
         }
 
-        // TODO:: Do we need to check whether if it's a gift card payment or not?
-        // TODO:: Do we need to wait for the full amount to be authorised?
-
         $refundRequests = [];
 
-        if (in_array(
-            $refundStrategy,
-            [self::REFUND_STRATEGY_FIRST_PAYMENT_FIRST, self::REFUND_STRATEGY_LAST_PAYMENT_FIRST])
-        ) {
-            /** @var AdyenPaymentEntity $adyenPayment */
-            foreach ($adyenPayments as $adyenPayment) {
+        $currency = $order->getCurrency()->getIsoCode();
+        $refundAmountInMinorUnit = $this->currency->sanitize($refundAmount, $currency);
+
+        /** @var AdyenPaymentEntity $adyenPayment */
+        foreach ($adyenPayments as $adyenPayment) {
+            // Adyen payments are already sorted according to strategy above.
+            if (in_array(
+                $refundStrategy,
+                [self::REFUND_STRATEGY_FIRST_PAYMENT_FIRST, self::REFUND_STRATEGY_LAST_PAYMENT_FIRST])
+            ) {
                 $refundableAmount = $adyenPayment->getAmountValue() - $adyenPayment->getTotalRefunded();
-                $requestRefundAmount = min([$refundableAmount, $refundAmount]);
+                $requestRefundAmount = min([$refundableAmount, $refundAmountInMinorUnit]);
 
-                $refundRequests[] = [
-                    'originalReference' => $adyenPayment->getOriginalReference(),
-                    'modificationAmount' => [
-                        'value' => $requestRefundAmount,
-                        'currency' => $order->getCurrency()->getIsoCode()
-                    ],
-                    'merchantAccount' => $merchantAccount
-                ];
+                if ($requestRefundAmount <= 0) {
+                    continue;
+                }
 
-                $refundAmount = $refundableAmount - $requestRefundAmount;
-                if ($refundAmount === 0) {
+                $refundRequests[] = $this->getRefundRequest(
+                    $requestRefundAmount,
+                    $currency,
+                    $merchantAccount,
+                    $adyenPayment->getPspreference(),
+                    [
+                        'totalRefunded' => $adyenPayment->getTotalRefunded(),
+                        'originalPspReference' => $adyenPayment->getPspreference()
+                    ]
+                );
+
+                $refundAmountInMinorUnit = $refundAmountInMinorUnit - $requestRefundAmount;
+                if ($refundAmountInMinorUnit === 0) {
                     break;
                 }
+            } elseif ($refundStrategy === self::REFUND_STRATEGY_RATIO) {
+                $orderAmountInMinorUnits = $this->currency->sanitize(
+                    $order->getAmountTotal(),
+                    $currency
+                );
+
+                $ratio = $adyenPayment->getAmountValue() / $orderAmountInMinorUnits;
+                $requestRefundAmount = $refundAmount * $ratio;
+                $requestRefundAmountMinorUnits = $this->currency->sanitize($requestRefundAmount, $currency);
+
+                $refundRequests[] = $this->getRefundRequest(
+                    $requestRefundAmountMinorUnits,
+                    $order->getCurrency()->getIsoCode(),
+                    $merchantAccount,
+                    $adyenPayment->getPspreference(),
+                    [
+                        'totalRefunded' => $adyenPayment->getTotalRefunded(),
+                        'originalPspReference' => $adyenPayment->getPspreference()
+                    ]
+                );
             }
-        } elseif ($refundStrategy === self::REFUND_STRATEGY_RATIO) {
-
-        } else {
-            $message = 'Refund strategy for gift cards has not been configured correctly!';
-            $this->logger->error($message);
-            throw new AdyenException($message);
         }
-
-        // TODO:: Add idempotency key to the request
 
         if (!empty($refundRequests)) {
             foreach ($refundRequests as $refundRequest) {
                 try {
-                    $modificationService = new Modification(
-                        $this->clientService->getClient($order->getSalesChannelId())
-                    );
+                    /** @var PaymentRefundRequest $request */
+                    $request = $refundRequest['requestObject'];
 
                     $this->clientService->logRequest(
-                        $refundRequest,
-                        Client::API_PAYMENT_VERSION,
-                        '/pal/servlet/Payment/{version}/refund',
+                        $request->toArray(),
+                        Client::API_CHECKOUT_VERSION,
+                        sprintf("/payments/%s/refunds", $refundRequest['pspReference']),
                         $order->getSalesChannelId()
                     );
 
-                    $response = $modificationService->refund($refundRequest);
+                    $modification = new ModificationsApi(
+                        $this->clientService->getClient($order->getSalesChannelId())
+                    );
+
+                    $response = $modification->refundCapturedPayment(
+                        $refundRequest['pspReference'],
+                        $request,
+                        $refundRequest['requestOptions']
+                    );
 
                     $this->clientService->logResponse(
-                        $response,
+                        $response->toArray(),
                         $order->getSalesChannelId()
                     );
 
                     // If response does not contain pspReference
-                    if (!array_key_exists('pspReference', $response)) {
+                    if (is_null($response->getPspReference())) {
                         $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
                         throw new AdyenException($message);
                     }
 
-                    $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, RefundService::REFUNDABLE_STATES);
-                    $adyenRefund = $this->adyenRefundRepository
-                        ->getRefundForOrderByPspReference($orderTransaction->getId(), $response['pspReference']);
+                    $orderTransaction = $this->getAdyenOrderTransactionForRefund(
+                        $order,
+                        RefundService::REFUNDABLE_STATES
+                    );
+                    $adyenRefund = $this->adyenRefundRepository->getRefundForOrderByPspReference(
+                        $orderTransaction->getId(),
+                        $response->getPspReference()
+                    );
 
                     if (is_null($adyenRefund)) {
                         $this->insertAdyenRefund(
                             $order,
-                            $response['pspReference'],
+                            $response->getPspReference(),
                             RefundEntity::SOURCE_SHOPWARE,
                             RefundEntity::STATUS_PENDING_WEBHOOK,
-                            $refundRequest['modificationAmount']['amount']
+                            $request->getAmount()->getValue()
                         );
                     }
                 } catch (AdyenException $e) {
@@ -415,5 +468,42 @@ class RefundService
         }
 
         return $orderTransaction;
+    }
+
+    /**
+     * @param mixed $requestRefundAmount
+     * @param string $currencyCode
+     * @param mixed $merchantAccount
+     * @param string $pspReference
+     * @param array|null $idempotencyExtraData
+     * @return array
+     */
+    public function getRefundRequest(
+        mixed $requestRefundAmount,
+        string $currencyCode,
+        mixed $merchantAccount,
+        string $pspReference,
+        array $idempotencyExtraData = null
+    ): array {
+        $amountObject = new Amount();
+        $amountObject->setValue($requestRefundAmount);
+        $amountObject->setCurrency($currencyCode);
+
+        $refundRequestObject = new PaymentRefundRequest();
+        $refundRequestObject->setMerchantAccount($merchantAccount);
+        $refundRequestObject->setAmount($amountObject);
+
+        $idempotencyKey = $this->idempotencyHelper->createKeyFromRequest(
+            $refundRequestObject->toArray(),
+            $idempotencyExtraData
+        );
+
+        return [
+            'pspReference' => $pspReference,
+            'requestObject' => $refundRequestObject,
+            'requestOptions' => [
+                'idempotencyKey' => $idempotencyKey
+            ]
+        ];
     }
 }

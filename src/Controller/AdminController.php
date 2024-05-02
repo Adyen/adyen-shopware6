@@ -23,12 +23,10 @@
 
 namespace Adyen\Shopware\Controller;
 
-use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
-use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
@@ -364,7 +362,7 @@ class AdminController
         }
 
         try {
-            $this->refundService->refund($order, $amountInMinorUnit);
+            $this->refundService->refund($order, (float) $refundAmount);
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
 
