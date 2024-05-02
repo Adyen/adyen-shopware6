@@ -41,4 +41,3 @@ class Idempotency
         return hash('sha256', json_encode($request));
     }
 }
-
