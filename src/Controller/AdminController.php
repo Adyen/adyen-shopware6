@@ -51,6 +51,7 @@ use Shopware\Core\System\Currency\CurrencyFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Throwable;
 
 /**
  * Class AdminController
@@ -302,12 +303,16 @@ class AdminController
     {
         try {
             $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId);
+            if (is_null($orderTransaction)) {
+                return new JsonResponse(false);
+            }
+            
             $paymentMethodHandlerIdentifier = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
 
             return new JsonResponse(
                 $this->captureService->isManualCapture($paymentMethodHandlerIdentifier)
             );
-        } catch (Exception $e) {
+        } catch (Throwable $t) {
             return new JsonResponse(false);
         }
     }
