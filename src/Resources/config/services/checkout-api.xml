@@ -44,6 +44,8 @@
             <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
+            <argument type="service" id="Adyen\Shopware\Util\Idempotency"/>
         </service>
     </services>
 </container>
