@@ -225,7 +225,7 @@ class PaymentMethodsService
 
         $salesChannelAssocLocale = $this->salesChannelRepository
             ->getSalesChannelAssoc($context, ['language.locale', 'country']);
-        $shopperLocale = $salesChannelAssocLocale->getLanguage()->getLocale()->getCode();
+        $shopperLocale = $this->salesChannelRepository->getSalesChannelLocale($context);
 
         if (!is_null($context->getCustomer())) {
             if ($context->getCustomer()->getActiveBillingAddress()->getCountry()->getIso()) {
