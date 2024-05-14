@@ -19,13 +19,13 @@ composer install --no-dev --working-dir=./AdyenPaymentShopware6
 # Copy original the composer.json file
 cp adyen-shopware6/composer.json AdyenPaymentShopware6/.
 
-# Zip the clean installation directory
+# Zip the plugin directory
 zip -r AdyenPaymentShopware6.zip AdyenPaymentShopware6/ ;
 
 # Move the zip file to plugin folder
 mv AdyenPaymentShopware6.zip adyen-shopware6
 
-# Cleanup the zip files
+# Cleanup the zip installation
 zip -d AdyenPaymentShopware6.zip __MACOSX/\* ; zip -d AdyenPaymentShopware6.zip *.git*
 
 # Go back to workflow's root directory
