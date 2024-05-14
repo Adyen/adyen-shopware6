@@ -18,12 +18,15 @@ jobs:
       - name: Prepare release artifact
         run: .github/workflows/scripts/prepare-release.sh
 
+      - name: Update current directory
+        run: cd ..
+
       - name: Marketplace Release Artifacts
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: marketplace-release-zip
-          path: ../AdyenPaymentShopware6
+          path: AdyenPaymentShopware6
 
 #      - name: Test with E2E
 #        if: always()
