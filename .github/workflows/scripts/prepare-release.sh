@@ -19,5 +19,7 @@ composer install --no-dev --working-dir=./AdyenPaymentShopware6
 # Copy original the composer.json file
 cp adyen-shopware6/composer.json AdyenPaymentShopware6/.
 
+cp AdyenPaymentShopware6.zip adyen-shopware6 && cd adyen-shopware6
+
 # Zip the clean installation directory
 zip -r AdyenPaymentShopware6.zip AdyenPaymentShopware6/ ; zip -d AdyenPaymentShopware6.zip __MACOSX/\* ; zip -d AdyenPaymentShopware6.zip *.git*
