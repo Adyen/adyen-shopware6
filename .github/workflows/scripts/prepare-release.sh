@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Create a copy of the plugin directory
-cp -r . AdyenPaymentShopware6
+cp -r * AdyenPaymentShopware6
 
 # Remove Shopware dependencies
 composer remove shopware/core --working-dir=./AdyenPaymentShopware6
@@ -15,7 +15,7 @@ rm -rf AdyenPaymentShopware6/vendor
 composer install --no-dev --working-dir=./AdyenPaymentShopware6
 
 # Copy original the composer.json file
-cp ./composer.json AdyenPaymentShopware6/.
+cp composer.json AdyenPaymentShopware6/.
 
 # Zip the clean installation directory
 zip -r AdyenPaymentShopware6.zip AdyenPaymentShopware6/ ; zip -d AdyenPaymentShopware6.zip __MACOSX/\* ; zip -d AdyenPaymentShopware6.zip *.git*
