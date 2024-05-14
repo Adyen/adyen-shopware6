@@ -31,16 +31,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
-class DisablePaymentMethodHandler
+class PaymentMethodStatusHandler
 {
     /**
      * @var AdyenPluginProvider
      */
     private $adyenPluginProvider;
 
-    /**
-     * @var EntityRepository
-     */
     private $paymentMethodRepository;
 
     /**
@@ -55,7 +52,7 @@ class DisablePaymentMethodHandler
 
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
-        EntityRepository $paymentMethodRepository,
+        $paymentMethodRepository,
         EntityRepository $salesChannelRepository,
         EntityRepository $salesChannelPaymentMethodRepository
     ) {
@@ -65,12 +62,16 @@ class DisablePaymentMethodHandler
         $this->salesChannelPaymentMethodRepository = $salesChannelPaymentMethodRepository;
     }
 
-    public function run(bool $isAll, ?string $paymentMethodHandlerIdentifier): void
+    public function run(bool $isAll, bool $isActive, ?string $paymentMethodHandlerIdentifier): void
     {
         $criteria = new Criteria();
         $criteria->addFilter(
             new EqualsFilter('pluginId', $this->adyenPluginProvider->getAdyenPluginId())
         );
+        $criteria->addFilter(
+            new EqualsFilter('active', true)
+        );
+
         if (!$isAll) {
             $criteria->addFilter(
                 new ContainsFilter('handlerIdentifier', $paymentMethodHandlerIdentifier)
@@ -90,18 +91,35 @@ class DisablePaymentMethodHandler
             ->searchIds($criteria, Context::createDefaultContext())
             ->getData();
 
-        echo "Following payment methods will be disabled: \n";
+        echo "Following payment methods will be enabled: \n";
         foreach ($paymentMethods->getElements() as $paymentMethod) {
             $paymentMethodName = $paymentMethod->getName();
             echo "* $paymentMethodName \n";
 
             foreach ($salesChannels as $salesChannel) {
-                $this->disablePaymentMethod($paymentMethod->getId(), $salesChannel['id']);
+                if ($isActive) {
+                    $this->enablePaymentMethod($paymentMethod->getId(), $salesChannel['id']);
+                } else {
+                    $this->disablePaymentMethod($paymentMethod->getId(), $salesChannel['id']);
+                }
             }
         }
     }
 
-    private function disablePaymentMethod(string $paymentMethodId, string $salesChannelId)
+    private function enablePaymentMethod(string $paymentMethodId, string $salesChannelId): void
+    {
+        $this->salesChannelPaymentMethodRepository->create(
+            [
+                [
+                    'salesChannelId' => $salesChannelId,
+                    'paymentMethodId' => $paymentMethodId
+                ]
+            ],
+            Context::createDefaultContext()
+        );
+    }
+
+    private function disablePaymentMethod(string $paymentMethodId, string $salesChannelId): void
     {
         $this->salesChannelPaymentMethodRepository
             ->delete(

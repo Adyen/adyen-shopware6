@@ -73,10 +73,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private OrderRepository $orderRepository;
 
-    /**
-     * @var EntityRepository
-     */
-    private EntityRepository $paymentMethodRepository;
+    private $paymentMethodRepository;
 
     /**
      * @var array|null
@@ -125,7 +122,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param EntityRepository $scheduledTaskRepository
      * @param NotificationService $notificationService
      * @param OrderRepository $orderRepository
-     * @param EntityRepository $paymentMethodRepository
+     * @param $paymentMethodRepository
      * @param OrderTransactionRepository $orderTransactionRepository
      * @param AdyenPaymentService $adyenPaymentService
      * @param CaptureService $captureService

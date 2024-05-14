@@ -23,12 +23,10 @@
 
 namespace Adyen\Shopware\Controller;
 
-use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
-use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
@@ -39,7 +37,7 @@ use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -51,6 +49,7 @@ use Shopware\Core\System\Currency\CurrencyFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Throwable;
 
 /**
  * Class AdminController
@@ -302,12 +301,16 @@ class AdminController
     {
         try {
             $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId);
+            if (is_null($orderTransaction)) {
+                return new JsonResponse(false);
+            }
+            
             $paymentMethodHandlerIdentifier = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
 
             return new JsonResponse(
                 $this->captureService->isManualCapture($paymentMethodHandlerIdentifier)
             );
-        } catch (Exception $e) {
+        } catch (Throwable $t) {
             return new JsonResponse(false);
         }
     }
@@ -364,27 +367,7 @@ class AdminController
         }
 
         try {
-            $result = $this->refundService->refund($order, $amountInMinorUnit);
-            // If response does not contain pspReference
-            if (!array_key_exists('pspReference', $result)) {
-                $message = sprintf('Invalid response for refund on order %s', $order->getOrderNumber());
-                throw new AdyenException($message);
-            }
-
-            $statesToSearch = RefundService::REFUNDABLE_STATES;
-            $orderTransaction = $this->refundService->getAdyenOrderTransactionForRefund($order, $statesToSearch);
-            $adyenRefund = $this->adyenRefundRepository
-                ->getRefundForOrderByPspReference($orderTransaction->getId(), $result['pspReference']);
-
-            if (is_null($adyenRefund)) {
-                $this->refundService->insertAdyenRefund(
-                    $order,
-                    $result['pspReference'],
-                    RefundEntity::SOURCE_SHOPWARE,
-                    RefundEntity::STATUS_PENDING_WEBHOOK,
-                    $amountInMinorUnit
-                );
-            }
+            $this->refundService->refund($order, (float) $refundAmount);
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
 

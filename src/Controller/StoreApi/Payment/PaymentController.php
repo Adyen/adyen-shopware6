@@ -24,7 +24,8 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\Payment;
 
-use Adyen\Service\Validator\CheckoutStateDataValidator;
+use Adyen\Model\Checkout\PaymentDetailsRequest;
+use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -95,7 +96,7 @@ class PaymentController
     /**
      * @var EntityRepository
      */
-    private $orderTransactionRepository;
+    private EntityRepository $orderTransactionRepository;
     /**
      * @var StateMachineRegistry
      */
@@ -130,10 +131,10 @@ class PaymentController
      * @param OrderService $orderService
      * @param StateMachineRegistry $stateMachineRegistry
      * @param InitialStateIdLoader $initialStateIdLoader
-     * @param LoggerInterface $logger
      * @param EntityRepository $orderTransactionRepository
      * @param ConfigurationService $configurationService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param LoggerInterface $logger
      */
     public function __construct(
         PaymentMethodsService $paymentMethodsService,
@@ -146,10 +147,10 @@ class PaymentController
         OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
         InitialStateIdLoader $initialStateIdLoader,
-        LoggerInterface $logger,
         EntityRepository $orderTransactionRepository,
         ConfigurationService $configurationService,
-        OrderTransactionStateHandler $orderTransactionStateHandler
+        OrderTransactionStateHandler $orderTransactionStateHandler,
+        LoggerInterface $logger
     ) {
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentDetailsService = $paymentDetailsService;
@@ -160,11 +161,11 @@ class PaymentController
         $this->orderRepository = $orderRepository;
         $this->orderService = $orderService;
         $this->stateMachineRegistry = $stateMachineRegistry;
-        $this->logger = $logger;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->initialStateIdLoader = $initialStateIdLoader;
+        $this->logger = $logger;
     }
 
     /**
@@ -179,7 +180,8 @@ class PaymentController
      */
     public function getPaymentMethods(SalesChannelContext $context): JsonResponse
     {
-        return new JsonResponse($this->paymentMethodsService->getPaymentMethods($context));
+        $paymentMethodsResponse = $this->paymentMethodsService->getPaymentMethods($context);
+        return new JsonResponse($this->paymentMethodsService->getPaymentMethodsArray($paymentMethodsResponse));
     }
 
     /**
@@ -225,7 +227,7 @@ class PaymentController
 
         try {
             $result = $this->paymentDetailsService->getPaymentDetails(
-                $stateData,
+                new PaymentDetailsRequest($stateData),
                 $paymentResponse->getOrderTransaction()
             );
         } catch (PaymentFailedException $exception) {

@@ -10,13 +10,13 @@
             {{ "adyen.giftcard.discount" | trans }}
         </dt>
         <dd class="col-5 summary-value summary-total adyen-giftcard-summary">
-            {{ adyenFrontendData.currencySymbol }} {{ adyenFrontendData.giftcardDiscountDisplay | number_format(2) }}
+            {{ adyenFrontendData.currencySymbol }} {{ adyenFrontendData.giftcardDiscount | number_format(2) }}
         </dd>
         <dt class="col-7 summary-label summary-total adyen-giftcard-summary">
             {{ "adyen.giftcard.remainingAmount" | trans }}
         </dt>
         <dd class="col-5 summary-value summary-total adyen-giftcard-summary">
-            {{ adyenFrontendData.currencySymbol }} {{ (adyenFrontendData.totalPrice - adyenFrontendData.giftcardDiscountDisplay) | number_format(2) }}
+            {{ adyenFrontendData.currencySymbol }} {{ (adyenFrontendData.totalPrice - adyenFrontendData.giftcardDiscount) | number_format(2) }}
         </dd>
     {% endif %}
 

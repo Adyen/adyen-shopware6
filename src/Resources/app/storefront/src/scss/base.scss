@@ -49,11 +49,12 @@
 
 .adyen-remove-giftcard {
     display: none;
+    float: right;
+    margin-left: auto;
 }
 
-.adyen-remaining-balance {
+.adyen-deducted-balance {
     display: none;
-    text-align: center;
 }
 
 .adyen-voucher-details {
@@ -77,4 +78,34 @@
 
 #adyen-payment-checkout-mask{
     width: 100%;
+}
+
+select{
+    display: block;
+    background-clip: padding-box;
+    border: 1px solid #cccccc;
+    border-radius: 1px;
+    font-size: 14px;
+    height: 32px;
+    line-height: 1.42857143;
+    padding: 4px 25px 5px 10px;
+    vertical-align: baseline;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.adyen-giftcard-logo {
+    width: 75px;
+    margin: 0 10px 5px 0;
+    float: left;
+}
+
+#adyen-giftcard-component{
+    margin: 15px 0;
+}
+
+.adyen-giftcard-summary {
+    margin-top: 5px;
+    color: #666;
+    font-size: 90%;
 }

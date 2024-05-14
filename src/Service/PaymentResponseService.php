@@ -23,6 +23,8 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Model\Checkout\PaymentDetailsResponse;
+use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
@@ -99,20 +101,32 @@ class PaymentResponseService
             ->first();
     }
 
+    /**
+     * @param PaymentResponse|PaymentDetailsResponse $paymentResponse
+     * @param OrderTransactionEntity $orderTransaction
+     * @param bool $upsert
+     * @return void
+     */
+
     public function insertPaymentResponse(
-        array $paymentResponse,
+        $paymentResponse,
         OrderTransactionEntity $orderTransaction,
         bool $upsert = true
     ): void {
+        if (!($paymentResponse instanceof PaymentResponse) && !($paymentResponse instanceof PaymentDetailsResponse)) {
+            throw new \InvalidArgumentException('Invalid $paymentDetailsResponse type.');
+        }
+
         $storedPaymentResponse = $this->getWithOrderTransaction($orderTransaction);
         if ($storedPaymentResponse && $upsert) {
             $fields['id'] = $storedPaymentResponse->getId();
         }
 
         $fields['orderTransactionId'] = $orderTransaction->getId();
-        $fields['resultCode'] = $paymentResponse["resultCode"];
-        $fields['response'] = json_encode($paymentResponse);
-        $fields['pspreference'] = $paymentResponse["pspReference"] ?? null;
+
+        $fields['resultCode'] = $paymentResponse->getResultCode();
+        $fields['response'] = $paymentResponse->__toString();
+        $fields['pspreference'] = $paymentResponse->getPspReference() ?? null;
 
         $this->repository->upsert(
             [$fields],

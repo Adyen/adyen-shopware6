@@ -27,7 +27,7 @@ namespace Adyen\Shopware\Handlers;
 
 class AmazonPayPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-    public static $supportsManualCapture = true;
+    public static bool $supportsManualCapture = true;
 
     public static function getPaymentMethodCode()
     {
