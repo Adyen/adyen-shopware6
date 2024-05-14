@@ -18,16 +18,16 @@ jobs:
       - name: Prepare release artifact
         run: .github/workflows/scripts/prepare-release.sh
 
-#      - name: Marketplace Release Artifacts
-#        if: always()
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: marketplace-release-zip
-#          path: .github/workflows/scripts/AdyenPaymentShopware6.zip
-
-      - name: Test with E2E
+      - name: Marketplace Release Artifacts
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: test-e2e-upload
-          path: .github/workflows/scripts/e2e.sh
+          name: marketplace-release-zip
+          path: .github/workflows/scripts/AdyenPaymentShopware6
+
+#      - name: Test with E2E
+#        if: always()
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: test-e2e-upload
+#          path: .github/workflows/scripts/e2e.sh
