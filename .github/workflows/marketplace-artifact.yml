@@ -19,8 +19,8 @@ jobs:
         run: scripts/prepare-release.sh
 
       - name: Marketplace Release Artifacts
-          if: always()
-          uses: actions/upload-artifact@v3
-          with:
-            name: marketplace-release-zip
-            path: scripts/AdyenPaymentShopware6.zip
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: marketplace-release-zip
+          path: scripts/AdyenPaymentShopware6.zip
