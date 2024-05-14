@@ -22,7 +22,7 @@ cp adyen-shopware6/composer.json AdyenPaymentShopware6/.
 # Zip the clean installation directory
 zip -r AdyenPaymentShopware6.zip AdyenPaymentShopware6/ ;
 
-cp AdyenPaymentShopware6.zip adyen-shopware6
+mv AdyenPaymentShopware6.zip adyen-shopware6
 
 zip -d AdyenPaymentShopware6.zip __MACOSX/\* ; zip -d AdyenPaymentShopware6.zip *.git*
 
