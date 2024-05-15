@@ -25,6 +25,10 @@
 
 namespace Adyen\Shopware\Handlers;
 
+/**
+ * @deprecated Individual gift card payment methods were deprecated and will be removed on v4.0.0.
+ * Use GiftCardPaymentMethod instead.
+ */
 class FashionChequeGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static $isGiftCard = true;

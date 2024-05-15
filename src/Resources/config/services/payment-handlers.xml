@@ -5,15 +5,11 @@
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <service id="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler" abstract="true">
+            <argument type="service" id="Adyen\Shopware\Service\OrdersService"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
-            <argument type="service" id="Adyen\Service\Builder\Browser"/>
-            <argument type="service" id="Adyen\Service\Builder\Address"/>
-            <argument type="service" id="Adyen\Service\Builder\Payment"/>
-            <argument type="service" id="Adyen\Service\Builder\OpenInvoice"/>
-            <argument type="service" id="Adyen\Util\Currency"/>
-            <argument type="service" id="Adyen\Service\Builder\Customer"/>
-            <argument type="service" id="Adyen\Service\Validator\CheckoutStateDataValidator"/>
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
+            <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
@@ -159,6 +155,46 @@
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
+        <service id="Adyen\Shopware\Handlers\GiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\MbwayPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\MultibancoPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\WechatpayqrPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\WechatpaywebPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\MobilePayPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\VippsPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\AffirmPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\PayBrightPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\OpenBankingPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
         <service id="Adyen\Shopware\Handlers\GivexGiftCardPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
@@ -215,41 +251,6 @@
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\MbwayPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\MultibancoPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\WechatpayqrPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\WechatpaywebPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\MobilePayPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\VippsPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\AffirmPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\PayBrightPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\OpenBankingPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
     </services>
 </container>
+

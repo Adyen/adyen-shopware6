@@ -72,6 +72,11 @@ class AdyenPaymentEntity extends Entity
     protected $amountCurrency;
 
     /**
+     * @var int
+     */
+    protected $totalRefunded;
+
+    /**
      * @var string
      */
     protected $additionalData;
@@ -201,6 +206,22 @@ class AdyenPaymentEntity extends Entity
     public function setAmountValue(int $amountValue): void
     {
         $this->amountValue = $amountValue;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalRefunded(): int
+    {
+        return $this->totalRefunded;
+    }
+
+    /**
+     * @param int $totalRefunded
+     */
+    public function setTotalRefunded(int $totalRefunded): void
+    {
+        $this->totalRefunded = $totalRefunded;
     }
 
     /**

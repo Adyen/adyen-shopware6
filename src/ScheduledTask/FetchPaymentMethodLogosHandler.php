@@ -46,13 +46,9 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
      * @var MediaService
      */
     private $mediaService;
-    /**
-     * @var EntityRepository
-     */
+
     private $paymentMethodRepository;
-    /**
-     * @var EntityRepository|\Shopware\Core\Content\Media\DataAbstractionLayer\MediaRepositoryDecorator
-     */
+
     private $mediaRepository;
     /**
      * @var bool

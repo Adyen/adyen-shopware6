@@ -23,7 +23,6 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Client;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -63,26 +62,14 @@ class OrdersService
             $checkoutService = new CheckoutService(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
-
-            $this->clientService->logRequest(
-                $requestData,
-                Client::API_CHECKOUT_VERSION,
-                '/orders',
-                $context->getSalesChannelId()
-            );
-
             $responseData = $checkoutService->orders($requestData);
-
-            $this->clientService->logResponse(
-                $responseData,
-                $context->getSalesChannelId()
-            );
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }
 
         return $responseData;
     }
+
 
     private function buildOrdersRequestData(
         SalesChannelContext $context,

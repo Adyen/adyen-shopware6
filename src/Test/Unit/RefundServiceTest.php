@@ -25,13 +25,15 @@
 namespace Adyen\Shopware\Test\Unit;
 
 use Adyen\Shopware\Entity\Refund\RefundEntity;
+use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Service\Repository\AdyenRefundRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Shopware\Test\Common\AdyenTestCase;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
+use Adyen\Shopware\Util\Idempotency;
 use Monolog\Logger;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -97,7 +99,7 @@ class RefundServiceTest extends AdyenTestCase
      * Use default mocks to create RefundService, except for what is passed in the array
      * Not using a for loop to ensure better readability
      *
-     * @param array $parameters
+     * @param array $classArguments
      * @return RefundService
      */
     private function createMockedRefundService(array $classArguments) : RefundService
@@ -109,7 +111,8 @@ class RefundServiceTest extends AdyenTestCase
         $currency = $this->getSimpleMock(Currency::class);
         $orderTransactionRepo = $this->getSimpleMock(OrderTransactionRepository::class);
         $orderTransactionStateHandler = $this->getSimpleMock(OrderTransactionStateHandler::class);
-
+        $adyenPaymentService = $this->getSimpleMock(AdyenPaymentService::class);
+        $idempotency = $this->getSimpleMock(Idempotency::class);
 
         if (array_key_exists(Logger::class, $classArguments)) {
             $logger = $classArguments[Logger::class];
@@ -139,6 +142,14 @@ class RefundServiceTest extends AdyenTestCase
             $orderTransactionStateHandler = $classArguments[OrderTransactionStateHandler::class];
         }
 
+        if (array_key_exists(AdyenPaymentService::class, $classArguments)) {
+            $adyenPaymentService = $classArguments[AdyenPaymentService::class];
+        }
+
+        if (array_key_exists(Idempotency::class, $classArguments)) {
+            $idempotency = $classArguments[Idempotency::class];
+        }
+
         return new RefundService(
             $logger,
             $configService,
@@ -146,7 +157,9 @@ class RefundServiceTest extends AdyenTestCase
             $refundRepo,
             $currency,
             $orderTransactionRepo,
-            $orderTransactionStateHandler
+            $orderTransactionStateHandler,
+            $adyenPaymentService,
+            $idempotency
         );
     }
 }

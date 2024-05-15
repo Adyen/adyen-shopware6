@@ -27,7 +27,7 @@ namespace Adyen\Shopware\Service;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
-use Adyen\Util\Currency;
+use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -84,7 +84,14 @@ class AdyenPaymentService
         return $this->adyenPaymentRepository->getMerchantReferenceByMerchantOrderReference($orderReference);
     }
 
-    public function getAdyenPayments(string $orderId): array
+    /**
+     * Returns the Adyen payments for the given order ID.
+     *
+     * @param string $orderId
+     * @param string $sort Sorts the response based on created_at column
+     * @return array
+     */
+    public function getAdyenPayments(string $orderId, string $sort = FieldSorting::DESCENDING): array
     {
         $orderTransaction = $this->orderTransactionRepository
             ->search(
@@ -101,7 +108,7 @@ class AdyenPaymentService
                 (new Criteria())
                     ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
                     ->addAssociation('orderTransaction.order')
-                    ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
+                    ->addSorting(new FieldSorting('createdAt', $sort)),
                 Context::createDefaultContext()
             )
             ->getElements();
@@ -141,5 +148,24 @@ class AdyenPaymentService
         }
 
         return false;
+    }
+
+    /**
+     * Updates totalRefunded amount og Adyen Payment Entity
+     *
+     * @param AdyenPaymentEntity $adyenPaymentEntity Entity to be updated
+     * @param int $refundAmount Single request refund amount
+     *
+     * @return void
+     */
+    public function updateTotalRefundedAmount(AdyenPaymentEntity $adyenPaymentEntity, int $refundAmount): void
+    {
+        $refundedAmount = $adyenPaymentEntity->getTotalRefunded() + $refundAmount;
+        $this->adyenPaymentRepository->getRepository()->update([
+            [
+                'id' => $adyenPaymentEntity->getId(),
+                'totalRefunded' => $refundedAmount
+            ]
+        ], Context::createDefaultContext());
     }
 }

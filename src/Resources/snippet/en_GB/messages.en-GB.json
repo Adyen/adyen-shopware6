@@ -8,6 +8,7 @@
             "removeGiftcard": "Remove Giftcard",
             "closeGiftcardSection": "Close Giftcard Section",
             "remainingBalance": "Remaining giftcard balance",
+            "deductedAmount": "Deducted Amount",
             "remainingAmount": "Remaining amount",
             "discount": "Giftcard discount"
         }

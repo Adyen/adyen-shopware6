@@ -23,7 +23,9 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Client;
+use Adyen\Model\Checkout\CancelOrderRequest;
+use Adyen\Model\Checkout\EncryptedOrderData;
+use Adyen\Service\Checkout\OrdersApi;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -68,23 +70,11 @@ class OrdersCancelService
 
         try {
             $requestData = $this->buildOrdersCancelRequestData($context, $orderData, $pspReference);
-            $checkoutService = new CheckoutService(
+
+            $orderService = new OrdersApi(
                 $this->clientService->getClient($context->getSalesChannel()->getId())
             );
-
-            $this->clientService->logRequest(
-                $requestData,
-                Client::API_CHECKOUT_VERSION,
-                '/orders/cancel',
-                $context->getSalesChannelId()
-            );
-
-            $responseData = $checkoutService->ordersCancel($requestData);
-
-            $this->clientService->logResponse(
-                $responseData,
-                $context->getSalesChannelId()
-            );
+            $responseData = $orderService->CancelOrder($requestData);
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
         }
@@ -92,24 +82,27 @@ class OrdersCancelService
         return $responseData;
     }
 
-    private function buildOrdersCancelRequestData(SalesChannelContext $context, $orderData, $pspReference): array
-    {
+    private function buildOrdersCancelRequestData(
+        SalesChannelContext $context,
+        $orderData,
+        $pspReference
+    ): CancelOrderRequest {
+        $request = new CancelOrderRequest();
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
             $this->logger->error('No Merchant Account has been configured. ' .
                 'Go to the Adyen plugin configuration panel and finish the required setup.');
-            return [];
+            return $request;
         }
 
-        $requestData = array(
-            "order" => [
-                "pspReference" => $pspReference,
-                "orderData" => $orderData
-            ],
-            "merchantAccount" => $merchantAccount
-        );
+        $order = new EncryptedOrderData();
+        $order->setOrderData($orderData);
+        $order->setPspReference($pspReference);
 
-        return $requestData;
+        $request->setMerchantAccount($merchantAccount);
+        $request->setOrder($order);
+
+        return $request;
     }
 }

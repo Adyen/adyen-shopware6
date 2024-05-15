@@ -26,6 +26,10 @@ namespace Adyen\Shopware\PaymentMethods;
 
 use Adyen\Shopware\Handlers\WebshopGiftCardPaymentMethodHandler;
 
+/**
+ * @deprecated Individual gift card payment methods were deprecated and will be removed on v4.0.0.
+ * Use GiftCardPaymentMethod instead.
+ */
 class WebshopGiftCardPaymentMethod implements PaymentMethodInterface
 {
     /**

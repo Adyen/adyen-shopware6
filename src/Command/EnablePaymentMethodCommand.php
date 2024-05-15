@@ -24,7 +24,7 @@
 
 namespace Adyen\Shopware\Command;
 
-use Adyen\Shopware\Handlers\Command\EnablePaymentMethodHandler;
+use Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -35,17 +35,17 @@ class EnablePaymentMethodCommand extends Command
     protected static $defaultName = 'adyen:payment-method:enable';
 
     /**
-     * @var EnablePaymentMethodHandler
+     * @var PaymentMethodStatusHandler
      */
-    protected $handler;
+    protected PaymentMethodStatusHandler $handler;
 
-    public function __construct(EnablePaymentMethodHandler $handler)
+    public function __construct(PaymentMethodStatusHandler $handler)
     {
         parent::__construct();
         $this->handler = $handler;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Finds the payment method according to given PM handler and enables it');
 
@@ -64,14 +64,14 @@ class EnablePaymentMethodCommand extends Command
         );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $isAllSelected = $input->getOption('all');
             $paymentMethodHandlerIdentifier = $input->getOption('payment-method');
 
             if ($isAllSelected xor isset($paymentMethodHandlerIdentifier)) {
-                $this->handler->run($isAllSelected, $paymentMethodHandlerIdentifier);
+                $this->handler->run($isAllSelected, true, $paymentMethodHandlerIdentifier);
                 $message = 'Payment method is enabled successfully.';
             } else {
                 throw new \Exception('Invalid parameter! For usage please check manual --help.');
@@ -81,6 +81,6 @@ class EnablePaymentMethodCommand extends Command
         }
 
         $output->writeln($message);
-        return 0;
+        return Command::SUCCESS;
     }
 }

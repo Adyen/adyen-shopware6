@@ -1,6 +1,10 @@
 {% block adyen_giftcards %}
     {% if adyenFrontendData and adyenFrontendData.giftcards %}
         <div id="adyen-giftcards-container">
+            <hr>
+            <a id="showGiftcardButton" class="btn btn-outline-info float-right mb-3">
+                &plus; {{ "adyen.giftcard.addGiftcards" | trans }}
+            </a>
             <div id="adyen-giftcards-configuration"
                  data-total-price="{{ adyenFrontendData.totalPrice }}"
                  data-total-in-minor-units="{{ adyenFrontendData.totalInMinorUnits }}"
@@ -11,38 +15,34 @@
                  data-check-balance-url="{{ adyenFrontendData.checkBalanceUrl }}"
                  data-set-giftcard-url="{{ adyenFrontendData.setGiftcardUrl }}"
                  data-remove-giftcard-url="{{ adyenFrontendData.removeGiftcardUrl }}"
+                 data-fetch-redeemed-giftcards-url="{{ adyenFrontendData.fetchRedeemedGiftcardsUrl }}"
                  data-switch-context-url="{{ adyenFrontendData.switchContextUrl }}"
                  data-translation-adyen-giftcard-remaining-balance="{{ "adyen.giftcard.remainingBalance" | trans }}"
+                 data-translation-adyen-giftcard-deducted-balance="{{ "adyen.giftcard.deductedAmount" | trans }}"
                  data-translation-adyen-giftcard-discount="{{ "adyen.giftcard.discount" | trans }}"
                  data-translation-adyen-giftcard-remaining-amount="{{ "adyen.giftcard.remainingAmount" | trans }}"
+                 data-translation-adyen-giftcard-remove="{{ "adyen.giftcard.removeGiftcard" | trans }}"
             ></div>
             <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
-            <hr>
             {# loop through giftcards and display logo #}
-            {% for giftcard in adyenFrontendData.giftcards %}
-                <span style="cursor: pointer"
-                      class="adyen-giftcard"
-                      data-giftcard="{{ giftcard|json_encode }}">
-                    {% if giftcard.media %}
-                        {% sw_thumbnails 'payment-method-image-thumbnails' with {
-                            media: giftcard.media,
-                            attributes: {
-                                'alt': (giftcard.media.translated.alt ?: giftcard.translated.name),
-                                'title': (giftcard.media.translated.title ?: giftcard.translated.name)
-                            }
-                        } %}
-                    {% endif %}
-                </span>
-            {% endfor %}
+            <select id="giftcardDropdown" style="display: none">
+                <option value="" disabled selected>{{ "Please select a giftcard..." | trans }}</option>
+                {% for giftcard in adyenFrontendData.giftcards %}
+                    <option class="adyen-giftcard"
+                            value="{{ giftcard.name }}"
+                            data-giftcard="{{ giftcard|json_encode|e('html_attr') }}"
+                    >
+                        {{ giftcard.name }}
+                    </option>
+                {% endfor %}
+            </select>
             <div class="clearfix"></div>
-            <a href="javascript:void(0)" class="btn btn-xs adyen-remove-giftcard btn-outline-dark">
-                {{ "adyen.giftcard.removeGiftcard" | trans }}
-            </a>
-            <span class="adyen-close-giftcard-component" title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
-            <h6 class="adyen-giftcard-header"></h6>
-            <p class="adyen-remaining-balance"></p>
-            <div id="adyen-giftcard-component"></div>
-            <hr>
+            <div id="adyen-giftcard-component">
+                <span class="adyen-close-giftcard-component" title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
+                <span class="adyen-giftcard-item"></span>
+                <h6 class="adyen-giftcard-header"></h6>
+            </div>
+            <div id="giftcardsContainer"></div>
         </div>
     {% endif %}
 {% endblock %}

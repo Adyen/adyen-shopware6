@@ -37,25 +37,25 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 class WebhookHandlerFactory
 {
     /** @var LoggerInterface */
-    private static $logger;
+    private static LoggerInterface $logger;
 
     /** @var CaptureService */
-    private static $captureService;
+    private static CaptureService $captureService;
 
     /** @var RefundService */
-    private static $refundService;
+    private static RefundService $refundService;
 
     /** @var AdyenPaymentService */
-    private static $adyenPaymentService;
+    private static AdyenPaymentService $adyenPaymentService;
 
     /** @var OrderTransactionStateHandler */
-    private static $orderTransactionStateHandler;
+    private static OrderTransactionStateHandler $orderTransactionStateHandler;
 
     /** @var PluginPaymentMethodsService */
-    private static $pluginPaymentMethodsService;
+    private static PluginPaymentMethodsService $pluginPaymentMethodsService;
 
     /** @var ConfigurationService */
-    private static $configurationService;
+    private static ConfigurationService $configurationService;
 
     /**
      * @param CaptureService $captureService
@@ -116,7 +116,9 @@ class WebhookHandlerFactory
                 break;
             case EventCodes::REFUND:
                 $handler = new RefundWebhookHandler(
-                    self::$refundService
+                    self::$refundService,
+                    self::$adyenPaymentService,
+                    self::$logger
                 );
                 break;
             case EventCodes::REFUND_FAILED:

@@ -392,4 +392,18 @@ class ConfigurationService
             $salesChannelId
         );
     }
+
+    /**
+     * Returns the refund strategy (FIFO, FILO or ratio) for gift card partial payments.
+     *
+     * @param string $salesChannelId
+     * @return string|null
+     */
+    public function getRefundStrategyForGiftcards(string $salesChannelId): ?string
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.refundStrategyGiftcard',
+            $salesChannelId
+        );
+    }
 }
