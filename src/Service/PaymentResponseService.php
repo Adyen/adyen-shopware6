@@ -38,24 +38,28 @@ class PaymentResponseService
     /**
      * @var EntityRepository
      */
-    private $repository;
+    private EntityRepository $adyenPaymentResponseRepository;
 
     /**
      * @var EntityRepository
      */
-    private $orderTransactionRepository;
+    private EntityRepository $orderTransactionRepository;
 
+    /**
+     * @param EntityRepository $adyenPaymentResponseRepository
+     * @param EntityRepository $orderTransactionRepository
+     */
     public function __construct(
-        EntityRepository $repository,
+        EntityRepository $adyenPaymentResponseRepository,
         EntityRepository $orderTransactionRepository
     ) {
-        $this->repository = $repository;
+        $this->adyenPaymentResponseRepository = $adyenPaymentResponseRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     public function getWithOrderNumber(string $orderNumber): ?PaymentResponseEntity
     {
-        return $this->repository
+        return $this->adyenPaymentResponseRepository
             ->search(
                 (new Criteria())
                     ->addFilter(new EqualsFilter('orderNumber', $orderNumber)),
@@ -83,14 +87,14 @@ class PaymentResponseService
         $criteria = new Criteria();
         $criteria->addFilter((new EqualsFilter('pspreference', $pspreference)));
 
-        return $this->repository
+        return $this->adyenPaymentResponseRepository
             ->search($criteria, Context::createDefaultContext())
             ->first();
     }
 
     public function getWithOrderTransaction(OrderTransactionEntity $orderTransaction): ?PaymentResponseEntity
     {
-        return $this->repository
+        return $this->adyenPaymentResponseRepository
             ->search(
                 (new Criteria())
                     ->addFilter(new EqualsFilter('orderTransactionId', $orderTransaction->getId()))
@@ -128,7 +132,7 @@ class PaymentResponseService
         $fields['response'] = $paymentResponse->__toString();
         $fields['pspreference'] = $paymentResponse->getPspReference() ?? null;
 
-        $this->repository->upsert(
+        $this->adyenPaymentResponseRepository->upsert(
             [$fields],
             Context::createDefaultContext()
         );

@@ -30,15 +30,17 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'adyen:payment-method:enable', description: 'Enables Adyen payment methods')]
 class EnablePaymentMethodCommand extends Command
 {
-    protected static $defaultName = 'adyen:payment-method:enable';
-
     /**
      * @var PaymentMethodStatusHandler
      */
     protected PaymentMethodStatusHandler $handler;
 
+    /**
+     * @param PaymentMethodStatusHandler $handler
+     */
     public function __construct(PaymentMethodStatusHandler $handler)
     {
         parent::__construct();
@@ -73,14 +75,15 @@ class EnablePaymentMethodCommand extends Command
             if ($isAllSelected xor isset($paymentMethodHandlerIdentifier)) {
                 $this->handler->run($isAllSelected, true, $paymentMethodHandlerIdentifier);
                 $message = 'Payment method is enabled successfully.';
+                $output->writeln($message);
             } else {
                 throw new \Exception('Invalid parameter! For usage please check manual --help.');
             }
         } catch (\Exception $e) {
-            $message = $e->getMessage();
+            $output->writeln($e->getMessage());
+            return Command::FAILURE;
         }
 
-        $output->writeln($message);
         return Command::SUCCESS;
     }
 }

@@ -38,16 +38,16 @@ class OrderTransactionRepository
     /**
      * @var EntityRepository
      */
-    private $repository;
+    private EntityRepository $orderTransactionRepository;
 
     /**
      * OrderTransactionRepository constructor.
      *
-     * @param EntityRepository $repository
+     * @param EntityRepository $orderTransactionRepository
      */
-    public function __construct(EntityRepository $repository)
+    public function __construct(EntityRepository $orderTransactionRepository)
     {
-        $this->repository = $repository;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
@@ -76,7 +76,7 @@ class OrderTransactionRepository
         $criteria->setLimit(1);
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
-        return $this->repository->search($criteria, Context::createDefaultContext())->first();
+        return $this->orderTransactionRepository->search($criteria, Context::createDefaultContext())->first();
     }
 
     /**
@@ -98,7 +98,7 @@ class OrderTransactionRepository
         $criteria->setLimit(1);
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
-        return $this->repository->search($criteria, Context::createDefaultContext())->first();
+        return $this->orderTransactionRepository->search($criteria, Context::createDefaultContext())->first();
     }
 
     /**
@@ -112,8 +112,9 @@ class OrderTransactionRepository
         $criteria->addAssociation('order.currency');
         $criteria->addAssociation('paymentMethod');
         $criteria->addAssociation('paymentMethod.plugin');
+        $criteria->addAssociation('stateMachineState');
         $criteria->addFilter(new EqualsFilter('id', $orderTransactionId));
 
-        return $this->repository->search($criteria, Context::createDefaultContext())->first();
+        return $this->orderTransactionRepository->search($criteria, Context::createDefaultContext())->first();
     }
 }

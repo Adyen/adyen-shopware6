@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\OrderApi;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\PaymentMethodsBalanceService;
 use Adyen\Shopware\Service\OrdersService;
@@ -36,83 +37,78 @@ use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Routing\Annotation\Route;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * Class OrderApiController
- * @package Adyen\Shopware\Controller\StoreApi\OrderApi
- * @Route(defaults={"_routeScope"={"store-api"}})
- */
+#[Route(defaults: ['_routeScope' => ['store-api']])]
 class OrderApiController
 {
     /**
      * @var PaymentMethodsBalanceService
      */
-    private $paymentMethodsBalanceService;
+    private PaymentMethodsBalanceService $paymentMethodsBalanceService;
 
     /**
-     * @var OrdersService
+     * @var OrdersService|OrdersCancelService
      */
-    private $ordersCancelService;
+    private OrdersCancelService|OrdersService $ordersCancelService;
 
     /**
      * @var PaymentStateDataService
      */
-    private $paymentStateDataService;
+    private PaymentStateDataService $paymentStateDataService;
 
     /**
      * @var CartService
      */
-    private $cartService;
-    private $logger;
-    private $contextSwitchRoute;
-    private $paymentMethodsFilterService;
+    private CartService $cartService;
+
+    /**
+     * @var AbstractContextSwitchRoute
+     */
+    private AbstractContextSwitchRoute $contextSwitchRoute;
+
+    /**
+     * @var PaymentMethodsFilterService
+     */
+    private PaymentMethodsFilterService $paymentMethodsFilterService;
 
     /**
      * StoreApiController constructor.
      *
      * @param PaymentMethodsBalanceService $paymentMethodsBalanceService
-     * @param OrdersService $ordersService
      * @param OrdersCancelService $ordersCancelService
      * @param PaymentStateDataService $paymentStateDataService
      * @param CartService $cartService
      * @param PaymentMethodsFilterService $paymentMethodsFilterService
      * @param AbstractContextSwitchRoute $contextSwitchRoute
-     * @param LoggerInterface $logger
      */
     public function __construct(
         PaymentMethodsBalanceService $paymentMethodsBalanceService,
-        OrdersService $ordersService,
         OrdersCancelService $ordersCancelService,
         PaymentStateDataService $paymentStateDataService,
         CartService $cartService,
         PaymentMethodsFilterService $paymentMethodsFilterService,
-        AbstractContextSwitchRoute $contextSwitchRoute,
-        LoggerInterface $logger
+        AbstractContextSwitchRoute $contextSwitchRoute
     ) {
         $this->paymentMethodsBalanceService = $paymentMethodsBalanceService;
-        $this->ordersService = $ordersService;
         $this->ordersCancelService = $ordersCancelService;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->cartService = $cartService;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
         $this->contextSwitchRoute = $contextSwitchRoute;
-        $this->logger = $logger;
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/payment-methods/balance",
-     *     name="store-api.action.adyen.payment-methods.balance",
-     *     methods={"POST"}
-     * )
-     *
      * @param SalesChannelContext $context
      * @param Request $request
      * @return JsonResponse
      */
+    #[Route(
+        '/store-api/adyen/payment-methods/balance',
+        name: 'store-api.action.adyen.payment-methods.balance',
+        methods: ['POST']
+    )]
     public function getPaymentMethodsBalance(SalesChannelContext $context, Request $request): JsonResponse
     {
         $paymentMethod = json_decode($request->request->get('paymentMethod', ''), true);
@@ -123,16 +119,11 @@ class OrderApiController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/orders/cancel",
-     *     name="store-api.action.adyen.orders.cancel",
-     *     methods={"POST"}
-     * )
-     *
      * @param SalesChannelContext $context
      * @param Request $request
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/orders/cancel', name: 'store-api.action.adyen.orders.cancel', methods: ['POST'])]
     public function cancelOrder(SalesChannelContext $context, Request $request): JsonResponse
     {
         $orderData = $request->request->get('orderData');
@@ -142,17 +133,13 @@ class OrderApiController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/giftcard",
-     *     name="store-api.action.adyen.giftcard",
-     *     methods={"POST"}
-     * )
      * @param SalesChannelContext $context
      * @param Request $request
      * @return JsonResponse
      * @throws ValidationException
-     * @throws \Adyen\AdyenException
+     * @throws AdyenException
      */
+    #[Route('/store-api/adyen/giftcard', name: 'store-api.action.adyen.giftcard', methods: ['POST'])]
     public function giftcardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
         // store giftcard state data for context
@@ -170,15 +157,11 @@ class OrderApiController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/giftcard/remove",
-     *     name="store-api.action.adyen.giftcard.remove",
-     *     methods={"POST"}
-     * )
      * @param SalesChannelContext $context
      * @param Request $request
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/giftcard/remove', name: 'store-api.action.adyen.giftcard.remove', methods: ['POST'])]
     public function deleteGiftCardStateData(SalesChannelContext $context, Request $request): JsonResponse
     {
         $stateDateId = $request->request->get('stateDataId');
@@ -188,17 +171,10 @@ class OrderApiController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/giftcard",
-     *     name="store-api.action.adyen.giftcard.fetch",
-     *     methods={"POST"}
-     * )
      * @param SalesChannelContext $context
-     * @param Request $request
      * @return JsonResponse
-     * @throws ValidationException
-     * @throws \Adyen\AdyenException
      */
+    #[Route('/store-api/adyen/giftcard', name: 'store-api.action.adyen.giftcard.fetch', methods: ['POST'])]
     public function fetchRedeemedGiftcards(SalesChannelContext $context): JsonResponse
     {
         $fetchedRedeemedGiftcards = $this->paymentStateDataService

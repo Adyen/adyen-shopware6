@@ -4,8 +4,7 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Adyen\Shopware\Provider\AdyenPluginProvider">
-            <argument type="service" id="Shopware\Core\Framework\Plugin\Util\PluginIdProvider" />
+        <service id="Adyen\Shopware\Provider\AdyenPluginProvider" autowire="true">
             <tag name="kernel.reset" method="reset" />
         </service>
     </services>
