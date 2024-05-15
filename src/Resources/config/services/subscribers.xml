@@ -11,6 +11,7 @@
             <argument key="$cartPersister" type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
             <argument key="$contextSwitchRoute" type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument key="$salesChannelContextFactory" type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
+            <argument key="$paymentMethodRepository" type="service" id="payment_method.repository"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Adyen\Shopware\Subscriber\PostPaymentSubscriber" autowire="true">

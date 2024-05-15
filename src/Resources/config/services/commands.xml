@@ -38,6 +38,9 @@
         <service id="Adyen\Shopware\Command\DisablePaymentMethodCommand" autowire="true">
             <tag name="console.command"/>
         </service>
+        <service id="Adyen\Shopware\Command\ScheduleWebhooksCommand" autowire="true">
+            <tag name="console.command"/>
+        </service>
 
         <!--Command handlers-->
         <service id="Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler">

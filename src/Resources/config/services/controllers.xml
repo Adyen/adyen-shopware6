@@ -10,6 +10,8 @@
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController" autowire="true">
+            <argument key="$contextSwitchRoute" type="service"
+                      id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController" autowire="true">
