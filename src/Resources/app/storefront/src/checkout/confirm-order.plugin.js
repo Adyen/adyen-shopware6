@@ -33,7 +33,6 @@ export default class ConfirmOrderPlugin extends Plugin {
 
     init() {
         this._client = new HttpClient();
-        this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
