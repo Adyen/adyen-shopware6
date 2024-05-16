@@ -50,10 +50,7 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
-use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
-use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
+use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -308,16 +305,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         if (empty($orderNumber)) {
             $message = 'Order number is missing';
-            throw new AsyncPaymentProcessException($transactionId, $message);
+            throw PaymentException::asyncProcessInterrupted($transactionId, $message);
         }
 
         try {
             $this->paymentResponseHandler
                 ->handleShopwareApis($transaction, $salesChannelContext, $this->paymentResults);
         } catch (PaymentCancelledException $exception) {
-            throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
+            throw PaymentException::customerCanceled($transactionId, $exception->getMessage());
         } catch (PaymentFailedException $exception) {
-            throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
+            throw PaymentException::asyncFinalizeInterrupted($transactionId, $exception->getMessage());
         }
 
         /*
@@ -337,7 +334,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         return new RedirectResponse($transaction->getReturnUrl());
     }
 
-    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction)
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @param $transaction
+     * @return array
+     */
+    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction): array
     {
         $uuid = Uuid::randomHex();
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
@@ -352,8 +354,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
-     * @throws AsyncPaymentFinalizeException
-     * @throws CustomerCanceledAsyncPaymentException
+     * @return void
      */
     public function finalize(
         AsyncPaymentTransactionStruct $transaction,
@@ -364,9 +365,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentCancelledException $exception) {
-            throw new CustomerCanceledAsyncPaymentException($transactionId, $exception->getMessage());
+            throw PaymentException::customerCanceled($transactionId, $exception->getMessage());
         } catch (PaymentFailedException $exception) {
-            throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
+            throw PaymentException::asyncFinalizeInterrupted($transactionId, $exception->getMessage());
         }
     }
 
@@ -707,7 +708,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $orderRequestData
             );
             return $request;
-        } catch (AsyncPaymentProcessException $exception) {
+        } catch (PaymentException $exception) {
             $this->logger->error($exception->getMessage());
             throw $exception;
         } catch (\Exception $exception) {
@@ -717,10 +718,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $exception->getMessage()
             );
             $this->logger->error($message);
-            throw new AsyncPaymentProcessException($transactionId, $message);
+            throw PaymentException::asyncProcessInterrupted($transactionId, $message);
         }
     }
 
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @param PaymentRequest $request
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @return void
+     */
     private function paymentsCall(
         SalesChannelContext $salesChannelContext,
         PaymentRequest $request,
@@ -750,7 +757,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
             $this->displaySafeErrorMessages($exception);
             $this->logger->error($message);
-            throw new AsyncPaymentProcessException($transactionId, $message);
+            throw PaymentException::asyncProcessInterrupted($transactionId, $message);
         }
         $this->paymentResults[] = $this->paymentResponseHandler
             ->handlePaymentResponse($response, $transaction->getOrderTransaction(), false);
@@ -779,7 +786,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         return $product;
     }
 
-    private function displaySafeErrorMessages(AdyenException $exception)
+    /**
+     * @param AdyenException $exception
+     * @return void
+     */
+    private function displaySafeErrorMessages(AdyenException $exception): void
     {
         if ('validation' === $exception->getErrorType()
             && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)) {
@@ -819,7 +830,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     /**
      * @param AsyncPaymentTransactionStruct $transaction
-     * @param RequestDataBag $dataBag
+     * @param $adyenOrderResponse
      * @param SalesChannelContext $salesChannelContext
      * @return void
      */
@@ -873,7 +884,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $this->paymentStateDataService->deletePaymentStateDataFromId($statedataArray->getId());
         }
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new AsyncPaymentProcessException(
+            throw PaymentException::asyncProcessInterrupted(
                 $transactionId,
                 'Invalid payment state data.'
             );
