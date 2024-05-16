@@ -38,6 +38,7 @@ jobs:
       - name: Marketplace Release Artifacts
         id: marketplace-release-Artifact
         uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: AdyenPaymentShopware6.zip
 #        env:
