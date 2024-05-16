@@ -94,77 +94,82 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * @var ClientService
      */
-    protected $clientService;
+    protected ClientService $clientService;
 
     /**
      * @var Currency
      */
-    protected $currency;
+    protected Currency $currency;
 
     /**
      * @var ConfigurationService
      */
-    protected $configurationService;
+    protected ConfigurationService $configurationService;
 
     /**
      * @var CheckoutStateDataValidator
      */
-    protected $checkoutStateDataValidator;
+    protected CheckoutStateDataValidator $checkoutStateDataValidator;
 
     /**
      * @var PaymentStateDataService
      */
-    protected $paymentStateDataService;
+    protected PaymentStateDataService $paymentStateDataService;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @var SalesChannelRepository
      */
-    protected $salesChannelRepository;
+    protected SalesChannelRepository $salesChannelRepository;
 
     /**
      * @var PaymentResponseHandler
      */
-    protected $paymentResponseHandler;
+    protected PaymentResponseHandler $paymentResponseHandler;
 
     /**
      * @var ResultHandler
      */
-    protected $resultHandler;
+    protected ResultHandler $resultHandler;
 
     /**
      * @var OrderTransactionStateHandler
      */
-    protected $orderTransactionStateHandler;
+    protected OrderTransactionStateHandler $orderTransactionStateHandler;
 
     /**
      * @var RouterInterface
      */
-    protected $symfonyRouter;
+    protected RouterInterface $symfonyRouter;
 
     /**
      * @var EntityRepository
      */
-    protected $currencyRepository;
+    protected EntityRepository $currencyRepository;
 
     /**
      * @var EntityRepository
      */
-    protected $productRepository;
+    protected EntityRepository $productRepository;
 
     /**
      * @var RequestStack
      */
-    protected $requestStack;
+    protected RequestStack $requestStack;
 
     /**
      * @var AbstractContextSwitchRoute
      */
-    private $contextSwitchRoute;
+    private AbstractContextSwitchRoute $contextSwitchRoute;
+
+    /**
+     * @var OrdersService
+     */
+    private OrdersService $ordersService;
 
     private $paymentsApiService;
 
@@ -173,8 +178,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     private $orderRequestData = [];
 
     private $remainingAmount = null;
-
-    private OrdersService $ordersService;
 
     /**
      * AbstractPaymentMethodHandler constructor.
@@ -244,7 +247,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
      * @return RedirectResponse
-     * @throws PaymentProcessException|AdyenException
+     * @throws AdyenException
      */
     public function pay(
         AsyncPaymentTransactionStruct $transaction,
