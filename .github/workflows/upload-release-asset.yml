@@ -37,14 +37,16 @@ jobs:
 
       - name: Marketplace Release Artifacts
         id: marketplace-release-Artifact
-        run: gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
+        run: |
+          gh api \
+          --method POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://uploads.github.com/repos/Adyen/adyen-shopware6/releases/155824733/assets?name=AdyenPaymentShopware6.zip \
+          -f "@AdyenPaymentShopware6.zip"
 #            --hostname  https://uploads.github.com \
 #            /repos/Adyen/adyen-shopware6/releases/155824733/assets?name=AdyenPaymentShopware6.zip \
-            https://uploads.github.com/repos/Adyen/adyen-shopware6/releases/155824733/assets?name=AdyenPaymentShopware6.zip \
-            -f "@AdyenPaymentShopware6.zip"
+
 
 
 #        uses: alexellis/upload-assets@0.4.1
