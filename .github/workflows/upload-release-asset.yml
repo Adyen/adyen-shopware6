@@ -32,7 +32,7 @@ jobs:
 
       - name: Use Latest Release Info
         run: |
-          echo "Latest Release ID: ${{ env.release_id }}"
+          echo "Latest Release ID: $release_id"
           echo "Latest Release Upload URL: ${{ steps.get-release-upload-url.outputs.upload_url }}"
 
       - name: Marketplace Release Artifacts
