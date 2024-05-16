@@ -37,16 +37,12 @@ jobs:
 
       - name: Marketplace Release Artifacts
         id: marketplace-release-Artifact
-        uses: softprops/action-gh-release@v2
-        if: always()
+        uses: tanyagray/action-upload-release-asset@v1.1.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: AdyenPaymentShopware6.zip
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-##          path: AdyenPaymentShopware6.zip
-##          name: AdyenPaymentShopware6
-#          upload_url: ${{ steps.get-release-upload-url.outputs.upload_url }}
-#          asset_path: ./AdyenPaymentShopware6.zip
-#          asset_name: AdyenPaymentShopware6.zip
-#          asset_content_type: application/zip
+          upload_url: ${{ steps.get-release-upload-url.outputs.upload_url }}
+          asset_path: ./AdyenPaymentShopware6.zip
+          asset_name: AdyenPaymentShopware6.zip
+          asset_content_type: application/zip
+
