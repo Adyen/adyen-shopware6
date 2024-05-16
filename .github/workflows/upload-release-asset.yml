@@ -40,6 +40,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ls -l
           gh api \
           --method POST \
           -H "Accept: application/vnd.github+json" \
