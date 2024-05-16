@@ -37,6 +37,8 @@ jobs:
 
       - name: Marketplace Release Artifacts
         id: marketplace-release-Artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api \
           --method POST \
