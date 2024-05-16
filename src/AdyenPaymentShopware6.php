@@ -461,15 +461,6 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
-    private function safeCopyAsset($source, $destination): bool
-    {
-        try {
-            return copy($source, $destination);
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
     /**
      * @param UpdateContext $updateContext
      * @param string $paymentMethodHandler
