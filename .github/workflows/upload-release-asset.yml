@@ -41,8 +41,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.get-release-upload-url.outputs.upload_url }}
-          asset_path: ./AdyenPaymentShopware6.zip
-          asset_name: AdyenPaymentShopware6.zip
-          asset_content_type: application/zip
+          asset_paths: '["./AdyenPaymentShopware6.zip"]'
+
+#          upload_url: ${{ steps.get-release-upload-url.outputs.upload_url }}
+#          asset_name: AdyenPaymentShopware6.zip
+#          asset_content_type: application/zip
 
