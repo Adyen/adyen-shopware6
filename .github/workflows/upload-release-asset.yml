@@ -54,4 +54,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ steps.get-release-info.outputs.tag_name }} README.txt --clobber
+          gh release upload ${{ steps.get-release-info.outputs.tag_name }} README.md --clobber
