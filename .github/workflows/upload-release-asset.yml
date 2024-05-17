@@ -50,12 +50,12 @@ jobs:
             --method POST \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            -H "Content-Type: application/zip" \
-            --data-binary "@AdyenPaymentShopware6.zip" \
+#            -H "Content-Type: application/zip" \
             ${{ steps.get-release-upload-url.outputs.upload_url }}?name=AdyenPaymentShopware6.zip \
 #            -f "data=@AdyenPaymentShopware6.zip"
+            -F "data=@README.md"
 
 #
 #      - name:  Upload asset
 #        run: |
-#          gh release upload ${{ steps.get-release-info.outputs.tag_name }} AdyenPaymentShopware6.zip --content-type "application/zip"
+#          gh release upload ${{ steps.get-release-info.outputs.tag_name }} AdyenPaymentShopware6.zip
