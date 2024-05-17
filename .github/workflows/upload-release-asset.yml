@@ -35,18 +35,18 @@ jobs:
           echo "Latest Release ID: ${{ steps.get-release-id.outputs.release_id }}"
           echo "Latest Release Upload URL: ${{ steps.get-release-upload-url.outputs.upload_url }}"
 
-      - name: Marketplace Release Artifacts
-        id: marketplace-release-Artifact
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ls -l
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            ${{ steps.get-release-upload-url.outputs.upload_url }}?name=AdyenPaymentShopware6.zip \
-            -f "data=@AdyenPaymentShopware6.zip"
+#      - name: Marketplace Release Artifacts
+#        id: marketplace-release-Artifact
+#        env:
+#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          ls -l
+#          gh api \
+#            --method POST \
+#            -H "Accept: application/vnd.github+json" \
+#            -H "X-GitHub-Api-Version: 2022-11-28" \
+#            ${{ steps.get-release-upload-url.outputs.upload_url }}?name=AdyenPaymentShopware6.zip \
+#            -f "data=@AdyenPaymentShopware6.zip"
 
       - name: Get Latest Release
         id: get-latest-release
@@ -61,6 +61,7 @@ jobs:
             console.log(response.data.tag_name);
             return response.data.tag_name;
 
-      - name: Print Latest Release Tag
-        run:
+      - name: Print Latest Release Tag and upload asset
+        run: |
           echo "Latest Release Tag: ${{ steps.get-latest-release.outputs.result }}"
+          gh release upload ${{ steps.get-latest-release.outputs.result }} AdyenPaymentShopware6.zip --content-type "application/zip"
