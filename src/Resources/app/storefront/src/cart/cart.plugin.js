@@ -66,22 +66,29 @@ export default class CartPlugin extends Plugin {
             document.getElementById("giftcardDropdown").style.display = "block";
         });
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const giftcardsList = document.getElementById('giftcardsContainer');
-            giftcardsList.addEventListener('click', (event) => {
-                if (event.target.classList.contains('adyen-remove-giftcard')) {
-                    const storeId = event.target.getAttribute('dataid');
-                    this.removeGiftcard(storeId);
-                }
-            });
-        });
+        if (document.readyState == 'interactive') {
+            this.fetchGiftcardsOnPageLoad();
+            this.setGiftcardsRemovalEvent();
+        } else {
+            window.addEventListener("DOMContentLoaded", this.fetchGiftcardsOnPageLoad());
+            window.addEventListener("DOMContentLoaded", this.setGiftcardsRemovalEvent());
+        }
+    }
 
-        window.addEventListener("DOMContentLoaded", (event) => {
-            if (parseInt(adyenGiftcardsConfiguration.giftcardDiscount, 10)) {
-                this.fetchRedeemedGiftcards();
+    fetchGiftcardsOnPageLoad() {
+        if (parseInt(adyenGiftcardsConfiguration.giftcardDiscount, 10)) {
+            this.fetchRedeemedGiftcards();
+        }
+    }
+
+    setGiftcardsRemovalEvent() {
+        const giftcardsList = document.getElementById('giftcardsContainer');
+        giftcardsList.addEventListener('click', (event) => {
+            if (event.target.classList.contains('adyen-remove-giftcard')) {
+                const storeId = event.target.getAttribute('dataid');
+                this.removeGiftcard(storeId);
             }
         });
-
     }
 
     async initializeCheckoutComponent() {
