@@ -53,7 +53,7 @@ jobs:
 #            -H "Content-Type: application/zip" \
             ${{ steps.get-release-upload-url.outputs.upload_url }}?name=AdyenPaymentShopware6.zip \
 #            -f "data=@AdyenPaymentShopware6.zip"
-            -F "data=@README.md"
+            -f "data=@README.md"
 
 #
 #      - name:  Upload asset
