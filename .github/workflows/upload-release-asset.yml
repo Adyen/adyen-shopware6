@@ -54,4 +54,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ steps.get-release-info.outputs.tag_name }} README.md --clobber
+          gh release upload ${{ steps.get-release-info.outputs.tag_name }} AdyenPaymentShopware6.zip --clobber
