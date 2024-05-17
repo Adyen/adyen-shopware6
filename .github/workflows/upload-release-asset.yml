@@ -13,8 +13,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-#      - name: Prepare release artifact
-#        run: .github/workflows/scripts/prepare-release.sh
+      - name: Prepare release artifact
+        run: .github/workflows/scripts/prepare-release.sh
 
       - name: Get Latest Release Information
         id: get-release-info
