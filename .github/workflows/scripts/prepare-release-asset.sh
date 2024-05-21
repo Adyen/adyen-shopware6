@@ -3,7 +3,6 @@
 # Create a copy of the plugin directory
 cd ..
 cp -r adyen-shopware6 AdyenPaymentShopware6
-#mkdir AdyenPaymentShopware6 && cp -r  AdyenPaymentShopware6
 
 # Remove Shopware dependencies
 composer remove shopware/core --working-dir=./AdyenPaymentShopware6
