@@ -29,15 +29,12 @@ use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
 use Adyen\Shopware\Exception\ValidationException;
-use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
-use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\ContextTokenResponse;
-use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -53,17 +50,17 @@ class FrontendProxyController extends StorefrontController
 
     private CartOrderRoute $cartOrderRoute;
     private CartService $cartService;
-    private ContextSwitchRoute $contextSwitchRoute;
     private HandlePaymentMethodRoute $handlePaymentMethodRoute;
+    private ContextSwitchRoute $contextSwitchRoute;
     private PaymentController $paymentController;
     private OrderApiController $orderApiController;
     private DonateController $donateController;
 
     public function __construct(
-        AbstractCartOrderRoute $cartOrderRoute,
-        AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
-        AbstractContextSwitchRoute $contextSwitchRoute,
+        CartOrderRoute $cartOrderRoute,
         CartService $cartService,
+        HandlePaymentMethodRoute $handlePaymentMethodRoute,
+        ContextSwitchRoute $contextSwitchRoute,
         PaymentController $paymentController,
         OrderApiController $orderApiController,
         DonateController $donateController
