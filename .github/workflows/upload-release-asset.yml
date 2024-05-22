@@ -1,6 +1,7 @@
 on:
-  release:
-    types: [published]
+  push:
+#  release:
+#    types: [published]
 
 name: Upload Shopware 6 Marketplace asset
 
@@ -19,4 +20,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ github.ref_name }} AdyenPaymentShopware6.zip --clobber
+          cd ..
+          ls -l
+#          gh release upload ${{ github.ref_name }} AdyenPaymentShopware6.zip --clobber
