@@ -1,8 +1,8 @@
 {% block adyen_capture %}
     <sw-card :isLoading="isLoading" :title="$tc('adyen.adyenPaymentCaptureTitle')" v-if="showWidget" :large="false" :hero="false">
         <div v-if="!errorOccurred">
-            <div class="adyen-card-header">
-                <div class="adyen-card-header-first">
+            <div class="adyen-capture-card-header">
+                <div class="adyen-capture-card-header-first">
                     <span v-if="!captureRequests.length">{{ $tc('adyen.noCaptureRequests') }}</span>
                 </div>
                 <div id="modalButtonContainer">

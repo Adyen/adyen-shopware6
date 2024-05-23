@@ -38,41 +38,40 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * Class DonateController
- * @package Adyen\Shopware\Controller\StoreApi\Donate
- * @Route(defaults={"_routeScope"={"store-api"}})
- */
+#[Route(defaults: ['_routeScope' => ['store-api']])]
 class DonateController
 {
     /**
      * @var OrderTransactionRepository
      */
-    private $adyenOrderTransactionRepository;
+    private OrderTransactionRepository $adyenOrderTransactionRepository;
+
     /**
      * @var EntityRepository
      */
-    private $orderTransactionRepository;
+    private EntityRepository $orderTransactionRepository;
+
     /**
      * @var DonationService
      */
-    private $donationService;
+    private DonationService $donationService;
 
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var Currency
      */
-    private $currency;
+    private Currency $currency;
+
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * StoreApiController constructor.
@@ -81,6 +80,7 @@ class DonateController
      * @param OrderTransactionRepository $adyenOrderTransactionRepository
      * @param EntityRepository $orderTransactionRepository
      * @param ConfigurationService $configurationService
+     * @param Currency $currency
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -100,16 +100,11 @@ class DonateController
     }
 
     /**
-     * @Route(
-     *     "/store-api/adyen/donate",
-     *     name="store-api.action.adyen.donate",
-     *     methods={"POST"}
-     * )
-     *
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
      * @return JsonResponse
      */
+    #[Route('/store-api/adyen/donate', name: 'store-api.action.adyen.donate', methods: ['POST'])]
     public function donate(
         Request $request,
         SalesChannelContext $salesChannelContext

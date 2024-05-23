@@ -4,23 +4,12 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler" abstract="true">
-            <argument type="service" id="Adyen\Shopware\Service\OrdersService"/>
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
-            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
-            <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
-            <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
-            <argument type="service"
-                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="router.default"/>
-            <argument type="service" id="request_stack"/>
-            <argument type="service" id="currency.repository"/>
-            <argument type="service" id="product.repository"/>
-            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+        <service id="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler" abstract="true" autowire="true">
+            <argument key="$symfonyRouter" type="service" id="router.default"/>
+            <argument key="$requestStack" type="service" id="request_stack"/>
+            <argument key="$currencyRepository" type="service" id="currency.repository"/>
+            <argument key="$productRepository" type="service" id="product.repository"/>
+            <argument key="$contextSwitchRoute" type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
         </service>
         <service id="Adyen\Shopware\Handlers\CardsPaymentMethodHandler"
@@ -253,4 +242,3 @@
         </service>
     </services>
 </container>
-

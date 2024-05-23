@@ -45,8 +45,8 @@ Component.register('adyen-config-check-button', {
             // i.e. from this.$parent.$parent.$parent to this.$parent.$parent.$parent.$parent
             // @fixme This is a hack to support all versions
             let systemConfigComponent = this.$parent;
-            while (!systemConfigComponent.hasOwnProperty('actualConfigData')) {
-                systemConfigComponent = systemConfigComponent.$parent
+            while (systemConfigComponent.actualConfigData === undefined) {
+                systemConfigComponent = systemConfigComponent.$parent;
             }
             let selectedSalesChannelId = systemConfigComponent.currentSalesChannelId;
             let config = systemConfigComponent.actualConfigData;

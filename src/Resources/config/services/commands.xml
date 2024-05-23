@@ -26,24 +26,19 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand">
-            <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
+        <service id="Adyen\Shopware\Command\FetchPaymentMethodLogosCommand" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Adyen\Shopware\Command\ProcessWebhooksCommand">
-            <argument type="service" id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler"/>
+        <service id="Adyen\Shopware\Command\ProcessWebhooksCommand" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Adyen\Shopware\Command\ScheduleWebhooksCommand">
-            <argument type="service" id="Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler"/>
+        <service id="Adyen\Shopware\Command\EnablePaymentMethodCommand" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Adyen\Shopware\Command\EnablePaymentMethodCommand">
-            <argument type="service" id="Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler"/>
+        <service id="Adyen\Shopware\Command\DisablePaymentMethodCommand" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Adyen\Shopware\Command\DisablePaymentMethodCommand">
-            <argument type="service" id="Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler"/>
+        <service id="Adyen\Shopware\Command\ScheduleWebhooksCommand" autowire="true">
             <tag name="console.command"/>
         </service>
 

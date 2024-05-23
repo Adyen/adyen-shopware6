@@ -25,20 +25,24 @@
 namespace Adyen\Shopware\Command;
 
 use Adyen\Shopware\Handlers\Command\PaymentMethodStatusHandler;
+use Exception;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'adyen:payment-method:disable', description: 'Disables Adyen payment methods')]
 class DisablePaymentMethodCommand extends Command
 {
-    protected static $defaultName = 'adyen:payment-method:disable';
-
     /**
      * @var PaymentMethodStatusHandler
      */
     protected PaymentMethodStatusHandler $handler;
 
+    /**
+     * @param PaymentMethodStatusHandler $handler
+     */
     public function __construct(PaymentMethodStatusHandler $handler)
     {
         parent::__construct();
@@ -73,14 +77,15 @@ class DisablePaymentMethodCommand extends Command
             if ($isAllSelected xor isset($paymentMethodHandlerIdentifier)) {
                 $this->handler->run($isAllSelected, false, $paymentMethodHandlerIdentifier);
                 $message = 'Payment method is disabled successfully.';
+                $output->writeln($message);
             } else {
                 throw new \Exception('Invalid parameter! For usage please check manual --help.');
             }
-        } catch (\Exception $e) {
-            $message = $e->getMessage();
+        } catch (Exception $e) {
+            $output->writeln($e->getMessage());
+            return Command::FAILURE;
         }
 
-        $output->writeln($message);
         return Command::SUCCESS;
     }
 }
