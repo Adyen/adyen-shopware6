@@ -25,19 +25,22 @@
 namespace Adyen\Shopware\Command;
 
 use Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'adyen:schedule-webhooks', description: 'Schedules Adyen webhooks')]
 class ScheduleWebhooksCommand extends Command
 {
-    protected static $defaultName = 'adyen:schedule-webhooks';
-
     /**
      * @var ScheduleNotificationsHandler
      */
-    protected $handler;
+    protected ScheduleNotificationsHandler $handler;
 
+    /**
+     * @param ScheduleNotificationsHandler $handler
+     */
     public function __construct(ScheduleNotificationsHandler $handler)
     {
         parent::__construct();

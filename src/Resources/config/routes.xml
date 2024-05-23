@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://symfony.com/schema/routing
         http://symfony.com/schema/routing/routing-1.0.xsd">
 
-    <import resource="../../Controller/*Controller.php" type="annotation"/>
-    <import resource="../../Controller/StoreApi/**/*Controller.php" type="annotation"/>
-    <import resource="../../**/Storefront/Controller/*Controller.php" type="annotation"/>
+    <import resource="../../Controller/*Controller.php" type="attribute"/>
+    <import resource="../../Controller/StoreApi/**/*Controller.php" type="attribute"/>
+    <import resource="../../**/Storefront/Controller/*Controller.php" type="attribute"/>
 </routes>

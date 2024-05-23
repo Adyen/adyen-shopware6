@@ -64,52 +64,52 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     /**
      * @var PaymentStateDataService
      */
-    private $paymentStateDataService;
+    private PaymentStateDataService $paymentStateDataService;
 
     /**
      * @var PaymentMethodsFilterService
      */
-    private $paymentMethodsFilterService;
+    private PaymentMethodsFilterService $paymentMethodsFilterService;
 
     /**
      * @var RouterInterface
      */
-    private $router;
+    private RouterInterface $router;
 
     /**
      * @var SalesChannelRepository
      */
-    private $salesChannelRepository;
+    private SalesChannelRepository $salesChannelRepository;
 
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var PaymentMethodsService
      */
-    private $paymentMethodsService;
+    private PaymentMethodsService $paymentMethodsService;
 
     /**
      * @var RequestStack $requestStack
      */
-    private $requestStack;
+    private RequestStack $requestStack;
 
     /**
      * @var AbstractCartPersister
      */
-    private $cartPersister;
+    private AbstractCartPersister $cartPersister;
 
     /**
      * @var CartCalculator
      */
-    private $cartCalculator;
+    private CartCalculator $cartCalculator;
 
     /**
      * @var Currency
      */
-    private $currency;
+    private Currency $currency;
 
     /**
      * @var AdyenPluginProvider
@@ -119,17 +119,17 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     /**
      * @var AbstractContextSwitchRoute
      */
-    private $contextSwitchRoute;
+    private AbstractContextSwitchRoute $contextSwitchRoute;
 
     /**
      * @var AbstractSalesChannelContextFactory
      */
-    private $salesChannelContextFactory;
+    private AbstractSalesChannelContextFactory $salesChannelContextFactory;
 
     /**
      * @var EntityRepository
      */
-    private $paymentMethodRepository;
+    private EntityRepository $paymentMethodRepository;
 
     /**
      * PaymentSubscriber constructor.
@@ -163,7 +163,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,
         Currency $currency,
-        $paymentMethodRepository
+        EntityRepository $paymentMethodRepository
     ) {
         $this->adyenPluginProvider = $adyenPluginProvider;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;

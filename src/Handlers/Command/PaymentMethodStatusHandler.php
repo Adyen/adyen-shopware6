@@ -36,23 +36,23 @@ class PaymentMethodStatusHandler
     /**
      * @var AdyenPluginProvider
      */
-    private $adyenPluginProvider;
+    private AdyenPluginProvider $adyenPluginProvider;
 
-    private $paymentMethodRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $salesChannelRepository;
+    private EntityRepository $paymentMethodRepository;
 
     /**
      * @var EntityRepository
      */
-    private $salesChannelPaymentMethodRepository;
+    private EntityRepository $salesChannelRepository;
+
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $salesChannelPaymentMethodRepository;
 
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
-        $paymentMethodRepository,
+        EntityRepository $paymentMethodRepository,
         EntityRepository $salesChannelRepository,
         EntityRepository $salesChannelPaymentMethodRepository
     ) {

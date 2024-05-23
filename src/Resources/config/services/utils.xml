@@ -16,5 +16,7 @@
         <service id="Adyen\Service\Builder\Payment"/>
         <service id="Adyen\Shopware\Util\Currency"/>
         <service id="Adyen\Shopware\Util\Idempotency"/>
+        <service id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
+        <service id="Adyen\Shopware\Util\DataArrayValidator"/>
     </services>
 </container>

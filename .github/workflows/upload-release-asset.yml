@@ -1,0 +1,22 @@
+on:
+  release:
+    types: [published]
+
+name: Upload Shopware 6 Marketplace asset
+
+jobs:
+  run:
+    name: Upload Release Asset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare release artifact
+        run: .github/workflows/scripts/prepare-release-asset.sh
+
+      - name:  Upload asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} AdyenPaymentShopware6.zip --clobber

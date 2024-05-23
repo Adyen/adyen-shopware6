@@ -22,10 +22,10 @@ jobs:
 
       - name: Initiate Dockware
         run: |
-          docker pull dockware/dev:6.5.2.1
+          docker pull dockware/dev:latest
           docker run --rm -p 443:443 --name shopware6 \
             --mount type=bind,source="$(pwd)",target=/data/extensions/workdir \
-            --env PHP_VERSION=8.2 -d dockware/dev:6.5.2.1
+            --env PHP_VERSION=8.2 -d dockware/dev:latest
           sleep 30
           docker logs shopware6
           docker exec shopware6 bash -c "sudo mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
@@ -38,7 +38,7 @@ jobs:
       - name: Install/Configure Plugin
         run: |
           docker exec shopware6 bash -c "composer config --json repositories.local '{\"type\": \"path\", \"url\": \"/data/extensions/workdir\", \"options\": { \"symlink\": false } }'"
-          docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6:*'
+          docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6:*@RC'
           docker exec shopware6 bash -c 'php bin/console plugin:refresh'
           docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
           docker exec shopware6 bash -c 'php bin/console cache:clear'

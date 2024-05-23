@@ -45,20 +45,27 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
     /**
      * @var MediaService
      */
-    private $mediaService;
+    private MediaService $mediaService;
 
-    private $paymentMethodRepository;
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $paymentMethodRepository;
 
-    private $mediaRepository;
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $mediaRepository;
+
     /**
      * @var bool
      */
-    private $enableUrlUploadFeature;
+    private bool $enableUrlUploadFeature;
 
     public function __construct(
         EntityRepository $scheduledTaskRepository,
         MediaService $mediaService,
-        $paymentMethodRepository,
+        EntityRepository $paymentMethodRepository,
         $mediaRepository,
         bool $enableUrlUploadFeature = true
     ) {

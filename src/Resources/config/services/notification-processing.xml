@@ -4,34 +4,24 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services
         https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Adyen\Shopware\Service\NotificationReceiverService">
-            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\NotificationService"/>
-            <argument type="service" id="Adyen\Webhook\Receiver\NotificationReceiver"/>
+        <service id="Adyen\Shopware\Service\NotificationReceiverService" autowire="true">
             <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Entity\Notification\NotificationEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_notification"/>
         </service>
-        <service id="Adyen\Shopware\Service\NotificationService">
-            <argument type="service" id="adyen_notification.repository"/>
+        <service id="Adyen\Shopware\Service\NotificationService" autowire="true">
+            <argument key="$notificationRepository" type="service" id="adyen_notification.repository"/>
         </service>
 
         <!--Scheduled Tasks-->
         <service id="Adyen\Shopware\ScheduledTask\ProcessNotifications">
             <tag name="shopware.scheduled.task"/>
         </service>
-        <service id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler">
-            <argument type="service" id="scheduled_task.repository"/>
-            <argument type="service" id="Adyen\Shopware\Service\NotificationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderRepository"/>
-            <argument type="service" id="payment_method.repository"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\OrderTransactionRepository"/>
-            <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
-            <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
-            <argument type="service" id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
+        <service id="Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler" autowire="true">
+            <argument key="$scheduledTaskRepository" type="service" id="scheduled_task.repository"/>
+            <argument key="$paymentMethodRepository" type="service" id="payment_method.repository"/>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
@@ -40,9 +30,8 @@
         <service id="Adyen\Shopware\ScheduledTask\ScheduleNotifications">
             <tag name="shopware.scheduled.task"/>
         </service>
-        <service id="Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler">
-            <argument type="service" id="scheduled_task.repository" />
-            <argument type="service" id="Adyen\Shopware\Service\NotificationService"/>
+        <service id="Adyen\Shopware\ScheduledTask\ScheduleNotificationsHandler" autowire="true">
+            <argument key="$scheduledTaskRepository" type="service" id="scheduled_task.repository" />
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
@@ -51,12 +40,11 @@
         <service id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogos">
             <tag name="shopware.scheduled.task"/>
         </service>
-        <service id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler">
-            <argument type="service" id="scheduled_task.repository"/>
-            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
-            <argument type="service" id="payment_method.repository"/>
-            <argument type="service" id="media.repository"/>
-            <argument>%shopware.media.enable_url_upload_feature%</argument>
+        <service id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler" autowire="true">
+            <argument key="$scheduledTaskRepository" type="service" id="scheduled_task.repository"/>
+            <argument key="$paymentMethodRepository" type="service" id="payment_method.repository"/>
+            <argument key="$mediaRepository" type="service" id="media.repository"/>
+            <argument key="$enableUrlUploadFeature">%shopware.media.enable_url_upload_feature%</argument>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_cron"/>

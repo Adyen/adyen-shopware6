@@ -23,11 +23,10 @@ class Migration1609373668AdyenMediaFolder extends MigrationStep
             $defaultFolderId = Uuid::randomBytes();
             $configurationId = Uuid::randomBytes();
             $connection->executeStatement('
-                INSERT INTO `media_default_folder` (`id`, `association_fields`, `entity`, `created_at`)
-                VALUES (:id, :associationFields, :entity, :createdAt)
+                INSERT INTO `media_default_folder` (`id`, `entity`, `created_at`)
+                VALUES (:id, :entity, :createdAt)
             ', [
                 'id' => $defaultFolderId,
-                'associationFields' => '[]',
                 'entity' => 'adyen',
                 'createdAt' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)
             ]);

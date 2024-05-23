@@ -11,7 +11,7 @@ class DataArrayValidator
      * @param array $approvedKeys
      * @return array
      */
-    public static function getArrayOnlyWithApprovedKeys($array, $approvedKeys)
+    public static function getArrayOnlyWithApprovedKeys(array $array, array $approvedKeys): array
     {
         $result = array();
 

@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: [ 7.4, 8.0, 8.1, 8.2 ]
+        php-version: [ 8.2, 8.3 ]
 
     steps:
       - name: Setup PHP
@@ -16,7 +16,7 @@ jobs:
           php-version: ${{ matrix.php-version }}
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Validate composer.json and composer.lock
         run: composer validate
