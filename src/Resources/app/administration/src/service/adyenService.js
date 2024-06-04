@@ -159,18 +159,35 @@ class ApiClient extends ApiService {
             });
     }
 
-    isAdyenOrder(order) {
+    async isAdyenOrder(order) {
         const orderTransactions = order.transactions;
         let isAdyen = false;
         for (let i = 0; i < orderTransactions.length; i++) {
-            if (orderTransactions[i].customFields !== undefined) {
-                if (orderTransactions[i].customFields.originalPspReference !== undefined) {
-                    isAdyen = true;
-                }
+            isAdyen = await this.checkAdyenOrder(orderTransactions[i].paymentMethod.pluginId).then((res) => {
+                return res.status
+            });
+
+            if (isAdyen){
+                return isAdyen;
             }
         }
 
         return isAdyen;
+    }
+
+    checkAdyenOrder(pluginId) {
+        const headers = this.getBasicHeaders({});
+        return this.httpClient
+            .get(this.getApiBasePath()  + '/orders/' + pluginId + '/is-adyen-order', {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            })
+            .catch((error) => {
+                console.error('An error occurred: ' + error.message);
+                throw error;
+            });
     }
 
     fetchAdyenPartialPayments(orderId) {
