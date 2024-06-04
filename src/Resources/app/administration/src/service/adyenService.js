@@ -159,30 +159,17 @@ class ApiClient extends ApiService {
             });
     }
 
-    async isAdyenOrder(order) {
-        const orderTransactions = order.transactions;
-        let isAdyen = false;
-        for (let i = 0; i < orderTransactions.length; i++) {
-            isAdyen = await this.checkAdyenOrder(orderTransactions[i].paymentMethod.pluginId).then((res) => {
-                return res.status
-            });
-
-            if (isAdyen){
-                return isAdyen;
-            }
-        }
-
-        return isAdyen;
-    }
-
-    checkAdyenOrder(pluginId) {
+    isAdyenOrder(order){
         const headers = this.getBasicHeaders({});
         return this.httpClient
-            .get(this.getApiBasePath()  + '/orders/' + pluginId + '/is-adyen-order', {
+            .get(this.getApiBasePath()  + '/orders/' + order.id + '/is-adyen-order', {
                 headers
             })
             .then((response) => {
                 return ApiService.handleResponse(response);
+            })
+            .then((response) => {
+                return response.status
             })
             .catch((error) => {
                 console.error('An error occurred: ' + error.message);

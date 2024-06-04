@@ -519,19 +519,32 @@ class AdminController
      * @return JsonResponse
      */
     #[Route(
-        '/api/adyen/orders/{pluginId}/is-adyen-order',
+        '/api/adyen/orders/{orderId}/is-adyen-order',
         name: 'api.adyen_is_adyen_order.get',
         methods: ['GET']
     )]
-    public function isAdyenOrder(string $pluginId): JsonResponse
+    public function isAdyenOrder(string $orderId): JsonResponse
     {
         try {
             $adyenPluginId = $this->pluginProvider->getAdyenPluginId();
+            $transaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId, Context::createDefaultContext());
+
+            if (!is_null($transaction)) {
+                $pluginId = $transaction->getPaymentMethod()->getPluginId();
+
+                if($pluginId == $adyenPluginId){
+                    return new JsonResponse(
+                        ['status' => true]
+                    );
+                }
+            }
+
             return new JsonResponse(
-                ['status' => $pluginId == $adyenPluginId]
+                ['status' => false]
             );
+
         } catch (Throwable $t) {
-            return new JsonResponse(['message' => 'Something went wrong.'], 500);
+            return new JsonResponse(['message' => "Something went wrong."], 500);
         }
     }
 }
