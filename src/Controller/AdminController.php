@@ -528,7 +528,8 @@ class AdminController
         try {
             $adyenPluginId = $this->pluginProvider->getAdyenPluginId();
             $transaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction(
-                $orderId, Context::createDefaultContext()
+                $orderId,
+                Context::createDefaultContext()
             );
             $pluginId = $transaction->getPaymentMethod()->getPluginId();
 
