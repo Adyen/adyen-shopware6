@@ -526,22 +526,16 @@ class AdminController
     public function isAdyenOrder(string $orderId): JsonResponse
     {
         try {
-            $adyenPluginId = $this->pluginProvider->getAdyenPluginId();
             $transaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction(
                 $orderId,
                 Context::createDefaultContext()
             );
-            $pluginId = $transaction->getPaymentMethod()->getPluginId();
 
-            if ($pluginId == $adyenPluginId) {
-                return new JsonResponse(
-                    ['status' => true]
-                );
+            if (!is_null($transaction)) {
+                return new JsonResponse(['status' => true]);
             }
 
-            return new JsonResponse(
-                ['status' => false]
-            );
+            return new JsonResponse(['status' => false]);
         } catch (Throwable $t) {
             return new JsonResponse(['message' => "Something went wrong."], 500);
         }
