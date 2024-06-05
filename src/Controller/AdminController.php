@@ -527,10 +527,12 @@ class AdminController
     {
         try {
             $adyenPluginId = $this->pluginProvider->getAdyenPluginId();
-            $transaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId, Context::createDefaultContext());
+            $transaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction(
+                $orderId, Context::createDefaultContext()
+            );
             $pluginId = $transaction->getPaymentMethod()->getPluginId();
 
-            if($pluginId == $adyenPluginId){
+            if ($pluginId == $adyenPluginId) {
                 return new JsonResponse(
                     ['status' => true]
                 );
