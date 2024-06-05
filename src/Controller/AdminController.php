@@ -28,6 +28,7 @@ use Adyen\Service\Checkout;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
+use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -96,6 +97,9 @@ class AdminController
     /** @var OrderTransactionRepository */
     private $orderTransactionRepository;
 
+    /** @var AdyenPluginProvider */
+    private AdyenPluginProvider $pluginProvider;
+
     /**
      * AdminController constructor.
      *
@@ -111,6 +115,7 @@ class AdminController
      * @param ConfigurationService $configurationService
      * @param AdyenPaymentService $adyenPaymentService
      * @param OrderTransactionRepository $orderTransactionRepository
+     * @param AdyenPluginProvider $pluginProvider
      */
     public function __construct(
         LoggerInterface $logger,
@@ -124,7 +129,8 @@ class AdminController
         Currency $currencyUtil,
         ConfigurationService $configurationService,
         AdyenPaymentService $adyenPaymentService,
-        OrderTransactionRepository $orderTransactionRepository
+        OrderTransactionRepository $orderTransactionRepository,
+        AdyenPluginProvider $pluginProvider
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
@@ -138,6 +144,7 @@ class AdminController
         $this->configurationService = $configurationService;
         $this->adyenPaymentService = $adyenPaymentService;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->pluginProvider = $pluginProvider;
     }
 
     /**
@@ -534,5 +541,35 @@ class AdminController
         }
 
         return new JsonResponse($notificationId);
+    }
+
+    /**
+     *
+     * @Route(
+     *      '/api/adyen/orders/{orderId}/is-adyen-order',
+     *      name: 'api.adyen_is_adyen_order.get',
+     *      methods: ['GET']
+     * )
+     *
+     * @param string $orderId
+     * @return JsonResponse
+     */
+
+    public function isAdyenOrder(string $orderId): JsonResponse
+    {
+        try {
+            $transaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction(
+                $orderId,
+                Context::createDefaultContext()
+            );
+
+            if (!is_null($transaction)) {
+                return new JsonResponse(['status' => true]);
+            }
+
+            return new JsonResponse(['status' => false]);
+        } catch (Throwable $t) {
+            return new JsonResponse(['message' => "Something went wrong."], 500);
+        }
     }
 }
