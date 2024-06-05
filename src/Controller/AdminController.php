@@ -515,7 +515,7 @@ class AdminController
     }
 
     /**
-     * @param string $pluginId
+     * @param string $orderId
      * @return JsonResponse
      */
     #[Route(
