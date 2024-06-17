@@ -558,10 +558,7 @@ class AdminController
     public function isAdyenOrder(string $orderId): JsonResponse
     {
         try {
-            $transaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction(
-                $orderId,
-                Context::createDefaultContext()
-            );
+            $transaction = $this->orderTransactionRepository->getFirstAdyenOrderTransaction($orderId);
 
             if (!is_null($transaction)) {
                 return new JsonResponse(['status' => true]);
