@@ -569,7 +569,8 @@ class AdminController
 
             return new JsonResponse(['status' => false]);
         } catch (Throwable $t) {
-            return new JsonResponse(['message' => "Something went wrong."], 500);
+            $this->logger->error($t->getMessage());
+            return new JsonResponse(['message' => 'adyen.error'], 500);
         }
     }
 }
