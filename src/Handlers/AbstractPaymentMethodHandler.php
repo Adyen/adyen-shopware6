@@ -339,7 +339,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $uuid = Uuid::randomHex();
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $transaction->getOrderTransaction()->getAmount()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
         return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
@@ -569,7 +569,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         //Building payment data
         $amount = $partialAmount ?: $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $transaction->getOrderTransaction()->getAmount()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
 
@@ -832,7 +832,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         //New Multi-Gift-card implementation
         $remainingOrderAmount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $transaction->getOrderTransaction()->getAmount()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
 
