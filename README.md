@@ -41,6 +41,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Apple Pay
  - Bancontact
  - Blik
+ - Billie
  - Clearpay
  - Dotpay
  - Electronic Payment Service (EPS)
