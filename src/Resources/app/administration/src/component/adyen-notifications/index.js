@@ -77,8 +77,8 @@ Component.register('adyen-notifications', {
         }
     },
 
-    beforeMount() {
-        this.showWidget = this.adyenService.isAdyenOrder(this.order);
+    async beforeMount() {
+        this.showWidget = await this.adyenService.isAdyenOrder(this.order);
         if (this.showWidget) {
             this.fetchNotifications();
         }
