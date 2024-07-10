@@ -26,6 +26,9 @@ namespace Adyen\Shopware\Handlers;
 
 class BilliePaymentMethodHandler extends AbstractPaymentMethodHandler
 {
+    public static bool $isOpenInvoice = true;
+    public static bool $supportsManualCapture = true;
+    public static bool $supportsPartialCapture = true;
 
     public static function getPaymentMethodCode()
     {
