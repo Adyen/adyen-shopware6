@@ -302,9 +302,9 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 2.0.0 introduces amazonpay, blik
         foreach ([
-                     new PaymentMethods\AmazonPayPaymentMethod,
-                     new PaymentMethods\BlikPaymentMethod,
-                 ] as $method) {
+             new PaymentMethods\AmazonPayPaymentMethod,
+             new PaymentMethods\BlikPaymentMethod,
+        ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -321,22 +321,22 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 3.0.0 introduces the following payment methods
         foreach ([
-                     new PaymentMethods\AfterpayDefaultPaymentMethod,
-                     new PaymentMethods\AlipayPaymentMethod,
-                     new PaymentMethods\AlipayHkPaymentMethod,
-                     new PaymentMethods\ClearpayPaymentMethod,
-                     new PaymentMethods\EpsPaymentMethod,
-                     new PaymentMethods\Facilypay3xPaymentMethod,
-                     new PaymentMethods\Facilypay4xPaymentMethod,
-                     new PaymentMethods\Facilypay6xPaymentMethod,
-                     new PaymentMethods\Facilypay10xPaymentMethod,
-                     new PaymentMethods\Facilypay12xPaymentMethod,
-                     new PaymentMethods\PaysafecardPaymentMethod,
-                     new PaymentMethods\RatepayPaymentMethod,
-                     new PaymentMethods\RatepayDirectdebitPaymentMethod,
-                     new PaymentMethods\SwishPaymentMethod,
-                     new PaymentMethods\TrustlyPaymentMethod,
-                     new PaymentMethods\TwintPaymentMethod,
+             new PaymentMethods\AfterpayDefaultPaymentMethod,
+             new PaymentMethods\AlipayPaymentMethod,
+             new PaymentMethods\AlipayHkPaymentMethod,
+             new PaymentMethods\ClearpayPaymentMethod,
+             new PaymentMethods\EpsPaymentMethod,
+             new PaymentMethods\Facilypay3xPaymentMethod,
+             new PaymentMethods\Facilypay4xPaymentMethod,
+             new PaymentMethods\Facilypay6xPaymentMethod,
+             new PaymentMethods\Facilypay10xPaymentMethod,
+             new PaymentMethods\Facilypay12xPaymentMethod,
+             new PaymentMethods\PaysafecardPaymentMethod,
+             new PaymentMethods\RatepayPaymentMethod,
+             new PaymentMethods\RatepayDirectdebitPaymentMethod,
+             new PaymentMethods\SwishPaymentMethod,
+             new PaymentMethods\TrustlyPaymentMethod,
+             new PaymentMethods\TwintPaymentMethod,
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,
