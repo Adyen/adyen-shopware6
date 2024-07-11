@@ -129,12 +129,7 @@ class AdyenPaymentShopware6 extends Plugin
 
         if (\version_compare($currentVersion, '3.15.0', '<')) {
             $this->updateTo3150($updateContext);
-            $this->updateTo400($updateContext);
         }
-
-//        if (\version_compare($currentVersion, '4.0.0', '<')) {
-//            $this->updateTo400($updateContext);
-//        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -302,9 +297,9 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 2.0.0 introduces amazonpay, blik
         foreach ([
-             new PaymentMethods\AmazonPayPaymentMethod,
-             new PaymentMethods\BlikPaymentMethod,
-        ] as $method) {
+                     new PaymentMethods\AmazonPayPaymentMethod,
+                     new PaymentMethods\BlikPaymentMethod,
+                 ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -321,22 +316,22 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 3.0.0 introduces the following payment methods
         foreach ([
-             new PaymentMethods\AfterpayDefaultPaymentMethod,
-             new PaymentMethods\AlipayPaymentMethod,
-             new PaymentMethods\AlipayHkPaymentMethod,
-             new PaymentMethods\ClearpayPaymentMethod,
-             new PaymentMethods\EpsPaymentMethod,
-             new PaymentMethods\Facilypay3xPaymentMethod,
-             new PaymentMethods\Facilypay4xPaymentMethod,
-             new PaymentMethods\Facilypay6xPaymentMethod,
-             new PaymentMethods\Facilypay10xPaymentMethod,
-             new PaymentMethods\Facilypay12xPaymentMethod,
-             new PaymentMethods\PaysafecardPaymentMethod,
-             new PaymentMethods\RatepayPaymentMethod,
-             new PaymentMethods\RatepayDirectdebitPaymentMethod,
-             new PaymentMethods\SwishPaymentMethod,
-             new PaymentMethods\TrustlyPaymentMethod,
-             new PaymentMethods\TwintPaymentMethod,
+                     new PaymentMethods\AfterpayDefaultPaymentMethod,
+                     new PaymentMethods\AlipayPaymentMethod,
+                     new PaymentMethods\AlipayHkPaymentMethod,
+                     new PaymentMethods\ClearpayPaymentMethod,
+                     new PaymentMethods\EpsPaymentMethod,
+                     new PaymentMethods\Facilypay3xPaymentMethod,
+                     new PaymentMethods\Facilypay4xPaymentMethod,
+                     new PaymentMethods\Facilypay6xPaymentMethod,
+                     new PaymentMethods\Facilypay10xPaymentMethod,
+                     new PaymentMethods\Facilypay12xPaymentMethod,
+                     new PaymentMethods\PaysafecardPaymentMethod,
+                     new PaymentMethods\RatepayPaymentMethod,
+                     new PaymentMethods\RatepayDirectdebitPaymentMethod,
+                     new PaymentMethods\SwishPaymentMethod,
+                     new PaymentMethods\TrustlyPaymentMethod,
+                     new PaymentMethods\TwintPaymentMethod,
                  ] as $method) {
             $this->addPaymentMethod(
                 $method,
@@ -415,8 +410,8 @@ class AdyenPaymentShopware6 extends Plugin
          * Open Banking / Pay by Bank
          */
         foreach ([
-            new PaymentMethods\OpenBankingPaymentMethod(),
-        ] as $method) {
+                     new PaymentMethods\OpenBankingPaymentMethod(),
+                 ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -431,16 +426,24 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function updateTo3150(UpdateContext $updateContext): void
     {
-        //Version 3.15.0 introduces MultiGiftcards
-        $this->addPaymentMethod(
-            new PaymentMethods\GiftCardPaymentMethod(),
-            $updateContext->getContext()
-        );
-        $this->setPaymentMethodIsActive(
-            true,
-            $updateContext->getContext(),
-            new PaymentMethods\GiftcardPaymentMethod()
-        );
+        /* Version 3.15.0 introduces following payment methods.
+        * MultiGiftcards, Billie
+        */
+
+        foreach ([
+                     new PaymentMethods\GiftCardPaymentMethod(),
+                     new PaymentMethods\BilliePaymentMethod()
+                 ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
 
         $deprecatedGiftcardMethods = [
             'Adyen\Shopware\Handlers\AlbelliGiftCardPaymentMethodHandler',
@@ -464,23 +467,6 @@ class AdyenPaymentShopware6 extends Plugin
             $description = '@deprecated DO NOT ACTIVATE, use GiftCard instead';
             $this->deactivateAndRemovePaymentMethod($updateContext, $deprecatedGiftcardMethod, $description);
         }
-    }
-
-    private function updateTo400(UpdateContext $updateContext): void
-    {
-        /*
-         * Version 4.0.0 introduces following payment methods.
-         * Billie
-         */
-        $this->addPaymentMethod(
-            new PaymentMethods\BilliePaymentMethod(),
-            $updateContext->getContext()
-        );
-        $this->setPaymentMethodIsActive(
-            true,
-            $updateContext->getContext(),
-            new PaymentMethods\BilliePaymentMethod()
-        );
     }
 
     /**

@@ -58,7 +58,7 @@ class BilliePaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_KLARNA_B2B';
+        return 'ADYEN_KLARNAB2B';
     }
 
     /**
