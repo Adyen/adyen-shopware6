@@ -466,16 +466,24 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function updateTo3150(UpdateContext $updateContext): void
     {
-        //Version 3.15.0 introduces MultiGiftcards
-        $this->addPaymentMethod(
+        /* Version 3.15.0 introduces following payment methods.
+       * MultiGiftcards, Billie
+       */
+
+        foreach ([
             new PaymentMethods\GiftCardPaymentMethod(),
-            $updateContext->getContext()
-        );
-        $this->setPaymentMethodIsActive(
-            true,
-            $updateContext->getContext(),
-            new PaymentMethods\GiftcardPaymentMethod()
-        );
+            new PaymentMethods\BilliePaymentMethod()
+        ] as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
 
         $deprecatedGiftcardMethods = [
             'Adyen\Shopware\Handlers\AlbelliGiftCardPaymentMethodHandler',
