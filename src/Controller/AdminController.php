@@ -544,7 +544,6 @@ class AdminController
     }
 
     /**
-     *
      * @Route(
      *      "/api/adyen/orders/{orderId}/is-adyen-order",
      *      name="api.adyen_is_adyen_order.get",
