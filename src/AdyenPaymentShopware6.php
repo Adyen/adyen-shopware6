@@ -170,6 +170,11 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.15.0', '<')) {
             $this->updateTo3150($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.16.0', '<')) {
+            $this->updateTo3160($updateContext);
+        }
+
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -466,24 +471,16 @@ class AdyenPaymentShopware6 extends Plugin
 
     private function updateTo3150(UpdateContext $updateContext): void
     {
-        /* Version 3.15.0 introduces following payment methods.
-       * MultiGiftcards, Billie
-       */
-
-        foreach ([
+        //Version 3.15.0 introduces MultiGiftcards
+        $this->addPaymentMethod(
             new PaymentMethods\GiftCardPaymentMethod(),
-            new PaymentMethods\BilliePaymentMethod()
-        ] as $method) {
-            $this->addPaymentMethod(
-                $method,
-                $updateContext->getContext()
-            );
-            $this->setPaymentMethodIsActive(
-                true,
-                $updateContext->getContext(),
-                $method
-            );
-        }
+            $updateContext->getContext()
+        );
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            new PaymentMethods\GiftcardPaymentMethod()
+        );
 
         $deprecatedGiftcardMethods = [
             'Adyen\Shopware\Handlers\AlbelliGiftCardPaymentMethodHandler',
@@ -507,6 +504,22 @@ class AdyenPaymentShopware6 extends Plugin
             $description = '@deprecated DO NOT ACTIVATE, use GiftCard instead';
             $this->deactivateAndRemovePaymentMethod($updateContext, $deprecatedGiftcardMethod, $description);
         }
+    }
+
+    private function updateTo3160(UpdateContext $updateContext): void
+    {
+        /* Version 3.16.0 introduces following payment method.
+       * Billie
+       */
+        $this->addPaymentMethod(
+            new PaymentMethods\BilliePaymentMethod(),
+            $updateContext->getContext()
+        );
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            new PaymentMethods\BilliePaymentMethod()
+        );
     }
 
     private function safeCopyAsset($source, $destination): bool
