@@ -276,11 +276,11 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 1.6.0 introduces applepay, paywithgoogle, dotpay and bancontact
         foreach ([
-                     new PaymentMethods\ApplePayPaymentMethod,
-                     new PaymentMethods\GooglePayPaymentMethod,
-                     new PaymentMethods\DotpayPaymentMethod,
-                     new PaymentMethods\BancontactCardPaymentMethod
-                 ] as $method) {
+            new PaymentMethods\ApplePayPaymentMethod,
+            new PaymentMethods\GooglePayPaymentMethod,
+            new PaymentMethods\DotpayPaymentMethod,
+            new PaymentMethods\BancontactCardPaymentMethod
+        ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -297,9 +297,9 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 2.0.0 introduces amazonpay, blik
         foreach ([
-                     new PaymentMethods\AmazonPayPaymentMethod,
-                     new PaymentMethods\BlikPaymentMethod,
-                 ] as $method) {
+            new PaymentMethods\AmazonPayPaymentMethod,
+            new PaymentMethods\BlikPaymentMethod,
+        ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
