@@ -546,15 +546,14 @@ class AdminController
     /**
      *
      * @Route(
-     *      '/api/adyen/orders/{orderId}/is-adyen-order',
-     *      name: 'api.adyen_is_adyen_order.get',
-     *      methods: ['GET']
+     *      "/api/adyen/orders/{orderId}/is-adyen-order",
+     *      name="api.adyen_is_adyen_order.get",
+     *      methods={"GET"}
      * )
      *
      * @param string $orderId
      * @return JsonResponse
      */
-
     public function isAdyenOrder(string $orderId): JsonResponse
     {
         try {
