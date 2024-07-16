@@ -174,7 +174,6 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.16.0', '<')) {
             $this->updateTo3160($updateContext);
         }
-
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
