@@ -159,18 +159,22 @@ class ApiClient extends ApiService {
             });
     }
 
-    isAdyenOrder(order) {
-        const orderTransactions = order.transactions;
-        let isAdyen = false;
-        for (let i = 0; i < orderTransactions.length; i++) {
-            if (orderTransactions[i].customFields !== undefined) {
-                if (orderTransactions[i].customFields.originalPspReference !== undefined) {
-                    isAdyen = true;
-                }
-            }
-        }
-
-        return isAdyen;
+    isAdyenOrder(order){
+        const headers = this.getBasicHeaders({});
+        return this.httpClient
+            .get(this.getApiBasePath()  + '/orders/' + order.id + '/is-adyen-order', {
+                headers
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            })
+            .then((response) => {
+                return response.status
+            })
+            .catch((error) => {
+                console.error('An error occurred: ' + error.message);
+                return false;
+            });
     }
 
     fetchAdyenPartialPayments(orderId) {

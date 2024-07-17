@@ -15,7 +15,7 @@ class Migration1713255011AlterAdyenPayment extends MigrationStep
     public function update(Connection $connection): void
     {
         $connection->executeStatement(<<<SQL
-            ALTER TABLE `adyen_payment` ADD COLUMN `total_refunded` int DEFAULT(0) NOT NULL;
+            ALTER TABLE `adyen_payment` ADD COLUMN `total_refunded` int DEFAULT 0 NOT NULL;
         SQL);
     }
 
