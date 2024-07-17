@@ -57,9 +57,9 @@ Component.register('adyen-partial-payments', {
         }
     },
 
-    beforeMount() {
+    async beforeMount() {
         this.isVersionOlderThan65 = VersionHelper.isVersionOlderThan65();
-        this.showWidget = this.adyenService.isAdyenOrder(this.order);
+        this.showWidget = await this.adyenService.isAdyenOrder(this.order);
 
         if (this.showWidget) {
             this.fetchAdyenPartialPayments();
