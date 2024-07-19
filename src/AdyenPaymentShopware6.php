@@ -131,8 +131,8 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo3150($updateContext);
         }
 
-        if (\version_compare($currentVersion, '4.0.0', '<')) {
-            $this->updateTo4000($updateContext);
+        if (\version_compare($currentVersion, '4.1.0', '<')) {
+            $this->updateTo410($updateContext);
         }
     }
 
@@ -465,9 +465,9 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
-    private function updateTo4000(UpdateContext $updateContext): void
+    private function updateTo410(UpdateContext $updateContext): void
     {
-        /* Version 4.0.0 introduces following payment method.
+        /* Version 4.1.0 introduces following payment method.
        * Billie
        */
         $this->addPaymentMethod(
