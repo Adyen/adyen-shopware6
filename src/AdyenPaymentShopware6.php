@@ -170,6 +170,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.15.0', '<')) {
             $this->updateTo3150($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.16.0', '<')) {
+            $this->updateTo3160($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -499,6 +503,22 @@ class AdyenPaymentShopware6 extends Plugin
             $description = '@deprecated DO NOT ACTIVATE, use GiftCard instead';
             $this->deactivateAndRemovePaymentMethod($updateContext, $deprecatedGiftcardMethod, $description);
         }
+    }
+
+    private function updateTo3160(UpdateContext $updateContext): void
+    {
+        /* Version 3.16.0 introduces following payment method.
+       * Billie
+       */
+        $this->addPaymentMethod(
+            new PaymentMethods\BilliePaymentMethod(),
+            $updateContext->getContext()
+        );
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            new PaymentMethods\BilliePaymentMethod()
+        );
     }
 
     private function safeCopyAsset($source, $destination): bool
