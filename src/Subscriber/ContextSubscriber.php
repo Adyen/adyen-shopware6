@@ -73,12 +73,17 @@ class ContextSubscriber implements EventSubscriberInterface
 
     public function onContextRestored(SalesChannelContextRestoredEvent $event): void
     {
+        if (!method_exists($event, 'getCurrentSalesChannelContext')) {
+            return;
+        }
+
         $token = $event->getRestoredSalesChannelContext()->getToken();
         $oldToken = $event->getCurrentSalesChannelContext()->getToken();
 
+
         $stateData = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken($oldToken);
-        foreach ($stateData->getElements() as $statedataArray) {
-            $this->paymentStateDataService->updateStateDataContextToken($statedataArray, $token);
+        foreach ($stateData->getElements() as $stateDataArray) {
+            $this->paymentStateDataService->updateStateDataContextToken($stateDataArray, $token);
         }
     }
 
