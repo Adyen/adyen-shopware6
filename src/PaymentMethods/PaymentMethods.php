@@ -69,6 +69,7 @@ class PaymentMethods
         MbwayPaymentMethod::class,
         VippsPaymentMethod::class,
         MobilePayPaymentMethod::class,
-        OpenBankingPaymentMethod::class
+        OpenBankingPaymentMethod::class,
+        BilliePaymentMethod::class
     ];
 }
