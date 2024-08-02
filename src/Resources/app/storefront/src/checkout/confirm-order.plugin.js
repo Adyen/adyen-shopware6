@@ -521,6 +521,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             },
             onSubmit: function(state, component) {
                 if (state.isValid) {
+                    state.data.paymentMethod.holderName = paymentMethod.holderName ?? '';
                     let extraParams = {
                         stateData: JSON.stringify(state.data)
                     };
