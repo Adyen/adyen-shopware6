@@ -93,6 +93,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             paymentMethodsConfiguration: {
                 card: {
                     hasHolderName: true,
+                    holderNameRequired: true,
                     clickToPayConfiguration: {
                         merchantDisplayName: merchantAccount,
                         shopperEmail: shopperDetails.shopperEmail
