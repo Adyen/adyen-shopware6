@@ -522,8 +522,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             },
             onSubmit: function(state, component) {
                 if (state.isValid) {
-                    if (isOneClick) {
-                        state.data.paymentMethod.holderName = paymentMethod.holderName ?? '';
+                    if (isOneClick && typeof paymentMethod.holderName !== "undefined") {
+                        state.data.paymentMethod.holderName = paymentMethod.holderName;
                     }
 
                     let extraParams = {
