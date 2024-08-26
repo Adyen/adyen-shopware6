@@ -103,5 +103,11 @@
             <argument type="service"
                       id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider.inner"/>
         </service>
+
+        <!-- Models -->
+        <service id="Adyen\Shopware\Model\JWTFactoryV2" autowire="true">
+            <argument type="service" id="shopware.jwt_config"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
     </services>
 </container>
