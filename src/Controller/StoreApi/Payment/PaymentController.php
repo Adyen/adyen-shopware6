@@ -354,20 +354,36 @@ class PaymentController
         $context->scope(
             Context::SYSTEM_SCOPE,
             function () use ($order, $initialStateId, $orderId, $paymentMethodId, $context): void {
-                if ($order->getTransactions() !== null && $order->getTransactions()->count() >= 1) {
-                    foreach ($order->getTransactions() as $transaction) {
-                        if ($transaction->getStateMachineState()->getTechnicalName()
-                            !== OrderTransactionStates::STATE_CANCELLED) {
-                            $this->orderTransactionStateHandler->cancel(
-                                $transaction->getId(),
-                                $context
-                            );
-                        }
+                $transactions = $order->getTransactions();
+                foreach ($order->getTransactions() as $transaction) {
+                    $stateMachineState = $transaction->getStateMachineState();
+                    if (null === $stateMachineState) {
+                        throw new \LogicException('State machine association not loaded');
+                    }
+                    $allowedStates = [OrderTransactionStates::STATE_CANCELLED, OrderTransactionStates::STATE_PARTIALLY_PAID];
+                    if (!in_array($transaction->getStateMachineState()->getTechnicalName(), $allowedStates)) {
+                        $this->orderTransactionStateHandler->cancel(
+                            $transaction->getId(),
+                            $context
+                        );
                     }
                 }
+
+                // sum total of partially paid transactions
+                $totalPaid = 0;
+                foreach ($transactions as $transaction) {
+                    $stateMachineState = $transaction->getStateMachineState();
+                    if (null === $stateMachineState) {
+                        throw new \LogicException('State machine association not loaded');
+                    }
+                    if ($stateMachineState->getTechnicalName() === OrderTransactionStates::STATE_PARTIALLY_PAID) {
+                        $totalPaid += $transaction->getAmount()->getTotalPrice();
+                    }
+                }
+
                 $transactionAmount = new CalculatedPrice(
-                    $order->getPrice()->getTotalPrice(),
-                    $order->getPrice()->getTotalPrice(),
+                    $order->getPrice()->getTotalPrice() - $totalPaid,
+                    $order->getPrice()->getTotalPrice() - $totalPaid,
                     $order->getPrice()->getCalculatedTaxes(),
                     $order->getPrice()->getTaxRules()
                 );
