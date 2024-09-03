@@ -1,7 +1,7 @@
 name: E2E Test
 run-name: Headless E2E tests for Adyen Shopware Plugin
 
-on: 
+on:
   pull_request:
   workflow_dispatch:
 
@@ -19,6 +19,11 @@ jobs:
     steps:
       - name: Clone Code
         uses: actions/checkout@v2
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
 
       - name: Initiate Dockware
         run: |
@@ -38,7 +43,7 @@ jobs:
       - name: Install/Configure Plugin
         run: |
           docker exec shopware6 bash -c "composer config --json repositories.local '{\"type\": \"path\", \"url\": \"/data/extensions/workdir\", \"options\": { \"symlink\": false } }'"
-          docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6:*@RC'
+          docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6:*'
           docker exec shopware6 bash -c 'php bin/console plugin:refresh'
           docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
           docker exec shopware6 bash -c 'php bin/console cache:clear'
