@@ -9,6 +9,9 @@ jobs:
   run:
     name: Upload Release Asset
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-versions: [ '8.2', '8.3']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
