@@ -1,5 +1,4 @@
 on:
-  push:
   release:
     types: [published]
 
@@ -9,12 +8,15 @@ jobs:
   run:
     name: Upload Release Asset
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php-versions: [ '8.2', '8.3']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2+'  # Ensures that PHP 8.2 is used
+          extensions: mbstring, xml, intl
 
       - name: Prepare release artifact
         run: .github/workflows/scripts/prepare-release-asset.sh
