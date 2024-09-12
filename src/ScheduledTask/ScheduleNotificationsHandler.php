@@ -28,7 +28,9 @@ use Adyen\Shopware\Service\NotificationService;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+#[AsMessageHandler(handles: ScheduleNotifications::class)]
 class ScheduleNotificationsHandler extends ScheduledTaskHandler
 {
     use LoggerAwareTrait;
