@@ -15,8 +15,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2+'  # Ensures that PHP 8.2 is used
-          extensions: mbstring, xml, intl
+          php-version: '8.2+'
 
       - name: Prepare release artifact
         run: .github/workflows/scripts/prepare-release-asset.sh
