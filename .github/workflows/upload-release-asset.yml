@@ -32,10 +32,6 @@ jobs:
       - name: List files in the root directory
         run: ls -al
 
-      # Debug step 3: List files in adyen-shopware6 directory
-      - name: List files in adyen-shopware6 directory
-        run: ls -al adyen-shopware6
-
       # Upload the artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v3
