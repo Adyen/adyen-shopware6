@@ -1,34 +1,43 @@
 on:
-  push:
   release:
     types: [published]
 
-name: Upload Shopware 6 Marketplace asset
+name: Create and Upload Shopware 6 Marketplace Artifact
 
 jobs:
   run:
-    name: Upload Release Asset
+    name: Create and Upload Artifact
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up PHP
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2+'
+          php-version: '8.2'  # Use 8.3 if preferred
+
+      - name: Make script executable
+        run: chmod +x .github/workflows/scripts/prepare-release-asset.sh
 
       - name: Prepare release artifact
         run: .github/workflows/scripts/prepare-release-asset.sh
 
+      # Debug step 1: Print the current directory
+      - name: Print working directory
+        run: pwd
+
+      # Debug step 2: List files in the root directory
+      - name: List files in the root directory
+        run: ls -al
+
+      # Debug step 3: List files in adyen-shopware6 directory
+      - name: List files in adyen-shopware6 directory
+        run: ls -al adyen-shopware6
+
+      # Upload the artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: AdyenPaymentShopware6
           path: adyen-shopware6/AdyenPaymentShopware6.zip
-
-#      - name:  Upload asset
-#        env:
-#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: |
-#          gh release upload ${{ github.ref_name }} AdyenPaymentShopware6.zip --clobber
