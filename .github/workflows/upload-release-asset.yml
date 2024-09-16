@@ -1,5 +1,4 @@
 on:
-  push:
   release:
     types: [published]
 
@@ -24,17 +23,9 @@ jobs:
       - name: Prepare release artifact
         run: .github/workflows/scripts/prepare-release-asset.sh
 
-      # Debug step 1: Print the current directory
-      - name: Print working directory
-        run: pwd
-
-      # Debug step 2: List files in the root directory
-      - name: List files in the root directory
-        run: ls -al
-
-      # Upload the artifact
+      # Upload the artifact (from root directory)
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: AdyenPaymentShopware6
-          path: adyen-shopware6/AdyenPaymentShopware6.zip
+          path: AdyenPaymentShopware6.zip
