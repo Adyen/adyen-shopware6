@@ -25,7 +25,7 @@ zip -r AdyenPaymentShopware6.zip AdyenPaymentShopware6/
 zip -d AdyenPaymentShopware6.zip __MACOSX/\* ; zip -d AdyenPaymentShopware6.zip *.git*
 
 # Move the zip file to plugin folder (use absolute path to avoid issues)
-mv AdyenPaymentShopware6.zip adyen-shopware6/AdyenPaymentShopware6.zip
+mv AdyenPaymentShopware6.zip adyen-shopware6
 
 # Go back to workflow's root directory
 cd adyen-shopware6

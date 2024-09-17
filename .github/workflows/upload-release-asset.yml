@@ -16,7 +16,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'  # Use 8.3 if preferred
+          php-version: '8.2+'
 
       - name: Make script executable
         run: chmod +x .github/workflows/scripts/prepare-release-asset.sh
