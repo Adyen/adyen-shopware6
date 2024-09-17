@@ -1,5 +1,4 @@
 on:
-  push:
   release:
     types: [published]
 
@@ -18,15 +17,11 @@ jobs:
         with:
           php-version: '8.2+'
 
-      - name: Make script executable
-        run: chmod +x .github/workflows/scripts/prepare-release-asset.sh
-
       - name: Prepare release artifact
         run: .github/workflows/scripts/prepare-release-asset.sh
 
-      # Upload the artifact (from root directory)
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: AdyenPaymentShopware6
-          path: AdyenPaymentShopware6.zip
+      - name: Upload asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} AdyenPaymentShopware6.zip --clobber
