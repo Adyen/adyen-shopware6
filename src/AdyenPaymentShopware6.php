@@ -53,7 +53,7 @@ class AdyenPaymentShopware6 extends Plugin
         $adminAssetPath = __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware6.js';
         if (\version_compare($shopwareVersion, '6.5.0.0', '<')) {
             $resultStorefront = $this->safeCopyAsset(
-                __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware64.js.dist',
+                __DIR__ . '/Resources/app/storefront/build/storefront/js/adyen-payment-shopware64.js.dist',
                 $storefrontAssetPath
             );
             $resultAdmin = $this->safeCopyAsset(
@@ -62,11 +62,11 @@ class AdyenPaymentShopware6 extends Plugin
             );
         } else {
             $resultStorefront = $this->safeCopyAsset(
-                __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware65.js.dist',
+                __DIR__ . '/Resources/app/storefront/build/storefront/js/adyen-payment-shopware65.js.dist',
                 $storefrontAssetPath
             );
             $resultAdmin = $this->safeCopyAsset(
-                __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware64.js.dist',
+                __DIR__ . '/Resources/public/administration/js/adyen-payment-shopware65.js.dist',
                 $adminAssetPath
             );
         }
