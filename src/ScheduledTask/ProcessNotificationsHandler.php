@@ -244,7 +244,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                  * It will be marked as done.
                  */
                 $this->logger->info($exception->getMessage(), $logContext);
-            } catch (\Exception $exception) {
+            } catch (\Throwable $exception) {
                 $logContext['errorMessage'] = $exception->getMessage();
                 $this->logger->error('Notification processing failed.', $logContext);
                 $this->logNotificationFailure($notification, $exception->getMessage());
