@@ -31,9 +31,7 @@ class Migration1669129247AdyenPayment extends MigrationStep
                 `updated_at` DATETIME(3) DEFAULT NULL COMMENT 'Updated at',
                 PRIMARY KEY (`id`),
                 KEY `ADYEN_PAYMENT_MERCHANT_REFERENCE` (`merchant_reference`),
-                KEY `ADYEN_PAYMENT_MERCHANT_ORDER_REFERENCE` (`merchant_order_reference`),
-                CONSTRAINT `fk.adyen_payment.order_transaction_id`
-                    FOREIGN KEY (order_transaction_id) references `order_transaction` (id)
+                KEY `ADYEN_PAYMENT_MERCHANT_ORDER_REFERENCE` (`merchant_order_reference`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL;
 
