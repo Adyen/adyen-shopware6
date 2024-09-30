@@ -88,7 +88,10 @@ class CaptureService
         $order = $this->orderRepository->getOrderByOrderNumber(
             $orderNumber,
             $context,
-            ['transactions', 'currency', 'lineItems', 'deliveries', 'deliveries.shippingMethod']
+            [
+                'transactions', 'currency', 'lineItems', 'deliveries',
+                'deliveries.shippingMethod', 'deliveries.stateMachineState'
+            ]
         );
 
         if (is_null($order)) {
