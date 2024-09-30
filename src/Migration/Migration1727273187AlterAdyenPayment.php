@@ -21,6 +21,7 @@ class Migration1727273187AlterAdyenPayment extends MigrationStep
         SQL
             );
         } catch (Exception) {
+            // Intentionally left empty, if foreign key is missing, the migration should be skipped.
         }
     }
 }
