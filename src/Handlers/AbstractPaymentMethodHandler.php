@@ -609,12 +609,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     !is_null($orderLine->getProductId()) ?
                         $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext()) :
                         null;
+                $domainUrl = $salesChannelContext->getSalesChannel()->getDomains()?->first()?->getUrl();
 
                 // Add url for only real product and not for the custom cart items.
-                if (!is_null($product->getId())) {
+                if (!is_null($product->getId()) && !is_null($domainUrl)) {
                     $productUrl = sprintf(
                         "%s/detail/%s",
-                        $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl(),
+                        $domainUrl,
                         $product->getId()
                     );
                 } else {
