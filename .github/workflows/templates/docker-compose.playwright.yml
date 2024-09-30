@@ -2,7 +2,7 @@ version: '3'
 
 services:
   playwright:
-    image: mcr.microsoft.com/playwright:focal
+    image: mcr.microsoft.com/playwright:v1.47.0-focal
     networks:
       - localnetwork
     shm_size: 1gb
