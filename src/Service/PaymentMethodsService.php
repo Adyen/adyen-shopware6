@@ -127,7 +127,7 @@ class PaymentMethodsService
             return CacheValueCompressor::uncompress($paymentMethodsResponseCache->get());
         }
 
-        $responseData = [];
+        $responseData = new PaymentMethodsResponse();
         try {
             $paymentsApiService = new PaymentsApi(
                 $this->clientService->getClient($context->getSalesChannelId())
