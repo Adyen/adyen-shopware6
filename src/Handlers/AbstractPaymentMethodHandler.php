@@ -612,7 +612,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
                 $domainUrl= null;
                 $domains = $salesChannelContext->getSalesChannel()->getDomains();
-                if ( $domains && $domains->first()){
+                if ($domains && $domains->first()) {
                     $domainUrl = $domains->first()->getUrl();
                 }
 
