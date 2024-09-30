@@ -24,9 +24,7 @@ class Migration1626331358AdyenRefund extends MigrationStep
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 `amount` INT(11) NOT NULL,
-                PRIMARY KEY (`id`),
-                CONSTRAINT `fk.adyen_refund.order_transaction_id`
-                    FOREIGN KEY (order_transaction_id) references `order_transaction` (id)
+                PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL
         );
