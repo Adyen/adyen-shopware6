@@ -21,6 +21,12 @@ class Migration1727273183AlterAdyenPaymentCapture extends MigrationStep
         SQL
             );
         } catch (Exception $exception) {
+            // Intentionally left empty, if foreign key is missing, the migration should be skipped.
         }
+    }
+
+    public function updateDestructive(Connection $connection): void
+    {
+        // implement update destructive
     }
 }
