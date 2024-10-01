@@ -29,8 +29,11 @@ use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
 use Adyen\Shopware\Exception\ValidationException;
+use Error;
+use Shopware\Core\Checkout\Cart\Exception\InvalidCartException;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Checkout\Order\Exception\EmptyCartException;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -41,6 +44,7 @@ use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * @Route(defaults={"_routeScope"={"storefront"}})
@@ -135,9 +139,26 @@ class FrontendProxyController extends StorefrontController
     public function checkoutOrder(RequestDataBag $data, SalesChannelContext $salesChannelContext): JsonResponse
     {
         $cart = $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext);
-        $order = $this->cartOrderRoute->order($cart, $salesChannelContext, $data)->getOrder();
+        try {
+            $order = $this->cartOrderRoute->order($cart, $salesChannelContext, $data)->getOrder();
 
-        return new JsonResponse(['id' => $order->getId()]);
+            return new JsonResponse(['id' => $order->getId()]);
+        } catch (InvalidCartException|Error|EmptyCartException) {
+            $this->addCartErrors(
+                $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)
+            );
+
+            return new JsonResponse(
+                [
+                    'url' => $this->generateUrl(
+                        'frontend.checkout.cart.page',
+                        [],
+                        UrlGeneratorInterface::ABSOLUTE_URL
+                    )
+                ],
+                400
+            );
+        }
     }
 
     /**
