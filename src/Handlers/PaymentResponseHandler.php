@@ -39,9 +39,12 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEnti
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\Token\TokenStruct;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class PaymentResponseHandler
 {
@@ -458,5 +461,23 @@ class PaymentResponseHandler
         }
 
         return false;
+    }
+
+    public function handleInvalidatedTokenResponse(TokenStruct $paymentToken): Response {
+        $transactionId = $paymentToken->getTransactionId();
+        $orderTransaction = $this->adyenOrderTransactionRepository->getWithId($transactionId);
+
+        $requiresManualCapture = $this->captureService->isManualCapture(
+            $orderTransaction->getPaymentMethod()->getHandlerIdentifier()
+        );
+
+        $stateMachineTechnicalName = $orderTransaction->getStateMachineState()->getTechnicalName();
+
+        if (($requiresManualCapture && $stateMachineTechnicalName === OrderTransactionStates::STATE_OPEN) ||
+            (!$requiresManualCapture && $stateMachineTechnicalName === OrderTransactionStates::STATE_AUTHORIZED)) {
+            return new RedirectResponse($paymentToken->getFinishUrl());
+        } else {
+            return new RedirectResponse($paymentToken->getErrorUrl());
+        }
     }
 }

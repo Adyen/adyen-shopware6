@@ -41,5 +41,13 @@
             <argument type="service" key="$logger" id="monolog.logger.adyen_api"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\Storefront\Controller\PaymentProxyController" autowire="true">
+            <argument key="$tokenFactoryInterfaceV2" type="service" id="Adyen\Shopware\Model\JWTFactoryV2"/>
+            <argument key="$orderRepository" type="service" id="order.repository"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>
