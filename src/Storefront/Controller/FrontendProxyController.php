@@ -30,15 +30,12 @@ use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
 use Adyen\Shopware\Exception\ValidationException;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
-use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
-use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\ContextTokenResponse;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
-use Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
@@ -50,15 +47,51 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  */
 class FrontendProxyController extends StorefrontController
 {
+    /**
+     * @var AbstractCartOrderRoute
+     */
+    private AbstractCartOrderRoute $cartOrderRoute;
 
-    private CartOrderRoute $cartOrderRoute;
+    /**
+     * @var CartService
+     */
     private CartService $cartService;
-    private ContextSwitchRoute $contextSwitchRoute;
-    private HandlePaymentMethodRoute $handlePaymentMethodRoute;
+
+    /**
+     * @var AbstractContextSwitchRoute
+     */
+    private AbstractContextSwitchRoute $contextSwitchRoute;
+
+    /**
+     * @var AbstractHandlePaymentMethodRoute
+     */
+    private AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute;
+
+    /**
+     * @var PaymentController
+     */
     private PaymentController $paymentController;
+
+    /**
+     * @var OrderApiController
+     */
     private OrderApiController $orderApiController;
+
+    /**
+     * @var DonateController
+     */
     private DonateController $donateController;
 
+
+    /**
+     * @param AbstractCartOrderRoute $cartOrderRoute
+     * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
+     * @param AbstractContextSwitchRoute $contextSwitchRoute
+     * @param CartService $cartService
+     * @param PaymentController $paymentController
+     * @param OrderApiController $orderApiController
+     * @param DonateController $donateController
+     */
     public function __construct(
         AbstractCartOrderRoute $cartOrderRoute,
         AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
