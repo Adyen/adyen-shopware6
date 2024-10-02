@@ -143,7 +143,7 @@ class FrontendProxyController extends StorefrontController
             $order = $this->cartOrderRoute->order($cart, $salesChannelContext, $data)->getOrder();
 
             return new JsonResponse(['id' => $order->getId()]);
-        } catch (InvalidCartException|Error|EmptyCartException) {
+        } catch (InvalidCartException|Error|EmptyCartException $exception) {
             $this->addCartErrors(
                 $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)
             );
