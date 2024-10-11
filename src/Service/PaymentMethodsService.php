@@ -32,7 +32,7 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
-use Shopware\Core\Framework\Adapter\Cache\CacheValueCompressor;
+use Shopware\Core\Framework\Adapter\Cache\CacheCompressor;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Contracts\Cache\CacheInterface;
 
@@ -96,7 +96,7 @@ class PaymentMethodsService
         ConfigurationService $configurationService,
         Currency $currency,
         CartService $cartService,
-        CacheInterface $cache,
+        $cache,
         SalesChannelRepository $salesChannelRepository,
         OrderRepository $orderRepository
     ) {
@@ -124,7 +124,7 @@ class PaymentMethodsService
         $paymentMethodsResponseCache = $this->cache->getItem($cacheKey);
 
         if ($paymentMethodsResponseCache->isHit() && $paymentMethodsResponseCache->get()) {
-            return CacheValueCompressor::uncompress($paymentMethodsResponseCache->get());
+            return CacheCompressor::uncompress($paymentMethodsResponseCache);
         }
 
         $responseData = new PaymentMethodsResponse();
@@ -135,7 +135,7 @@ class PaymentMethodsService
 
             $responseData = $paymentsApiService->paymentMethods(new PaymentMethodsRequest($requestData));
 
-            $paymentMethodsResponseCache->set(CacheValueCompressor::compress($responseData));
+            $paymentMethodsResponseCache = CacheCompressor::compress($paymentMethodsResponseCache, $responseData);
             $this->cache->save($paymentMethodsResponseCache);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());

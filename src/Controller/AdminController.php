@@ -148,7 +148,8 @@ class AdminController
     }
 
     /**
-     * @Route(path="/api/_action/adyen/verify")
+     * @Route(path="/api/_action/adyen/verify",
+     *       name="api.action.adyen.verify", methods={"GET", "POST"})
      *
      * @param RequestDataBag $dataBag
      * @return JsonResponse
@@ -311,7 +312,7 @@ class AdminController
             if (is_null($orderTransaction)) {
                 return new JsonResponse(false);
             }
-            
+
             $paymentMethodHandlerIdentifier = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
 
             return new JsonResponse(
@@ -410,7 +411,7 @@ class AdminController
      * @Route(
      *     "/api/adyen/orders/{orderId}/notifications",
      *      methods={"GET"}
- *     )
+     *     )
      * @param string $orderId
      * @return JsonResponse
      */

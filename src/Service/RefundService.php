@@ -482,9 +482,9 @@ class RefundService
      * @return array
      */
     public function getRefundRequest(
-        mixed $requestRefundAmount,
+        $requestRefundAmount,
         string $currencyCode,
-        mixed $merchantAccount,
+        $merchantAccount,
         string $pspReference,
         array $idempotencyExtraData = null
     ): array {

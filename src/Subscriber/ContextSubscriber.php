@@ -28,7 +28,6 @@ use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Struct\AdyenContextDataStruct;
 use Adyen\Shopware\Util\Currency;
-use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Framework\Routing\Event\SalesChannelContextResolvedEvent;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextRestoredEvent;
@@ -41,7 +40,7 @@ class ContextSubscriber implements EventSubscriberInterface
     private ConfigurationService $configurationService;
     private PaymentStateDataService $paymentStateDataService;
     private AbstractContextSwitchRoute $contextSwitchRoute;
-    private AbstractCartPersister $cartPersister;
+    private $cartPersister;
     private CartCalculator $cartCalculator;
     private Currency $currency;
 
@@ -50,7 +49,7 @@ class ContextSubscriber implements EventSubscriberInterface
         ConfigurationService $configurationService,
         PaymentStateDataService $paymentStateDataService,
         AbstractContextSwitchRoute $contextSwitchRoute,
-        AbstractCartPersister $cartPersister,
+        $cartPersister,
         CartCalculator $cartCalculator,
         Currency $currency
     ) {
@@ -74,7 +73,7 @@ class ContextSubscriber implements EventSubscriberInterface
     public function onContextRestored(SalesChannelContextRestoredEvent $event): void
     {
         $token = $event->getRestoredSalesChannelContext()->getToken();
-        $oldToken = $event->getCurrentSalesChannelContext()->getToken();
+        $oldToken = $_SESSION['_sf2_attributes']['sw-context-token'];
 
         $stateData = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken($oldToken);
         foreach ($stateData->getElements() as $statedataArray) {

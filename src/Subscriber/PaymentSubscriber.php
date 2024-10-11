@@ -158,7 +158,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
         RequestStack $requestStack,
-        AbstractCartPersister $cartPersister,
+        $cartPersister,
         CartCalculator $cartCalculator,
         AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,

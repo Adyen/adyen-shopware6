@@ -41,7 +41,7 @@ class SalesChannelRepository
      */
     public function __construct(
         EntityRepository $domainRepository,
-        EntityRepository $salesChannelRepository,
+        $salesChannelRepository,
         ConfigurationService $configurationService,
         EntityRepository $languageRepository
     ) {
