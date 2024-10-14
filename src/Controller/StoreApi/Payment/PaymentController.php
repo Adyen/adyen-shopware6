@@ -44,9 +44,10 @@ use Shopware\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -114,9 +115,9 @@ class PaymentController
      */
     private $orderTransactionStateHandler;
     /**
-     * @var InitialStateIdLoader
+     * @var EntityRepository
      */
-    private $initialStateIdLoader;
+    private $stateMachineRepo;
 
     /**
      * StoreApiController constructor.
@@ -130,7 +131,7 @@ class PaymentController
      * @param OrderRepository $orderRepository
      * @param OrderService $orderService
      * @param StateMachineRegistry $stateMachineRegistry
-     * @param InitialStateIdLoader $initialStateIdLoader
+     * @param EntityRepository $stateMachineRepo
      * @param EntityRepository $orderTransactionRepository
      * @param ConfigurationService $configurationService
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
@@ -146,7 +147,7 @@ class PaymentController
         OrderRepository $orderRepository,
         OrderService $orderService,
         StateMachineRegistry $stateMachineRegistry,
-        InitialStateIdLoader $initialStateIdLoader,
+        EntityRepository $stateMachineRepo,
         EntityRepository $orderTransactionRepository,
         ConfigurationService $configurationService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
@@ -164,7 +165,7 @@ class PaymentController
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
-        $this->initialStateIdLoader = $initialStateIdLoader;
+        $this->stateMachineRepo = $stateMachineRepo;
         $this->logger = $logger;
     }
 
@@ -346,7 +347,12 @@ class PaymentController
         SalesChannelContext $salesChannelContext
     ): void {
         $context = $salesChannelContext->getContext();
-        $initialStateId = $this->initialStateIdLoader->get(OrderTransactionStates::STATE_MACHINE);
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('technicalName', OrderTransactionStates::STATE_MACHINE)
+        );
+
+        $initialStateId = $this->stateMachineRepo->search($criteria, $context)->first()->getInitialStateId();
 
         /** @var OrderEntity $order */
         $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
