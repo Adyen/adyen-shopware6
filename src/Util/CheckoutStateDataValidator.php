@@ -20,7 +20,8 @@ class CheckoutStateDataValidator
         'storePaymentMethod',
         'conversionId',
         'paymentData',
-        'details'
+        'details',
+        'origin'
     );
 
     /**
