@@ -6,10 +6,10 @@
            name="paymentMethodId"
            value="{{ payment.id }}"
            {% if payment.id is same as(selectedPaymentMethodId) %}checked="checked"{% endif %}
-           {% if page.isPaymentChangeable is defined and not page.isPaymentChangeable %}
-              disabled="disabled"
-           {% endif %}
-           class="{{ formCheckInputClass ?? 'form-check-input' }} payment-method-input {% if 'handler_adyen_' in payment.formattedHandlerIdentifier %}adyen-payment-method-input-radio{% endif %}">
+            {% if page.isPaymentChangeable is defined and not page.isPaymentChangeable %}
+                disabled="disabled"
+            {% endif %}
+           class="{{ formCheckInputClass ?? 'form-check-input' }} custom-control-input payment-method-input {% if 'handler_adyen_' in payment.formattedHandlerIdentifier %}adyen-payment-method-input-radio{% endif %}">
 {% endblock %}
 
 {% block component_payment_method_description %}
