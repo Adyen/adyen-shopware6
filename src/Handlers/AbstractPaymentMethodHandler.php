@@ -671,12 +671,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $paymentRequest->setLineItems($lineItems);
         }
 
-        //Setting info from statedata additionalData if present
-        if (!empty($stateDataAdditionalData['origin'])) {
-            $origin = $stateDataAdditionalData['origin'];
-        } else {
-            $origin = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
-        }
+        $origin = $stateDataAdditionalData['origin'] ??
+            $request['origin'] ??
+            $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
 
         $paymentRequest->setOrigin($origin);
         $paymentRequest->setAdditionaldata(['allow3DS2' => true]);

@@ -232,6 +232,12 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
+        if(order.url){
+            location.href = order.url;
+
+            return;
+        }
+
         this.orderId = order.id;
         this.finishUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentFinishUrl);
