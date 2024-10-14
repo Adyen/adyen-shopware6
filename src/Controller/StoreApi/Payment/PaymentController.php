@@ -308,7 +308,7 @@ class PaymentController
         $initialStateId = $this->initialStateIdLoader->get(OrderTransactionStates::STATE_MACHINE);
 
         /** @var OrderEntity $order */
-        $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
+        $order = $this->orderRepository->getOrder($orderId, $context, ['transactions', 'transactions.stateMachineState']);
 
         $context->scope(
             Context::SYSTEM_SCOPE,
@@ -364,7 +364,7 @@ class PaymentController
     ): JsonResponse {
         $context = $salesChannelContext->getContext();
         $orderId = $request->request->get('orderId');
-        $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
+        $order = $this->orderRepository->getOrder($orderId, $context, ['transactions', 'transactions.stateMachineState']);
 
         $transaction = $order->getTransactions()
             ->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)
