@@ -9,7 +9,7 @@
 
 {% block page_account_order_item_detail_table_labels_summary %}
     {{ parent() }}
-    {% if actionType === 'voucher' %}
+    {% if actionType == 'voucher' %}
         <dl class="adyen-voucher-details" data-orderId = "{{ orderId }}">
             <div class="voucher-detail">
                 <dt>Voucher reference:</dt>
