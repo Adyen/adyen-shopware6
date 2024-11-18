@@ -94,6 +94,7 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function activate(ActivateContext $activateContext): void
     {
+        // test komentar
         $this->installJsAssets($activateContext->getCurrentShopwareVersion());
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(true, $activateContext->getContext(), new $paymentMethod());
