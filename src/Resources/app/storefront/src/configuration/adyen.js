@@ -25,7 +25,7 @@ export default {
         'scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'bcmc_mobile', 'blik', 'klarna_b2b', 'eps', 'facilypay_3x',
         'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay',
         'ratepay_directdebit', 'giftcard', 'paybright', 'affirm', 'multibanco', 'mbway', 'vipps', 'mobilepay',
-        'wechatpayQR', 'wechatpayWeb', 'paybybank'
+        'wechatpayQR', 'wechatpayWeb', 'paybybank', 'ebanking_FI'
     ],
     componentsWithPayButton: {
         'applepay': {
@@ -156,6 +156,7 @@ export default {
         'affirm': 'handler_adyen_affirmpaymentmethodhandler',
         'paybright': 'handler_adyen_paybrightpaymentmethodhandler',
         'paybybank': 'handler_adyen_openbankingpaymentmethodhandler',
-        'klarna_b2b': 'handler_adyen_billiepaymentmethodhandler'
+        'klarna_b2b': 'handler_adyen_billiepaymentmethodhandler',
+        'ebanking_FI': 'handler_adyen_onlinebankingfinlandpaymentmethodhandler'
     }
 }

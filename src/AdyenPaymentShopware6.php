@@ -175,6 +175,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.16.0', '<')) {
             $this->updateTo3160($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.17.0', '<')) {
+            $this->updateTo3170($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -236,10 +240,11 @@ class AdyenPaymentShopware6 extends Plugin
     }
 
     private function setPaymentMethodIsActive(
-        bool $active,
-        Context $context,
+        bool                                  $active,
+        Context                               $context,
         PaymentMethods\PaymentMethodInterface $paymentMethod
-    ): void {
+    ): void
+    {
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
@@ -321,11 +326,11 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 1.6.0 introduces applepay, paywithgoogle, dotpay and bancontact
         foreach ([
-            new PaymentMethods\ApplePayPaymentMethod,
-            new PaymentMethods\GooglePayPaymentMethod,
-            new PaymentMethods\DotpayPaymentMethod,
-            new PaymentMethods\BancontactCardPaymentMethod
-        ] as $method) {
+                     new PaymentMethods\ApplePayPaymentMethod,
+                     new PaymentMethods\GooglePayPaymentMethod,
+                     new PaymentMethods\DotpayPaymentMethod,
+                     new PaymentMethods\BancontactCardPaymentMethod
+                 ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -342,9 +347,9 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 2.0.0 introduces amazonpay, blik
         foreach ([
-            new PaymentMethods\AmazonPayPaymentMethod,
-            new PaymentMethods\BlikPaymentMethod,
-        ] as $method) {
+                     new PaymentMethods\AmazonPayPaymentMethod,
+                     new PaymentMethods\BlikPaymentMethod,
+                 ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -361,23 +366,23 @@ class AdyenPaymentShopware6 extends Plugin
     {
         //Version 3.0.0 introduces the following payment methods
         foreach ([
-            new PaymentMethods\AfterpayDefaultPaymentMethod,
-            new PaymentMethods\AlipayPaymentMethod,
-            new PaymentMethods\AlipayHkPaymentMethod,
-            new PaymentMethods\ClearpayPaymentMethod,
-            new PaymentMethods\EpsPaymentMethod,
-            new PaymentMethods\Facilypay3xPaymentMethod,
-            new PaymentMethods\Facilypay4xPaymentMethod,
-            new PaymentMethods\Facilypay6xPaymentMethod,
-            new PaymentMethods\Facilypay10xPaymentMethod,
-            new PaymentMethods\Facilypay12xPaymentMethod,
-            new PaymentMethods\PaysafecardPaymentMethod,
-            new PaymentMethods\RatepayPaymentMethod,
-            new PaymentMethods\RatepayDirectdebitPaymentMethod,
-            new PaymentMethods\SwishPaymentMethod,
-            new PaymentMethods\TrustlyPaymentMethod,
-            new PaymentMethods\TwintPaymentMethod,
-        ] as $method) {
+                     new PaymentMethods\AfterpayDefaultPaymentMethod,
+                     new PaymentMethods\AlipayPaymentMethod,
+                     new PaymentMethods\AlipayHkPaymentMethod,
+                     new PaymentMethods\ClearpayPaymentMethod,
+                     new PaymentMethods\EpsPaymentMethod,
+                     new PaymentMethods\Facilypay3xPaymentMethod,
+                     new PaymentMethods\Facilypay4xPaymentMethod,
+                     new PaymentMethods\Facilypay6xPaymentMethod,
+                     new PaymentMethods\Facilypay10xPaymentMethod,
+                     new PaymentMethods\Facilypay12xPaymentMethod,
+                     new PaymentMethods\PaysafecardPaymentMethod,
+                     new PaymentMethods\RatepayPaymentMethod,
+                     new PaymentMethods\RatepayDirectdebitPaymentMethod,
+                     new PaymentMethods\SwishPaymentMethod,
+                     new PaymentMethods\TrustlyPaymentMethod,
+                     new PaymentMethods\TwintPaymentMethod,
+                 ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -427,15 +432,15 @@ class AdyenPaymentShopware6 extends Plugin
          * MB Way, Multibanco, WeChat Pay, MobilePay, Vipps, Affirm & PayBright
          */
         foreach ([
-            new PaymentMethods\MbwayPaymentMethod(),
-            new PaymentMethods\MultibancoPaymentMethod(),
-            new PaymentMethods\WechatpayqrPaymentMethod(),
-            new PaymentMethods\WechatpaywebPaymentMethod(),
-            new PaymentMethods\MobilePayPaymentMethod(),
-            new PaymentMethods\VippsPaymentMethod(),
-            new PaymentMethods\AffirmPaymentMethod(),
-            new PaymentMethods\PayBrightPaymentMethod()
-        ] as $method) {
+                     new PaymentMethods\MbwayPaymentMethod(),
+                     new PaymentMethods\MultibancoPaymentMethod(),
+                     new PaymentMethods\WechatpayqrPaymentMethod(),
+                     new PaymentMethods\WechatpaywebPaymentMethod(),
+                     new PaymentMethods\MobilePayPaymentMethod(),
+                     new PaymentMethods\VippsPaymentMethod(),
+                     new PaymentMethods\AffirmPaymentMethod(),
+                     new PaymentMethods\PayBrightPaymentMethod()
+                 ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -455,8 +460,8 @@ class AdyenPaymentShopware6 extends Plugin
          * Open Banking / Pay by Bank
          */
         foreach ([
-            new PaymentMethods\OpenBankingPaymentMethod(),
-        ] as $method) {
+                     new PaymentMethods\OpenBankingPaymentMethod(),
+                 ] as $method) {
             $this->addPaymentMethod(
                 $method,
                 $updateContext->getContext()
@@ -522,6 +527,23 @@ class AdyenPaymentShopware6 extends Plugin
         );
     }
 
+    private function updateTo3170(UpdateContext $updateContext): void
+    {
+        // Version 3.17.0 introduces Online Banking Finland
+        $method = new PaymentMethods\OnlineBankingFinlandPaymentMethod();
+
+        $this->addPaymentMethod(
+            $method,
+            $updateContext->getContext()
+        );
+
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            $method
+        );
+    }
+
     private function safeCopyAsset($source, $destination): bool
     {
         try {
@@ -539,9 +561,10 @@ class AdyenPaymentShopware6 extends Plugin
      */
     private function deactivateAndRemovePaymentMethod(
         UpdateContext $updateContext,
-        string $paymentMethodHandler,
-        string $description = null
-    ): void {
+        string        $paymentMethodHandler,
+        string        $description = null
+    ): void
+    {
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
         /** @var EntityRepository $salesChannelPaymentRepository */

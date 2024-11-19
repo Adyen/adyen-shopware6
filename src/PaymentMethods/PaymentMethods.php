@@ -70,6 +70,7 @@ class PaymentMethods
         VippsPaymentMethod::class,
         MobilePayPaymentMethod::class,
         OpenBankingPaymentMethod::class,
-        BilliePaymentMethod::class
+        BilliePaymentMethod::class,
+        OnlineBankingFinlandPaymentMethod::class,
     ];
 }
