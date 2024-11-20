@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\SofortPaymentMethodHandler;
+use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
 
-class SofortPaymentMethod implements PaymentMethodInterface
+class KlarnaDebitRiskPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Sofort';
+        return 'Klarna Debit Risk';
     }
 
     /**
@@ -55,7 +55,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return SofortPaymentMethodHandler::class;
+        return KlarnaDebitRiskPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_SOFORT';
+        return 'ADYEN_KLARNA_DEBIT_RISK';
     }
 
     /**
@@ -85,7 +85,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'sofort.png';
+        return 'directEbanking.png';
     }
 
     /**

@@ -35,7 +35,7 @@ class PaymentMethods
         RatepayPaymentMethod::class,
         RatepayDirectdebitPaymentMethod::class,
         SepaPaymentMethod::class,
-        SofortPaymentMethod::class,
+        KlarnaDebitRiskPaymentMethod::class,
         PaypalPaymentMethod::class,
         OneClickPaymentMethod::class,
         GiroPayPaymentMethod::class,

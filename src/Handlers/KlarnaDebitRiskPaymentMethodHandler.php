@@ -25,7 +25,7 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class SofortPaymentMethodHandler extends AbstractPaymentMethodHandler
+class KlarnaDebitRiskPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static function getPaymentMethodCode()
     {

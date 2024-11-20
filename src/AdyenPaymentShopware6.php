@@ -542,6 +542,24 @@ class AdyenPaymentShopware6 extends Plugin
             $updateContext->getContext(),
             $method
         );
+
+        // Version 3.17.0 replaces Sofort with Klarna Debit Risk
+        $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
+        $paymentRepository = $this->container->get('payment_method.repository');
+        $paymentMethodId = $this->getPaymentMethodId('filiphandle');
+
+        if (!$paymentMethodId) {
+            return;
+        }
+
+        $paymentMethodData = [
+            'id' => $paymentMethodId,
+            'handlerIdentifier' => $method->getPaymentHandler(),
+            'name' => $method->getName(),
+            'description' => $method->getDescription(),
+        ];
+
+        $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
     }
 
     private function safeCopyAsset($source, $destination): bool

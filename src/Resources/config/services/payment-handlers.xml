@@ -55,7 +55,7 @@
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\SofortPaymentMethodHandler"
+        <service id="Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
