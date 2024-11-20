@@ -41,7 +41,6 @@ class PaymentMethods
         GiroPayPaymentMethod::class,
         ApplePayPaymentMethod::class,
         GooglePayPaymentMethod::class,
-        DotpayPaymentMethod::class,
         BancontactCardPaymentMethod::class,
         BancontactMobilePaymentMethod::class,
         AmazonPayPaymentMethod::class,

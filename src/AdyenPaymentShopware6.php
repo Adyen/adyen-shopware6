@@ -94,7 +94,6 @@ class AdyenPaymentShopware6 extends Plugin
 
     public function activate(ActivateContext $activateContext): void
     {
-        // test komentar
         $this->installJsAssets($activateContext->getCurrentShopwareVersion());
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->setPaymentMethodIsActive(true, $activateContext->getContext(), new $paymentMethod());
@@ -546,7 +545,7 @@ class AdyenPaymentShopware6 extends Plugin
         // Version 3.17.0 replaces Sofort with Klarna Debit Risk
         $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
         $paymentRepository = $this->container->get('payment_method.repository');
-        $paymentMethodId = $this->getPaymentMethodId('filiphandle');
+        $paymentMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
 
         if (!$paymentMethodId) {
             return;
@@ -560,6 +559,10 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
+
+        // Version 3.17.0 removes Dotpay
+        $paymentMethodHandler = 'Adyen\Shopware\Handlers\DotpayPaymentMethodHandler';
+        $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
     }
 
     private function safeCopyAsset($source, $destination): bool
