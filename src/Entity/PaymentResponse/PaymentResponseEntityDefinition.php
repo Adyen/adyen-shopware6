@@ -59,11 +59,7 @@ class PaymentResponseEntityDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
-            (new FkField(
-                'order_transaction_id',
-                'orderTransactionId',
-                OrderTransactionDefinition::class
-            ))->addFlags(new Required()),
+            new IdField('order_transaction_id', 'orderTransactionId'),
             new StringField('result_code', 'resultCode'),
             new StringField('pspreference', 'pspreference'),
             new LongTextField('response', 'response'),
