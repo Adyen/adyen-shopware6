@@ -72,5 +72,6 @@ class PaymentMethods
         OpenBankingPaymentMethod::class,
         BilliePaymentMethod::class,
         OnlineBankingFinlandPaymentMethod::class,
+        //KlarnaDebitRiskPaymentMethod::class
     ];
 }

@@ -135,9 +135,9 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo410($updateContext);
         }
 
-        if (\version_compare($currentVersion, '4.2.0', '<')) {
-            $this->updateTo420($updateContext);
-        }
+//        if (\version_compare($currentVersion, '4.2.0', '<')) {
+//            $this->updateTo420($updateContext);
+//        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -500,6 +500,24 @@ class AdyenPaymentShopware6 extends Plugin
             $updateContext->getContext(),
             $method
         );
+
+        // Version 3.17.0 replaces Sofort with Klarna Debit Risk
+        $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
+        $paymentRepository = $this->container->get('payment_method.repository');
+        $paymentMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
+
+        if (!$paymentMethodId) {
+            return;
+        }
+
+        $paymentMethodData = [
+            'id' => $paymentMethodId,
+            'handlerIdentifier' => $method->getPaymentHandler(),
+            'name' => $method->getName(),
+            'description' => $method->getDescription(),
+        ];
+
+        $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
     }
 
     /**
