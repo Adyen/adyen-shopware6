@@ -134,6 +134,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '4.1.0', '<')) {
             $this->updateTo410($updateContext);
         }
+
+        if (\version_compare($currentVersion, '4.2.0', '<')) {
+            $this->updateTo420($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -478,6 +482,23 @@ class AdyenPaymentShopware6 extends Plugin
             true,
             $updateContext->getContext(),
             new PaymentMethods\BilliePaymentMethod()
+        );
+    }
+
+    private function updateTo420(UpdateContext $updateContext): void
+    {
+        // Version 4.2.0 introduces Online Banking Finland
+        $method = new PaymentMethods\OnlineBankingFinlandPaymentMethod();
+
+        $this->addPaymentMethod(
+            $method,
+            $updateContext->getContext()
+        );
+
+        $this->setPaymentMethodIsActive(
+            true,
+            $updateContext->getContext(),
+            $method
         );
     }
 
