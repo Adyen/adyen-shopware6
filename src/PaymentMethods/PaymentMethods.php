@@ -71,5 +71,6 @@ class PaymentMethods
         OpenBankingPaymentMethod::class,
         BilliePaymentMethod::class,
         OnlineBankingFinlandPaymentMethod::class,
+        OnlineBankingPolandPaymentMethod::class
     ];
 }

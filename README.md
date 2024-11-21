@@ -52,6 +52,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Klarna Pay Later
  - Klarna Pay Now
  - Klarna Pay Over Time
+ - Klarna Debit Risk
  - MB Way
  - MobilePay
  - Multibanco
@@ -61,7 +62,6 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - PaySafeCard
  - RatePay, RatePay Direct Debit
  - SEPA Direct Debit
- - Sofort
  - Swish
  - Trustly
  - Twint
@@ -69,6 +69,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - WeChat Pay
  - Open Banking / Pay by Bank
  - Online Banking Finland
+ - Online Banking Poland
 
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
