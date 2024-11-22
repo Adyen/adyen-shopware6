@@ -43,6 +43,7 @@ use Shopware\Core\System\SalesChannel\ContextTokenResponse;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -207,7 +208,7 @@ class FrontendProxyController extends StorefrontController
         $paymentToken = $request->get('_sw_payment_token');
         $redirectResult = $request->get('redirectResult');
 
-        if ($this->paymentTokenValidator->validateToken($paymentToken) || !$redirectResult) {
+        if ($this->paymentTokenValidator->validateToken($paymentToken)) {
             return new RedirectResponse(
                 $this->router->generate(
                     'payment.finalize.transaction',
@@ -222,8 +223,14 @@ class FrontendProxyController extends StorefrontController
         $request->request->add(['stateData' => json_encode($stateData, JSON_THROW_ON_ERROR)]);
         $request->request->add(['orderId' => $orderId]);
         $response = $this->paymentController->postPaymentDetails($request, $salesChannelContext);
+        $resultCode = json_decode(
+            $response->getContent(),
+            false,
+            512,
+            JSON_THROW_ON_ERROR
+        )->resultCode ?? '';
 
-        if ($response['resultCode'] === PaymentResponseHandler::AUTHORISED) {
+        if ($resultCode === PaymentResponseHandler::AUTHORISED) {
             return new RedirectResponse(
                 $this->router->generate(
                     'frontend.checkout.finish.page',
@@ -233,11 +240,10 @@ class FrontendProxyController extends StorefrontController
             );
         }
 
-
         return new RedirectResponse(
             $this->router->generate(
                 'frontend.checkout.cart.page',
-                ['error-code' => 'UNSUCCESSFUL_ADYEN_TRANSACTION'],
+                ['errorCode' => 'UNSUCCESSFUL_ADYEN_TRANSACTION'],
                 UrlGeneratorInterface::ABSOLUTE_URL
             )
         );
