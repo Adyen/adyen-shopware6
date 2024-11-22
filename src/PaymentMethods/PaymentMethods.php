@@ -35,7 +35,7 @@ class PaymentMethods
         RatepayPaymentMethod::class,
         RatepayDirectdebitPaymentMethod::class,
         SepaPaymentMethod::class,
-        SofortPaymentMethod::class,
+        KlarnaDebitRiskPaymentMethod::class,
         PaypalPaymentMethod::class,
         OneClickPaymentMethod::class,
         GiroPayPaymentMethod::class,
@@ -71,7 +71,6 @@ class PaymentMethods
         MobilePayPaymentMethod::class,
         OpenBankingPaymentMethod::class,
         BilliePaymentMethod::class,
-        OnlineBankingFinlandPaymentMethod::class,
-        //KlarnaDebitRiskPaymentMethod::class
+        OnlineBankingFinlandPaymentMethod::class
     ];
 }

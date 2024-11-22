@@ -121,7 +121,7 @@ export default {
         'ratepay': 'handler_adyen_ratepaypaymentmethodhandler',
         'ratepay_directdebit': 'handler_adyen_ratepaydirectdebitpaymentmethodhandler',
         'sepadirectdebit': 'handler_adyen_sepapaymentmethodhandler',
-        'sofort': 'handler_adyen_sofortpaymentmethodhandler',
+        'directEbanking': 'handler_adyen_klarnadebitriskpaymentmethodhandler',
         'paypal': 'handler_adyen_paypalpaymentmethodhandler',
         'oneclick': 'handler_adyen_oneclickpaymentmethodhandler',
         'giropay': 'handler_adyen_giropaypaymentmethodhandler',
@@ -157,7 +157,6 @@ export default {
         'paybright': 'handler_adyen_paybrightpaymentmethodhandler',
         'paybybank': 'handler_adyen_openbankingpaymentmethodhandler',
         'klarna_b2b': 'handler_adyen_billiepaymentmethodhandler',
-        'ebanking_FI': 'handler_adyen_onlinebankingfinlandpaymentmethodhandler',
-        //'directEbanking': 'handler_adyen_klarnadebitriskpaymentmethodhandler',
+        'ebanking_FI': 'handler_adyen_onlinebankingfinlandpaymentmethodhandler'
     }
 }

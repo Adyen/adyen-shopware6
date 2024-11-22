@@ -135,9 +135,9 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo410($updateContext);
         }
 
-//        if (\version_compare($currentVersion, '4.2.0', '<')) {
-//            $this->updateTo420($updateContext);
-//        }
+        if (\version_compare($currentVersion, '4.2.0', '<')) {
+            $this->updateTo420($updateContext);
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -488,18 +488,18 @@ class AdyenPaymentShopware6 extends Plugin
     private function updateTo420(UpdateContext $updateContext): void
     {
         // Version 4.2.0 introduces Online Banking Finland
-        $method = new PaymentMethods\OnlineBankingFinlandPaymentMethod();
-
-        $this->addPaymentMethod(
-            $method,
-            $updateContext->getContext()
-        );
-
-        $this->setPaymentMethodIsActive(
-            true,
-            $updateContext->getContext(),
-            $method
-        );
+//        $method = new PaymentMethods\OnlineBankingFinlandPaymentMethod();
+//
+//        $this->addPaymentMethod(
+//            $method,
+//            $updateContext->getContext()
+//        );
+//
+//        $this->setPaymentMethodIsActive(
+//            true,
+//            $updateContext->getContext(),
+//            $method
+//        );
 
         // Version 3.17.0 replaces Sofort with Klarna Debit Risk
         $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
