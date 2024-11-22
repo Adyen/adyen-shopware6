@@ -70,6 +70,7 @@ class PaymentMethods
         MobilePayPaymentMethod::class,
         OpenBankingPaymentMethod::class,
         BilliePaymentMethod::class,
-        OnlineBankingFinlandPaymentMethod::class
+        OnlineBankingFinlandPaymentMethod::class,
+        OnlineBankingPolandPaymentMethod::class
     ];
 }

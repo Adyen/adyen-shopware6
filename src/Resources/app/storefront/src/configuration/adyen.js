@@ -156,6 +156,7 @@ export default {
         'paybright': 'handler_adyen_paybrightpaymentmethodhandler',
         'paybybank': 'handler_adyen_openbankingpaymentmethodhandler',
         'klarna_b2b': 'handler_adyen_billiepaymentmethodhandler',
-        'ebanking_FI': 'handler_adyen_onlinebankingfinlandpaymentmethodhandler'
+        'ebanking_FI': 'handler_adyen_onlinebankingfinlandpaymentmethodhandler',
+        'onlineBanking_PL': 'handler_adyen_onlinebankingpolandpaymentmethodhandler'
     }
 }
