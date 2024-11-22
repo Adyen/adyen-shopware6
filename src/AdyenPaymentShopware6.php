@@ -501,7 +501,7 @@ class AdyenPaymentShopware6 extends Plugin
 //            $method
 //        );
 
-        // Version 3.17.0 replaces Sofort with Klarna Debit Risk
+        // Version 4.2.0 replaces Sofort with Klarna Debit Risk
         $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
         $paymentRepository = $this->container->get('payment_method.repository');
         $paymentMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');

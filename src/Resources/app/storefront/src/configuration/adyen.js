@@ -22,7 +22,7 @@
 
 export default {
     updatablePaymentMethods: [
-        'scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'bcmc_mobile', 'blik', 'klarna_b2b', 'eps', 'facilypay_3x',
+        'scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'bcmc', 'bcmc_mobile', 'blik', 'klarna_b2b', 'eps', 'facilypay_3x',
         'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay',
         'ratepay_directdebit', 'giftcard', 'paybright', 'affirm', 'multibanco', 'mbway', 'vipps', 'mobilepay',
         'wechatpayQR', 'wechatpayWeb', 'paybybank'
@@ -127,7 +127,6 @@ export default {
         'giropay': 'handler_adyen_giropaypaymentmethodhandler',
         'applepay': 'handler_adyen_applepaypaymentmethodhandler',
         'googlepay': 'handler_adyen_googlepaypaymentmethodhandler',
-        'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
         'bcmc_mobile': 'handler_adyen_bancontactmobilepaymentmethodhandler',
         'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
