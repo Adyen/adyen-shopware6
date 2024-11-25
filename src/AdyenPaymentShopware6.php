@@ -529,6 +529,12 @@ class AdyenPaymentShopware6 extends Plugin
         $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
     }
 
+    public function postUpdate(UpdateContext $updateContext): void
+    {
+        $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
+        $handler->getHandler()->run();
+    }
+
     /**
      * @param UpdateContext $updateContext
      * @param string $paymentMethodHandler
