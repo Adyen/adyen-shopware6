@@ -32,6 +32,7 @@
                       id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
             <argument key="$contextSwitchRoute" type="service"
                       id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
+            <argument key="$router" type="service" id="router.default"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>

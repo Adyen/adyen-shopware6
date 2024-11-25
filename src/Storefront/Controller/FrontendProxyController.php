@@ -27,6 +27,8 @@ namespace Adyen\Shopware\Storefront\Controller;
 use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
+use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Util\ShopwarePaymentTokenValidator;
 use Error;
 use Shopware\Core\Checkout\Cart\Exception\InvalidCartException;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
@@ -39,10 +41,12 @@ use Shopware\Core\System\SalesChannel\ContextTokenResponse;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\RouterInterface;
 
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class FrontendProxyController extends StorefrontController
@@ -68,6 +72,11 @@ class FrontendProxyController extends StorefrontController
     private AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute;
 
     /**
+     * @var RouterInterface
+     */
+    private RouterInterface $router;
+
+    /**
      * @var PaymentController
      */
     private PaymentController $paymentController;
@@ -83,30 +92,41 @@ class FrontendProxyController extends StorefrontController
     private DonateController $donateController;
 
     /**
+     * @var ShopwarePaymentTokenValidator
+     */
+    private ShopwarePaymentTokenValidator $paymentTokenValidator;
+
+    /**
      * @param AbstractCartOrderRoute $cartOrderRoute
      * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
      * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param CartService $cartService
+     * @param RouterInterface $router
      * @param PaymentController $paymentController
      * @param OrderApiController $orderApiController
      * @param DonateController $donateController
+     * @param ShopwarePaymentTokenValidator $paymentTokenValidator
      */
     public function __construct(
         AbstractCartOrderRoute $cartOrderRoute,
         AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
         AbstractContextSwitchRoute $contextSwitchRoute,
         CartService $cartService,
+        RouterInterface $router,
         PaymentController $paymentController,
         OrderApiController $orderApiController,
-        DonateController $donateController
+        DonateController $donateController,
+        ShopwarePaymentTokenValidator $paymentTokenValidator
     ) {
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
         $this->contextSwitchRoute = $contextSwitchRoute;
+        $this->router = $router;
         $this->paymentController = $paymentController;
         $this->orderApiController = $orderApiController;
         $this->donateController = $donateController;
+        $this->paymentTokenValidator = $paymentTokenValidator;
     }
 
     /**
@@ -165,6 +185,60 @@ class FrontendProxyController extends StorefrontController
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
         return new JsonResponse($routeResponse->getObject());
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-finalize-transaction",
+     *     name="payment.adyen.proxy-finalize-transaction",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"GET"}
+     * )
+     */
+    public function finalizeTransaction(Request $request, SalesChannelContext $salesChannelContext): RedirectResponse
+    {
+        $paymentToken = $request->get('_sw_payment_token');
+        $redirectResult = $request->get('redirectResult');
+
+        if ($this->paymentTokenValidator->validateToken($paymentToken)) {
+            return new RedirectResponse(
+                $this->router->generate(
+                    'payment.finalize.transaction',
+                    ['_sw_payment_token' => $paymentToken],
+                    UrlGeneratorInterface::ABSOLUTE_URL
+                )
+            );
+        }
+
+        $orderId = $request->get('orderId') ?? '';
+        $stateData = ['details' => ['redirectResult' => $redirectResult]];
+        $request->request->add(['stateData' => json_encode($stateData, JSON_THROW_ON_ERROR)]);
+        $request->request->add(['orderId' => $orderId]);
+        $response = $this->paymentController->postPaymentDetails($request, $salesChannelContext);
+        $resultCode = json_decode(
+            $response->getContent(),
+            false,
+            512,
+            JSON_THROW_ON_ERROR
+        )->resultCode ?? '';
+
+        if ($resultCode === PaymentResponseHandler::AUTHORISED) {
+            return new RedirectResponse(
+                $this->router->generate(
+                    'frontend.checkout.finish.page',
+                    ['orderId' => $orderId],
+                    UrlGeneratorInterface::ABSOLUTE_URL
+                )
+            );
+        }
+
+        return new RedirectResponse(
+            $this->router->generate(
+                'frontend.checkout.cart.page',
+                ['errorCode' => 'UNSUCCESSFUL_ADYEN_TRANSACTION'],
+                UrlGeneratorInterface::ABSOLUTE_URL
+            )
+        );
     }
 
     /**
