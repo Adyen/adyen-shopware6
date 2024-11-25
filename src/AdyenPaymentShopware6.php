@@ -180,6 +180,15 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    public function postUpdate(UpdateContext $updateContext): void
+    {
+        $currentVersion = $updateContext->getCurrentPluginVersion();
+        if (\version_compare($currentVersion, '3.17.0', '==')) {
+            $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
+            $handler->getHandler()->run();
+        }
+    }
+
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
     {
         $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
@@ -239,11 +248,10 @@ class AdyenPaymentShopware6 extends Plugin
     }
 
     private function setPaymentMethodIsActive(
-        bool                                  $active,
-        Context                               $context,
+        bool $active,
+        Context $context,
         PaymentMethods\PaymentMethodInterface $paymentMethod
-    ): void
-    {
+    ): void {
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
@@ -570,12 +578,6 @@ class AdyenPaymentShopware6 extends Plugin
         $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
     }
 
-    public function postUpdate(UpdateContext $updateContext): void
-    {
-        $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
-        $handler->getHandler()->run();
-    }
-
     private function safeCopyAsset($source, $destination): bool
     {
         try {
@@ -593,10 +595,9 @@ class AdyenPaymentShopware6 extends Plugin
      */
     private function deactivateAndRemovePaymentMethod(
         UpdateContext $updateContext,
-        string        $paymentMethodHandler,
-        string        $description = null
-    ): void
-    {
+        string $paymentMethodHandler,
+        string $description = null
+    ): void {
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
         /** @var EntityRepository $salesChannelPaymentRepository */

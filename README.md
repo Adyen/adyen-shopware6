@@ -43,7 +43,6 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Blik
  - Billie
  - Clearpay
- - Dotpay
  - Electronic Payment Service (EPS)
  - Gift cards
  - GiroPay
