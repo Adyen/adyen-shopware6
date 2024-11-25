@@ -140,6 +140,15 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    public function postUpdate(UpdateContext $updateContext): void
+    {
+        $currentVersion = $updateContext->getCurrentPluginVersion();
+        if (\version_compare($currentVersion, '4.2.0', '==')) {
+            $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
+            $handler->getHandler()->run();
+        }
+    }
+
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
     {
         $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
@@ -527,12 +536,6 @@ class AdyenPaymentShopware6 extends Plugin
         // Version 4.2.0 removes Dotpay
         $paymentMethodHandler = 'Adyen\Shopware\Handlers\DotpayPaymentMethodHandler';
         $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
-    }
-
-    public function postUpdate(UpdateContext $updateContext): void
-    {
-        $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
-        $handler->getHandler()->run();
     }
 
     /**
