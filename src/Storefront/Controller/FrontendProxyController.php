@@ -187,20 +187,18 @@ class FrontendProxyController extends StorefrontController
         return new JsonResponse($routeResponse->getObject());
     }
 
-    /**
-     * @Route(
-     *     "/adyen/proxy-finalize-transaction",
-     *     name="payment.adyen.proxy-finalize-transaction",
-     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *     methods={"GET"}
-     * )
-     */
+    #[Route(
+        '/adyen/proxy-finalize-transaction',
+        name: 'payment.adyen.proxy-finalize-transaction',
+        defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
+        methods: ['GET']
+    )]
     public function finalizeTransaction(Request $request, SalesChannelContext $salesChannelContext): RedirectResponse
     {
         $paymentToken = $request->get('_sw_payment_token');
         $redirectResult = $request->get('redirectResult');
 
-        if ($this->paymentTokenValidator->validateToken($paymentToken)) {
+        if ($this->paymentTokenValidator->validateToken($paymentToken) && !$redirectResult) {
             return new RedirectResponse(
                 $this->router->generate(
                     'payment.finalize.transaction',
