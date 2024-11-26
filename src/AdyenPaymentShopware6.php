@@ -183,7 +183,7 @@ class AdyenPaymentShopware6 extends Plugin
     public function postUpdate(UpdateContext $updateContext): void
     {
         $currentVersion = $updateContext->getCurrentPluginVersion();
-        if (\version_compare($currentVersion, '3.17.0', '==')) {
+        if (\version_compare($currentVersion, '3.17.0', '<')) {
             $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
             $handler->getHandler()->run();
         }
