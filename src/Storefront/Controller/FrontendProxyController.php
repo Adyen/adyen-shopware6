@@ -208,7 +208,7 @@ class FrontendProxyController extends StorefrontController
         $paymentToken = $request->get('_sw_payment_token');
         $redirectResult = $request->get('redirectResult');
 
-        if ($this->paymentTokenValidator->validateToken($paymentToken)) {
+        if ($this->paymentTokenValidator->validateToken($paymentToken) && !$redirectResult) {
             return new RedirectResponse(
                 $this->router->generate(
                     'payment.finalize.transaction',
