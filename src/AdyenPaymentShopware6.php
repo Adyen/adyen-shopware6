@@ -28,6 +28,7 @@ namespace Adyen\Shopware;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
+use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
 use Adyen\Shopware\PaymentMethods\KlarnaDebitRiskPaymentMethod;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
@@ -201,7 +202,7 @@ class AdyenPaymentShopware6 extends Plugin
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
 
-        if ($paymentMethod->getPaymentHandler() === KlarnaDebitRiskPaymentMethod::class) {
+        if ($paymentMethod->getPaymentHandler() === KlarnaDebitRiskPaymentMethodHandler::class) {
             $sofortMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
 
             if ($sofortMethodId) {
