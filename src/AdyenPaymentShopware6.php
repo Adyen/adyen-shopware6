@@ -28,6 +28,8 @@ namespace Adyen\Shopware;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
+use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
+use Adyen\Shopware\PaymentMethods\KlarnaDebitRiskPaymentMethod;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -157,6 +159,30 @@ class AdyenPaymentShopware6 extends Plugin
         $pluginIdProvider = $this->container->get(PluginIdProvider::class);
         $pluginId = $pluginIdProvider->getPluginIdByBaseClass(get_class($this), $context);
 
+        /** @var EntityRepository $paymentRepository */
+        $paymentRepository = $this->container->get('payment_method.repository');
+
+        // Rename if Klarna Debit Risk doesnt exist from previous installations
+        if ($paymentMethod->getPaymentHandler() === KlarnaDebitRiskPaymentMethodHandler::class && $paymentMethodId === null) {
+            $sofortMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
+
+            if ($sofortMethodId) {
+                // update Sofort to Klarna Debit Risk
+                $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
+
+                $paymentMethodData = [
+                    'id' => $sofortMethodId,
+                    'handlerIdentifier' => $method->getPaymentHandler(),
+                    'name' => $method->getName(),
+                    'description' => $method->getDescription(),
+                ];
+
+                $paymentRepository->update([$paymentMethodData], $context);
+
+                return;
+            }
+        }
+
         // Payment method exists already, set the pluginId
         if ($paymentMethodId) {
             $this->setPluginId($paymentMethodId, $pluginId, $context);
@@ -171,8 +197,6 @@ class AdyenPaymentShopware6 extends Plugin
             'afterOrderEnabled' => true
         ];
 
-        /** @var EntityRepository $paymentRepository */
-        $paymentRepository = $this->container->get('payment_method.repository');
         $paymentRepository->create([$paymentData], $context);
     }
 
@@ -515,14 +539,29 @@ class AdyenPaymentShopware6 extends Plugin
             );
         }
 
+        // Version 4.2.0 removes Dotpay
+        $paymentMethodHandler = 'Adyen\Shopware\Handlers\DotpayPaymentMethodHandler';
+        $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
+
         // Version 4.2.0 replaces Sofort with Klarna Debit Risk
-        $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
         $paymentRepository = $this->container->get('payment_method.repository');
         $paymentMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
+        $klarnaDebitRisktMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler');
 
+        // If Sofort does not exist, return
         if (!$paymentMethodId) {
             return;
         }
+
+        if($klarnaDebitRisktMethodId !== null) {
+            // Klarna Debit Risk exists, deactivate Sofort and skip renaming
+            $this->deactivateAndRemovePaymentMethod($updateContext, 'Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
+
+            return;
+        }
+
+        // Update Sofort to Klarna Debit Risk
+        $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
 
         $paymentMethodData = [
             'id' => $paymentMethodId,
@@ -532,10 +571,6 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
-
-        // Version 4.2.0 removes Dotpay
-        $paymentMethodHandler = 'Adyen\Shopware\Handlers\DotpayPaymentMethodHandler';
-        $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
     }
 
     /**
