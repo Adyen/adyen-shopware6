@@ -201,10 +201,9 @@ class AdyenPaymentShopware6 extends Plugin
 
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');
-        $klarnaDebitRisktMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler');
 
         // Rename if Klarna Debit Risk doesnt exist from previous installations
-        if ($paymentMethod->getPaymentHandler() === KlarnaDebitRiskPaymentMethodHandler::class && $klarnaDebitRisktMethodId !== null) {
+        if ($paymentMethod->getPaymentHandler() === KlarnaDebitRiskPaymentMethodHandler::class && $paymentMethodId === null) {
             $sofortMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
 
             if ($sofortMethodId) {
