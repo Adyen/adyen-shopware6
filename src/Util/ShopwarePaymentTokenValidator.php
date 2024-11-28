@@ -15,7 +15,8 @@ class ShopwarePaymentTokenValidator
     /**
      * @param TokenFactoryInterfaceV2 $tokenFactory
      */
-    public function __construct(TokenFactoryInterfaceV2 $tokenFactory){
+    public function __construct(TokenFactoryInterfaceV2 $tokenFactory)
+    {
         $this->tokenFactory = $tokenFactory;
     }
 

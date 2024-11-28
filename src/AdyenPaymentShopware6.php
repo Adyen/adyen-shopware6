@@ -49,6 +49,8 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
 class AdyenPaymentShopware6 extends Plugin
 {
+    public const SOFORT = 'Adyen\Shopware\Handlers\SofortPaymentMethodHandler';
+
     public function installJsAssets($shopwareVersion)
     {
         $storefrontAssetPath = __DIR__ . '/Resources/app/storefront/dist/storefront/js/adyen-payment-shopware6.js';
@@ -203,8 +205,9 @@ class AdyenPaymentShopware6 extends Plugin
         $paymentRepository = $this->container->get('payment_method.repository');
 
         // Rename if Klarna Debit Risk doesnt exist from previous installations
-        if ($paymentMethod->getPaymentHandler() === KlarnaDebitRiskPaymentMethodHandler::class && $paymentMethodId === null) {
-            $sofortMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
+        if ($paymentMethod->getPaymentHandler() === KlarnaDebitRiskPaymentMethodHandler::class
+            && $paymentMethodId === null) {
+            $sofortMethodId = $this->getPaymentMethodId(self::SOFORT);
 
             if ($sofortMethodId) {
                 // update Sofort to Klarna Debit Risk
@@ -585,17 +588,22 @@ class AdyenPaymentShopware6 extends Plugin
 
         // Version 3.17.0 replaces Sofort with Klarna Debit Risk
         $paymentRepository = $this->container->get('payment_method.repository');
-        $paymentMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
-        $klarnaDebitRisktMethodId = $this->getPaymentMethodId('Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler');
+        $paymentMethodId = $this->getPaymentMethodId(self::SOFORT);
+        $klarnaDebitRisktMethodId = $this->getPaymentMethodId(
+            'Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler'
+        );
 
         // If Sofort does not exist, return
         if (!$paymentMethodId) {
             return;
         }
 
-        if($klarnaDebitRisktMethodId !== null) {
+        if ($klarnaDebitRisktMethodId !== null) {
             // Klarna Debit Risk exists, deactivate Sofort and skip renaming
-            $this->deactivateAndRemovePaymentMethod($updateContext, 'Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
+            $this->deactivateAndRemovePaymentMethod(
+                $updateContext,
+                self::SOFORT
+            );
 
             return;
         }
