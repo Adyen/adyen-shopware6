@@ -45,7 +45,7 @@ class OnlineBankingFinlandPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Online Banking Finland';
+        return 'Online Banking Finland payment method';
     }
 
     /**

@@ -606,9 +606,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setMerchantAccount(
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
-        if($paymentMethodType === 'bcmc_mobile'){
+        if ($paymentMethodType === 'bcmc_mobile') {
             $paymentRequest->setReturnUrl($this->getReturnUrl($transaction));
-        }else{
+        } else {
             $paymentRequest->setReturnUrl($transaction->getReturnUrl());
         }
 

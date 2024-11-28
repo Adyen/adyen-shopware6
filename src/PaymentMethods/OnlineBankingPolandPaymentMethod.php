@@ -45,7 +45,7 @@ class OnlineBankingPolandPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Online Banking Poland';
+        return 'Online Banking Poland payment method';
     }
 
     /**
