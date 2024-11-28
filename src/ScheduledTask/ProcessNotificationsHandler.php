@@ -400,10 +400,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     /**
      * @param string $notificationId
-     * @param string $merchantReference
+     * @param string|null $merchantReference
      * @return void
      */
-    private function markAsProcessing(string $notificationId, string $merchantReference): void
+    private function markAsProcessing(string $notificationId, ?string $merchantReference = null): void
     {
         $this->notificationService->changeNotificationState($notificationId, 'processing', true);
         $this->logger->debug("Payment notification for order {$merchantReference} marked as processing.");
