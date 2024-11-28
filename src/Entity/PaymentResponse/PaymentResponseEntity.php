@@ -49,16 +49,6 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
-    protected $refusalReason;
-
-    /**
-     * @var string
-     */
-    protected $refusalReasonCode;
-
-    /**
-     * @var string
-     */
     protected $response;
 
     /**
@@ -70,6 +60,7 @@ class PaymentResponseEntity extends Entity
      * @var string
      */
     protected $pspreference;
+
 
     /**
      * @return string
@@ -122,38 +113,6 @@ class PaymentResponseEntity extends Entity
     /**
      * @return string
      */
-    public function getRefusalReason(): ?string
-    {
-        return $this->refusalReason;
-    }
-
-    /**
-     * @param string $refusalReason
-     */
-    public function setRefusalReason(string $refusalReason): void
-    {
-        $this->refusalReason = $refusalReason;
-    }
-
-    /**
-     * @return string
-     */
-    public function getRefusalReasonCode(): ?string
-    {
-        return $this->refusalReasonCode;
-    }
-
-    /**
-     * @param string $refusalReasonCode
-     */
-    public function setRefusalReasonCode(string $refusalReasonCode): void
-    {
-        $this->refusalReasonCode = $refusalReasonCode;
-    }
-
-    /**
-     * @return string
-     */
     public function getResponse(): string
     {
         return $this->response;
@@ -181,5 +140,15 @@ class PaymentResponseEntity extends Entity
     public function setPspreference(?string $pspreference): void
     {
         $this->pspreference = $pspreference;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTimeInterface $createdAt): void
+    {
+        $this->createdAt = $createdAt;
     }
 }
