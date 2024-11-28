@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\SofortPaymentMethodHandler;
+use Adyen\Shopware\Handlers\OnlineBankingFinlandPaymentMethodHandler;
 
-class SofortPaymentMethod implements PaymentMethodInterface
+class OnlineBankingFinlandPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Sofort';
+        return 'Online Banking Finland';
     }
 
     /**
@@ -45,7 +45,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Direct debit payments';
+        return 'Online Banking Finland';
     }
 
     /**
@@ -55,7 +55,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return SofortPaymentMethodHandler::class;
+        return OnlineBankingFinlandPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_SOFORT';
+        return 'ADYEN_EBANKING_FI';
     }
 
     /**
@@ -85,7 +85,7 @@ class SofortPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'sofort.png';
+        return 'ebanking_FI.png';
     }
 
     /**
