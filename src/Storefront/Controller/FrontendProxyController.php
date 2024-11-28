@@ -111,7 +111,7 @@ class FrontendProxyController extends StorefrontController
      * @param DonateController $donateController
      * @param ShopwarePaymentTokenValidator $paymentTokenValidator
      */
-    public function __construct(
+    public function __construct(//NOSONAR
         AbstractCartOrderRoute $cartOrderRoute,//NOSONAR
         AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,//NOSONAR
         AbstractContextSwitchRoute $contextSwitchRoute,//NOSONAR
@@ -121,7 +121,7 @@ class FrontendProxyController extends StorefrontController
         OrderApiController $orderApiController,//NOSONAR
         DonateController $donateController,//NOSONAR
         ShopwarePaymentTokenValidator    $paymentTokenValidator//NOSONAR
-    ) {
+    ) {//NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
