@@ -37,7 +37,7 @@ class ShopwarePaymentTokenValidator
             }
 
             return true;
-        } catch (PaymentException) {
+        } catch (PaymentException $exception) {
             return false;
         }
     }
