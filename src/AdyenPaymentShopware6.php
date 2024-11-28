@@ -556,6 +556,12 @@ class AdyenPaymentShopware6 extends Plugin
         if($klarnaDebitRisktMethodId !== null) {
             // Klarna Debit Risk exists, deactivate Sofort and skip renaming
             $this->deactivateAndRemovePaymentMethod($updateContext, 'Adyen\Shopware\Handlers\SofortPaymentMethodHandler');
+            // activate Klarna Debit Risk
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                new PaymentMethods\KlarnaDebitRiskPaymentMethod()
+            );
 
             return;
         }
