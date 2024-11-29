@@ -15,7 +15,7 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2021 Adyen B.V.
+ * Copyright (c) 2020 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\DotpayPaymentMethodHandler;
+use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
 
-class DotpayPaymentMethod implements PaymentMethodInterface
+class KlarnaDebitRiskPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Dotpay';
+        return 'Klarna Debit Risk';
     }
 
     /**
@@ -45,7 +45,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Online banking payments';
+        return 'Direct debit payments';
     }
 
     /**
@@ -55,7 +55,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return DotpayPaymentMethodHandler::class;
+        return KlarnaDebitRiskPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_DOTPAY';
+        return 'ADYEN_KLARNA_DEBIT_RISK';
     }
 
     /**
@@ -85,7 +85,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'dotpay.png';
+        return 'directEbanking.png';
     }
 
     /**

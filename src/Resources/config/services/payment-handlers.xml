@@ -44,7 +44,7 @@
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\SofortPaymentMethodHandler"
+        <service id="Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
@@ -65,10 +65,6 @@
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method.async"/>
-        </service>
-        <service id="Adyen\Shopware\Handlers\DotpayPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
@@ -241,6 +237,14 @@
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Adyen\Shopware\Handlers\DeCadeaukaartGiftCardPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\OnlineBankingFinlandPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\OnlineBankingPolandPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>
