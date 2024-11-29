@@ -50,9 +50,11 @@
             <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Payment\PaymentController"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController"/>
+            <argument type="service" id="Adyen\Shopware\Util\ShopwarePaymentTokenValidator"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
