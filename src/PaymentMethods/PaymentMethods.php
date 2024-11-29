@@ -35,13 +35,12 @@ class PaymentMethods
         RatepayPaymentMethod::class,
         RatepayDirectdebitPaymentMethod::class,
         SepaPaymentMethod::class,
-        SofortPaymentMethod::class,
+        KlarnaDebitRiskPaymentMethod::class,
         PaypalPaymentMethod::class,
         OneClickPaymentMethod::class,
         GiroPayPaymentMethod::class,
         ApplePayPaymentMethod::class,
         GooglePayPaymentMethod::class,
-        DotpayPaymentMethod::class,
         BancontactCardPaymentMethod::class,
         BancontactMobilePaymentMethod::class,
         AmazonPayPaymentMethod::class,
@@ -70,6 +69,8 @@ class PaymentMethods
         VippsPaymentMethod::class,
         MobilePayPaymentMethod::class,
         OpenBankingPaymentMethod::class,
-        BilliePaymentMethod::class
+        BilliePaymentMethod::class,
+        OnlineBankingFinlandPaymentMethod::class,
+        OnlineBankingPolandPaymentMethod::class
     ];
 }

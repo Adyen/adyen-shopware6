@@ -68,6 +68,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
 abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
@@ -331,7 +332,26 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
 
         // Payment had no error, continue the process
+
+        // If Bancontact mobile payment is used, redirect to proxy finalize transaction endpoint
+        if ($stateData['paymentMethod']['type'] === 'bcmc_mobile') {
+            return new RedirectResponse($this->getReturnUrl($transaction));
+        }
+
         return new RedirectResponse($transaction->getReturnUrl());
+    }
+
+    private function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    {
+        $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
+        parse_str($query, $params);
+        $token =  $params['_sw_payment_token'] ?? '';
+
+        return $this->symfonyRouter->generate(
+            'payment.adyen.proxy-finalize-transaction',
+            ['_sw_payment_token' => $token, 'orderId' => $transaction->getOrder()->getId()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
     }
 
     private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction)
@@ -582,7 +602,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setMerchantAccount(
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
-        $paymentRequest->setReturnUrl($transaction->getReturnUrl());
+        if ($paymentMethodType === 'bcmc_mobile') {
+            $paymentRequest->setReturnUrl($this->getReturnUrl($transaction));
+        } else {
+            $paymentRequest->setReturnUrl($transaction->getReturnUrl());
+        }
 
         if (static::$isOpenInvoice) {
             $orderLines = $transaction->getOrder()->getLineItems();

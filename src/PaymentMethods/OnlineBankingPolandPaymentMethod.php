@@ -15,7 +15,7 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2021 Adyen B.V.
+ * Copyright (c) 2020 Adyen B.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\DotpayPaymentMethodHandler;
+use Adyen\Shopware\Handlers\OnlineBankingPolandPaymentMethodHandler;
 
-class DotpayPaymentMethod implements PaymentMethodInterface
+class OnlineBankingPolandPaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Dotpay';
+        return 'Online Banking Poland';
     }
 
     /**
@@ -45,7 +45,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getDescription(): string
     {
-        return 'Online banking payments';
+        return 'Online Banking Poland payment method';
     }
 
     /**
@@ -55,7 +55,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return DotpayPaymentMethodHandler::class;
+        return OnlineBankingPolandPaymentMethodHandler::class;
     }
 
     /**
@@ -65,7 +65,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getGatewayCode(): string
     {
-        return 'ADYEN_DOTPAY';
+        return 'ADYEN_ONLINEBANKING_PL';
     }
 
     /**
@@ -85,7 +85,7 @@ class DotpayPaymentMethod implements PaymentMethodInterface
      */
     public function getLogo(): string
     {
-        return 'dotpay.png';
+        return 'onlineBanking_PL.png';
     }
 
     /**
