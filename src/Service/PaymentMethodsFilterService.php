@@ -43,6 +43,11 @@ use Symfony\Component\HttpFoundation\Request;
 class PaymentMethodsFilterService
 {
     /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
+    /**
      * @var PaymentMethodsService
      */
     private $paymentMethodsService;
@@ -56,15 +61,18 @@ class PaymentMethodsFilterService
     /**
      * PaymentMethodsFilterService constructor.
      *
+     * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
      * @param AbstractPaymentMethodRoute $paymentMethodRoute
      * @param EntityRepository $paymentMethodRepository
      */
     public function __construct(
+        ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
         AbstractPaymentMethodRoute $paymentMethodRoute,
         $paymentMethodRepository
     ) {
+        $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentMethodRoute = $paymentMethodRoute;
         $this->paymentMethodRepository = $paymentMethodRepository;
@@ -105,6 +113,12 @@ class PaymentMethodsFilterService
                 $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
                 $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
                 $isSafari = preg_match('/^((?!chrome|android).)*safari/', strtolower($_SERVER['HTTP_USER_AGENT']));
+
+                if (
+                    ($pmCode === 'ratepay' || $pmCode === 'ratepay_directdebit') &&
+                    !$this->configurationService->getDeviceFingerprintSnippetId()) {
+                    $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                }
 
                 if ($pmCode == OneClickPaymentMethodHandler::getPaymentMethodCode()) {
                     // For OneClick, remove it if /paymentMethod response has no stored payment methods

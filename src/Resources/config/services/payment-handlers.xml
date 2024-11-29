@@ -10,6 +10,7 @@
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
+            <argument type="service" id="Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>

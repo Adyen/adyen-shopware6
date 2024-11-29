@@ -260,6 +260,18 @@ class ConfigurationService
     }
 
     /**
+     * @param string|null $salesChannelId
+     * @return array|mixed|null
+     */
+    public function getDeviceFingerprintSnippetId(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.deviceFingerprintSnippetId',
+            $salesChannelId
+        );
+    }
+
+    /**
      * @param string $salesChannelId
      * @return array|mixed|null
      */

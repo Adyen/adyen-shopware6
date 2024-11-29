@@ -32,9 +32,11 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
+use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
 use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -117,6 +119,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private $adyenPluginProvider;
 
     /**
+     * @var RatePayDeviceFingerprintParamsProvider
+     */
+    private $ratePayFingerprintParamsProvider;
+
+    /**
      * @var AbstractContextSwitchRoute
      */
     private $contextSwitchRoute;
@@ -147,6 +154,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
      * @param Currency $currency
+     * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
      * @param EntityRepository $paymentMethodRepository
      */
     public function __construct(
@@ -163,6 +171,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractSalesChannelContextFactory $salesChannelContextFactory,
         Currency $currency,
+        RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
         $paymentMethodRepository
     ) {
         $this->adyenPluginProvider = $adyenPluginProvider;
@@ -178,6 +187,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->contextSwitchRoute = $contextSwitchRoute;
         $this->salesChannelContextFactory = $salesChannelContextFactory;
         $this->currency = $currency;
+        $this->ratePayFingerprintParamsProvider = $ratePayFingerprintParamsProvider;
         $this->paymentMethodRepository = $paymentMethodRepository;
     }
 
@@ -392,7 +402,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         ),
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
-                    ]
+                    ],
+                    $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
             )
         );
@@ -425,5 +436,27 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 )
             );
         }
+    }
+
+    /**
+     *
+     * @param SalesChannelContext $salesChannelContext
+     * @param PaymentMethodEntity $paymentMethod
+     * @return array
+     */
+    private function getFingerprintParametersForRatepayMethod(
+        SalesChannelContext $salesChannelContext,
+        PaymentMethodEntity $paymentMethod
+    ): array
+    {
+        if (
+            $paymentMethod->getFormattedHandlerIdentifier() === 'handler_adyen_ratepaydirectdebitpaymentmethodhandler' ||
+            $paymentMethod->getFormattedHandlerIdentifier() === 'handler_adyen_ratepaypaymentmethodhandler'
+        ) {
+            return ['ratepay' => $this->ratePayFingerprintParamsProvider
+                ->getFingerprintParams($salesChannelContext->getSalesChannelId())];
+        }
+
+        return [];
     }
 }
