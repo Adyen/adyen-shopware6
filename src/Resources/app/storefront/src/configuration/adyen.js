@@ -22,7 +22,7 @@
 
 export default {
     updatablePaymentMethods: [
-        'scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'dotpay', 'bcmc', 'bcmc_mobile', 'blik', 'klarna_b2b', 'eps', 'facilypay_3x',
+        'scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'bcmc', 'bcmc_mobile', 'blik', 'klarna_b2b', 'eps', 'facilypay_3x',
         'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay',
         'ratepay_directdebit', 'giftcard', 'paybright', 'affirm', 'multibanco', 'mbway', 'vipps', 'mobilepay',
         'wechatpayQR', 'wechatpayWeb', 'paybybank'
@@ -121,13 +121,12 @@ export default {
         'ratepay': 'handler_adyen_ratepaypaymentmethodhandler',
         'ratepay_directdebit': 'handler_adyen_ratepaydirectdebitpaymentmethodhandler',
         'sepadirectdebit': 'handler_adyen_sepapaymentmethodhandler',
-        'sofort': 'handler_adyen_sofortpaymentmethodhandler',
+        'directEbanking': 'handler_adyen_klarnadebitriskpaymentmethodhandler',
         'paypal': 'handler_adyen_paypalpaymentmethodhandler',
         'oneclick': 'handler_adyen_oneclickpaymentmethodhandler',
         'giropay': 'handler_adyen_giropaypaymentmethodhandler',
         'applepay': 'handler_adyen_applepaypaymentmethodhandler',
         'googlepay': 'handler_adyen_googlepaypaymentmethodhandler',
-        'dotpay': 'handler_adyen_dotpaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
         'bcmc_mobile': 'handler_adyen_bancontactmobilepaymentmethodhandler',
         'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
@@ -156,6 +155,8 @@ export default {
         'affirm': 'handler_adyen_affirmpaymentmethodhandler',
         'paybright': 'handler_adyen_paybrightpaymentmethodhandler',
         'paybybank': 'handler_adyen_openbankingpaymentmethodhandler',
-        'klarna_b2b': 'handler_adyen_billiepaymentmethodhandler'
+        'klarna_b2b': 'handler_adyen_billiepaymentmethodhandler',
+        'ebanking_FI': 'handler_adyen_onlinebankingfinlandpaymentmethodhandler',
+        'onlineBanking_PL': 'handler_adyen_onlinebankingpolandpaymentmethodhandler'
     }
 }

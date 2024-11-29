@@ -10,6 +10,7 @@
             "remainingBalance": "Verbleibendes guthaben der geschenkkarte",
             "remainingAmount": "Restbetrag",
             "discount": "Geschenkkarten-Rabatt"
-        }
+        },
+        "unsuccessful_adyen_transaction": "Payment with Bancontact mobile was unsuccessful. Please change the payment method or try again."
     }
 }
