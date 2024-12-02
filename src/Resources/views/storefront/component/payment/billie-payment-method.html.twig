@@ -1,0 +1,28 @@
+<div id="billie-payment-fields" class="billie-fields">
+    <p class="text-muted mt-2">
+        All fields are required unless marked otherwise.
+    </p>
+    <div class="form-group">
+        <label for="company-name">Company Name</label>
+        <input
+                type="text"
+                id="company-name"
+                name="companyName"
+                value="{{ adyenFrontendData.companyName }}"
+                placeholder="Enter your company name"
+                class="form-control"
+                required
+        />
+    </div>
+    <div class="form-group">
+        <label for="registration-number">Company Registration Number</label>
+        <input
+                type="text"
+                id="registration-number"
+                name="registrationNumber"
+                placeholder="Enter your registration number"
+                class="form-control"
+                required
+        />
+    </div>
+</div>
