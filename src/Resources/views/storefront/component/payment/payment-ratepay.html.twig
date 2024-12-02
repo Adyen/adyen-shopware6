@@ -1,8 +1,11 @@
-<script type="text/javascript">
-    const di = {
-        t: '{{ adyenFrontendData.ratepay.token }}',
-        v: '{{ adyenFrontendData.ratepay.snippetId }}',
-        l: '{{ adyenFrontendData.ratepay.location }}'
-    };
-</script>
-<script type="text/javascript" src="https://d.ratepay.com/{adyenFrontendData.ratepay.snippetId}/di.js"></script>
+{% if payment.formattedHandlerIdentifier is same as('handler_adyen_ratepaydirectdebitpaymentmethodhandler')
+    or payment.formattedHandlerIdentifier is same as('handler_adyen_ratepaypaymentmethodhandler') %}
+    <script type="text/javascript">
+        const di = {
+            t: '{{ adyenFrontendData.ratepay.token }}',
+            v: '{{ adyenFrontendData.ratepay.snippetId }}',
+            l: '{{ adyenFrontendData.ratepay.location }}'
+        };
+    </script>
+    <script type="text/javascript" src="https://d.ratepay.com/{adyenFrontendData.ratepay.snippetId}/di.js"></script>
+{% endif %}

@@ -17,9 +17,6 @@
     {% if payment.id is same as(selectedPaymentMethodId)
         and 'handler_adyen_' in payment.formattedHandlerIdentifier %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-component.html.twig' %}
-    {% endif %}
-    {% if payment.formattedHandlerIdentifier is same as('handler_adyen_ratepaydirectdebitpaymentmethodhandler')
-        or payment.formattedHandlerIdentifier is same as('handler_adyen_ratepaypaymentmethodhandler') %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-ratepay.html.twig' %}
     {% endif %}
 {% endblock %}
