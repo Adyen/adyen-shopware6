@@ -25,8 +25,6 @@ class PaymentResponseHandlerResult
     {
         // Set result code
         $this->setResultCode($paymentResponse->getResultCode());
-        $this->setRefusalReason($paymentResponse->getRefusalReason());
-        $this->setRefusalReasonCode($paymentResponse->getRefusalReasonCode());
 
         $response = $paymentResponse->getResponse();
 

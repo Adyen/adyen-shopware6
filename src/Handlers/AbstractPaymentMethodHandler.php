@@ -65,6 +65,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
 abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
@@ -331,7 +332,26 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
 
         // Payment had no error, continue the process
+
+        // If Bancontact mobile payment is used, redirect to proxy finalize transaction endpoint
+        if ($stateData['paymentMethod']['type'] === 'bcmc_mobile') {
+            return new RedirectResponse($this->getReturnUrl($transaction));
+        }
+
         return new RedirectResponse($transaction->getReturnUrl());
+    }
+
+    private function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    {
+        $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
+        parse_str($query, $params);
+        $token =  $params['_sw_payment_token'] ?? '';
+
+        return $this->symfonyRouter->generate(
+            'payment.adyen.proxy-finalize-transaction',
+            ['_sw_payment_token' => $token, 'orderId' => $transaction->getOrder()->getId()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
     }
 
     /**
@@ -586,7 +606,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setMerchantAccount(
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
-        $paymentRequest->setReturnUrl($transaction->getReturnUrl());
+        if ($paymentMethodType === 'bcmc_mobile') {
+            $paymentRequest->setReturnUrl($this->getReturnUrl($transaction));
+        } else {
+            $paymentRequest->setReturnUrl($transaction->getReturnUrl());
+        }
 
         if (static::$isOpenInvoice) {
             $orderLines = $transaction->getOrder()->getLineItems();
@@ -613,12 +637,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     !is_null($orderLine->getProductId()) ?
                         $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext()) :
                         null;
+                $domainUrl = $salesChannelContext->getSalesChannel()->getDomains()?->first()?->getUrl();
 
                 // Add url for only real product and not for the custom cart items.
-                if (!is_null($product->getId())) {
+                if (!is_null($product->getId()) && !is_null($domainUrl)) {
                     $productUrl = sprintf(
                         "%s/detail/%s",
-                        $salesChannelContext->getSalesChannel()->getDomains()->first()->getUrl(),
+                        $domainUrl,
                         $product->getId()
                     );
                 } else {
@@ -640,7 +665,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $currency = $salesChannelContext->getCurrency();
 
                 //Building open invoice line
-              
+
                 $lineItem = new LineItem();
 
                 $lineItem->setDescription($productName);
@@ -670,12 +695,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $paymentRequest->setLineItems($lineItems);
         }
 
-        //Setting info from statedata additionalData if present
-        if (!empty($stateDataAdditionalData['origin'])) {
-            $origin = $stateDataAdditionalData['origin'];
-        } else {
-            $origin = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
-        }
+        $origin = $stateDataAdditionalData['origin'] ??
+            $request['origin'] ??
+            $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
 
         $paymentRequest->setOrigin($origin);
         $paymentRequest->setAdditionaldata(['allow3DS2' => true]);

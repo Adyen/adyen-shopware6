@@ -46,7 +46,9 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+#[AsMessageHandler(handles: ProcessNotifications::class)]
 class ProcessNotificationsHandler extends ScheduledTaskHandler
 {
     use LoggerAwareTrait;
@@ -168,6 +170,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             try {
                 /** @var NotificationEntity $notification */
                 $logContext = ['eventCode' => $notification->getEventCode()];
+
+                if (is_null($notification->getMerchantReference())) {
+                    continue;
+                }
 
                 /*
                  * Before processing any notification, factory should be created first.

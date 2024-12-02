@@ -28,6 +28,8 @@ namespace Adyen\Shopware;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
+use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
+use Adyen\Shopware\PaymentMethods\KlarnaDebitRiskPaymentMethod;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -47,6 +49,8 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
 class AdyenPaymentShopware6 extends Plugin
 {
+    public const SOFORT = 'Adyen\Shopware\Handlers\SofortPaymentMethodHandler';
+
     public function install(InstallContext $installContext): void
     {
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
@@ -134,6 +138,19 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '4.1.0', '<')) {
             $this->updateTo410($updateContext);
         }
+
+        if (\version_compare($currentVersion, '4.2.0', '<')) {
+            $this->updateTo420($updateContext);
+        }
+    }
+
+    public function postUpdate(UpdateContext $updateContext): void
+    {
+        $currentVersion = $updateContext->getCurrentPluginVersion();
+        if (\version_compare($currentVersion, '4.2.0', '<')) {
+            $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
+            $handler->getHandler()->run();
+        }
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -143,6 +160,31 @@ class AdyenPaymentShopware6 extends Plugin
         /** @var PluginIdProvider $pluginIdProvider */
         $pluginIdProvider = $this->container->get(PluginIdProvider::class);
         $pluginId = $pluginIdProvider->getPluginIdByBaseClass(get_class($this), $context);
+
+        /** @var EntityRepository $paymentRepository */
+        $paymentRepository = $this->container->get('payment_method.repository');
+
+        // Rename if Klarna Debit Risk doesnt exist from previous installations
+        if ($paymentMethod->getPaymentHandler() === KlarnaDebitRiskPaymentMethodHandler::class
+            && $paymentMethodId === null) {
+            $sofortMethodId = $this->getPaymentMethodId(self::SOFORT);
+
+            if ($sofortMethodId) {
+                // update Sofort to Klarna Debit Risk
+                $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
+
+                $paymentMethodData = [
+                    'id' => $sofortMethodId,
+                    'handlerIdentifier' => $method->getPaymentHandler(),
+                    'name' => $method->getName(),
+                    'description' => $method->getDescription(),
+                ];
+
+                $paymentRepository->update([$paymentMethodData], $context);
+
+                return;
+            }
+        }
 
         // Payment method exists already, set the pluginId
         if ($paymentMethodId) {
@@ -158,8 +200,6 @@ class AdyenPaymentShopware6 extends Plugin
             'afterOrderEnabled' => true
         ];
 
-        /** @var EntityRepository $paymentRepository */
-        $paymentRepository = $this->container->get('payment_method.repository');
         $paymentRepository->create([$paymentData], $context);
     }
 
@@ -479,6 +519,69 @@ class AdyenPaymentShopware6 extends Plugin
             $updateContext->getContext(),
             new PaymentMethods\BilliePaymentMethod()
         );
+    }
+
+    private function updateTo420(UpdateContext $updateContext): void
+    {
+        // Version 4.2.0 introduces Online Banking Finland and Online Banking Poland
+        $paymentMethods = [
+            new PaymentMethods\OnlineBankingFinlandPaymentMethod(),
+            new PaymentMethods\OnlineBankingPolandPaymentMethod(),
+        ];
+
+        foreach ($paymentMethods as $method) {
+            $this->addPaymentMethod(
+                $method,
+                $updateContext->getContext()
+            );
+
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                $method
+            );
+        }
+
+        // Version 4.2.0 removes Dotpay
+        $paymentMethodHandler = 'Adyen\Shopware\Handlers\DotpayPaymentMethodHandler';
+        $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
+
+        // Version 4.2.0 replaces Sofort with Klarna Debit Risk
+        $paymentRepository = $this->container->get('payment_method.repository');
+        $paymentMethodId = $this->getPaymentMethodId(self::SOFORT);
+        $klarnaDebitRisktMethodId = $this->getPaymentMethodId(
+            'Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler'
+        );
+
+        // If Sofort does not exist, return
+        if (!$paymentMethodId) {
+            return;
+        }
+
+        if ($klarnaDebitRisktMethodId !== null) {
+            // Klarna Debit Risk exists, deactivate Sofort and skip renaming
+            $this->deactivateAndRemovePaymentMethod($updateContext, self::SOFORT);
+            // activate Klarna Debit Risk
+            $this->setPaymentMethodIsActive(
+                true,
+                $updateContext->getContext(),
+                new PaymentMethods\KlarnaDebitRiskPaymentMethod()
+            );
+
+            return;
+        }
+
+        // Update Sofort to Klarna Debit Risk
+        $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
+
+        $paymentMethodData = [
+            'id' => $paymentMethodId,
+            'handlerIdentifier' => $method->getPaymentHandler(),
+            'name' => $method->getName(),
+            'description' => $method->getDescription(),
+        ];
+
+        $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
     }
 
     /**
