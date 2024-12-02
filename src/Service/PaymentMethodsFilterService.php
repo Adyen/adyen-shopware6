@@ -30,6 +30,8 @@ use Adyen\Shopware\Handlers\GiftCardPaymentMethodHandler;
 use Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
+use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
@@ -115,7 +117,10 @@ class PaymentMethodsFilterService
                 $isSafari = preg_match('/^((?!chrome|android).)*safari/', strtolower($_SERVER['HTTP_USER_AGENT']));
 
                 if (
-                    ($pmCode === 'ratepay' || $pmCode === 'ratepay_directdebit') &&
+                    (
+                        $pmCode === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
+                        $pmCode === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
+                    ) &&
                     !$this->configurationService->getDeviceFingerprintSnippetId()) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }

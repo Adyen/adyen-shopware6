@@ -37,6 +37,8 @@ use Adyen\Model\Checkout\BrowserInfo;
 use Adyen\Model\Checkout\Name;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
+use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
@@ -308,9 +310,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $this->paymentStateDataService->deletePaymentStateDataFromId($storedStateData['id']);
             }
 
+            $paymentMethodType = $stateData['paymentMethod']['type'];
             if (
-                $stateData['paymentMethod']['type'] === 'ratepay' ||
-                $stateData['paymentMethod']['type'] === 'ratepay_directdebit'
+                $paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
+                $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
             ) {
                 $this->ratePayFingerprintParamsProvider->clear();
             }
@@ -598,7 +601,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
 
-        if($paymentMethodType === 'ratepay' || $paymentMethodType === 'ratepay_direct') {
+        if (
+            $paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
+            $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
+        ) {
             $paymentRequest->setDeviceFingerprint($this->ratePayFingerprintParamsProvider->getToken());
         }
 
