@@ -28,6 +28,7 @@ namespace Adyen\Shopware\Handlers;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Model\Checkout\CheckoutPaymentMethod;
+use Adyen\Model\Checkout\Company;
 use Adyen\Model\Checkout\EncryptedOrderData;
 use Adyen\Model\Checkout\LineItem;
 use Adyen\Model\Checkout\PaymentRequest;
@@ -280,6 +281,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
          */
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
+        $companyName = $dataBag->get('companyName');
+        $registrationNumber = $dataBag->get('registrationNumber');
+
+        $billieData = [
+            'companyName' => $companyName,
+            'registrationNumber' => $registrationNumber,
+        ];
+
         /*
          * If there are more than one stateData and /payments calls have been completed,
          * check the remaining order amount for final /payments call.
@@ -292,7 +301,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $transaction,
                 $stateData,
                 $this->remainingAmount,
-                $this->orderRequestData
+                $this->orderRequestData,
+                $billieData
             );
             //make /payments call
             $this->paymentsCall($salesChannelContext, $request, $transaction);
@@ -587,6 +597,19 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setShopperIP($shopperIp);
         $paymentRequest->setShopperReference($shopperReference);
 
+        if (!empty($request['billieData'])) {
+            $billieData = $request['billieData'];
+
+            $companyName = $billieData['companyName'] ?? '';
+            $registrationNumber = $billieData['registrationNumber'] ?? '';
+
+            $company = new Company();
+            $company
+                ->setRegistrationNumber($registrationNumber)
+                ->setName($companyName);
+            $paymentRequest->setCompany($company);
+        }
+
         //Building payment data
         $amount = $partialAmount ?: $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
@@ -719,9 +742,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $transaction,
         $stateData,
         $partialAmount,
-        $orderRequestData
+        $orderRequestData,
+        $billieData = []
     ) {
         $transactionId = $transaction->getOrderTransaction()->getId();
+        $stateData['billieData'] = $billieData;
         try {
             $request = $this->preparePaymentsRequest(
                 $salesChannelContext,

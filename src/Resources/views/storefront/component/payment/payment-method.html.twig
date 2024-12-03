@@ -16,10 +16,7 @@
     {{ parent() }}
     {% if payment.id is same as(selectedPaymentMethodId)
         and 'handler_adyen_' in payment.formattedHandlerIdentifier %}
-        {% if payment.formattedHandlerIdentifier == 'handler_adyen_billiepaymentmethodhandler' %}
-            {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/billie-payment-method.html.twig' %}
-        {% else %}
             {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-component.html.twig' %}
-        {% endif %}
+            {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/billie-payment-method.html.twig' %}
     {% endif %}
 {% endblock %}

@@ -62,6 +62,12 @@ export default class ConfirmOrderPlugin extends Plugin {
                 // replaces confirm button with adyen pay button for paywithgoogle, applepay etc.
                 this.initializeCustomPayButton();
             }
+
+            if (this.selectedAdyenPaymentMethod === "klarna_b2b") {
+                this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
+                return;
+            }
+
             if (adyenConfiguration.updatablePaymentMethods.includes(this.selectedAdyenPaymentMethod) && !this.stateData) {
                 // create inline component for cards etc. and set event listener for submit button to confirm payment component
                 this.renderPaymentComponent(this.selectedAdyenPaymentMethod);
@@ -245,6 +251,17 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.errorUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', order.id);
+
+        if (adyenCheckoutOptions.selectedPaymentMethodHandler === 'handler_adyen_billiepaymentmethodhandler') {
+            const companyNameElement = DomAccess.querySelector(document, '#company-name');
+            const companyName = companyNameElement ? companyNameElement.value : '';
+            const registrationNumberElement = DomAccess.querySelector(document, '#registration-number');
+            const registrationNumber = registrationNumberElement ? registrationNumberElement.value : '';
+
+            extraParams.companyName = companyName;
+            extraParams.registrationNumber = registrationNumber;
+        }
+
         let params = {
             'orderId': this.orderId,
             'finishUrl': this.finishUrl.toString(),
