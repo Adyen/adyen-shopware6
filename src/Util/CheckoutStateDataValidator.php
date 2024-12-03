@@ -21,7 +21,8 @@ class CheckoutStateDataValidator
         'conversionId',
         'paymentData',
         'details',
-        'origin'
+        'origin',
+        'billieData'
     );
 
     /**

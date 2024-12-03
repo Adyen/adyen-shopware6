@@ -17,5 +17,6 @@
     {% if payment.id is same as(selectedPaymentMethodId)
         and 'handler_adyen_' in payment.formattedHandlerIdentifier %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-component.html.twig' %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/billie-payment-method.html.twig' %}
     {% endif %}
 {% endblock %}
