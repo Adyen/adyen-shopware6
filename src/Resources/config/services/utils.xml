@@ -20,6 +20,10 @@
         <service id="Adyen\Shopware\Util\ShopwarePaymentTokenValidator">
             <argument type="service" id="Shopware\Core\Checkout\Payment\Cart\Token\JWTFactoryV2"/>
         </service>
+        <service id="Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider">
+            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+        </service>
         <service id="Adyen\Shopware\Util\DataArrayValidator"/>
     </services>
 </container>

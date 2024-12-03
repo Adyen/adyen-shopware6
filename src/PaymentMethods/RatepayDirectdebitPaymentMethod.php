@@ -28,6 +28,8 @@ use Adyen\Shopware\Handlers\RatepayDirectdebitPaymentMethodHandler;
 
 class RatepayDirectdebitPaymentMethod implements PaymentMethodInterface
 {
+    const RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE = 'ratepay_directdebit';
+
     /**
      * {@inheritDoc}
      *
