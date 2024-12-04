@@ -415,6 +415,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         ),
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
+                        'companyName' => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCompany(),
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
