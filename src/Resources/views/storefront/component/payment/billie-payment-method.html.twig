@@ -1,0 +1,32 @@
+{% if payment.formattedHandlerIdentifier == 'handler_adyen_billiepaymentmethodhandler' %}
+    <div id="billie-payment-fields" class="billie-fields">
+        <p class="text-muted mt-2">
+            All fields are required unless marked otherwise.
+        </p>
+        <div class="form-group" style="margin-bottom: 10px">
+            <label for="adyen-company-name">Company Name</label>
+            <input
+                    type="text"
+                    id="adyen-company-name"
+                    name="companyName"
+                    value="{{ adyenFrontendData.companyName }}"
+                    placeholder="Enter your company name"
+                    class="form-control"
+                    required
+            />
+        </div>
+        <span id="adyen-company-name-error" class="text-danger" style="display: none; margin-bottom: 15px">Company name is required.</span>
+        <div class="form-group" style="margin-bottom: 10px">
+            <label for="adyen-registration-number">Company Registration Number</label>
+            <input
+                    type="text"
+                    id="adyen-registration-number"
+                    name="registrationNumber"
+                    placeholder="Enter your registration number"
+                    class="form-control"
+                    required
+            />
+        </div>
+        <span id="adyen-registration-number-error" class="text-danger" style="display: none; margin-bottom: 10px">Registration number is required.</span>
+    </div>
+{% endif %}
