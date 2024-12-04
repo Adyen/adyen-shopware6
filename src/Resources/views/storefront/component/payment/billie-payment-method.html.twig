@@ -3,11 +3,11 @@
         <p class="text-muted mt-2">
             All fields are required unless marked otherwise.
         </p>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 10px">
             <label for="company-name">Company Name</label>
             <input
                     type="text"
-                    id="company-name"
+                    id="adyen-company-name"
                     name="companyName"
                     value="{{ adyenFrontendData.companyName }}"
                     placeholder="Enter your company name"
@@ -15,16 +15,18 @@
                     required
             />
         </div>
-        <div class="form-group">
+        <span id="adyen-company-name-error" class="text-danger" style="display: none; margin-bottom: 15px">Company name is required.</span>
+        <div class="form-group" style="margin-bottom: 10px">
             <label for="registration-number">Company Registration Number</label>
             <input
                     type="text"
-                    id="registration-number"
+                    id="adyen-registration-number"
                     name="registrationNumber"
                     placeholder="Enter your registration number"
                     class="form-control"
                     required
             />
         </div>
+        <span id="adyen-registration-number-error" class="text-danger" style="display: none; margin-bottom: 10px">Registration number is required.</span>
     </div>
 {% endif %}
