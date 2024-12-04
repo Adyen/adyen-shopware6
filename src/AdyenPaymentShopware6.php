@@ -25,9 +25,12 @@
 
 namespace Adyen\Shopware;
 
+use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntityDefinition;
 use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
+use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
+use Adyen\Shopware\Entity\Refund\RefundEntityDefinition;
 use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
 use Adyen\Shopware\PaymentMethods\KlarnaDebitRiskPaymentMethod;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -278,7 +281,10 @@ class AdyenPaymentShopware6 extends Plugin
         $tables = [
             NotificationEntityDefinition::ENTITY_NAME,
             PaymentStateDataEntityDefinition::ENTITY_NAME,
-            PaymentResponseEntityDefinition::ENTITY_NAME
+            PaymentResponseEntityDefinition::ENTITY_NAME,
+            AdyenPaymentEntityDefinition::ENTITY_NAME,
+            PaymentCaptureEntityDefinition::ENTITY_NAME,
+            RefundEntityDefinition::ENTITY_NAME
         ];
         $connection = $this->container->get(Connection::class);
         foreach ($tables as $table) {
