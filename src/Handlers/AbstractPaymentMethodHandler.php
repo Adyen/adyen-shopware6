@@ -343,8 +343,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         // Payment had no error, continue the process
 
-        // If Bancontact mobile payment is used, redirect to proxy finalize transaction endpoint
-        if ($stateData['paymentMethod']['type'] === 'bcmc_mobile') {
+        // If Bancontact mobile or Billie payment method is used, redirect to proxy finalize transaction endpoint
+        if (
+            $stateData['paymentMethod']['type'] === 'bcmc_mobile' ||
+            $stateData['paymentMethod']['type'] === 'klarna_b2b'
+        ) {
             return new RedirectResponse($this->getReturnUrl($transaction));
         }
 
@@ -625,7 +628,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setMerchantAccount(
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
-        if ($paymentMethodType === 'bcmc_mobile') {
+        if ($paymentMethodType === 'bcmc_mobile' || $paymentMethodType === 'klarna_b2b') {
             $paymentRequest->setReturnUrl($this->getReturnUrl($transaction));
         } else {
             $paymentRequest->setReturnUrl($transaction->getReturnUrl());
