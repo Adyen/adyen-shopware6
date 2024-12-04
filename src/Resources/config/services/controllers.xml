@@ -55,6 +55,7 @@
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController"/>
             <argument type="service" id="Adyen\Shopware\Util\ShopwarePaymentTokenValidator"/>
+            <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>

@@ -377,7 +377,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         return $this->symfonyRouter->generate(
             'payment.adyen.proxy-finalize-transaction',
-            ['_sw_payment_token' => $token, 'orderId' => $transaction->getOrder()->getId()],
+            [
+                '_sw_payment_token' => $token,
+                'orderId' => $transaction->getOrder()->getId(),
+                'transactionId' => $transaction->getOrderTransaction()->getId()
+            ],
             UrlGeneratorInterface::ABSOLUTE_URL
         );
     }
