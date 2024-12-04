@@ -30,11 +30,13 @@ use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Util\ShopwarePaymentTokenValidator;
 use Error;
 use Shopware\Core\Checkout\Cart\Exception\InvalidCartException;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\Exception\EmptyCartException;
 use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
@@ -94,11 +96,15 @@ class FrontendProxyController extends StorefrontController
      * @var DonateController
      */
     private DonateController $donateController;
-
     /**
      * @var ShopwarePaymentTokenValidator
      */
     private ShopwarePaymentTokenValidator $paymentTokenValidator;
+
+    /**
+     * @var AdyenPaymentService
+     */
+    private AdyenPaymentService $adyenPaymentService;
 
     /**
      * @param AbstractCartOrderRoute $cartOrderRoute
@@ -110,6 +116,7 @@ class FrontendProxyController extends StorefrontController
      * @param OrderApiController $orderApiController
      * @param DonateController $donateController
      * @param ShopwarePaymentTokenValidator $paymentTokenValidator
+     * @param AdyenPaymentService $adyenPaymentService
      */
     public function __construct(//NOSONAR
         AbstractCartOrderRoute $cartOrderRoute,//NOSONAR
@@ -120,7 +127,8 @@ class FrontendProxyController extends StorefrontController
         PaymentController $paymentController,//NOSONAR
         OrderApiController $orderApiController,//NOSONAR
         DonateController $donateController,//NOSONAR
-        ShopwarePaymentTokenValidator    $paymentTokenValidator//NOSONAR
+        ShopwarePaymentTokenValidator    $paymentTokenValidator,//NOSONAR
+        AdyenPaymentService         $adyenPaymentService
     ) {//NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
@@ -131,6 +139,7 @@ class FrontendProxyController extends StorefrontController
         $this->orderApiController = $orderApiController;
         $this->donateController = $donateController;
         $this->paymentTokenValidator = $paymentTokenValidator;
+        $this->adyenPaymentService = $adyenPaymentService;
     }
 
     /**
@@ -206,46 +215,34 @@ class FrontendProxyController extends StorefrontController
     public function finalizeTransaction(Request $request, SalesChannelContext $salesChannelContext): RedirectResponse
     {
         $paymentToken = $request->get('_sw_payment_token');
-        $redirectResult = $request->get('redirectResult');
-
-        if ($this->paymentTokenValidator->validateToken($paymentToken) && !$redirectResult) {
-            return new RedirectResponse(
-                $this->router->generate(
-                    'payment.finalize.transaction',
-                    ['_sw_payment_token' => $paymentToken],
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                )
+        if ($this->paymentTokenValidator->validateToken($paymentToken)) {
+            return $this->redirectToRoute(
+                'payment.finalize.transaction',
+                $request->query->all(),
             );
         }
 
+        $transactionId = $request->get('transactionId');
         $orderId = $request->get('orderId') ?? '';
-        $stateData = ['details' => ['redirectResult' => $redirectResult]];
-        $request->request->add(['stateData' => json_encode($stateData, JSON_THROW_ON_ERROR)]);
-        $request->request->add(['orderId' => $orderId]);
-        $response = $this->paymentController->postPaymentDetails($request, $salesChannelContext);
-        $resultCode = json_decode(
-            $response->getContent(),
-            false,
-            512,
-            JSON_THROW_ON_ERROR
-        )->resultCode ?? '';
+        $transaction = $this->adyenPaymentService->getPaymentTransactionStruct($transactionId, $salesChannelContext);
+        $transactionState = $transaction->getOrderTransaction()->getStateMachineState();
+        $transactionStateTechnicalName = $transactionState ?
+            $transactionState->getTechnicalName() : OrderTransactionStates::STATE_FAILED;
 
-        if ($resultCode === PaymentResponseHandler::AUTHORISED) {
-            return new RedirectResponse(
-                $this->router->generate(
-                    'frontend.checkout.finish.page',
-                    ['orderId' => $orderId],
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                )
+        if ($transactionStateTechnicalName === OrderTransactionStates::STATE_FAILED ||
+            $transactionStateTechnicalName === OrderTransactionStates::STATE_CANCELLED) {
+            return $this->redirectToRoute(
+                'frontend.account.edit-order.page',
+                [
+                    'orderId' => $orderId,
+                    'error-code' => 'CHECKOUT__UNKNOWN_ERROR',
+                ]
             );
         }
 
-        return new RedirectResponse(
-            $this->router->generate(
-                'frontend.checkout.cart.page',
-                ['errorCode' => 'UNSUCCESSFUL_ADYEN_TRANSACTION'],
-                UrlGeneratorInterface::ABSOLUTE_URL
-            )
+        return $this->redirectToRoute(
+            'frontend.checkout.finish.page',
+            ['orderId' => $orderId]
         );
     }
 
