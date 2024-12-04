@@ -14,19 +14,6 @@ class Migration1713255011AlterAdyenPayment extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $schemaManager = $connection->getSchemaManager();
-
-        // check if table exists
-        if (!$schemaManager->tablesExist(['adyen_payment'])) {
-            return;
-        }
-
-        // check if column already exists
-        $columns = $schemaManager->listTableColumns('adyen_payment');
-        if (array_key_exists('total_refunded', $columns)) {
-            return;
-        }
-
         $connection->executeStatement(<<<SQL
             ALTER TABLE `adyen_payment` ADD COLUMN `total_refunded` int DEFAULT 0 NOT NULL;
         SQL);
