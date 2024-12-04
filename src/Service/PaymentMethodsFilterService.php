@@ -30,6 +30,8 @@ use Adyen\Shopware\Handlers\GiftCardPaymentMethodHandler;
 use Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
+use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
@@ -42,6 +44,11 @@ use Symfony\Component\HttpFoundation\Request;
 
 class PaymentMethodsFilterService
 {
+    /**
+     * @var ConfigurationService
+     */
+    private $configurationService;
+
     /**
      * @var PaymentMethodsService
      */
@@ -56,15 +63,18 @@ class PaymentMethodsFilterService
     /**
      * PaymentMethodsFilterService constructor.
      *
+     * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
      * @param AbstractPaymentMethodRoute $paymentMethodRoute
      * @param EntityRepository $paymentMethodRepository
      */
     public function __construct(
+        ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
         AbstractPaymentMethodRoute $paymentMethodRoute,
         $paymentMethodRepository
     ) {
+        $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentMethodRoute = $paymentMethodRoute;
         $this->paymentMethodRepository = $paymentMethodRepository;
@@ -105,6 +115,15 @@ class PaymentMethodsFilterService
                 $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
                 $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
                 $isSafari = preg_match('/^((?!chrome|android).)*safari/', strtolower($_SERVER['HTTP_USER_AGENT']));
+
+                if (
+                    (
+                        $pmCode === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
+                        $pmCode === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
+                    ) &&
+                    !$this->configurationService->getDeviceFingerprintSnippetId()) {
+                    $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                }
 
                 if ($pmCode == OneClickPaymentMethodHandler::getPaymentMethodCode()) {
                     // For OneClick, remove it if /paymentMethod response has no stored payment methods
