@@ -180,6 +180,16 @@
         </input-field>
     </card>
     <card>
+        <title>Ratepay payment methods configuration</title>
+        <input-field type="text">
+            <name>deviceFingerprintSnippetId</name>
+            <label>Device fingerprint snippet id</label>
+            <helpText>
+                Set the device fingerprint snippet id provided by Ratepay. This value is required for the Ratepay payment methods to be available at checkout.
+            </helpText>
+        </input-field>
+    </card>
+    <card>
         <title>Adyen Giving</title>
         <input-field type="bool">
             <name>adyenGivingEnabled</name>
