@@ -225,19 +225,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     {
         /** @var CheckoutCartPage|OffcanvasCartPage $page */
         $page = $event->getPage();
-        $errorCodes = [];
-        if ($event->getRequest()->get('errorCode')
-            && $event->getRequest()->get('errorCode') === 'UNSUCCESSFUL_ADYEN_TRANSACTION'
-        ) {
-            $errorCodes['errorCode'] = 'UNSUCCESSFUL_ADYEN_TRANSACTION';
-            $page->addExtension(
-                'errorCodes',
-                new ArrayEntity(
-                    $errorCodes
-                )
-            );
-        }
-
         if ($page->getCart()->getLineItems()->count() === 0) {
             return;
         }

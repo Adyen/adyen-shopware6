@@ -96,6 +96,7 @@
         <service id="Adyen\Shopware\Service\AdyenPaymentService">
             <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository"/>
             <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStructFactory"/>
         </service>
 
         <service id="Adyen\Shopware\Service\FetchLogosService" public="true" class="Adyen\Shopware\Service\FetchLogosService">
