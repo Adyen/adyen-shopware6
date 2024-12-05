@@ -29,9 +29,8 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
-use Shopware\Core\Checkout\Payment\Cart\AbstractPaymentTransactionStructFactory;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\PaymentException;
+use Shopware\Core\Checkout\Payment\Exception\InvalidTransactionException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -47,19 +46,12 @@ class AdyenPaymentService
     protected AdyenPaymentRepository $adyenPaymentRepository;
     protected EntityRepository $orderTransactionRepository;
 
-    /**
-     * @var AbstractPaymentTransactionStructFactory
-     */
-    private AbstractPaymentTransactionStructFactory $paymentTransactionStructFactory;
-
     public function __construct(
         AdyenPaymentRepository $adyenPaymentRepository,
         EntityRepository $orderTransactionRepository,
-        AbstractPaymentTransactionStructFactory $paymentTransactionStructFactory
     ) {
         $this->adyenPaymentRepository = $adyenPaymentRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
-        $this->paymentTransactionStructFactory = $paymentTransactionStructFactory;
     }
 
     public function insertAdyenPayment(
@@ -193,9 +185,9 @@ class AdyenPaymentService
         $orderTransaction = $this->orderTransactionRepository->search($criteria, $context->getContext())->first();
 
         if ($orderTransaction === null || $orderTransaction->getOrder() === null) {
-            throw PaymentException::invalidTransaction($orderTransactionId);
+            throw new InvalidTransactionException($orderTransactionId);
         }
 
-        return $this->paymentTransactionStructFactory->async($orderTransaction, $orderTransaction->getOrder(), '');
+        return new AsyncPaymentTransactionStruct($orderTransaction, $orderTransaction->getOrder(), '');
     }
 }
