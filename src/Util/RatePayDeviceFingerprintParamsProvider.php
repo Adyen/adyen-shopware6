@@ -23,8 +23,7 @@ class RatePayDeviceFingerprintParamsProvider
     public function __construct(
         RequestStack $requestStack,
         ConfigurationService $configurationService
-    )
-    {
+    ) {
         $this->requestStack = $requestStack;
         $this->configurationService = $configurationService;
     }
@@ -71,6 +70,4 @@ class RatePayDeviceFingerprintParamsProvider
     {
         $this->requestStack->getSession()->remove(self::TOKEN_SESSION_KEY);
     }
-
-
 }

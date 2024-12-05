@@ -180,8 +180,10 @@ class AdyenPaymentService
         ], Context::createDefaultContext());
     }
 
-    public function getPaymentTransactionStruct(string $orderTransactionId, SalesChannelContext $context): AsyncPaymentTransactionStruct
-    {
+    public function getPaymentTransactionStruct(
+        string $orderTransactionId,
+        SalesChannelContext $context
+    ): AsyncPaymentTransactionStruct {
         $criteria = new Criteria([$orderTransactionId]);
         $criteria->setTitle('payment-service::load-transaction');
         $criteria->addAssociation('order');

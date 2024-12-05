@@ -116,8 +116,7 @@ class PaymentMethodsFilterService
                 $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
                 $isSafari = preg_match('/^((?!chrome|android).)*safari/', strtolower($_SERVER['HTTP_USER_AGENT']));
 
-                if (
-                    (
+                if ((
                         $pmCode === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
                         $pmCode === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
                     ) &&
