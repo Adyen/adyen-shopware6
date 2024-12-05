@@ -180,6 +180,7 @@ class AdyenPaymentService
         $criteria->setTitle('payment-service::load-transaction');
         $criteria->addAssociation('order');
         $criteria->addAssociation('paymentMethod.appPaymentMethod.app');
+        $criteria->addAssociation('stateMachineState');
 
         /** @var OrderTransactionEntity|null $orderTransaction */
         $orderTransaction = $this->orderTransactionRepository->search($criteria, $context->getContext())->first();
