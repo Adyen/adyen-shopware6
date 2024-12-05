@@ -23,8 +23,7 @@ class RatePayDeviceFingerprintParamsProvider
     public function __construct(
         RequestStack         $requestStack,
         ConfigurationService $configurationService
-    )
-    {
+    ) {
         $this->requestStack = $requestStack;
         $this->configurationService = $configurationService;
     }

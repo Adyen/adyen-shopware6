@@ -448,10 +448,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private function getFingerprintParametersForRatepayMethod(
         SalesChannelContext $salesChannelContext,
         PaymentMethodEntity $paymentMethod
-    ): array
-    {
-        if (
-            $paymentMethod->getFormattedHandlerIdentifier() === 'handler_adyen_ratepaydirectdebitpaymentmethodhandler' ||
+    ): array {
+        if ($paymentMethod->getFormattedHandlerIdentifier() ===
+            'handler_adyen_ratepaydirectdebitpaymentmethodhandler' ||
             $paymentMethod->getFormattedHandlerIdentifier() === 'handler_adyen_ratepaypaymentmethodhandler'
         ) {
             return ['ratepay' => $this->ratePayFingerprintParamsProvider

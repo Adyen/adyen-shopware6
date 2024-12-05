@@ -566,8 +566,7 @@ class PaymentRequest extends CheckoutPaymentRequest
         parent::__construct($data);
 
         $data = $data ?? [];
-        if (
-            self::isNullable('bankAccount') &&
+        if (self::isNullable('bankAccount') &&
             array_key_exists('bankAccount', $data) &&
             is_null($data['bankAccount'])
         ) {

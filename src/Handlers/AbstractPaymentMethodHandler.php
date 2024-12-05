@@ -323,8 +323,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             }
 
             $paymentMethodType = $stateData['paymentMethod']['type'];
-            if (
-                $paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
+            if ($paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
                 $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
             ) {
                 $this->ratePayFingerprintParamsProvider->clear();
@@ -658,8 +657,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $paymentRequest->setReturnUrl($transaction->getReturnUrl());
         }
 
-        if (
-            $paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
+        if ($paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
             $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
         ) {
             $paymentRequest->setDeviceFingerprint($this->ratePayFingerprintParamsProvider->getToken());

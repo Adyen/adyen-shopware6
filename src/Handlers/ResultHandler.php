@@ -117,8 +117,7 @@ class ResultHandler
         $result = $this->paymentResponseHandlerResult->createFromPaymentResponse($paymentResponse);
         $requestResponse = $request->getMethod() === 'GET' ? $request->query->all() : $request->request->all();
 
-        if (
-            'RedirectShopper' === $result->getResultCode() ||
+        if ('RedirectShopper' === $result->getResultCode() ||
             (
                 $salesChannelContext->getPaymentMethod()->getFormattedHandlerIdentifier() ===
                 'handler_adyen_bancontactmobilepaymentmethodhandler' &&
