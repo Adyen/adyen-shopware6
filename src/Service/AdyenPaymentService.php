@@ -48,7 +48,7 @@ class AdyenPaymentService
 
     public function __construct(
         AdyenPaymentRepository $adyenPaymentRepository,
-        EntityRepository $orderTransactionRepository,
+        EntityRepository $orderTransactionRepository
     ) {
         $this->adyenPaymentRepository = $adyenPaymentRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
