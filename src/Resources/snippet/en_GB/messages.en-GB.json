@@ -11,6 +11,7 @@
             "deductedAmount": "Deducted Amount",
             "remainingAmount": "Remaining amount",
             "discount": "Giftcard discount"
-        }
+        },
+        "unsuccessful_adyen_transaction": "Payment with Bancontact mobile was unsuccessful. Please change the payment method or try again."
     }
 }

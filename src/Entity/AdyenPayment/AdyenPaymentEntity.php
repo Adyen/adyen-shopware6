@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Entity\AdyenPayment;
 
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
@@ -95,6 +96,11 @@ class AdyenPaymentEntity extends Entity
      * @var \DateTimeInterface|null
      */
     protected $updatedAt;
+
+    /**
+     * @var OrderTransactionEntity
+     */
+    protected OrderTransactionEntity $orderTransaction;
 
     /**
      * @return string
@@ -171,7 +177,7 @@ class AdyenPaymentEntity extends Entity
     /**
      * @param int $orderTransactionId
      */
-    public function setEventCode(int $orderTransactionId): void
+    public function setOrderTransactionId(int $orderTransactionId): void
     {
         $this->orderTransactionId = $orderTransactionId;
     }
@@ -278,5 +284,21 @@ class AdyenPaymentEntity extends Entity
     public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->createdAt;
+    }
+
+    /**
+     * @return OrderTransactionEntity
+     */
+    public function getOrderTransaction(): OrderTransactionEntity
+    {
+        return $this->orderTransaction;
+    }
+
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     */
+    public function setOrderTransaction(OrderTransactionEntity $orderTransaction): void
+    {
+        $this->orderTransaction = $orderTransaction;
     }
 }

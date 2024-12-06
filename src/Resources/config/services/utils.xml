@@ -17,6 +17,9 @@
         <service id="Adyen\Shopware\Util\Currency"/>
         <service id="Adyen\Shopware\Util\Idempotency"/>
         <service id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
+        <service id="Adyen\Shopware\Util\ShopwarePaymentTokenValidator">
+            <argument type="service" id="Shopware\Core\Checkout\Payment\Cart\Token\JWTFactoryV2"/>
+        </service>
         <service id="Adyen\Shopware\Util\DataArrayValidator"/>
     </services>
 </container>
