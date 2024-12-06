@@ -97,6 +97,10 @@
             <argument type="service" id="order_transaction.repository"/>
         </service>
 
+        <service id="Adyen\Shopware\Service\FetchLogosService" public="true" class="Adyen\Shopware\Service\FetchLogosService">
+            <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
+        </service>
+
         <!--Service decorators-->
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"
                  decorates="Shopware\Storefront\Framework\Cookie\CookieProviderInterface">

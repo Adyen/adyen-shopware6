@@ -127,6 +127,18 @@ class RefundWebhookHandler implements WebhookHandlerInterface
                 $notificationEntity->getOriginalReference()
             );
 
+            if ($adyenPayment === null) {
+                $this->logger->warning(
+                    'Adyen payment entity not found for the given notification.',
+                    [
+                        'originalReference' => $notificationEntity->getOriginalReference(),
+                        'notificationVars' => $notificationEntity->getVars()
+                    ]
+                );
+
+                return;
+            }
+
             $this->adyenPaymentService->updateTotalRefundedAmount(
                 $adyenPayment,
                 (int) $notificationEntity->getAmountValue()

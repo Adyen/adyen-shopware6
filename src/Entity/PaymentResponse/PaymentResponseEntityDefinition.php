@@ -26,7 +26,6 @@ namespace Adyen\Shopware\Entity\PaymentResponse;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
@@ -59,11 +58,7 @@ class PaymentResponseEntityDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
-            (new FkField(
-                'order_transaction_id',
-                'orderTransactionId',
-                OrderTransactionDefinition::class
-            ))->addFlags(new Required()),
+            new IdField('order_transaction_id', 'orderTransactionId'),
             new StringField('result_code', 'resultCode'),
             new StringField('pspreference', 'pspreference'),
             new LongTextField('response', 'response'),

@@ -171,6 +171,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 /** @var NotificationEntity $notification */
                 $logContext = ['eventCode' => $notification->getEventCode()];
 
+                if (is_null($notification->getMerchantReference())) {
+                    continue;
+                }
+
                 /*
                  * Before processing any notification, factory should be created first.
                  * It checks the supported EventCode to use related class in the factory.
