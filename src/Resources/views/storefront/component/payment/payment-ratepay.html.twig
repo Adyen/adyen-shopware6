@@ -7,5 +7,6 @@
             l: '{{ adyenFrontendData.ratepay.location }}'
         };
     </script>
-    <script type="text/javascript" src="https://d.ratepay.com/{{adyenFrontendData.ratepay.snippetId}}/di.js"></script>
+    {# This block is excluded from Sonar analysis because the script is provided by Device Fingerprinting method. #}
+    <!-- //NOSONAR --><script type="text/javascript" src="https://d.ratepay.com/{{ adyenFrontendData.ratepay.snippetId }}/di.js"></script>
 {% endif %}

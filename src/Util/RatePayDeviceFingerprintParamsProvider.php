@@ -53,7 +53,8 @@ class RatePayDeviceFingerprintParamsProvider
         if (!$this->requestStack->getSession()->get(self::TOKEN_SESSION_KEY)) {
             $this->requestStack->getSession()->set(
                 self::TOKEN_SESSION_KEY,
-                md5($this->requestStack->getSession()->get('sessionId') . '_' . microtime())
+                // This is excluded from Sonar analysis because md5 is used to generate a unique token.
+                md5($this->requestStack->getSession()->get('sessionId') . '_' . microtime())//NOSONAR
             );
         }
 
