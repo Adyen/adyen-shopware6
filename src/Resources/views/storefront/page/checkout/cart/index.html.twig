@@ -7,27 +7,3 @@
     {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
     {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
 {% endblock %}
-
-{% block page_checkout_container %}
-    {% if page.cart.lineItems.count is same as(0) %}
-        {{ parent() }}
-        {% if  page.extensions['errorCodes'].errorCode == 'UNSUCCESSFUL_ADYEN_TRANSACTION'%}
-            {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
-                type: 'danger',
-                content: 'adyen.unsuccessful_adyen_transaction' | trans
-            } %}
-        {% endif %}
-    {% else %}
-        {{ parent() }}
-    {% endif %}
-{% endblock %}
-
-{% block page_checkout_cart_header %}
-    {{ parent() }}
-    {% if page.extensions['errorCodes'].errorCode == 'UNSUCCESSFUL_ADYEN_TRANSACTION'%}
-        {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
-            type: 'danger',
-            content: 'adyen.unsuccessful_adyen_transaction' | trans
-        } %}
-    {% endif %}
-{% endblock %}
