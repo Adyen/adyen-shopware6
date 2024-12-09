@@ -1,0 +1,12 @@
+{% if payment.formattedHandlerIdentifier is same as('handler_adyen_ratepaydirectdebitpaymentmethodhandler')
+    or payment.formattedHandlerIdentifier is same as('handler_adyen_ratepaypaymentmethodhandler') %}
+    <script type="text/javascript">
+        const di = {
+            t: '{{ adyenFrontendData.ratepay.token }}',
+            v: '{{ adyenFrontendData.ratepay.snippetId }}',
+            l: '{{ adyenFrontendData.ratepay.location }}'
+        };
+    </script>
+    {# This block is excluded from Sonar analysis because the script is provided by Device Fingerprinting method. #}
+    <!-- //NOSONAR --><script type="text/javascript" src="https://d.ratepay.com/{{ adyenFrontendData.ratepay.snippetId }}/di.js"></script>
+{% endif %}

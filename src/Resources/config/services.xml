@@ -82,6 +82,7 @@
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsFilterService">
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService" />
             <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute" />
             <argument type="service" id="payment_method.repository"/>
@@ -95,6 +96,7 @@
         <service id="Adyen\Shopware\Service\AdyenPaymentService">
             <argument type="service" id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository"/>
             <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStructFactory"/>
         </service>
 
         <service id="Adyen\Shopware\Service\FetchLogosService" public="true" class="Adyen\Shopware\Service\FetchLogosService">
