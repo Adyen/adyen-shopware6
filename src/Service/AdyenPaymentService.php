@@ -29,11 +29,14 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Exception\InvalidTransactionException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class AdyenPaymentService
 {
@@ -167,5 +170,25 @@ class AdyenPaymentService
                 'totalRefunded' => $refundedAmount
             ]
         ], Context::createDefaultContext());
+    }
+
+    public function getPaymentTransactionStruct(
+        string $orderTransactionId,
+        SalesChannelContext $context
+    ): AsyncPaymentTransactionStruct {
+        $criteria = new Criteria([$orderTransactionId]);
+        $criteria->setTitle('payment-service::load-transaction');
+        $criteria->addAssociation('order');
+        $criteria->addAssociation('paymentMethod.appPaymentMethod.app');
+        $criteria->addAssociation('stateMachineState');
+
+        /** @var OrderTransactionEntity|null $orderTransaction */
+        $orderTransaction = $this->orderTransactionRepository->search($criteria, $context->getContext())->first();
+
+        if ($orderTransaction === null || $orderTransaction->getOrder() === null) {
+            throw new InvalidTransactionException($orderTransactionId);
+        }
+
+        return new AsyncPaymentTransactionStruct($orderTransaction, $orderTransaction->getOrder(), '');
     }
 }

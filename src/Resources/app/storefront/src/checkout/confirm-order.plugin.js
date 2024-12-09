@@ -62,6 +62,12 @@ export default class ConfirmOrderPlugin extends Plugin {
                 // replaces confirm button with adyen pay button for paywithgoogle, applepay etc.
                 this.initializeCustomPayButton();
             }
+
+            if (this.selectedAdyenPaymentMethod === "klarna_b2b") {
+                this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
+                return;
+            }
+
             if (adyenConfiguration.updatablePaymentMethods.includes(this.selectedAdyenPaymentMethod) && !this.stateData) {
                 // create inline component for cards etc. and set event listener for submit button to confirm payment component
                 this.renderPaymentComponent(this.selectedAdyenPaymentMethod);
@@ -125,6 +131,36 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (!form.checkValidity()) {
             return;
         }
+
+        if (this.selectedAdyenPaymentMethod === "klarna_b2b") {
+            const companyNameElement = DomAccess.querySelector(document, '#adyen-company-name');
+            const registrationNumberElement = DomAccess.querySelector(document, '#adyen-registration-number');
+
+            const companyName = companyNameElement ? companyNameElement.value.trim() : '';
+            const registrationNumber = registrationNumberElement ? registrationNumberElement.value.trim() : '';
+            const companyNameError = DomAccess.querySelector(document, '#adyen-company-name-error');
+            const registrationNumberError = DomAccess.querySelector(document, '#adyen-registration-number-error');
+            companyNameError.style.display = 'none';
+            registrationNumberError.style.display = 'none';
+
+            let hasError = false;
+
+            if (!companyName) {
+                companyNameError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (!registrationNumber) {
+                registrationNumberError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (hasError) {
+                event.preventDefault();
+                return;
+            }
+        }
+
         event.preventDefault();
         ElementLoadingIndicatorUtil.create(document.body);
         const formData = FormSerializeUtil.serialize(form);
@@ -245,6 +281,17 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.errorUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', order.id);
+
+        if (adyenCheckoutOptions.selectedPaymentMethodHandler === 'handler_adyen_billiepaymentmethodhandler') {
+            const companyNameElement = DomAccess.querySelector(document, '#adyen-company-name');
+            const companyName = companyNameElement ? companyNameElement.value : '';
+            const registrationNumberElement = DomAccess.querySelector(document, '#adyen-registration-number');
+            const registrationNumber = registrationNumberElement ? registrationNumberElement.value : '';
+
+            extraParams.companyName = companyName;
+            extraParams.registrationNumber = registrationNumber;
+        }
+
         let params = {
             'orderId': this.orderId,
             'finishUrl': this.finishUrl.toString(),
