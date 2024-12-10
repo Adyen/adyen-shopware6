@@ -272,10 +272,10 @@ class ConfigurationService
     }
 
     /**
-     * @param string $salesChannelId
+     * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function isApplePayExpressCheckoutEnabled(string $salesChannelId)
+    public function isApplePayExpressCheckoutEnabled(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.applePayExpressCheckoutEnabled',
@@ -284,10 +284,10 @@ class ConfigurationService
     }
 
     /**
-     * @param string $salesChannelId
+     * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function isGooglePayExpressCheckoutEnabled(string $salesChannelId)
+    public function isGooglePayExpressCheckoutEnabled(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googlePayExpressCheckoutEnabled',
@@ -296,10 +296,10 @@ class ConfigurationService
     }
 
     /**
-     * @param string $salesChannelId
+     * @param string|null $salesChannelId
      * @return array|mixed|null
      */
-    public function isPayPalExpressCheckoutEnabled(string $salesChannelId)
+    public function isPayPalExpressCheckoutEnabled(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.payPalExpressCheckoutEnabled',
