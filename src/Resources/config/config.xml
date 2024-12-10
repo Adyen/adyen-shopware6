@@ -190,6 +190,30 @@
         </input-field>
     </card>
     <card>
+        <title>Express checkout</title>
+        <input-field type="bool">
+            <name>applePayExpressCheckoutEnabled</name>
+            <label>Enable Apple Pay express checkout</label>
+            <helpText>
+                This enables Apple Pay express checkout payments on the product and cart pages. For Apple Pay method to be available, it must also be activated on the Adyen account and added to the desired sales channel.
+            </helpText>
+        </input-field>
+        <input-field type="bool">
+            <name>googlePayExpressCheckoutEnabled</name>
+            <label>Enable Google Pay express checkout</label>
+            <helpText>
+                This enables Google Pay express checkout payments on the product and cart pages. For Google Pay method to be available, it must also be activated on the Adyen account and added to the desired sales channel.
+            </helpText>
+        </input-field>
+        <input-field type="bool">
+            <name>payPalExpressCheckoutEnabled</name>
+            <label>Enable PayPal express checkout</label>
+            <helpText>
+                This enables PayPal express checkout payments on the product and cart pages. For PayPal method to be available, it must also be activated on the Adyen account and added to the desired sales channel.
+            </helpText>
+        </input-field>
+    </card>
+    <card>
         <title>Adyen Giving</title>
         <input-field type="bool">
             <name>adyenGivingEnabled</name>

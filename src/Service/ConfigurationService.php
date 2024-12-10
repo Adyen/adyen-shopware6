@@ -275,6 +275,42 @@ class ConfigurationService
      * @param string $salesChannelId
      * @return array|mixed|null
      */
+    public function isApplePayExpressCheckoutEnabled(string $salesChannelId)
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.applePayExpressCheckoutEnabled',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string $salesChannelId
+     * @return array|mixed|null
+     */
+    public function isGooglePayExpressCheckoutEnabled(string $salesChannelId)
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.googlePayExpressCheckoutEnabled',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string $salesChannelId
+     * @return array|mixed|null
+     */
+    public function isPayPalExpressCheckoutEnabled(string $salesChannelId)
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.payPalExpressCheckoutEnabled',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string $salesChannelId
+     * @return array|mixed|null
+     */
     public function isAdyenGivingEnabled(string $salesChannelId)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.adyenGivingEnabled', $salesChannelId);
