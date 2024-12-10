@@ -160,7 +160,7 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         }
         foreach ($paymentMethodsResponse->getPaymentMethods() as $paymentMethodConfig) {
             if (($paymentMethodConfig->getType() ?? null) == $type) {
-                return $paymentMethodConfig;
+                return $paymentMethodConfig->toArray();
             }
         }
 
