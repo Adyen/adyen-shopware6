@@ -124,7 +124,7 @@ class RefundWebhookHandler implements WebhookHandlerInterface
 
         try {
             $adyenPayment = $this->adyenPaymentService->getAdyenPayment(
-                $notificationEntity->getOriginalReference()
+                $notificationEntity->getPspreference()
             );
 
             if ($adyenPayment === null) {
