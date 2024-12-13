@@ -15,8 +15,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       fail-fast: false
-    # if: ${{ github.actor != 'renovate[bot]' || github.actor != 'lgtm-com[bot]' }}
-    if: false
+    if: ${{ github.actor != 'renovate[bot]' || github.actor != 'lgtm-com[bot]' }}
     # Prevent bots from initiating E2E pipeline
     steps:
       - name: Clone Code
