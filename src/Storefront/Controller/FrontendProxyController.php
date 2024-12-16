@@ -26,10 +26,10 @@ namespace Adyen\Shopware\Storefront\Controller;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
+use Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
 use Adyen\Shopware\Exception\ValidationException;
-use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Util\ShopwarePaymentTokenValidator;
 use Error;
@@ -96,6 +96,12 @@ class FrontendProxyController extends StorefrontController
      * @var DonateController
      */
     private DonateController $donateController;
+
+    /**
+     * @var ExpressCheckoutController
+     */
+    private ExpressCheckoutController $expressCheckoutController;
+
     /**
      * @var ShopwarePaymentTokenValidator
      */
@@ -115,6 +121,7 @@ class FrontendProxyController extends StorefrontController
      * @param PaymentController $paymentController
      * @param OrderApiController $orderApiController
      * @param DonateController $donateController
+     * @param ExpressCheckoutController $expressCheckoutController
      * @param ShopwarePaymentTokenValidator $paymentTokenValidator
      * @param AdyenPaymentService $adyenPaymentService
      */
@@ -127,6 +134,7 @@ class FrontendProxyController extends StorefrontController
         PaymentController $paymentController,//NOSONAR
         OrderApiController $orderApiController,//NOSONAR
         DonateController $donateController,//NOSONAR
+        ExpressCheckoutController        $expressCheckoutController,
         ShopwarePaymentTokenValidator    $paymentTokenValidator,//NOSONAR
         AdyenPaymentService         $adyenPaymentService
     ) {//NOSONAR
@@ -138,6 +146,7 @@ class FrontendProxyController extends StorefrontController
         $this->paymentController = $paymentController;
         $this->orderApiController = $orderApiController;
         $this->donateController = $donateController;
+        $this->expressCheckoutController = $expressCheckoutController;
         $this->paymentTokenValidator = $paymentTokenValidator;
         $this->adyenPaymentService = $adyenPaymentService;
     }
@@ -379,5 +388,20 @@ class FrontendProxyController extends StorefrontController
     public function donate(Request $request, SalesChannelContext $context): JsonResponse
     {
         return $this->donateController->donate($request, $context);
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-express-checkout-config",
+     *     name="payment.adyen.proxy-express-checkout-config",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"POST"}
+     * )
+     */
+    public function getExpressCheckoutConfiguration(
+        Request $request,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse {
+        return $this->expressCheckoutController->getExpressCheckoutConfig($request, $salesChannelContext);
     }
 }

@@ -66,6 +66,12 @@
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
         </service>
+        <service id="Adyen\Shopware\Service\ExpressCheckoutService" autowire="true">
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="country.repository"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
+        </service>
         <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
             <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
