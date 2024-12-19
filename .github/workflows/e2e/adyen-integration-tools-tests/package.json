@@ -1,0 +1,23 @@
+{
+  "name": "pluginstest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test:ci:shopware": "npx playwright test  --config=projects/shopware/shopwareCIContainer.config.cjs",
+    "test:adyenlocal:shopware": "npx playwright test --workers=1 --headed --project=chromium --config=projects/shopware/shopware.config.cjs",
+    "test:adyenlocal:shopware:headless": "npx playwright test --workers=1 --project=chromium --config=projects/shopware/shopware.config.cjs",
+    "test:adyenlocal:shopware:parallel": "npx playwright test --headed --project=chromium --config=projects/shopware/shopware.config.cjs",
+    "test:adyenlocal:shopware:headless:parallel": "npx playwright test --project=chromium --config=projects/shopware/shopware.config.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "1.48.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}

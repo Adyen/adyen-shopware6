@@ -2,10 +2,7 @@
 set -euo pipefail
 
 # Checkout E2E tests
-cd /tmp;
-git clone https://github.com/Adyen/adyen-integration-tools-tests.git;
-cd adyen-integration-tools-tests;
-git checkout $INTEGRATION_TESTS_BRANCH;
+cd /tmp/adyen-integration-tools-tests;
 
 # Setup environment
 rm -rf package-lock.json;
