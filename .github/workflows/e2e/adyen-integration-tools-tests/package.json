@@ -5,7 +5,15 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test:ci:shopware": "npx playwright test  --config=projects/shopware/shopwareCIContainer.config.cjs",
+    "test:ci:magento:all": "npx playwright test --config=projects/magento/magentoCIContainer.config.cjs",
+    "test:ci:magento": "npx playwright test --config=projects/magento/magentoCIContainer.config.cjs --project='backoffice' --project='user'",
+    "test:ci:magento:express-checkout": "npx playwright test --config=projects/magento/magentoCIContainer.config.cjs --project='express-checkout'",
+    "test:adyenlocal:magento": "npx playwright test --workers=1 --headed --project='backoffice' --project='user' --config=projects/magento/magento.config.cjs",
+    "test:adyenlocal:magento:headless": "npx playwright test --workers=1 --project=chromium --config=projects/magento/magento.config.cjs",
+    "test:adyenlocal:magento:parallel": "npx playwright test --headed --project=chromium --config=projects/magento/magento.config.cjs",
+    "test:adyenlocal:magento:headless:parallel": "npx playwright test --project=chromium --config=projects/magento/magento.config.cjs",
+    "test:adyenlocal:magento:wallet": "npx playwright test --workers=1 --headed --project='backoffice' --project='user' --grep @wallet --config=projects/magento/magento.config.cjs",
+    "test:ci:shopware": "npx playwright test --config=projects/shopware/shopwareCIContainer.config.cjs",
     "test:adyenlocal:shopware": "npx playwright test --workers=1 --headed --project=chromium --config=projects/shopware/shopware.config.cjs",
     "test:adyenlocal:shopware:headless": "npx playwright test --workers=1 --project=chromium --config=projects/shopware/shopware.config.cjs",
     "test:adyenlocal:shopware:parallel": "npx playwright test --headed --project=chromium --config=projects/shopware/shopware.config.cjs",
@@ -15,7 +23,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.48.1"
+    "@playwright/test": "^1.42.1"
   },
   "dependencies": {
     "dotenv": "^16.3.1"
