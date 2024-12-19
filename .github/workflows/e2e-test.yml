@@ -56,7 +56,6 @@ jobs:
       - name: Run E2E Tests
         run: docker compose -f .github/workflows/templates/docker-compose.playwright.yml run --rm playwright /e2e.sh
         env:
-          INTEGRATION_TESTS_BRANCH: develop
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
           PAYPAL_USERNAME: ${{secrets.PLAYWRIGHT_PAYPAL_USERNAME}}
           PAYPAL_PASSWORD: ${{secrets.PLAYWRIGHT_PAYPAL_PASSWORD}}

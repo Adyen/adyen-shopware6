@@ -10,13 +10,12 @@ services:
     cap_add:
       - SYS_ADMIN
     environment:
-      - INTEGRATION_TESTS_BRANCH
       - SHOPWARE_BASE_URL
       - PAYPAL_USERNAME
       - PAYPAL_PASSWORD
     volumes:
       - ../scripts/e2e.sh:/e2e.sh
-      #- ../e2e/:/tmp/
+      - ../e2e/adyen-integration-tools-tests/:/tmp/adyen-integration-tools-tests/
       - ../../../test-report:/tmp/test-report
 
 networks:
