@@ -62,6 +62,12 @@ export default class ConfirmOrderPlugin extends Plugin {
                 // replaces confirm button with adyen pay button for paywithgoogle, applepay etc.
                 this.initializeCustomPayButton();
             }
+
+            if (this.selectedAdyenPaymentMethod === "klarna_b2b") {
+                this.confirmFormSubmit.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
+                return;
+            }
+
             if (adyenConfiguration.updatablePaymentMethods.includes(this.selectedAdyenPaymentMethod) && !this.stateData) {
                 // create inline component for cards etc. and set event listener for submit button to confirm payment component
                 this.renderPaymentComponent(this.selectedAdyenPaymentMethod);
@@ -125,6 +131,36 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (!form.checkValidity()) {
             return;
         }
+
+        if (this.selectedAdyenPaymentMethod === "klarna_b2b") {
+            const companyNameElement = DomAccess.querySelector(document, '#adyen-company-name');
+            const registrationNumberElement = DomAccess.querySelector(document, '#adyen-registration-number');
+
+            const companyName = companyNameElement ? companyNameElement.value.trim() : '';
+            const registrationNumber = registrationNumberElement ? registrationNumberElement.value.trim() : '';
+            const companyNameError = DomAccess.querySelector(document, '#adyen-company-name-error');
+            const registrationNumberError = DomAccess.querySelector(document, '#adyen-registration-number-error');
+            companyNameError.style.display = 'none';
+            registrationNumberError.style.display = 'none';
+
+            let hasError = false;
+
+            if (!companyName) {
+                companyNameError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (!registrationNumber) {
+                registrationNumberError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (hasError) {
+                event.preventDefault();
+                return;
+            }
+        }
+
         event.preventDefault();
         ElementLoadingIndicatorUtil.create(document.body);
         const formData = FormSerializeUtil.serialize(form);
@@ -245,6 +281,17 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.errorUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', order.id);
+
+        if (adyenCheckoutOptions.selectedPaymentMethodHandler === 'handler_adyen_billiepaymentmethodhandler') {
+            const companyNameElement = DomAccess.querySelector(document, '#adyen-company-name');
+            const companyName = companyNameElement ? companyNameElement.value : '';
+            const registrationNumberElement = DomAccess.querySelector(document, '#adyen-registration-number');
+            const registrationNumber = registrationNumberElement ? registrationNumberElement.value : '';
+
+            extraParams.companyName = companyName;
+            extraParams.registrationNumber = registrationNumber;
+        }
+
         let params = {
             'orderId': this.orderId,
             'finishUrl': this.finishUrl.toString(),
@@ -412,11 +459,17 @@ export default class ConfirmOrderPlugin extends Plugin {
                 componentConfig.onCancel(data, component, this);
             },
             onError: (error, component) => {
-                if (component.props.name === 'PayPal' && error.name === 'CANCEL') {
+                if (component.props.name === 'PayPal') {
                     this._client.post(
                         `${adyenCheckoutOptions.cancelOrderTransactionUrl}`,
-                        JSON.stringify({orderId: this.orderId})
+                        JSON.stringify({orderId: this.orderId}),
+                        () => {
+                            ElementLoadingIndicatorUtil.remove(document.body);
+                            componentConfig.onError(error, component, this);
+                        }
                     );
+
+                    return;
                 }
 
                 ElementLoadingIndicatorUtil.remove(document.body);
@@ -500,8 +553,8 @@ export default class ConfirmOrderPlugin extends Plugin {
     getSelectedPaymentMethodKey() {
         return Object.keys(
             adyenConfiguration.paymentMethodTypeHandlers).find(
-                key => adyenConfiguration.paymentMethodTypeHandlers[key] ===
-                    adyenCheckoutOptions.selectedPaymentMethodHandler);
+            key => adyenConfiguration.paymentMethodTypeHandlers[key] ===
+                adyenCheckoutOptions.selectedPaymentMethodHandler);
     }
 
     mountCustomPayButton(paymentMethodInstance) {
@@ -578,16 +631,16 @@ export default class ConfirmOrderPlugin extends Plugin {
 
             let shoppingCartSummaryDetails =
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.translationAdyenGiftcardDiscount +
+                adyenCheckoutOptions.translationAdyenGiftcardDiscount +
                 '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.currencySymbol + giftcardDiscount +
+                adyenCheckoutOptions.currencySymbol + giftcardDiscount +
                 '</dd>' +
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.translationAdyenGiftcardRemainingAmount +
+                adyenCheckoutOptions.translationAdyenGiftcardRemainingAmount +
                 '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.currencySymbol + remainingAmount +
+                adyenCheckoutOptions.currencySymbol + remainingAmount +
                 '</dd>';
 
             this.shoppingCartSummaryBlock[0].innerHTML += shoppingCartSummaryDetails;

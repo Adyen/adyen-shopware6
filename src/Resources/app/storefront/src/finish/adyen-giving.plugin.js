@@ -29,7 +29,8 @@ export default class AdyenGivingPlugin extends Plugin {
     init() {
         this._client = new HttpClient();
         this.adyenCheckout = Promise;
-        this.initializeCheckoutComponent().bind(this);
+        let boundInitializeCheckout = this.initializeCheckoutComponent.bind(this);
+        boundInitializeCheckout();
     }
 
     async initializeCheckoutComponent () {

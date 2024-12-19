@@ -28,15 +28,18 @@ namespace Adyen\Shopware\Handlers;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Model\Checkout\CheckoutPaymentMethod;
+use Adyen\Model\Checkout\Company;
 use Adyen\Model\Checkout\EncryptedOrderData;
 use Adyen\Model\Checkout\LineItem;
-use Adyen\Model\Checkout\PaymentRequest;
+use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Model\Checkout\Address;
 use Adyen\Model\Checkout\Amount;
 use Adyen\Model\Checkout\BrowserInfo;
 use Adyen\Model\Checkout\Name;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
+use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
@@ -46,6 +49,7 @@ use Adyen\Shopware\Service\OrdersService;
 use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
+use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -108,6 +112,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @var CheckoutStateDataValidator
      */
     protected CheckoutStateDataValidator $checkoutStateDataValidator;
+
+    /**
+     * @var RatePayDeviceFingerprintParamsProvider
+     */
+    protected RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
 
     /**
      * @var PaymentStateDataService
@@ -181,10 +190,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * AbstractPaymentMethodHandler constructor.
      *
      * @param OrdersService $ordersService
-     * @param ClientService $clientService
      * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
+     * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -203,6 +213,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         ClientService $clientService,
         Currency $currency,
         CheckoutStateDataValidator $checkoutStateDataValidator,
+        RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
         PaymentResponseHandler $paymentResponseHandler,
@@ -220,6 +231,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->currency = $currency;
         $this->configurationService = $configurationService;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
+        $this->ratePayFingerprintParamsProvider = $ratePayFingerprintParamsProvider;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
@@ -280,6 +292,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
          */
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
+        $companyName = $dataBag->get('companyName');
+        $registrationNumber = $dataBag->get('registrationNumber');
+
+        $billieData = [
+            'companyName' => $companyName,
+            'registrationNumber' => $registrationNumber,
+        ];
+
         /*
          * If there are more than one stateData and /payments calls have been completed,
          * check the remaining order amount for final /payments call.
@@ -292,13 +312,21 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $transaction,
                 $stateData,
                 $this->remainingAmount,
-                $this->orderRequestData
+                $this->orderRequestData,
+                $billieData
             );
             //make /payments call
             $this->paymentsCall($salesChannelContext, $request, $transaction);
             //Remove all state data if stored or from giftcard
             if ($storedStateData) {
                 $this->paymentStateDataService->deletePaymentStateDataFromId($storedStateData['id']);
+            }
+
+            $paymentMethodType = $stateData['paymentMethod']['type'];
+            if ($paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
+                $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
+            ) {
+                $this->ratePayFingerprintParamsProvider->clear();
             }
         }
 
@@ -349,7 +377,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         return $this->symfonyRouter->generate(
             'payment.adyen.proxy-finalize-transaction',
-            ['_sw_payment_token' => $token, 'orderId' => $transaction->getOrder()->getId()],
+            [
+                '_sw_payment_token' => $token,
+                'orderId' => $transaction->getOrder()->getId(),
+                'transactionId' => $transaction->getOrderTransaction()->getId()
+            ],
             UrlGeneratorInterface::ABSOLUTE_URL
         );
     }
@@ -397,7 +429,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param array $request
      * @param int|null $partialAmount
      * @param array|null $adyenOrderData
-     * @return PaymentRequest
+     * @return IntegrationPaymentRequest
      */
     protected function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
@@ -405,9 +437,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         array $request = [],
         ?int $partialAmount = null,
         ?array $adyenOrderData = []
-    ): PaymentRequest {
+    ): IntegrationPaymentRequest {
 
-        $paymentRequest = new PaymentRequest($request);
+        $paymentRequest = new IntegrationPaymentRequest($request);
 
         if (!empty($request['additionalData'])) {
             $stateDataAdditionalData = $request['additionalData'];
@@ -591,6 +623,19 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setShopperIP($shopperIp);
         $paymentRequest->setShopperReference($shopperReference);
 
+        if (!empty($request['billieData'])) {
+            $billieData = $request['billieData'];
+
+            $companyName = $billieData['companyName'] ?? '';
+            $registrationNumber = $billieData['registrationNumber'] ?? '';
+
+            $company = new Company();
+            $company
+                ->setRegistrationNumber($registrationNumber)
+                ->setName($companyName);
+            $paymentRequest->setCompany($company);
+        }
+
         //Building payment data
         $amount = $partialAmount ?: $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
@@ -610,6 +655,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $paymentRequest->setReturnUrl($this->getReturnUrl($transaction));
         } else {
             $paymentRequest->setReturnUrl($transaction->getReturnUrl());
+        }
+
+        if ($paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
+            $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
+        ) {
+            $paymentRequest->setDeviceFingerprint($this->ratePayFingerprintParamsProvider->getToken());
         }
 
         if (static::$isOpenInvoice) {
@@ -718,9 +769,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $transaction,
         $stateData,
         $partialAmount,
-        $orderRequestData
+        $orderRequestData,
+        $billieData = []
     ) {
         $transactionId = $transaction->getOrderTransaction()->getId();
+        $stateData['billieData'] = $billieData;
         try {
             $request = $this->preparePaymentsRequest(
                 $salesChannelContext,
@@ -746,13 +799,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     /**
      * @param SalesChannelContext $salesChannelContext
-     * @param PaymentRequest $request
+     * @param IntegrationPaymentRequest $request
      * @param AsyncPaymentTransactionStruct $transaction
      * @return void
      */
     private function paymentsCall(
         SalesChannelContext $salesChannelContext,
-        PaymentRequest $request,
+        IntegrationPaymentRequest $request,
         AsyncPaymentTransactionStruct $transaction
     ): void {
         $transactionId = $transaction->getOrderTransaction()->getId();
