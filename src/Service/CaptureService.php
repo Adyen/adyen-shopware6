@@ -334,11 +334,13 @@ class CaptureService
                 continue;
             }
 
+            $highestTaxRate = $lineItem->getPrice()->getTaxRules()->highestRate();
+
             $lineItemData = [
                 'amountIncludingTax' => ceil($lineItem->getPrice()->getTotalPrice() * 100),
                 'description' => $lineItem->getLabel(),
                 'taxAmount' => intval($lineItem->getPrice()->getCalculatedTaxes()->getAmount() * 100),
-                'taxPercentage' => $lineItem->getPrice()->getTaxRules()->highestRate()->getPercentage() * 10,
+                'taxPercentage' => $highestTaxRate !== null ? ($highestTaxRate->getPercentage() * 10) : 0,
                 'quantity' => $lineItem->getQuantity(),
                 'id' => $lineItem->getId()
             ];
