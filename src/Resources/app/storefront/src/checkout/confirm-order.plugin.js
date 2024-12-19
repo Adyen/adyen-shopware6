@@ -459,11 +459,17 @@ export default class ConfirmOrderPlugin extends Plugin {
                 componentConfig.onCancel(data, component, this);
             },
             onError: (error, component) => {
-                if (component.props.name === 'PayPal' && error.name === 'CANCEL') {
+                if (component.props.name === 'PayPal') {
                     this._client.post(
                         `${adyenCheckoutOptions.cancelOrderTransactionUrl}`,
-                        JSON.stringify({orderId: this.orderId})
+                        JSON.stringify({orderId: this.orderId}),
+                        () => {
+                            ElementLoadingIndicatorUtil.remove(document.body);
+                            componentConfig.onError(error, component, this);
+                        }
                     );
+
+                    return;
                 }
 
                 ElementLoadingIndicatorUtil.remove(document.body);
@@ -547,8 +553,8 @@ export default class ConfirmOrderPlugin extends Plugin {
     getSelectedPaymentMethodKey() {
         return Object.keys(
             adyenConfiguration.paymentMethodTypeHandlers).find(
-                key => adyenConfiguration.paymentMethodTypeHandlers[key] ===
-                    adyenCheckoutOptions.selectedPaymentMethodHandler);
+            key => adyenConfiguration.paymentMethodTypeHandlers[key] ===
+                adyenCheckoutOptions.selectedPaymentMethodHandler);
     }
 
     mountCustomPayButton(paymentMethodInstance) {
@@ -625,16 +631,16 @@ export default class ConfirmOrderPlugin extends Plugin {
 
             let shoppingCartSummaryDetails =
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.translationAdyenGiftcardDiscount +
+                adyenCheckoutOptions.translationAdyenGiftcardDiscount +
                 '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.currencySymbol + giftcardDiscount +
+                adyenCheckoutOptions.currencySymbol + giftcardDiscount +
                 '</dd>' +
                 '<dt class="col-7 checkout-aside-summary-label checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.translationAdyenGiftcardRemainingAmount +
+                adyenCheckoutOptions.translationAdyenGiftcardRemainingAmount +
                 '</dt>' +
                 '<dd class="col-5 checkout-aside-summary-value checkout-aside-summary-total adyen-giftcard-summary">' +
-                    adyenCheckoutOptions.currencySymbol + remainingAmount +
+                adyenCheckoutOptions.currencySymbol + remainingAmount +
                 '</dd>';
 
             this.shoppingCartSummaryBlock[0].innerHTML += shoppingCartSummaryDetails;
