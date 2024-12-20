@@ -33,7 +33,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
             "paypal": {},
             "applepay": {}
         };
-        this.quantityInput = document.querySelector('.product-detail-quantity-input');
+        this.quantityInput = document.getElementById('productDetailPageBuyProductForm')
+            .querySelector('.js-quantity-selector');
         this.listenOnQuantityChange();
         this.mountExpressCheckoutComponents({
             countryCode: adyenExpressCheckoutOptions.countryCode,
