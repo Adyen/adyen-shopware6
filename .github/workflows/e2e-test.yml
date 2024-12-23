@@ -74,14 +74,7 @@ jobs:
           mkdir -p logs
 
           # Copy logs from Shopware container to the host
-          docker cp shopware6:var/log/adyen logs
-
-      - name: Upload Adyen Logs
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: adyen-logs
-          path: logs/adyen.log
+          docker cp shopware6:~/html/var/log/adyen logs
 
       - name: Upload Adyen api Logs
         if: always()
