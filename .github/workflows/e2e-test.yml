@@ -66,3 +66,15 @@ jobs:
         with:
           name: html-report
           path: test-report
+
+      - name: Upload Adyen Logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: adyen-logs
+          path: var/log/adyen/adyen.log
+
+      - name: Upload Adyen api Logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: adyen-api-logs
+          path: var/log/adyen/api.log
