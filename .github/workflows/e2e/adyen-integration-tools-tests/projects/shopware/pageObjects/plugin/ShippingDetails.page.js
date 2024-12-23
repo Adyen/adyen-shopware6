@@ -19,11 +19,11 @@ export class ShippingDetailsPage extends SPRBasePage {
         this.editSalutationDropDown = this.editAddressEditorWrapper.locator("#billing-addresspersonalSalutation");
         this.editFirstNameField = this.editAddressEditorWrapper.locator("#billing-addresspersonalFirstName");
         this.editLastNameField = this.editAddressEditorWrapper.locator("#billing-addresspersonalLastName");
-        this.editAddressField = this.editAddressEditorWrapper.locator("#billing-addressAddressStreet");
-        this.editPostCodeField = this.editAddressEditorWrapper.locator("#billing-addressAddressZipcode");
-        this.editCityField = this.editAddressEditorWrapper.locator("#billing-addressAddressCity");
-        this.editCountrySelectDropdown = this.editAddressEditorWrapper.locator("#billing-addressAddressCountry");
-        this.editStateSelectDropDown = this.editAddressEditorWrapper.locator("#billing-addressAddressCountryState");
+        this.editAddressField = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressStreet");
+        this.editPostCodeField = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressZipcode");
+        this.editCityField = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressCity");
+        this.editCountrySelectDropdown = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressCountry");
+        this.editStateSelectDropDown = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressCountryState");
         
         this.editSaveAddressButton = this.editAddressEditorWrapper.locator("button[type='submit']");
         
