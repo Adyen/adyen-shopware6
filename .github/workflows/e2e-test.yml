@@ -68,12 +68,14 @@ jobs:
           path: test-report
 
       - name: Upload Adyen Logs
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: adyen-logs
           path: var/log/adyen/adyen.log
 
       - name: Upload Adyen api Logs
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: adyen-api-logs
