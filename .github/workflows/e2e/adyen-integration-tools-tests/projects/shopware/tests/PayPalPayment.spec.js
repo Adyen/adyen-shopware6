@@ -12,7 +12,7 @@ import { PayPalPaymentPage } from "../../common/redirect/PayPalPaymentPage.js";
 const paymentResources = new PaymentResources();
 const users = paymentResources.guestUser;
 
-test.describe.skip("Payment via PayPal", () => {
+test.describe("Payment via PayPal", () => {
     test.beforeEach(async ({ page }) => {
         await goToShippingWithFullCart(page);
         await proceedToPaymentAs(page, users.regular);

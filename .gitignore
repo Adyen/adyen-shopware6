@@ -5,3 +5,7 @@
 
 #composer
 vendor/
+
+#github actions
+.github/test-report
+.github/workflows/e2e/adyen-integration-tools-tests/projects/shopware/test-results

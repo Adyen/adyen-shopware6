@@ -18,6 +18,7 @@ test.describe.parallel("Payment via ClearPay", () => {
         await doPrePaymentChecks(page);
     });
 
+    // Requires specific locations (VPN)
     test.skip("should succeed", async ({ page }) => {
 
         await payViaClearPay(page);
