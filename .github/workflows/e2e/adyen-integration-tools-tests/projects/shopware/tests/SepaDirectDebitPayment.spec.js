@@ -20,7 +20,7 @@ test.describe("Payment via SEPA Direct debit", () => {
     });
 
     // Depends on ECP-8525
-    test.fixme("should succeed", async ({ page }) => {
+    test("should succeed", async ({ page }) => {
         const paymentDetailPage = new PaymentDetailsPage(page);
         const sepaPaymentSection = await paymentDetailPage.selectSepaDirectDebit();
 
