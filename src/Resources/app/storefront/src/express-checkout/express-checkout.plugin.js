@@ -27,8 +27,28 @@ export default class ExpressCheckoutPlugin extends Plugin {
     init() {
         this._client = new HttpClient();
         this.paymentMethodInstance = null;
+        const userLoggedIn = adyenExpressCheckoutOptions.userLoggedIn === "1";
         this.paymentMethodSpecificConfig = {
-            "paywithgoogle": {},
+            "paywithgoogle": {
+                onClick: (resolve, reject) => {
+                    console.log("Google Pay button clicked!");
+                    resolve();
+                },
+                isExpress: true,
+                callBackIntents: adyenExpressCheckoutOptions.userLoggedIn === "" ? ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION'] : [],
+                shippingAddressRequired: adyenExpressCheckoutOptions.userLoggedIn === "",
+                emailRequired: adyenExpressCheckoutOptions.userLoggedIn === "",
+                shippingAddressParameters: {
+                    allowedCountryCodes: [],
+                    phoneNumberRequired: true
+                },
+                shippingOptionRequired: false,
+                buttonSizeMode: "fill",
+                onAuthorized: paymentData => {
+                    console.log('Shopper details', paymentData);
+                },
+                buttonColor : "white"
+            },
             "googlepay": {},
             "paypal": {},
             "applepay": {}
@@ -114,20 +134,36 @@ export default class ExpressCheckoutPlugin extends Plugin {
     }
 
     listenOnQuantityChange() {
-        this.quantityInput?.addEventListener('change', (event) => {
-            const newQuantity = event.target.value;
-            const productMeta = document.querySelector('meta[itemprop="productID"]');
-            const productId = productMeta ? productMeta.content : '-1';
-            this._client.post(
-                adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
-                JSON.stringify({
-                    quantity: newQuantity,
-                    productId: productId
-                }),
-                this.afterQuantityUpdated.bind(this)
-            );
+        if (this.quantityInput) {
+            this.quantityInput.addEventListener('change', (event) => {
+                const newQuantity = event.target.value;
+                const productMeta = document.querySelector('meta[itemprop="productID"]');
+                const productId = productMeta ? productMeta.content : '-1';
 
-        });
+                this._client.post(
+                    adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
+                    JSON.stringify({
+                        quantity: newQuantity,
+                        productId: productId
+                    }),
+                    this.afterQuantityUpdated.bind(this)
+                );
+            });
+        }
+        // this.quantityInput?.addEventListener('change', (event) => {
+        //     const newQuantity = event.target.value;
+        //     const productMeta = document.querySelector('meta[itemprop="productID"]');
+        //     const productId = productMeta ? productMeta.content : '-1';
+        //     this._client.post(
+        //         adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
+        //         JSON.stringify({
+        //             quantity: newQuantity,
+        //             productId: productId
+        //         }),
+        //         this.afterQuantityUpdated.bind(this)
+        //     );
+        //
+        // });
     }
 
     afterQuantityUpdated(response){

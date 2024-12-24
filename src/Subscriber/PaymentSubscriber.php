@@ -335,6 +335,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $salesChannelContext = $event->getSalesChannelContext();
         $productId = $page->getProduct()->getId();
 
+        $userLoggedIn = $salesChannelContext->getCustomer() !== null;
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -358,7 +360,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             'changedPayment' => false,
                             'paymentFailed' => true,
                         ]
-                    )
+                    ),
+                    'userLoggedIn' => (bool) $userLoggedIn
                     ],
                     $this->expressCheckoutService->getExpressCheckoutConfigOnProductPage(
                         $productId,

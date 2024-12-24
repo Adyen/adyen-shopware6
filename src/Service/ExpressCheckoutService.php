@@ -63,6 +63,7 @@ class ExpressCheckoutService
             $salesChannelContext->getSalesChannel(),
             $salesChannelContext->getCurrency(),
             $salesChannelContext->getCurrentCustomerGroup(),
+            $salesChannelContext->getCurrentCustomerGroup(),
             $salesChannelContext->getTaxRules(),
             $salesChannelContext->getPaymentMethod(),
             $salesChannelContext->getShippingMethod(),
