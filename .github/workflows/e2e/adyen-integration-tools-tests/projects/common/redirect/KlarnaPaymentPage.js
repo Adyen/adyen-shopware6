@@ -30,7 +30,6 @@ export default class KlarnaPaymentPage {
 
       if (await this.paymentTypeSelectButton.isVisible()) {
         await this.paymentTypeSelectButton.click();
-        await this.paymentTypeSelectButton.click();
       }
     }
 
