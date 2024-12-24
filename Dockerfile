@@ -25,12 +25,4 @@ RUN unzip adyen-plugin.zip && mv AdyenPaymentShopware6 custom/plugins/AdyenPayme
 RUN rm adyen-plugin.zip && rm -rf /var/lib/apt/lists/*
 
 
-# Fix permissions and update the system
-USER root
-RUN rm -rf /var/lib/apt/lists/* && \
-    mkdir -p /var/lib/apt/lists/partial && \
-    chmod -R 777 /var/lib/apt/lists && \
-    apt-get update && apt-get install -y curl unzip
-
-# Set the working directory
-WORKDIR /var/www/html
+USER dockware
