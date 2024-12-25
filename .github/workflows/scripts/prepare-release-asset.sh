@@ -23,7 +23,7 @@ zip -r AdyenPaymentShopware6.zip AdyenPaymentShopware6/ ;
 
 # Cleanup the zip installation
 zip -d AdyenPaymentShopware6.zip __MACOSX/\* ; zip -d AdyenPaymentShopware6.zip *.git* ;
-zip -d AdyenPaymentShopware6.zip Dockerfile
+zip -d AdyenPaymentShopware6.zip */Dockerfile
 
 # Move the zip file to plugin folder
 mv AdyenPaymentShopware6.zip adyen-shopware6
