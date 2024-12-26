@@ -5,5 +5,5 @@
 
 #composer
 vendor/
-/.github/test-report/
 /.github/workflows/e2e/adyen-integration-tools-tests/projects/shopware/test-results/
+/test-report/
