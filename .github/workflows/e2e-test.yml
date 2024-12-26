@@ -65,7 +65,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: html-report
-          path: test-report
+          path: ../test-report
 
       - name: Copy Adyen api logs from container if available
         if: always()
