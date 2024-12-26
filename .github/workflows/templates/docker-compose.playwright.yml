@@ -16,7 +16,7 @@ services:
     volumes:
       - ../scripts/e2e.sh:/e2e.sh
       - ../e2e/adyen-integration-tools-tests/:/tmp/adyen-integration-tools-tests/
-      - ../../test-report:/tmp/test-report
+      - ../../../test-report:/tmp/test-report
 
 networks:
   localnetwork:
