@@ -150,20 +150,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 );
             });
         }
-        // this.quantityInput?.addEventListener('change', (event) => {
-        //     const newQuantity = event.target.value;
-        //     const productMeta = document.querySelector('meta[itemprop="productID"]');
-        //     const productId = productMeta ? productMeta.content : '-1';
-        //     this._client.post(
-        //         adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
-        //         JSON.stringify({
-        //             quantity: newQuantity,
-        //             productId: productId
-        //         }),
-        //         this.afterQuantityUpdated.bind(this)
-        //     );
-        //
-        // });
     }
 
     afterQuantityUpdated(response){
