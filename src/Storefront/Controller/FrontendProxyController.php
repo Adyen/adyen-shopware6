@@ -215,6 +215,36 @@ class FrontendProxyController extends StorefrontController
 
     /**
      * @Route(
+     *     "/adyen/proxy-checkout-order-express-product",
+     *     name="payment.adyen.proxy-checkout-order-express-product",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"POST"}
+     * )
+     */
+    public function checkoutOrderExpressProduct(RequestDataBag $data, SalesChannelContext $salesChannelContext): JsonResponse
+    {
+        // TO DO
+        return new JsonResponse();
+    }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-handle-payment-express-product",
+     *     name="payment.adyen.proxy-handle-payment-express-product",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"POST"}
+     * )
+     */
+    public function handlePaymentExpressProduct(Request $request, SalesChannelContext $salesChannelContext): JsonResponse
+    {
+        // TO DO
+        $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
+
+        return new JsonResponse($routeResponse->getObject());
+    }
+
+    /**
+     * @Route(
      *     "/adyen/proxy-finalize-transaction",
      *     name="payment.adyen.proxy-finalize-transaction",
      *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},

@@ -361,7 +361,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             'paymentFailed' => true,
                         ]
                     ),
-                    'userLoggedIn' => (bool) $userLoggedIn
+                    'userLoggedIn' => json_encode($userLoggedIn)
                     ],
                     $this->expressCheckoutService->getExpressCheckoutConfigOnProductPage(
                         $productId,
