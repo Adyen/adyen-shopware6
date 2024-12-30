@@ -48,6 +48,11 @@ class ExpressCheckoutService
     private $paymentMethodsService;
 
     /**
+     * @var PaymentMethodsFilterService
+     */
+    private $paymentMethodsFilterService;
+
+    /**
      * @var Currency
      */
     private Currency $currencyUtil;
@@ -58,13 +63,15 @@ class ExpressCheckoutService
         EntityRepository      $paymentMethodRepository,
         EntityRepository      $shippingMethodRepository,
         PaymentMethodsService $paymentMethodsService,
-        Currency              $currencyUtil
+        PaymentMethodsFilterService $paymentMethodsFilterService,
+        Currency $currencyUtil
     ) {
         $this->cartService = $cartService;
         $this->countryRepository = $countryRepository;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->shippingMethodRepository = $shippingMethodRepository;
         $this->paymentMethodsService = $paymentMethodsService;
+        $this->paymentMethodsFilterService = $paymentMethodsFilterService;
         $this->currencyUtil = $currencyUtil;
     }
 
@@ -244,16 +251,16 @@ class ExpressCheckoutService
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
 
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($updatedSalesChannelContext);
+        $filteredPaymentMethods = $this->paymentMethodsFilterService->filterAndValidatePaymentMethods($paymentMethods, $cart, $salesChannelContext);
 
         return [
             'cart' => $cart,
             'shippingMethods' => $shippingMethods,
             'shippingMethod' => $shippingMethod,
             'shippingLocation' => $shippingLocation,
-            'paymentMethods' => $paymentMethods,
+            'paymentMethods' => $filteredPaymentMethods,
         ];
     }
-
 
     /**
      * Resolves the country entity based on the provided new address or context.
