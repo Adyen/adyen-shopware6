@@ -221,8 +221,10 @@ class FrontendProxyController extends StorefrontController
      *     methods={"POST"}
      * )
      */
-    public function checkoutOrderExpressProduct(RequestDataBag $data, SalesChannelContext $salesChannelContext): JsonResponse
-    {
+    public function checkoutOrderExpressProduct(
+        RequestDataBag $data,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse {
         // TO DO
         return new JsonResponse();
     }
@@ -235,8 +237,10 @@ class FrontendProxyController extends StorefrontController
      *     methods={"POST"}
      * )
      */
-    public function handlePaymentExpressProduct(Request $request, SalesChannelContext $salesChannelContext): JsonResponse
-    {
+    public function handlePaymentExpressProduct(
+        Request $request,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse {
         // TO DO
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 

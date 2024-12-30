@@ -99,6 +99,7 @@ class ExpressCheckoutController
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
+     * @throws \Exception
      */
     public function createCart(
         string $productId,
@@ -107,6 +108,7 @@ class ExpressCheckoutController
         array $newAddress = [],
         array $newShipping = []
     ): array {
-        return $this->expressCheckoutService->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping);
+        return $this->expressCheckoutService
+            ->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping);
     }
 }

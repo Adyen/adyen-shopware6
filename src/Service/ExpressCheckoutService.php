@@ -59,8 +59,7 @@ class ExpressCheckoutService
         EntityRepository      $shippingMethodRepository,
         PaymentMethodsService $paymentMethodsService,
         Currency              $currencyUtil
-    )
-    {
+    ) {
         $this->cartService = $cartService;
         $this->countryRepository = $countryRepository;
         $this->paymentMethodRepository = $paymentMethodRepository;
@@ -83,8 +82,8 @@ class ExpressCheckoutService
         string $productId,
         int $quantity,
         SalesChannelContext $salesChannelContext,
-        array $newAddress = [],
-        array $newShipping = []
+        array               $newAddress = [],
+        array               $newShipping = []
     ): array {
         // Creating new cart
         $cartData = $this->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping);
@@ -152,14 +151,18 @@ class ExpressCheckoutService
      * @param SalesChannelContext $salesChannelContext
      * @return PaymentMethodsResponse
      */
-    public function getAvailableExpressCheckoutPaymentMethods(SalesChannelContext $salesChannelContext): PaymentMethodsResponse
-    {
-        $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext)->getPaymentMethods();
-        $salesChannelPaymentMethodIs = $shopwarePaymentMethods = $salesChannelContext->getSalesChannel()->getPaymentMethodIds();
+    public function getAvailableExpressCheckoutPaymentMethods(
+        SalesChannelContext $salesChannelContext
+    ): PaymentMethodsResponse {
+        $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
+            ->getPaymentMethods();
+        $salesChannelPaymentMethodIs = $shopwarePaymentMethods = $salesChannelContext->getSalesChannel()
+            ->getPaymentMethodIds();
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsAnyFilter('id', $salesChannelPaymentMethodIs));
         /** @var null|PaymentMethodCollection $country */
-        $paymentMethods = $this->paymentMethodRepository->search($criteria, $salesChannelContext->getContext())->getEntities();
+        $paymentMethods = $this->paymentMethodRepository->search($criteria, $salesChannelContext->getContext())
+            ->getEntities();
 
         return new PaymentMethodsResponse();
     }
@@ -177,11 +180,11 @@ class ExpressCheckoutService
      * @throws \Exception
      */
     public function createCart(
-        string $productId,
-        int $quantity,
+        string              $productId,
+        int                 $quantity,
         SalesChannelContext $salesChannelContext,
-        array $newAddress = [],
-        array $newShipping = []
+        array               $newAddress = [],
+        array               $newShipping = []
     ): array {
         // Creating new cart with the product from the product page
         $lineItem = new LineItem($productId, 'product', $productId, $quantity);
@@ -293,9 +296,11 @@ class ExpressCheckoutService
      * @return ShippingMethodEntity The resolved shipping method.
      * @throws \Exception If no valid shipping method is available.
      */
-    private function resolveShippingMethod(SalesChannelContext $salesChannelContext,
-                                           Cart                $cart,
-                                           array               $newShipping): ShippingMethodEntity {
+    private function resolveShippingMethod(
+        SalesChannelContext $salesChannelContext,
+        Cart                $cart,
+        array               $newShipping
+    ): ShippingMethodEntity {
         // Fetch available shipping methods
         $filteredMethods = $this->fetchAvailableShippingMethods($salesChannelContext, $cart);
 
@@ -303,7 +308,8 @@ class ExpressCheckoutService
         $newShippingMethodId = $newShipping['id'] ?? null;
 
         // Attempt to get the shipping method based on the ID or fallback to the first available method
-        $shippingMethod = $newShippingMethodId ? $filteredMethods->get($newShippingMethodId) : $filteredMethods->first();
+        $shippingMethod = $newShippingMethodId
+            ? $filteredMethods->get($newShippingMethodId) : $filteredMethods->first();
 
         // If no shipping method is resolved, throw an exception
         if (!$shippingMethod) {
@@ -320,17 +326,22 @@ class ExpressCheckoutService
      * @param Cart $cart The cart to calculate shipping for.
      * @return ShippingMethodCollection The collection of available shipping methods.
      */
-    private function fetchAvailableShippingMethods(SalesChannelContext $salesChannelContext, Cart $cart): ShippingMethodCollection
-    {
+    private function fetchAvailableShippingMethods(
+        SalesChannelContext $salesChannelContext,
+        Cart $cart
+    ): ShippingMethodCollection {
         $criteria = new Criteria();
         $criteria->addAssociation('availabilityRule');
 
         /** @var ShippingMethodCollection $shippingMethods */
-        $shippingMethods = $this->shippingMethodRepository->search($criteria, $salesChannelContext->getContext())->getEntities();
+        $shippingMethods = $this->shippingMethodRepository->search($criteria, $salesChannelContext->getContext())
+            ->getEntities();
 
-        return $shippingMethods->filter(function (ShippingMethodEntity $shippingMethod) use ($cart, $salesChannelContext) {
-            $availabilityRule = $shippingMethod->getAvailabilityRule();
-            return !$availabilityRule || $availabilityRule->getPayload()->match(new CartRuleScope($cart, $salesChannelContext));
-        });
+        return $shippingMethods
+            ->filter(function (ShippingMethodEntity $shippingMethod) use ($cart, $salesChannelContext) {
+                $availabilityRule = $shippingMethod->getAvailabilityRule();
+                return !$availabilityRule || $availabilityRule->getPayload()
+                    ->match(new CartRuleScope($cart, $salesChannelContext));
+            });
     }
 }
