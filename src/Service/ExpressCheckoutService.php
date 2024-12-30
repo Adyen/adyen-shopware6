@@ -251,7 +251,8 @@ class ExpressCheckoutService
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
 
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($updatedSalesChannelContext);
-        $filteredPaymentMethods = $this->paymentMethodsFilterService->filterAndValidatePaymentMethods($paymentMethods, $cart, $salesChannelContext);
+        $filteredPaymentMethods = $this->paymentMethodsFilterService
+            ->filterAndValidatePaymentMethods($paymentMethods, $cart, $salesChannelContext);
 
         return [
             'cart' => $cart,

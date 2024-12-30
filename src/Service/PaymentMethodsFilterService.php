@@ -324,22 +324,25 @@ class PaymentMethodsFilterService
         ];
 
         // Filter methods by type and configuration
-        $filteredMethods = array_filter($paymentMethods, function ($method) use ($allowedMethods, $salesChannelContext) {
-            $type = $method['type'];
-            if (!isset($allowedMethods[$type])) {
-                return false;
-            }
+        $filteredMethods =
+            array_filter($paymentMethods, function ($method) use ($allowedMethods, $salesChannelContext) {
+                $type = $method['type'];
+                if (!isset($allowedMethods[$type])) {
+                    return false;
+                }
 
-            $configCheck = $allowedMethods[$type];
-            return $configCheck($salesChannelContext->getSalesChannelId());
-        });
+                $configCheck = $allowedMethods[$type];
+                return $configCheck($salesChannelContext->getSalesChannelId());
+            });
 
         // Check rules for every method
         $validMethods = [];
         foreach ($filteredMethods as $method) {
             $availabilityRule = $method['availabilityRule'] ?? null;
 
-            if (!$availabilityRule || $availabilityRule->getPayload()->match(new CartRuleScope($cart, $salesChannelContext))) {
+            if (!$availabilityRule ||
+                $availabilityRule->getPayload()->match(new CartRuleScope($cart, $salesChannelContext))
+            ) {
                 $validMethods[] = $method;
             }
         }
@@ -348,5 +351,4 @@ class PaymentMethodsFilterService
 
         return $paymentMethodsResponse;
     }
-
 }
