@@ -32,6 +32,8 @@ use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
+use Shopware\Core\Checkout\Cart\Cart;
+use Shopware\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
@@ -305,4 +307,46 @@ class PaymentMethodsFilterService
         // Return the payment method ID or null if not found
         return $paymentMethod ? $paymentMethod->getId() : null;
     }
+
+    public function filterAndValidatePaymentMethods(
+        PaymentMethodsResponse $paymentMethodsResponse,
+        Cart $cart,
+        SalesChannelContext $salesChannelContext
+    ): PaymentMethodsResponse {
+        // Extract original payment methods
+        $paymentMethods = $paymentMethodsResponse->getPaymentMethods();
+
+        // Supported payment methods and their corresponding configuration checks
+        $allowedMethods = [
+            'paywithgoogle' => [$this->configurationService, 'isGooglePayExpressCheckoutEnabled'],
+            'paypal' => [$this->configurationService, 'isPayPalExpressCheckoutEnabled'],
+            'applepay' => [$this->configurationService, 'isApplePayExpressCheckoutEnabled']
+        ];
+
+        // Filter methods by type and configuration
+        $filteredMethods = array_filter($paymentMethods, function ($method) use ($allowedMethods, $salesChannelContext) {
+            $type = $method['type'];
+            if (!isset($allowedMethods[$type])) {
+                return false;
+            }
+
+            $configCheck = $allowedMethods[$type];
+            return $configCheck($salesChannelContext->getSalesChannelId());
+        });
+
+        // Check rules for every method
+        $validMethods = [];
+        foreach ($filteredMethods as $method) {
+            $availabilityRule = $method['availabilityRule'] ?? null;
+
+            if (!$availabilityRule || $availabilityRule->getPayload()->match(new CartRuleScope($cart, $salesChannelContext))) {
+                $validMethods[] = $method;
+            }
+        }
+
+        $paymentMethodsResponse->setPaymentMethods($validMethods);
+
+        return $paymentMethodsResponse;
+    }
+
 }

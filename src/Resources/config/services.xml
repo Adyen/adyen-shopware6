@@ -71,6 +71,7 @@
             <argument type="service" id="country.repository"/>
             <argument type="service" id="shipping_method.repository"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsFilterService"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
         </service>
         <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
