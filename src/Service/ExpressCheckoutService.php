@@ -21,6 +21,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 class ExpressCheckoutService
 {
@@ -57,6 +58,11 @@ class ExpressCheckoutService
      */
     private Currency $currencyUtil;
 
+    /**
+     * @var bool
+     */
+    private bool $isVersion64;
+
     public function __construct(
         CartService           $cartService,
         EntityRepository      $countryRepository,
@@ -64,7 +70,8 @@ class ExpressCheckoutService
         EntityRepository      $shippingMethodRepository,
         PaymentMethodsService $paymentMethodsService,
         PaymentMethodsFilterService $paymentMethodsFilterService,
-        Currency $currencyUtil
+        Currency $currencyUtil,
+        KernelInterface $kernel
     ) {
         $this->cartService = $cartService;
         $this->countryRepository = $countryRepository;
@@ -73,6 +80,20 @@ class ExpressCheckoutService
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
         $this->currencyUtil = $currencyUtil;
+        $this->isVersion64 = $this->isVersion64($kernel->getContainer()->getParameter('kernel.shopware_version'));
+    }
+
+    /**
+     * Checks if the given version string corresponds to Shopware 6.4.
+     *
+     * @param string $version The version string to check, e.g., "6.4.20.2".
+     *
+     * @return bool True if the version is 6.4, false otherwise.
+     */
+    private function isVersion64(string $version): bool
+    {
+        $parts = explode('.', $version);
+        return $parts[0] === '6' && $parts[1] === '4';
     }
 
     /**
@@ -202,23 +223,10 @@ class ExpressCheckoutService
         $country = $this->resolveCountry($salesChannelContext, $newAddress);
         $shippingLocation = ShippingLocation::createFromCountry($country);
 
-        // Create new context with resolved location
-        $updatedSalesChannelContext = new SalesChannelContext(
-            $salesChannelContext->getContext(),
-            $tokenNew,
-            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
-            $salesChannelContext->getSalesChannel(),
-            $salesChannelContext->getCurrency(),
-            $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getTaxRules(),
-            $salesChannelContext->getPaymentMethod(),
-            $salesChannelContext->getShippingMethod(),
-            $shippingLocation,
-            $salesChannelContext->getCustomer(),
-            $salesChannelContext->getItemRounding(),
-            $salesChannelContext->getTotalRounding()
-        );
+        // Check Shopware version and create context accordingly
+        $updatedSalesChannelContext = $this->isVersion64
+            ? $this->createContextFor64($salesChannelContext, $tokenNew, $shippingLocation)
+            : $this->createContextFor65($salesChannelContext, $tokenNew, $shippingLocation);
 
         // recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
@@ -229,23 +237,10 @@ class ExpressCheckoutService
         // Fetch shipping method
         $shippingMethod = $this->resolveShippingMethod($updatedSalesChannelContext, $cart, $newShipping);
 
-        // Create new context with fetched shipping method
-        $updatedSalesChannelContext = new SalesChannelContext(
-            $salesChannelContext->getContext(),
-            $tokenNew,
-            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
-            $salesChannelContext->getSalesChannel(),
-            $salesChannelContext->getCurrency(),
-            $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getTaxRules(),
-            $salesChannelContext->getPaymentMethod(),
-            $shippingMethod,
-            $shippingLocation,
-            $salesChannelContext->getCustomer(),
-            $salesChannelContext->getItemRounding(),
-            $salesChannelContext->getTotalRounding()
-        );
+        // Recreate context with selected shipping method
+        $updatedSalesChannelContext = $this->isVersion64
+            ? $this->createContextFor64($salesChannelContext, $tokenNew, $shippingLocation, $shippingMethod)
+            : $this->createContextFor65($salesChannelContext, $tokenNew, $shippingLocation, $shippingMethod);
 
         // Recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
@@ -351,5 +346,58 @@ class ExpressCheckoutService
                 return !$availabilityRule || $availabilityRule->getPayload()
                     ->match(new CartRuleScope($cart, $salesChannelContext));
             });
+    }
+
+    /**
+     * Creates a SalesChannelContext for Shopware 6.4.
+     */
+    private function createContextFor64(
+        SalesChannelContext $salesChannelContext,
+        string $token,
+        ShippingLocation $shippingLocation,
+        ?ShippingMethodEntity $shippingMethod = null
+    ): SalesChannelContext {
+        return new SalesChannelContext(
+            $salesChannelContext->getContext(),
+            $token,
+            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
+            $salesChannelContext->getSalesChannel(),
+            $salesChannelContext->getCurrency(),
+            $salesChannelContext->getCurrentCustomerGroup(),
+            $salesChannelContext->getCurrentCustomerGroup(),
+            $salesChannelContext->getTaxRules(),
+            $salesChannelContext->getPaymentMethod(),
+            $shippingMethod ?? $salesChannelContext->getShippingMethod(),
+            $shippingLocation,
+            $salesChannelContext->getCustomer(),
+            $salesChannelContext->getItemRounding(),
+            $salesChannelContext->getTotalRounding()
+        );
+    }
+
+    /**
+     * Creates a SalesChannelContext for Shopware 6.5.
+     */
+    private function createContextFor65(
+        SalesChannelContext $salesChannelContext,
+        string $token,
+        ShippingLocation $shippingLocation,
+        ?ShippingMethodEntity $shippingMethod = null
+    ): SalesChannelContext {
+        return new SalesChannelContext(
+            $salesChannelContext->getContext(),
+            $token,
+            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
+            $salesChannelContext->getSalesChannel(),
+            $salesChannelContext->getCurrency(),
+            $salesChannelContext->getCurrentCustomerGroup(),
+            $salesChannelContext->getTaxRules(),
+            $salesChannelContext->getPaymentMethod(),
+            $shippingMethod ?? $salesChannelContext->getShippingMethod(),
+            $shippingLocation,
+            $salesChannelContext->getCustomer(),
+            $salesChannelContext->getItemRounding(),
+            $salesChannelContext->getTotalRounding()
+        );
     }
 }

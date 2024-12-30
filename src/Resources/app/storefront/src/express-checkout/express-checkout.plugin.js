@@ -130,8 +130,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
             "paypal": {},
             "applepay": {}
         };
-        //this.quantityInput = document.querySelector('.product-detail-quantity-input'); - shopware 6.5
-        this.quantityInput = document.querySelector('.product-detail-quantity-select');
+        this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
+                             document.querySelector('.product-detail-quantity-input');
+        console.log("kolicina" + this.quantityInput.value)
         this.listenOnQuantityChange();
 
         this.mountExpressCheckoutComponents({
