@@ -70,11 +70,43 @@ class ExpressCheckoutController
     ): JsonResponse {
         $productId = $request->request->get('productId');
         $quantity = (int)$request->request->get('quantity');
+        $newAddress = $request->request->get('newAddress');
+        $newShipping = $request->request->get('newShippingMethod');
+
+        if ($newAddress === null) {
+            $newAddress = [];
+        }
+
+        if ($newShipping === null) {
+            $newShipping = [];
+        }
 
         return new JsonResponse($this->expressCheckoutService->getExpressCheckoutConfigOnProductPage(
             $productId,
             $quantity,
-            $salesChannelContext
+            $salesChannelContext,
+            $newAddress,
+            $newShipping
         ));
+    }
+
+    /**
+     * Creates a cart with the provided product and calculates it with the resolved shipping location and method.
+     *
+     * @param string $productId The ID of the product.
+     * @param int $quantity The quantity of the product.
+     * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     * @param array $newAddress Optional new address details.
+     * @param array $newShipping Optional new shipping method details.
+     * @return array The cart, shipping methods, selected shipping method, and payment methods.
+     */
+    public function createCart(
+        string $productId,
+        int $quantity,
+        SalesChannelContext $salesChannelContext,
+        array $newAddress = [],
+        array $newShipping = []
+    ): array {
+        return $this->expressCheckoutService->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping);
     }
 }
