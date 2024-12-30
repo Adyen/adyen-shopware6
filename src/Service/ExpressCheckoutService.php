@@ -2,12 +2,15 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Model\Checkout\PaymentMethodsResponse;
 use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Country\CountryEntity;
@@ -24,6 +27,10 @@ class ExpressCheckoutService
      * @var EntityRepository
      */
     private $countryRepository;
+    /**
+     * @var EntityRepository
+     */
+    private $paymentMethodRepository;
 
     /**
      * @var PaymentMethodsService
@@ -36,22 +43,26 @@ class ExpressCheckoutService
     private Currency $currencyUtil;
 
     public function __construct(
-        CartService $cartService,
-        EntityRepository $countryRepository,
+        CartService           $cartService,
+        EntityRepository      $countryRepository,
+        EntityRepository      $paymentMethodRepository,
         PaymentMethodsService $paymentMethodsService,
-        Currency $currencyUtil
-    ) {
+        Currency              $currencyUtil
+    )
+    {
         $this->cartService = $cartService;
         $this->countryRepository = $countryRepository;
+        $this->paymentMethodRepository = $paymentMethodRepository;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->currencyUtil = $currencyUtil;
     }
 
     public function getExpressCheckoutConfigOnProductPage(
-        string $productId,
-        int $quantity,
+        string              $productId,
+        int                 $quantity,
         SalesChannelContext $salesChannelContext
-    ): array {
+    ): array
+    {
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $lineItem = new LineItem($productId, 'product', $productId, $quantity);
         $cart = $this->cartService->createNew($tokenNew = Uuid::randomHex());
@@ -63,7 +74,7 @@ class ExpressCheckoutService
             $salesChannelContext->getSalesChannel(),
             $salesChannelContext->getCurrency(),
             $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getCurrentCustomerGroup(),
+//            $salesChannelContext->getCurrentCustomerGroup(),
             $salesChannelContext->getTaxRules(),
             $salesChannelContext->getPaymentMethod(),
             $salesChannelContext->getShippingMethod(),
@@ -76,6 +87,8 @@ class ExpressCheckoutService
 
         $amountInMinorUnits = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($expressCheckoutSalesChannelContext);
+
+        $this->getAvailableExpressCheckoutPaymentMethods($salesChannelContext);
 
         return [
             'currency' => $currency,
@@ -112,5 +125,23 @@ class ExpressCheckoutService
         }
 
         return '';
+    }
+
+    /**
+     * Returns filtered Adyen express checkout payment methods
+     *
+     * @param SalesChannelContext $salesChannelContext
+     * @return PaymentMethodsResponse
+     */
+    public function getAvailableExpressCheckoutPaymentMethods(SalesChannelContext $salesChannelContext): PaymentMethodsResponse
+    {
+        $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext)->getPaymentMethods();
+        $salesChannelPaymentMethodIs = $shopwarePaymentMethods = $salesChannelContext->getSalesChannel()->getPaymentMethodIds();
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsAnyFilter('id', $salesChannelPaymentMethodIs));
+        /** @var null|PaymentMethodCollection $country */
+        $paymentMethods = $this->paymentMethodRepository->search($criteria, $salesChannelContext->getContext())->getEntities();
+
+        return new PaymentMethodsResponse();
     }
 }

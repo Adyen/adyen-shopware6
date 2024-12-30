@@ -69,6 +69,7 @@
         <service id="Adyen\Shopware\Service\ExpressCheckoutService" autowire="true">
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
             <argument type="service" id="country.repository"/>
+            <argument type="service" id="payment_method.repository"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
         </service>
