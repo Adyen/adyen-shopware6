@@ -70,8 +70,8 @@ class ExpressCheckoutController
     ): JsonResponse {
         $productId = $request->request->get('productId');
         $quantity = (int)$request->request->get('quantity');
-        $newAddress = $request->request->get('newAddress');
-        $newShipping = $request->request->get('newShippingMethod');
+        $newAddress = $request->request->all()['newAddress'] ?? null;
+        $newShipping = $request->request->all()['newAddress'] ?? null;
 
         if ($newAddress === null) {
             $newAddress = [];

@@ -63,6 +63,11 @@ class ExpressCheckoutService
      */
     private bool $isVersion64;
 
+    /**
+     * @var bool
+     */
+    private bool $isLoggedIn;
+
     public function __construct(
         CartService           $cartService,
         EntityRepository      $countryRepository,
@@ -214,6 +219,9 @@ class ExpressCheckoutService
         array               $newAddress = [],
         array               $newShipping = []
     ): array {
+        // Check if the user is guest or customer
+        $this->isLoggedIn = $salesChannelContext->getCustomer() !== null;
+
         // Creating new cart with the product from the product page
         $lineItem = new LineItem($productId, 'product', $productId, $quantity);
         $cart = $this->cartService->createNew($tokenNew = Uuid::randomHex());
