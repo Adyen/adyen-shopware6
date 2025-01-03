@@ -22,6 +22,7 @@
 
 import Plugin from 'src/plugin-system/plugin.class';
 import HttpClient from 'src/service/http-client.service';
+import adyenConfiguration from '../configuration/adyen';
 
 export default class ExpressCheckoutPlugin extends Plugin {
     init() {
@@ -45,6 +46,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                         if (shippingAddress) {
                             extraData.newAddress = shippingAddress;
                         }
+
+                        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
 
                         const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
 
@@ -76,6 +79,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                         if (shippingOptionData) {
                             extraData.newShippingMethod = shippingOptionData;
                         }
+
+                        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
 
                         const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
 

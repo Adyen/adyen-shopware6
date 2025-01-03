@@ -244,6 +244,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
         $amountInMinorUnits = $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency);
 
+        $userLoggedIn = $salesChannelContext->getCustomer() !== null;
+
         //Filter Payment Methods
         $shopwarePaymentMethods = null;
         if ($page instanceof CheckoutCartPage) {
@@ -317,6 +319,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         $salesChannelContext
                     ),
                     'paymentMethodsResponse' => json_encode($paymentMethods),
+                    'userLoggedIn' => json_encode($userLoggedIn)
                 ])
             )
         );

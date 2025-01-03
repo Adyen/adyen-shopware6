@@ -13,6 +13,7 @@ use Shopware\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
+use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -118,10 +119,11 @@ class ExpressCheckoutService
         int $quantity,
         SalesChannelContext $salesChannelContext,
         array               $newAddress = [],
-        array               $newShipping = []
+        array               $newShipping = [],
+        string $formattedHandlerIdentifier = ''
     ): array {
         // Creating new cart
-        $cartData = $this->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping);
+        $cartData = $this->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier);
 
         $cart = $cartData['cart'];
 
@@ -219,7 +221,8 @@ class ExpressCheckoutService
         int                 $quantity,
         SalesChannelContext $salesChannelContext,
         array               $newAddress = [],
-        array               $newShipping = []
+        array               $newShipping = [],
+        string $formattedHandlerIdentifier = ''
     ): array {
         // Check if the user is guest or customer
         $this->isLoggedIn = $salesChannelContext->getCustomer() !== null;
@@ -235,14 +238,21 @@ class ExpressCheckoutService
             $token = $tokenNew;
         }
 
+        // Get payment method
+        $paymentMethod = $salesChannelContext->getPaymentMethod();
+        if ($formattedHandlerIdentifier !== '') {
+            // Express checkout payment method
+            $paymentMethod = $this->paymentMethodsFilterService->getPaymentMethodByFormattedHandler($formattedHandlerIdentifier, $salesChannelContext->getContext());
+        }
+
         // Resolving shipping location
         $country = $this->resolveCountry($salesChannelContext, $newAddress);
         $shippingLocation = ShippingLocation::createFromCountry($country);
 
         // Check Shopware version and create context accordingly
         $updatedSalesChannelContext = $this->isVersion64
-            ? $this->createContextFor64($salesChannelContext, $token, $shippingLocation)
-            : $this->createContextFor65($salesChannelContext, $token, $shippingLocation);
+            ? $this->createContextFor64($salesChannelContext, $token, $shippingLocation, $paymentMethod)
+            : $this->createContextFor65($salesChannelContext, $token, $shippingLocation, $paymentMethod);
 
         // recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
@@ -255,8 +265,8 @@ class ExpressCheckoutService
 
         // Recreate context with selected shipping method
         $updatedSalesChannelContext = $this->isVersion64
-            ? $this->createContextFor64($salesChannelContext, $token, $shippingLocation, $shippingMethod)
-            : $this->createContextFor65($salesChannelContext, $token, $shippingLocation, $shippingMethod);
+            ? $this->createContextFor64($salesChannelContext, $token, $shippingLocation, $paymentMethod, $shippingMethod)
+            : $this->createContextFor65($salesChannelContext, $token, $shippingLocation, $paymentMethod, $shippingMethod);
 
         // Recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
@@ -366,11 +376,20 @@ class ExpressCheckoutService
 
     /**
      * Creates a SalesChannelContext for Shopware 6.4.
+     *
+     * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     * @param string $token The token to be associated with the new context.
+     * @param ShippingLocation $shippingLocation The shipping location to be used.
+     * @param PaymentMethodEntity $paymentMethod The payment method entity to set in the context.
+     * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
+     *
+     * @return SalesChannelContext A new SalesChannelContext for Shopware 6.4.
      */
     private function createContextFor64(
         SalesChannelContext $salesChannelContext,
         string $token,
         ShippingLocation $shippingLocation,
+        PaymentMethodEntity $paymentMethod,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
         return new SalesChannelContext(
@@ -382,7 +401,7 @@ class ExpressCheckoutService
             $salesChannelContext->getCurrentCustomerGroup(),
             $salesChannelContext->getCurrentCustomerGroup(),
             $salesChannelContext->getTaxRules(),
-            $salesChannelContext->getPaymentMethod(),
+            $paymentMethod,
             $shippingMethod ?? $salesChannelContext->getShippingMethod(),
             $shippingLocation,
             $salesChannelContext->getCustomer(),
@@ -393,11 +412,20 @@ class ExpressCheckoutService
 
     /**
      * Creates a SalesChannelContext for Shopware 6.5.
+     *
+     * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     * @param string $token The token to be associated with the new context.
+     * @param ShippingLocation $shippingLocation The shipping location to be used.
+     * @param PaymentMethodEntity $paymentMethod The payment method entity to set in the context.
+     * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
+     *
+     * @return SalesChannelContext A new SalesChannelContext for Shopware 6.5.
      */
     private function createContextFor65(
         SalesChannelContext $salesChannelContext,
         string $token,
         ShippingLocation $shippingLocation,
+        PaymentMethodEntity $paymentMethod,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
         return new SalesChannelContext(
@@ -408,7 +436,7 @@ class ExpressCheckoutService
             $salesChannelContext->getCurrency(),
             $salesChannelContext->getCurrentCustomerGroup(),
             $salesChannelContext->getTaxRules(),
-            $salesChannelContext->getPaymentMethod(),
+            $paymentMethod,
             $shippingMethod ?? $salesChannelContext->getShippingMethod(),
             $shippingLocation,
             $salesChannelContext->getCustomer(),

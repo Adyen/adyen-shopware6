@@ -37,6 +37,7 @@ use Shopware\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -350,5 +351,30 @@ class PaymentMethodsFilterService
         $paymentMethodsResponse->setPaymentMethods($validMethods);
 
         return $paymentMethodsResponse;
+    }
+
+    /**
+     * Finds a PaymentMethodEntity by its formattedHandlerIdentifier.
+     *
+     * @param string $formattedHandlerIdentifier
+     * @param Context $context
+     * @return PaymentMethodEntity|null
+     */
+    public function getPaymentMethodByFormattedHandler(string $formattedHandlerIdentifier, Context $context): ?PaymentMethodEntity
+    {
+        $criteria = new Criteria();
+
+        // Fetch all payment methods
+        /** @var PaymentMethodEntity[] $paymentMethods */
+        $paymentMethods = $this->paymentMethodRepository->search($criteria, $context)->getEntities();
+
+        // Filter by formattedHandlerIdentifier
+        foreach ($paymentMethods as $paymentMethod) {
+            if ($paymentMethod->getFormattedHandlerIdentifier() === $formattedHandlerIdentifier) {
+                return $paymentMethod;
+            }
+        }
+
+        return null; // Return null if no match found
     }
 }

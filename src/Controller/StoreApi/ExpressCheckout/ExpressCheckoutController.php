@@ -72,6 +72,7 @@ class ExpressCheckoutController
     ): JsonResponse {
         $productId = $request->request->get('productId');
         $quantity = (int)$request->request->get('quantity');
+        $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';
         $newAddress = $request->request->all()['newAddress'] ?? null;
         $newShipping = $request->request->all()['newAddress'] ?? null;
 
@@ -89,7 +90,8 @@ class ExpressCheckoutController
                 $quantity,
                 $salesChannelContext,
                 $newAddress,
-                $newShipping
+                $newShipping,
+                $formattedHandlerIdentifier
             );
 
             return new JsonResponse($config);
