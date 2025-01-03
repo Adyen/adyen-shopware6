@@ -33,61 +33,68 @@ export default class ExpressCheckoutPlugin extends Plugin {
         let onPaymentDataChanged = (intermediatePaymentData) => {
             console.log("onPaymentDataChanged triggered", intermediatePaymentData);
             return new Promise(async  resolve => {
-                const { callbackTrigger, shippingAddress, shippingOptionData } = intermediatePaymentData;
-                const paymentDataRequestUpdate = {};
+                try {
+                    const {callbackTrigger, shippingAddress, shippingOptionData} = intermediatePaymentData;
+                    const paymentDataRequestUpdate = {};
 
-                if (callbackTrigger === 'INITIALIZE' || callbackTrigger === 'SHIPPING_ADDRESS') {
-                    console.log("ADDRESS trigger");
+                    if (callbackTrigger === 'INITIALIZE' || callbackTrigger === 'SHIPPING_ADDRESS') {
+                        console.log("ADDRESS trigger");
 
-                    const extraData = {};
+                        const extraData = {};
 
-                    if (shippingAddress) {
-                        extraData.newAddress = shippingAddress;
+                        if (shippingAddress) {
+                            extraData.newAddress = shippingAddress;
+                        }
+
+                        const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
+
+                        let shippingMethodsArray = response.shippingMethodsResponse;
+
+                        paymentDataRequestUpdate.newShippingOptionParameters = {
+                            defaultSelectedOptionId: shippingMethodsArray[0].id,
+                            shippingOptions: shippingMethodsArray
+                        };
+
+                        paymentDataRequestUpdate.newTransactionInfo = {
+                            currencyCode: response.currency,
+                            totalPriceStatus: "FINAL",
+                            totalPrice: (parseInt(response.amount) / 100).toString(),
+                            totalPriceLabel: "Total",
+                            countryCode: response.countryCode,
+                        };
                     }
 
-                    const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
+                    if (callbackTrigger === 'SHIPPING_OPTION') {
+                        console.log("SHIPPING trigger")
 
-                    let shippingMethodsArray = response.shippingMethodsResponse;
+                        const extraData = {};
 
-                    paymentDataRequestUpdate.newShippingOptionParameters = {
-                        defaultSelectedOptionId: shippingMethodsArray[0].id,
-                        shippingOptions: shippingMethodsArray
-                    };
+                        if (shippingAddress) {
+                            extraData.newAddress = shippingAddress;
+                        }
 
-                    paymentDataRequestUpdate.newTransactionInfo = {
-                        currencyCode: response.currency,
-                        totalPriceStatus: "FINAL",
-                        totalPrice: (parseInt(response.amount) / 100).toString(),
-                        totalPriceLabel: "Total",
-                        countryCode: response.countryCode,
-                    };
+                        if (shippingOptionData) {
+                            extraData.newShippingMethod = shippingOptionData;
+                        }
+
+                        const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
+
+                        paymentDataRequestUpdate.newTransactionInfo = {
+                            currencyCode: response.currency,
+                            totalPriceStatus: "FINAL",
+                            totalPrice: (parseInt(response.amount) / 100).toString(),
+                            totalPriceLabel: "Total",
+                            countryCode: response.countryCode,
+                        };
+                    }
+
+                    resolve(paymentDataRequestUpdate);
+                } catch (error) {
+                    console.error("Error in onPaymentDataChanged:", error);
+                    resolve({
+                        error: error.error
+                    });
                 }
-
-                if (callbackTrigger === 'SHIPPING_OPTION') {
-                    console.log("SHIPPING trigger")
-
-                    const extraData = {};
-
-                    if (shippingAddress) {
-                        extraData.newAddress = shippingAddress;
-                    }
-
-                    if (shippingOptionData) {
-                        extraData.newShippingMethod = shippingOptionData;
-                    }
-
-                    const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
-
-                    paymentDataRequestUpdate.newTransactionInfo = {
-                        currencyCode: response.currency,
-                        totalPriceStatus: "FINAL",
-                        totalPrice: (parseInt(response.amount) / 100).toString(),
-                        totalPriceLabel: "Total",
-                        countryCode: response.countryCode,
-                    };
-                }
-
-                resolve(paymentDataRequestUpdate);
             });
         };
 
@@ -130,10 +137,17 @@ export default class ExpressCheckoutPlugin extends Plugin {
             "paypal": {},
             "applepay": {}
         };
+
         this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
                              document.querySelector('.product-detail-quantity-input');
-        console.log("kolicina" + this.quantityInput.value)
+
+        if(this.quantityInput) {
+            console.log("kolicina" + this.quantityInput.value)
+        }
+
         this.listenOnQuantityChange();
+
+        console.log(adyenExpressCheckoutOptions);
 
         this.mountExpressCheckoutComponents({
             countryCode: adyenExpressCheckoutOptions.countryCode,
@@ -160,11 +174,26 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 (response) => {
                     try {
                         const parsedResponse = JSON.parse(response);
-                        console.log("Controller Response:", parsedResponse);
+                        console.log("odgovor ")
+                        console.log(parsedResponse);
+
+                        console.log("status ")
+                        console.log(this._client._request.status)
+
+                        if (this._client._request.status >= 400) {
+                            // if valid resonse, but contains error data
+                            reject({
+                                error: parsedResponse.error
+                            });
+                            return;
+                        }
+
                         resolve(parsedResponse);
                     } catch (error) {
-                        console.error("Failed to parse response:", error);
-                        reject(error);
+                        reject({
+                            status: 500,
+                            message: "Failed to parse server response.",
+                        });
                     }
                 }
             );

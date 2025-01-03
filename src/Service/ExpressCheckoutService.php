@@ -3,6 +3,8 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\Model\Checkout\PaymentMethodsResponse;
+use Adyen\Shopware\Exception\ResolveCountryException;
+use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
@@ -292,7 +294,7 @@ class ExpressCheckoutService
         $country = $this->countryRepository->search($criteria, $salesChannelContext->getContext())->first();
 
         if (!$country) {
-            throw new \Exception('Invalid country information.');
+            throw new ResolveCountryException("No shipping country found!");
         }
 
         return $country;
@@ -324,7 +326,7 @@ class ExpressCheckoutService
 
         // If no shipping method is resolved, throw an exception
         if (!$shippingMethod) {
-            throw new \Exception('No valid shipping method is available.');
+            throw new ResolveShippingMethodException("No shipping method found!");
         }
 
         return $shippingMethod;

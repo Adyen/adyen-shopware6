@@ -24,6 +24,8 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\ExpressCheckout;
 
+use Adyen\Shopware\Exception\ResolveCountryException;
+use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -81,13 +83,41 @@ class ExpressCheckoutController
             $newShipping = [];
         }
 
-        return new JsonResponse($this->expressCheckoutService->getExpressCheckoutConfigOnProductPage(
-            $productId,
-            $quantity,
-            $salesChannelContext,
-            $newAddress,
-            $newShipping
-        ));
+        try {
+            $config = $this->expressCheckoutService->getExpressCheckoutConfigOnProductPage(
+                $productId,
+                $quantity,
+                $salesChannelContext,
+                $newAddress,
+                $newShipping
+            );
+
+            return new JsonResponse($config);
+        } catch (ResolveCountryException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'SHIPPING_ADDRESS_INVALID',
+                    'message' => $e->getMessage(),
+                    'intent' => 'SHIPPING_ADDRESS',
+                ]
+            ], 400);
+        } catch (ResolveShippingMethodException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'SHIPPING_OPTION_INVALID',
+                    'message' => $e->getMessage(),
+                    'intent' => 'SHIPPING_OPTION',
+                ]
+            ], 400);
+        } catch (\Exception $e) {
+            // Fallback for unexpected errors
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'OTHER_ERROR',
+                    'message' => $e->getMessage(),
+                ]
+            ], 500);
+        }
     }
 
     /**
