@@ -224,10 +224,16 @@ class ExpressCheckoutService
         // Check if the user is guest or customer
         $this->isLoggedIn = $salesChannelContext->getCustomer() !== null;
 
-        // Creating new cart with the product from the product page
-        $lineItem = new LineItem($productId, 'product', $productId, $quantity);
-        $cart = $this->cartService->createNew($tokenNew = Uuid::randomHex());
-        $cart->add($lineItem);
+        $token = $salesChannelContext->getToken();
+        $cart = $this->cartService->getCart($token, $salesChannelContext);
+
+        if ($productId !== "-1") { // product page
+            // Creating new cart with the product from the product page
+            $lineItem = new LineItem($productId, 'product', $productId, $quantity);
+            $cart = $this->cartService->createNew($tokenNew = Uuid::randomHex());
+            $cart->add($lineItem);
+            $token = $tokenNew;
+        }
 
         // Resolving shipping location
         $country = $this->resolveCountry($salesChannelContext, $newAddress);
@@ -235,8 +241,8 @@ class ExpressCheckoutService
 
         // Check Shopware version and create context accordingly
         $updatedSalesChannelContext = $this->isVersion64
-            ? $this->createContextFor64($salesChannelContext, $tokenNew, $shippingLocation)
-            : $this->createContextFor65($salesChannelContext, $tokenNew, $shippingLocation);
+            ? $this->createContextFor64($salesChannelContext, $token, $shippingLocation)
+            : $this->createContextFor65($salesChannelContext, $token, $shippingLocation);
 
         // recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
@@ -249,8 +255,8 @@ class ExpressCheckoutService
 
         // Recreate context with selected shipping method
         $updatedSalesChannelContext = $this->isVersion64
-            ? $this->createContextFor64($salesChannelContext, $tokenNew, $shippingLocation, $shippingMethod)
-            : $this->createContextFor65($salesChannelContext, $tokenNew, $shippingLocation, $shippingMethod);
+            ? $this->createContextFor64($salesChannelContext, $token, $shippingLocation, $shippingMethod)
+            : $this->createContextFor65($salesChannelContext, $token, $shippingLocation, $shippingMethod);
 
         // Recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
