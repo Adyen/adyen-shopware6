@@ -113,11 +113,16 @@ class PaymentMethodsService
     /**
      * @param SalesChannelContext $context
      * @param string $orderId
+     * @param int $amount
      * @return PaymentMethodsResponse
      */
-    public function getPaymentMethods(SalesChannelContext $context, $orderId = ''): PaymentMethodsResponse
+    public function getPaymentMethods(
+        SalesChannelContext $context,
+        string $orderId = '',
+        int $amount = 0
+    ): PaymentMethodsResponse
     {
-        $requestData = $this->buildPaymentMethodsRequestData($context, $orderId);
+        $requestData = $this->buildPaymentMethodsRequestData($context, $orderId, $amount);
 
         $paymentRequestString = json_encode($requestData);
         $cacheKey = 'adyen_payment_methods_' . md5($paymentRequestString);
@@ -200,9 +205,14 @@ class PaymentMethodsService
     /**
      * @param SalesChannelContext $context
      * @param string $orderId
+     * @param int $amount
      * @return array
      */
-    private function buildPaymentMethodsRequestData(SalesChannelContext $context, $orderId = '')
+    private function buildPaymentMethodsRequestData(
+        SalesChannelContext $context,
+        string $orderId = '',
+        int $amount = 0
+    ): array
     {
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
@@ -215,8 +225,10 @@ class PaymentMethodsService
         // Retrieve data from cart if no order is created yet
         if ($orderId === '') {
             $currency = $context->getCurrency()->getIsoCode();
-            $cart = $this->cartService->getCart($context->getToken(), $context);
-            $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
+            if ($amount === 0){
+                $cart = $this->cartService->getCart($context->getToken(), $context);
+                $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
+            }
         } else {
             $order = $this->orderRepository->getOrder($orderId, $context->getContext(), ['currency']);
             $currency = $order->getCurrency()->getIsoCode();

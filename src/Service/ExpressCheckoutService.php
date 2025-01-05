@@ -2,59 +2,35 @@
 
 namespace Adyen\Shopware\Service;
 
-use Adyen\Model\Checkout\PaymentMethodsResponse;
-use Adyen\Shopware\Exception\ResolveCountryException;
+use Adyen\Shopware\Service\Repository\ExpressCheckoutRepository;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
-use Shopware\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
-use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
-use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 class ExpressCheckoutService
 {
-
     /** @var CartService */
-    private $cartService;
+    private CartService $cartService;
 
     /**
-     * @var EntityRepository
+     * @var ExpressCheckoutRepository
      */
-    private $countryRepository;
-    /**
-     * @var EntityRepository
-     */
-    private $paymentMethodRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $shippingMethodRepository;
-
-    /**
-     * @var PaymentMethodsService
-     */
-    private $paymentMethodsService;
+    private ExpressCheckoutRepository $expressCheckoutRepository;
 
     /**
      * @var PaymentMethodsFilterService
      */
-    private $paymentMethodsFilterService;
+    private PaymentMethodsFilterService $paymentMethodsFilterService;
 
     /**
      * @var Currency
@@ -72,20 +48,15 @@ class ExpressCheckoutService
     private bool $isLoggedIn;
 
     public function __construct(
-        CartService           $cartService,
-        EntityRepository      $countryRepository,
-        EntityRepository      $paymentMethodRepository,
-        EntityRepository      $shippingMethodRepository,
-        PaymentMethodsService $paymentMethodsService,
+        CartService                 $cartService,
+        ExpressCheckoutRepository   $expressCheckoutRepository,
         PaymentMethodsFilterService $paymentMethodsFilterService,
-        Currency $currencyUtil,
-        KernelInterface $kernel
-    ) {
+        Currency                    $currencyUtil,
+        KernelInterface             $kernel
+    )
+    {
         $this->cartService = $cartService;
-        $this->countryRepository = $countryRepository;
-        $this->paymentMethodRepository = $paymentMethodRepository;
-        $this->shippingMethodRepository = $shippingMethodRepository;
-        $this->paymentMethodsService = $paymentMethodsService;
+        $this->expressCheckoutRepository = $expressCheckoutRepository;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
         $this->currencyUtil = $currencyUtil;
         $this->isVersion64 = $this->isVersion64($kernel->getContainer()->getParameter('kernel.shopware_version'));
@@ -142,8 +113,6 @@ class ExpressCheckoutService
         // Available payment methods
         $paymentMethods = $cartData['paymentMethods'];
 
-        $this->getAvailableExpressCheckoutPaymentMethods($salesChannelContext);
-
         return [
             'currency' => $currency,
             'amount' => $amountInMinorUnits,
@@ -167,43 +136,8 @@ class ExpressCheckoutService
      */
     public function getCountryCode(?CustomerEntity $customer, SalesChannelContext $salesChannelContext): string
     {
-        if ($customer && $customer->getActiveShippingAddress() && $customer->getActiveShippingAddress()->getCountry()) {
-            return $customer->getActiveShippingAddress()->getCountry()->getIso();
-        }
-
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('id', $salesChannelContext->getSalesChannel()->getCountryId()));
-        /** @var null|CountryEntity $country */
-        $country = $this->countryRepository->search($criteria, $salesChannelContext->getContext())->first();
-        if ($country) {
-            return $country->getIso();
-        }
-
-        return '';
+        return $this->expressCheckoutRepository->getCountryCode($customer, $salesChannelContext);
     }
-
-    /**
-     * Returns filtered Adyen express checkout payment methods
-     *
-     * @param SalesChannelContext $salesChannelContext
-     * @return PaymentMethodsResponse
-     */
-    public function getAvailableExpressCheckoutPaymentMethods(
-        SalesChannelContext $salesChannelContext
-    ): PaymentMethodsResponse {
-        $adyenPaymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext)
-            ->getPaymentMethods();
-        $salesChannelPaymentMethodIs = $shopwarePaymentMethods = $salesChannelContext->getSalesChannel()
-            ->getPaymentMethodIds();
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsAnyFilter('id', $salesChannelPaymentMethodIs));
-        /** @var null|PaymentMethodCollection $country */
-        $paymentMethods = $this->paymentMethodRepository->search($criteria, $salesChannelContext->getContext())
-            ->getEntities();
-
-        return new PaymentMethodsResponse();
-    }
-
 
     /**
      * Creates a cart with the provided product and calculates it with the resolved shipping location and method.
@@ -246,7 +180,7 @@ class ExpressCheckoutService
         }
 
         // Resolving shipping location
-        $country = $this->resolveCountry($salesChannelContext, $newAddress);
+        $country = $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
         $shippingLocation = ShippingLocation::createFromCountry($country);
 
         // Check Shopware version and create context accordingly
@@ -258,7 +192,8 @@ class ExpressCheckoutService
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
 
         // Fetch available shipping methods
-        $shippingMethods = $this->fetchAvailableShippingMethods($updatedSalesChannelContext, $cart);
+        $shippingMethods = $this->expressCheckoutRepository
+            ->fetchAvailableShippingMethods($updatedSalesChannelContext, $cart);
 
         // Fetch shipping method
         $shippingMethod = $this->resolveShippingMethod($updatedSalesChannelContext, $cart, $newShipping);
@@ -271,9 +206,9 @@ class ExpressCheckoutService
         // Recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
 
-        $paymentMethods = $this->paymentMethodsService->getPaymentMethods($updatedSalesChannelContext);
+        // Fetch available express checkout payment methods
         $filteredPaymentMethods = $this->paymentMethodsFilterService
-            ->filterAndValidatePaymentMethods($paymentMethods, $cart, $salesChannelContext);
+            ->getAvailableExpressCheckoutPaymentMethods($cart, $updatedSalesChannelContext);
 
         return [
             'cart' => $cart,
@@ -282,38 +217,6 @@ class ExpressCheckoutService
             'shippingLocation' => $shippingLocation,
             'paymentMethods' => $filteredPaymentMethods,
         ];
-    }
-
-    /**
-     * Resolves the country entity based on the provided new address or context.
-     *
-     * @param SalesChannelContext $salesChannelContext The current sales channel context.
-     * @param array $newAddress Optional new address details.
-     * @return CountryEntity The resolved country entity.
-     * @throws \Exception If the country cannot be resolved.
-     */
-    private function resolveCountry(SalesChannelContext $salesChannelContext, array $newAddress = []): CountryEntity
-    {
-        $criteria = new Criteria();
-
-        // If country code is present in request, use it to find the country
-        if (!empty($newAddress['countryCode'])) {
-            $criteria->addFilter(new EqualsFilter('iso', $newAddress['countryCode']));
-        } else {
-            // If user is logged in, use its shipping country
-            // And if not, use shop default country
-            $customer = $salesChannelContext->getCustomer();
-            $countryIso = $this->getCountryCode($customer, $salesChannelContext);
-            $criteria->addFilter(new EqualsFilter('iso', $countryIso));
-        }
-
-        $country = $this->countryRepository->search($criteria, $salesChannelContext->getContext())->first();
-
-        if (!$country) {
-            throw new ResolveCountryException("No shipping country found!");
-        }
-
-        return $country;
     }
 
     /**
@@ -329,9 +232,10 @@ class ExpressCheckoutService
         SalesChannelContext $salesChannelContext,
         Cart                $cart,
         array               $newShipping
-    ): ShippingMethodEntity {
+    ): ShippingMethodEntity
+    {
         // Fetch available shipping methods
-        $filteredMethods = $this->fetchAvailableShippingMethods($salesChannelContext, $cart);
+        $filteredMethods = $this->expressCheckoutRepository->fetchAvailableShippingMethods($salesChannelContext, $cart);
 
         // Check if a specific shipping method ID is provided in the new shipping data
         $newShippingMethodId = $newShipping['id'] ?? null;
@@ -346,32 +250,6 @@ class ExpressCheckoutService
         }
 
         return $shippingMethod;
-    }
-
-    /**
-     * Fetches the available shipping methods for the given context and cart.
-     *
-     * @param SalesChannelContext $salesChannelContext The current sales channel context.
-     * @param Cart $cart The cart to calculate shipping for.
-     * @return ShippingMethodCollection The collection of available shipping methods.
-     */
-    private function fetchAvailableShippingMethods(
-        SalesChannelContext $salesChannelContext,
-        Cart $cart
-    ): ShippingMethodCollection {
-        $criteria = new Criteria();
-        $criteria->addAssociation('availabilityRule');
-
-        /** @var ShippingMethodCollection $shippingMethods */
-        $shippingMethods = $this->shippingMethodRepository->search($criteria, $salesChannelContext->getContext())
-            ->getEntities();
-
-        return $shippingMethods
-            ->filter(function (ShippingMethodEntity $shippingMethod) use ($cart, $salesChannelContext) {
-                $availabilityRule = $shippingMethod->getAvailabilityRule();
-                return !$availabilityRule || $availabilityRule->getPayload()
-                    ->match(new CartRuleScope($cart, $salesChannelContext));
-            });
     }
 
     /**
@@ -391,7 +269,8 @@ class ExpressCheckoutService
         ShippingLocation $shippingLocation,
         PaymentMethodEntity $paymentMethod,
         ?ShippingMethodEntity $shippingMethod = null
-    ): SalesChannelContext {
+    ): SalesChannelContext
+    {
         return new SalesChannelContext(
             $salesChannelContext->getContext(),
             $token,
@@ -427,7 +306,8 @@ class ExpressCheckoutService
         ShippingLocation $shippingLocation,
         PaymentMethodEntity $paymentMethod,
         ?ShippingMethodEntity $shippingMethod = null
-    ): SalesChannelContext {
+    ): SalesChannelContext
+    {
         return new SalesChannelContext(
             $salesChannelContext->getContext(),
             $token,

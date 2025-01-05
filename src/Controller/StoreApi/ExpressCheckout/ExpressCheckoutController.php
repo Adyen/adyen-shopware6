@@ -74,7 +74,7 @@ class ExpressCheckoutController
         $quantity = (int)$request->request->get('quantity');
         $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';
         $newAddress = $request->request->all()['newAddress'] ?? null;
-        $newShipping = $request->request->all()['newAddress'] ?? null;
+        $newShipping = $request->request->all()['newShippingMethod'] ?? null;
 
         if ($newAddress === null) {
             $newAddress = [];
