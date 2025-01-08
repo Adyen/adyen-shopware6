@@ -30,8 +30,7 @@ class ExpressCheckoutRepository
     public function __construct(
         EntityRepository $shippingMethodRepository,
         EntityRepository $countryRepository
-    )
-    {
+    ) {
         $this->shippingMethodRepository = $shippingMethodRepository;
         $this->countryRepository = $countryRepository;
     }
@@ -120,5 +119,4 @@ class ExpressCheckoutRepository
 
         return $country;
     }
-
 }

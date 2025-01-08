@@ -53,8 +53,7 @@ class ExpressCheckoutService
         PaymentMethodsFilterService $paymentMethodsFilterService,
         Currency                    $currencyUtil,
         KernelInterface             $kernel
-    )
-    {
+    ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
@@ -94,7 +93,14 @@ class ExpressCheckoutService
         string $formattedHandlerIdentifier = ''
     ): array {
         // Creating new cart
-        $cartData = $this->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier);
+        $cartData = $this->createCart(
+            $productId,
+            $quantity,
+            $salesChannelContext,
+            $newAddress,
+            $newShipping,
+            $formattedHandlerIdentifier
+        );
 
         $cart = $cartData['cart'];
 
@@ -176,7 +182,8 @@ class ExpressCheckoutService
         $paymentMethod = $salesChannelContext->getPaymentMethod();
         if ($formattedHandlerIdentifier !== '') {
             // Express checkout payment method
-            $paymentMethod = $this->paymentMethodsFilterService->getPaymentMethodByFormattedHandler($formattedHandlerIdentifier, $salesChannelContext->getContext());
+            $paymentMethod = $this->paymentMethodsFilterService
+                ->getPaymentMethodByFormattedHandler($formattedHandlerIdentifier, $salesChannelContext->getContext());
         }
 
         // Resolving shipping location
@@ -200,8 +207,20 @@ class ExpressCheckoutService
 
         // Recreate context with selected shipping method
         $updatedSalesChannelContext = $this->isVersion64
-            ? $this->createContextFor64($salesChannelContext, $token, $shippingLocation, $paymentMethod, $shippingMethod)
-            : $this->createContextFor65($salesChannelContext, $token, $shippingLocation, $paymentMethod, $shippingMethod);
+            ? $this->createContextFor64(
+                $salesChannelContext,
+                $token,
+                $shippingLocation,
+                $paymentMethod,
+                $shippingMethod
+            )
+            : $this->createContextFor65(
+                $salesChannelContext,
+                $token,
+                $shippingLocation,
+                $paymentMethod,
+                $shippingMethod
+            );
 
         // Recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
@@ -232,8 +251,7 @@ class ExpressCheckoutService
         SalesChannelContext $salesChannelContext,
         Cart                $cart,
         array               $newShipping
-    ): ShippingMethodEntity
-    {
+    ): ShippingMethodEntity {
         // Fetch available shipping methods
         $filteredMethods = $this->expressCheckoutRepository->fetchAvailableShippingMethods($salesChannelContext, $cart);
 
@@ -269,8 +287,7 @@ class ExpressCheckoutService
         ShippingLocation $shippingLocation,
         PaymentMethodEntity $paymentMethod,
         ?ShippingMethodEntity $shippingMethod = null
-    ): SalesChannelContext
-    {
+    ): SalesChannelContext {
         return new SalesChannelContext(
             $salesChannelContext->getContext(),
             $token,
@@ -306,8 +323,7 @@ class ExpressCheckoutService
         ShippingLocation $shippingLocation,
         PaymentMethodEntity $paymentMethod,
         ?ShippingMethodEntity $shippingMethod = null
-    ): SalesChannelContext
-    {
+    ): SalesChannelContext {
         return new SalesChannelContext(
             $salesChannelContext->getContext(),
             $token,

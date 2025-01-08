@@ -94,9 +94,8 @@ class PaymentMethodsFilterService
         ExpressCheckoutRepository  $expressCheckoutRepository,
         Currency                   $currency,
         AbstractPaymentMethodRoute $paymentMethodRoute,
-                                   $paymentMethodRepository
-    )
-    {
+        $paymentMethodRepository
+    ) {
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
         $this->paymentMethodRoute = $paymentMethodRoute;
@@ -342,8 +341,7 @@ class PaymentMethodsFilterService
     public function getAvailableExpressCheckoutPaymentMethods(
         Cart                $cart,
         SalesChannelContext $salesChannelContext
-    ): PaymentMethodsResponse
-    {
+    ): PaymentMethodsResponse {
         $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
         $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
         $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
@@ -367,7 +365,8 @@ class PaymentMethodsFilterService
             ->getElements();
 
         foreach ($salesChannelPaymentMethodEntities as $paymentMethodEntity) {
-            if ( $paymentMethodEntity->getFormattedHandlerIdentifier() === 'handler_adyen_googlepaypaymentmethodhandler') {
+            if ($paymentMethodEntity->getFormattedHandlerIdentifier()
+                === 'handler_adyen_googlepaypaymentmethodhandler') {
                 $googlePayInSalesChannel = true;
                 continue;
             }
@@ -377,7 +376,8 @@ class PaymentMethodsFilterService
                 continue;
             }
 
-            if ($paymentMethodEntity->getFormattedHandlerIdentifier() === 'handler_adyen_applepaypaymentmethodhandler') {
+            if ($paymentMethodEntity->getFormattedHandlerIdentifier()
+                === 'handler_adyen_applepaypaymentmethodhandler') {
                 $applePayInSalesChannel = true;
             }
         }
@@ -433,8 +433,10 @@ class PaymentMethodsFilterService
      * @param Context $context
      * @return PaymentMethodEntity|null
      */
-    public function getPaymentMethodByFormattedHandler(string $formattedHandlerIdentifier, Context $context): ?PaymentMethodEntity
-    {
+    public function getPaymentMethodByFormattedHandler(
+        string $formattedHandlerIdentifier,
+        Context $context
+    ): ?PaymentMethodEntity {
         $criteria = new Criteria();
 
         // Fetch all payment methods
@@ -461,8 +463,7 @@ class PaymentMethodsFilterService
     private function getSalesChannelPaymentMethodEntitiesFilteredByRules(
         Cart $cart,
         SalesChannelContext $salesChannelContext
-    ): PaymentMethodCollection
-    {
+    ): PaymentMethodCollection {
         $salesChannelPaymentMethodIs = $salesChannelContext->getSalesChannel()
             ->getPaymentMethodIds();
         $criteria = new Criteria();
@@ -473,7 +474,10 @@ class PaymentMethodsFilterService
         $paymentMethods = $this->paymentMethodRepository->search($criteria, $salesChannelContext->getContext())
             ->getEntities();
 
-        return $paymentMethods->filter(function (PaymentMethodEntity $paymentMethodEntity) use ($cart, $salesChannelContext) {
+        return $paymentMethods->filter(function (PaymentMethodEntity $paymentMethodEntity) use (
+            $cart,
+            $salesChannelContext
+        ) {
             $availabilityRule = $paymentMethodEntity->getAvailabilityRule();
             if (!$availabilityRule) {
                 return true; // No rule means it's always available

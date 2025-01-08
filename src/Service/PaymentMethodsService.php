@@ -120,8 +120,7 @@ class PaymentMethodsService
         SalesChannelContext $context,
         string $orderId = '',
         int $amount = 0
-    ): PaymentMethodsResponse
-    {
+    ): PaymentMethodsResponse {
         $requestData = $this->buildPaymentMethodsRequestData($context, $orderId, $amount);
 
         $paymentRequestString = json_encode($requestData);
@@ -212,8 +211,7 @@ class PaymentMethodsService
         SalesChannelContext $context,
         string $orderId = '',
         int $amount = 0
-    ): array
-    {
+    ): array {
         $merchantAccount = $this->configurationService->getMerchantAccount($context->getSalesChannel()->getId());
 
         if (!$merchantAccount) {
@@ -225,7 +223,7 @@ class PaymentMethodsService
         // Retrieve data from cart if no order is created yet
         if ($orderId === '') {
             $currency = $context->getCurrency()->getIsoCode();
-            if ($amount === 0){
+            if ($amount === 0) {
                 $cart = $this->cartService->getCart($context->getToken(), $context);
                 $amount = $this->currency->sanitize($cart->getPrice()->getTotalPrice(), $currency);
             }
