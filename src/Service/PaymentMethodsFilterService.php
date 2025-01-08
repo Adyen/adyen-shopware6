@@ -409,15 +409,16 @@ class PaymentMethodsFilterService
         $applePayAvailable ? $allowedMethods['applepay'] = true : false;
 
 //         Filter methods by type and configuration
-        $filteredMethods =
-            array_filter($paymentMethods, function ($method) use ($allowedMethods, $salesChannelContext) {
+        $filteredMethods = array_values(
+            array_filter($paymentMethods, function ($method) use ($allowedMethods) {
                 $type = $method['type'];
                 if (!isset($allowedMethods[$type])) {
                     return false;
                 }
 
                 return $method;
-            });
+            })
+        );
 
         $paymentMethodsResponse = new PaymentMethodsResponse();
         $paymentMethodsResponse->setPaymentMethods($filteredMethods);
