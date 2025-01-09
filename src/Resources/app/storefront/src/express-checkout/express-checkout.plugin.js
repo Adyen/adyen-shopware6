@@ -215,11 +215,19 @@ export default class ExpressCheckoutPlugin extends Plugin {
             return;
         }
 
+        let availableTypes = [];
+        let paymentMethods = data.paymentMethodsResponse.paymentMethods || [];
+        for (let i = 0; i < paymentMethods.length; i++) {
+            availableTypes[i] = paymentMethods[i].type;
+        }
+
         for (let i = 0; i < checkoutElements.length; i++) {
             let type = checkoutElements[i].getElementsByClassName('adyen-type')[0].value;
-            this.initializeCheckoutComponent(data).then(function (checkoutInstance) {
-                this.mountElement(type, checkoutInstance, checkoutElements[i]);
-            }.bind(this));
+            if (availableTypes.includes(type)){
+                this.initializeCheckoutComponent(data).then(function (checkoutInstance) {
+                    this.mountElement(type, checkoutInstance, checkoutElements[i]);
+                }.bind(this));
+            }
         }
     }
 
