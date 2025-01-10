@@ -262,8 +262,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
             paymentMethodsResponse: data.paymentMethodsResponse,
             onAdditionalDetails: this.handleOnAdditionalDetails.bind(this),
             onSubmit: function (state, component) {
-                console.log("on submit funkcija")
-            }
+                // SUBMIT PAYMENT
+            }.bind(this)
         };
 
         return Promise.resolve(await AdyenCheckout(ADYEN_EXPRESS_CHECKOUT_CONFIG));

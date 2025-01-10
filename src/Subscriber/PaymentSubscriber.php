@@ -349,7 +349,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'expressCheckoutConfigUrl' =>
                         $this->router->generate('payment.adyen.proxy-express-checkout-config'),
                     'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                    'checkoutOrderExpressUrl' => $this->router->generate('payment.adyen.proxy-checkout-order-express-product'),
                     'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
+                    'paymentHandleExpressUrl' => $this->router->generate('payment.adyen.proxy-handle-payment-express-product'),
                     'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
                     'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
                     'paymentFinishUrl' => $this->router->generate(
