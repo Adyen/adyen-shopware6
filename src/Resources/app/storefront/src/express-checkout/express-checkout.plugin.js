@@ -33,7 +33,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             console.log("onPaymentDataChanged triggered", intermediatePaymentData);
-            return new Promise(async  resolve => {
+            return new Promise(async resolve => {
                 try {
                     const {callbackTrigger, shippingAddress, shippingOptionData} = intermediatePaymentData;
                     const paymentDataRequestUpdate = {};
@@ -119,8 +119,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 },
                 isExpress: true,
                 callbackIntents: !userLoggedIn ? ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION', 'SHIPPING_OPTION'] : [],
-                shippingAddressRequired: !userLoggedIn ,
-                emailRequired: !userLoggedIn ,
+                shippingAddressRequired: !userLoggedIn,
+                emailRequired: !userLoggedIn,
                 shippingAddressParameters: {
                     allowedCountryCodes: [],
                     phoneNumberRequired: true
@@ -130,7 +130,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 onAuthorized: paymentData => {
                     console.log('Shopper details', paymentData);
                 },
-                buttonColor : "white",
+                buttonColor: "white",
                 paymentDataCallbacks: !userLoggedIn ?
                     {
                         onPaymentDataChanged: onPaymentDataChanged,
@@ -143,10 +143,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
             "applepay": {}
         };
 
-        this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
-            document.querySelector('.product-detail-quantity-input');
+        this.productDetailPageBuyProductForm = document.getElementById('productDetailPageBuyProductForm');
+        if (this.productDetailPageBuyProductForm) {
+            this.quantityInput = this.productDetailPageBuyProductForm.querySelector('.js-quantity-selector');
+        }
 
-        if(this.quantityInput) {
+        if (this.quantityInput) {
             console.log("kolicina" + this.quantityInput.value)
         }
 
@@ -156,7 +158,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         this.mountExpressCheckoutComponents({
             countryCode: adyenExpressCheckoutOptions.countryCode,
-            amount:  adyenExpressCheckoutOptions.amount,
+            amount: adyenExpressCheckoutOptions.amount,
             currency: adyenExpressCheckoutOptions.currency,
             paymentMethodsResponse: JSON.parse(adyenExpressCheckoutOptions.paymentMethodsResponse),
             // shippingMethodsResponse: adyenExpressCheckoutOptions.paymentMethodsResponse,
@@ -172,7 +174,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this._client.post(
                 url,
                 JSON.stringify({
-                    quantity:  this.quantityInput ? this.quantityInput.value : -1,
+                    quantity: this.quantityInput ? this.quantityInput.value : -1,
                     productId: productId,
                     ...extraData
                 }),
@@ -223,7 +225,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         for (let i = 0; i < checkoutElements.length; i++) {
             let type = checkoutElements[i].getElementsByClassName('adyen-type')[0].value;
-            if (availableTypes.includes(type)){
+            if (availableTypes.includes(type)) {
                 this.initializeCheckoutComponent(data).then(function (checkoutInstance) {
                     this.mountElement(type, checkoutInstance, checkoutElements[i]);
                 }.bind(this));
@@ -254,7 +256,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             clientKey,
             environment,
             showPayButton: true,
-            countryCode:data.countryCode,
+            countryCode: data.countryCode,
             amount: {
                 value: data.amount,
                 currency: data.currency,
@@ -304,12 +306,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
     }
 
-    afterQuantityUpdated(response){
+    afterQuantityUpdated(response) {
         try {
             const responseObject = JSON.parse(response);
             this.mountExpressCheckoutComponents({
                 countryCode: responseObject.countryCode,
-                amount:  responseObject.amount,
+                amount: responseObject.amount,
                 currency: responseObject.currency,
                 paymentMethodsResponse: JSON.parse(responseObject.paymentMethodsResponse),
             })

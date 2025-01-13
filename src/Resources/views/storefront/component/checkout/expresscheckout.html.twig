@@ -1,8 +1,10 @@
 <div id="adyen-express-checkout">
     <div id="adyen-express-checkout-options"
          data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}"
+         data-checkout-order-express-url="{{ adyenFrontendData.checkoutOrderExpressUrl }}"
          data-express-checkout-config-url="{{ adyenFrontendData.expressCheckoutConfigUrl }}"
          data-payment-handle-url="{{ adyenFrontendData.paymentHandleUrl }}"
+         data-payment-handle-express-url="{{ adyenFrontendData.paymentHandleExpressUrl }}"
          data-payment-details-url="{{ adyenFrontendData.paymentDetailsUrl }}"
          data-payment-finish-url="{{ adyenFrontendData.paymentFinishUrl }}"
          data-payment-error-url="{{ adyenFrontendData.paymentErrorUrl }}"
@@ -10,6 +12,8 @@
          data-amount="{{ adyenFrontendData.amount }}"
          data-currency="{{ adyenFrontendData.currency }}"
          data-payment-methods-response="{{ adyenFrontendData.paymentMethodsResponse }}"
+         data-user-logged-in="{{ adyenFrontendData.userLoggedIn }}"
+         data-shipping-methods-response="{{ adyenFrontendData.shippingMethodsResponse }}"
     ></div>
     {% set adyenExpressCheckoutPaymentTypes = ['applepay', 'paywithgoogle', 'paypal'] %}
     {% for adyenPaymentMethodType in adyenExpressCheckoutPaymentTypes %}
