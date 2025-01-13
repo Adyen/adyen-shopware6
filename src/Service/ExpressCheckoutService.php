@@ -112,7 +112,7 @@ class ExpressCheckoutService
             return [
                 'id' => $method->getId(),
                 'label' => $method->getName(),
-                'description' => $method->getDescription()
+                'description' => $method->getDescription() ?? ''
             ];
         }, $cartData['shippingMethods']->getElements());
 
