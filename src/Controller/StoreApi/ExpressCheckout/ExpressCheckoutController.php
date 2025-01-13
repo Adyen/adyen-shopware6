@@ -24,6 +24,8 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\ExpressCheckout;
 
+use Adyen\Shopware\Exception\ResolveCountryException;
+use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -70,11 +72,53 @@ class ExpressCheckoutController
     ): JsonResponse {
         $productId = $request->request->get('productId');
         $quantity = (int)$request->request->get('quantity');
+        $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';
+        $newAddress = $request->request->all()['newAddress'] ?? null;
+        $newShipping = $request->request->all()['newShippingMethod'] ?? null;
 
-        return new JsonResponse($this->expressCheckoutService->getExpressCheckoutConfigOnProductPage(
-            $productId,
-            $quantity,
-            $salesChannelContext
-        ));
+        if ($newAddress === null) {
+            $newAddress = [];
+        }
+
+        if ($newShipping === null) {
+            $newShipping = [];
+        }
+
+        try {
+            $config = $this->expressCheckoutService->getExpressCheckoutConfig(
+                $productId,
+                $quantity,
+                $salesChannelContext,
+                $newAddress,
+                $newShipping,
+                $formattedHandlerIdentifier
+            );
+
+            return new JsonResponse($config);
+        } catch (ResolveCountryException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'SHIPPING_ADDRESS_INVALID',
+                    'message' => $e->getMessage(),
+                    'intent' => 'SHIPPING_ADDRESS',
+                ]
+            ], 400);
+        } catch (ResolveShippingMethodException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'SHIPPING_OPTION_INVALID',
+                    'message' => $e->getMessage(),
+                    'intent' => 'SHIPPING_OPTION',
+                ]
+            ], 400);
+        } catch (\Exception $e) {
+            // Fallback for unexpected errors
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'OTHER_ERROR',
+                    'message' => $e->getMessage(),
+                ]
+            ], 500);
+        }
     }
 }
