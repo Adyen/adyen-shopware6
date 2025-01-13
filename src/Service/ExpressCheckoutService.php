@@ -84,7 +84,7 @@ class ExpressCheckoutService
      * @param array $newShipping Optional new shipping method details.
      * @return array The configuration for express checkout.
      */
-    public function getExpressCheckoutConfigOnProductPage(
+    public function getExpressCheckoutConfig(
         string $productId,
         int $quantity,
         SalesChannelContext $salesChannelContext,

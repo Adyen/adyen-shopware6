@@ -85,7 +85,7 @@ class ExpressCheckoutController
         }
 
         try {
-            $config = $this->expressCheckoutService->getExpressCheckoutConfigOnProductPage(
+            $config = $this->expressCheckoutService->getExpressCheckoutConfig(
                 $productId,
                 $quantity,
                 $salesChannelContext,

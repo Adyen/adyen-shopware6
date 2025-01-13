@@ -280,7 +280,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
-                array_merge($this->getComponentData($salesChannelContext), [
+                array_merge(
+                    $this->getComponentData($salesChannelContext),
+                    [
                     'giftcards' => $giftcards,
                     'totalPrice' => $page->getCart()->getPrice()->getTotalPrice(),
                     'totalInMinorUnits' => $amountInMinorUnits,
@@ -320,7 +322,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     ),
                     'paymentMethodsResponse' => json_encode($paymentMethods),
                     'userLoggedIn' => json_encode($userLoggedIn)
-                ])
+                    ],
+                    $this->expressCheckoutService->getExpressCheckoutConfig(
+                        '-1',
+                        -1,
+                        $salesChannelContext
+                    )
+                )
             )
         );
     }
@@ -349,9 +357,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'expressCheckoutConfigUrl' =>
                         $this->router->generate('payment.adyen.proxy-express-checkout-config'),
                     'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
-                    'checkoutOrderExpressUrl' => $this->router->generate('payment.adyen.proxy-checkout-order-express-product'),
+                    'checkoutOrderExpressUrl' => $this->router->generate(
+                        'payment.adyen.proxy-checkout-order-express-product'
+                    ),
                     'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
-                    'paymentHandleExpressUrl' => $this->router->generate('payment.adyen.proxy-handle-payment-express-product'),
+                    'paymentHandleExpressUrl' => $this->router->generate(
+                        'payment.adyen.proxy-handle-payment-express-product'
+                    ),
                     'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
                     'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
                     'paymentFinishUrl' => $this->router->generate(
@@ -368,7 +380,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     ),
                     'userLoggedIn' => json_encode($userLoggedIn)
                     ],
-                    $this->expressCheckoutService->getExpressCheckoutConfigOnProductPage(
+                    $this->expressCheckoutService->getExpressCheckoutConfig(
                         $productId,
                         1,
                         $salesChannelContext
