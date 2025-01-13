@@ -320,7 +320,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         $salesChannelContext->getCustomer(),
                         $salesChannelContext
                     ),
-                    'paymentMethodsResponse' => json_encode($paymentMethods),
                     'userLoggedIn' => json_encode($userLoggedIn)
                     ],
                     $this->expressCheckoutService->getExpressCheckoutConfig(
