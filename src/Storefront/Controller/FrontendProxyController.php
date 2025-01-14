@@ -225,8 +225,39 @@ class FrontendProxyController extends StorefrontController
         RequestDataBag $data,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        // TO DO
-        return new JsonResponse();
+        $productId = $data->get('productId');
+        $quantity = (int)$data->get('quantity');
+        $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
+        $newAddress = $data->get('newAddress') ?? '{}';
+        $newShipping = $data->get('newShippingMethod') ?? '{}';
+
+        $newAddress = json_decode($newAddress, true);
+        $newShipping = json_decode($newShipping, true);
+
+        $cartData = $this->expressCheckoutController->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier);
+        $cart = $cartData['cart'];
+        $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
+
+        try {
+            $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
+
+            return new JsonResponse(['id' => $order->getId()]);
+        } catch (InvalidCartException|Error|EmptyCartException $exception) {
+            $this->addCartErrors(
+                $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)
+            );
+
+            return new JsonResponse(
+                [
+                    'url' => $this->generateUrl(
+                        'frontend.checkout.cart.page',
+                        [],
+                        UrlGeneratorInterface::ABSOLUTE_URL
+                    )
+                ],
+                400
+            );
+        }
     }
 
     /**
@@ -241,7 +272,6 @@ class FrontendProxyController extends StorefrontController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        // TO DO
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
         return new JsonResponse($routeResponse->getObject());

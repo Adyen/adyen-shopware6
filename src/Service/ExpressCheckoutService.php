@@ -190,6 +190,10 @@ class ExpressCheckoutService
         $country = $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
         $shippingLocation = ShippingLocation::createFromCountry($country);
 
+        if ($this->isLoggedIn) {
+            $shippingLocation = $salesChannelContext->getShippingLocation();
+        }
+
         // Check Shopware version and create context accordingly
         $updatedSalesChannelContext = $this->isVersion64
             ? $this->createContextFor64($salesChannelContext, $token, $shippingLocation, $paymentMethod)
@@ -235,6 +239,7 @@ class ExpressCheckoutService
             'shippingMethod' => $shippingMethod,
             'shippingLocation' => $shippingLocation,
             'paymentMethods' => $filteredPaymentMethods,
+            'updatedSalesChannelContext' => $updatedSalesChannelContext
         ];
     }
 

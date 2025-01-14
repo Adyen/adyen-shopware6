@@ -138,9 +138,10 @@ class ExpressCheckoutController
         int $quantity,
         SalesChannelContext $salesChannelContext,
         array $newAddress = [],
-        array $newShipping = []
+        array $newShipping = [],
+        string $formattedHandlerIdentifier = ''
     ): array {
         return $this->expressCheckoutService
-            ->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping);
+            ->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier);
     }
 }

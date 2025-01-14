@@ -28,8 +28,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
     init() {
         this._client = new HttpClient();
         this.paymentMethodInstance = null;
+        this.responseHandler = this.handlePaymentAction;
 
         const userLoggedIn = adyenExpressCheckoutOptions.userLoggedIn === "true";
+        this.formattedHandlerIdentifier = '';
+        this.newAddress = {};
+        this.newShippingMethod = {};
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             console.log("onPaymentDataChanged triggered", intermediatePaymentData);
@@ -44,7 +48,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                         const extraData = {};
 
                         if (shippingAddress) {
-                            extraData.newAddress = shippingAddress;
+                            this.newAddress = extraData.newAddress = shippingAddress;
                         }
 
                         extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
@@ -73,11 +77,11 @@ export default class ExpressCheckoutPlugin extends Plugin {
                         const extraData = {};
 
                         if (shippingAddress) {
-                            extraData.newAddress = shippingAddress;
+                            this.newAddress = extraData.newAddress = shippingAddress;
                         }
 
                         if (shippingOptionData) {
-                            extraData.newShippingMethod = shippingOptionData;
+                            this.newShippingMethod = extraData.newShippingMethod = shippingOptionData;
                         }
 
                         extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
@@ -115,6 +119,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 onClick: (resolve, reject) => {
                     console.log("Google Pay button clicked!");
                     console.log(userLoggedIn)
+                    this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
                     resolve();
                 },
                 isExpress: true,
@@ -262,16 +267,141 @@ export default class ExpressCheckoutPlugin extends Plugin {
             paymentMethodsResponse: data.paymentMethodsResponse,
             onAdditionalDetails: this.handleOnAdditionalDetails.bind(this),
             onSubmit: function (state, component) {
+                const productMeta = document.querySelector('meta[itemprop="productID"]');
+                const productId = productMeta ? productMeta.content : '-1';
+                const quantity =  this.quantityInput ? this.quantityInput.value : -1;
                 // SUBMIT PAYMENT
+                // check what method -gp, ap, pp
+                const formData = new FormData();
+                formData.append('productId', productId);
+                formData.append('quantity', quantity);
+                formData.append('formattedHandlerIdentifier', this.formattedHandlerIdentifier);
+                formData.append('newAddress', JSON.stringify(this.newAddress));
+                formData.append('newShippingMethod', JSON.stringify(this.newShippingMethod));
+                let extraParams = {
+                    stateData: JSON.stringify(state.data)
+                };
+
+                this.createOrder(formData, extraParams);
             }.bind(this)
         };
 
         return Promise.resolve(await AdyenCheckout(ADYEN_EXPRESS_CHECKOUT_CONFIG));
     }
 
+    createOrder(formData, extraParams) {
+        this._client.post(
+            adyenExpressCheckoutOptions.checkoutOrderExpressUrl,
+            formData,
+            this.afterCreateOrder.bind(this, extraParams)
+        );
+    }
+
+    afterCreateOrder(extraParams = {}, response) {
+        let order;
+        try {
+            order = JSON.parse(response);
+        } catch (error) {
+            ElementLoadingIndicatorUtil.remove(document.body);
+            console.log('Error: invalid response from Shopware API', response);
+            return;
+        }
+
+        if(order.url){
+            location.href = order.url;
+
+            return;
+        }
+
+        this.orderId = order.id;
+        this.finishUrl = new URL(
+            location.origin + adyenExpressCheckoutOptions.paymentFinishUrl);
+        this.finishUrl.searchParams.set('orderId', this.orderId);
+        this.errorUrl = new URL(
+            location.origin + adyenExpressCheckoutOptions.paymentErrorUrl);
+        this.errorUrl.searchParams.set('orderId', this.orderId );
+
+        let params = {
+            'orderId': this.orderId,
+            'finishUrl': this.finishUrl.toString(),
+            'errorUrl': this.errorUrl.toString(),
+        };
+
+        // Append any extra parameters passed, e.g. stateData
+        for (const property in extraParams) {
+            params[property] = extraParams[property];
+        }
+
+        this._client.post(
+            adyenExpressCheckoutOptions.paymentHandleExpressUrl,
+            JSON.stringify(params),
+            this.afterPayOrder.bind(this, this.orderId),
+        );
+    }
+
+    afterPayOrder(orderId, response) {
+        try {
+            response = JSON.parse(response);
+            console.log(response)
+            this.returnUrl = response.redirectUrl;
+        } catch (e) {
+            ElementLoadingIndicatorUtil.remove(document.body);
+            console.log('Error: invalid response from Shopware API', response);
+            return;
+        }
+
+        // If payment call returns the errorUrl, then no need to proceed further.
+        // Redirect to error page.
+        if (this.returnUrl === this.errorUrl.toString()) {
+            location.href = this.returnUrl;
+        }
+
+        try {
+            this._client.post(
+                `${adyenExpressCheckoutOptions.paymentStatusUrl}`,
+                JSON.stringify({'orderId': orderId}),
+                this.responseHandler.bind(this),
+            );
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    handlePaymentAction(response) {
+        try {
+            const paymentResponse = JSON.parse(response);
+            if (paymentResponse.isFinal || paymentResponse.action.type === 'voucher') {
+                location.href = this.returnUrl;
+            }
+            // if (!!paymentResponse.action) {
+            //     const actionModalConfiguration = {};
+            //     if (paymentResponse.action.type === 'threeDS2') {
+            //         actionModalConfiguration.challengeWindowSize = '05';
+            //     }
+            //
+            //     this.adyenCheckout
+            //         .createFromAction(paymentResponse.action, actionModalConfiguration)
+            //         .mount('[data-adyen-payment-action-container]');
+            //     const modalActionTypes = ['threeDS2', 'qrCode']
+            //     if (modalActionTypes.includes(paymentResponse.action.type)) {
+            //         if (window.jQuery) {
+            //             // Bootstrap v4 support
+            //             $('[data-adyen-payment-action-modal]').modal({show: true});
+            //         } else {
+            //             // Bootstrap v5 support
+            //             var adyenPaymentModal = new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
+            //                 keyboard: false
+            //             });
+            //             adyenPaymentModal.show();
+            //         }
+            //     }
+            // }
+        } catch (e) {
+            console.log(e);
+        }
+    }
 
     handleOnAdditionalDetails(state) {
-        console.log("aasdasdasdad")
         this._client.post(
             `${adyenExpressCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),

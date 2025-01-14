@@ -353,6 +353,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 array_merge(
                     $this->getComponentData($salesChannelContext),
                     [
+                    'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
                     'expressCheckoutConfigUrl' =>
                         $this->router->generate('payment.adyen.proxy-express-checkout-config'),
                     'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
