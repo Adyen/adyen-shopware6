@@ -186,12 +186,12 @@ class ExpressCheckoutService
                 ->getPaymentMethodByFormattedHandler($formattedHandlerIdentifier, $salesChannelContext->getContext());
         }
 
-        // Resolving shipping location
-        $country = $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
-        $shippingLocation = ShippingLocation::createFromCountry($country);
+        $shippingLocation = $salesChannelContext->getShippingLocation();
 
-        if ($this->isLoggedIn) {
-            $shippingLocation = $salesChannelContext->getShippingLocation();
+        // Resolving shipping location for guest
+        if(!$this->isLoggedIn) {
+            $country = $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
+            $shippingLocation = ShippingLocation::createFromCountry($country);
         }
 
         // Check Shopware version and create context accordingly
