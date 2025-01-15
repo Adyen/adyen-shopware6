@@ -267,13 +267,25 @@ export default class ExpressCheckoutPlugin extends Plugin {
             paymentMethodsResponse: data.paymentMethodsResponse,
             onAdditionalDetails: this.handleOnAdditionalDetails.bind(this),
             onSubmit: function (state, component) {
+                if (!state.isValid) {
+                    return;
+                }
+
                 console.log("on submit fja")
                 console.log(state);
                 const productMeta = document.querySelector('meta[itemprop="productID"]');
                 const productId = productMeta ? productMeta.content : '-1';
                 const quantity =  this.quantityInput ? this.quantityInput.value : -1;
                 // SUBMIT PAYMENT
+                const type = state.data.paymentMethod.type;
                 // check what method -gp, ap, pp
+                if (type === 'paypal') {
+                    this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
+                    const paypalComponentConfig = adyenConfiguration.componentsWithPayButton['paypal'];
+                    if ('responseHandler' in paypalComponentConfig) {
+                        this.responseHandler = paypalComponentConfig.responseHandler.bind(component, this);
+                    }
+                }
                 const formData = new FormData();
                 formData.append('productId', productId);
                 formData.append('quantity', quantity);
@@ -354,6 +366,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this.afterPayOrder.bind(this, this.orderId),
         );
     }
+
     afterPayOrder(orderId, response) {
         console.log("after")
         try {
@@ -430,7 +443,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     return;
                 }
 
-                // this.responseHandler(paymentResponse);
+                this.responseHandler(paymentResponse);
             }.bind(this)
         );
     }
