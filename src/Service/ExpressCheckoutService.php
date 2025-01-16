@@ -131,7 +131,7 @@ class ExpressCheckoutService
             /** @var ShippingMethodPriceEntity $shippingMethodPriceEntity */
             $shippingMethodPriceEntity = $method->getPrices()->first();
             /** @var null|Price $price */
-            $price = $shippingMethodPriceEntity->getCurrencyPrice()?->first();
+            $price = $shippingMethodPriceEntity?->getCurrencyPrice()?->first();
             $value = 0;
             if ($price) {
                 $value = $this->currencyUtil->sanitize($price->getGross(), $currency);

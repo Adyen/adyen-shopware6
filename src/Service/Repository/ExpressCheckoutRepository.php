@@ -266,7 +266,7 @@ class ExpressCheckoutRepository
         $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
         //$stateID = $this->getStateId('CA', 'US', $salesChannelContext); // TO DO
         $stateID = null;
-        if (isset($newAddress['administrativeArea'], $newAddress['countryCode'])) {
+        if ($newAddress['administrativeArea'] && $newAddress['countryCode']) {
             $stateID = $this->getStateId($newAddress['administrativeArea'], $newAddress['countryCode'], $salesChannelContext);
         }
         $city =  $newAddress['locality'];
