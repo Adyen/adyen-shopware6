@@ -11,7 +11,9 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -108,11 +110,26 @@ class ExpressCheckoutService
         $amountInMinorUnits = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
 
         // Available shipping methods for the given address
-        $shippingMethods = array_map(function (ShippingMethodEntity $method) {
+        $shippingMethods = array_map(function (ShippingMethodEntity $method) use ($currency, $cartData) {
+            /** @var ShippingMethodEntity $shippingMethod */
+            $shippingMethod = $cartData['shippingMethod'];
+
+            /** @var ShippingMethodPriceEntity $shippingMethodPriceEntity */
+            $shippingMethodPriceEntity = $method->getPrices()->first();
+            /** @var null|Price $price */
+            $price = $shippingMethodPriceEntity->getCurrencyPrice()?->first();
+            $value = 0;
+            if ($price) {
+                $value = $this->currencyUtil->sanitize($price->getGross(), $currency);
+            }
+
             return [
                 'id' => $method->getId(),
                 'label' => $method->getName(),
-                'description' => $method->getDescription() ?? ''
+                'description' => $method->getDescription() ?? '',
+                'value' => $value,
+                'currency' => $currency,
+                'selected' => $shippingMethod->getId() === $method->getId(),
             ];
         }, $cartData['shippingMethods']->getElements());
 

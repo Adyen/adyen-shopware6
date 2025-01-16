@@ -22,6 +22,7 @@
 
 import Plugin from 'src/plugin-system/plugin.class';
 import HttpClient from 'src/service/http-client.service';
+import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 import adyenConfiguration from '../configuration/adyen';
 
 export default class ExpressCheckoutPlugin extends Plugin {
@@ -38,7 +39,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             console.log("onPaymentDataChanged triggered", intermediatePaymentData);
-            return new Promise(async  resolve => {
+            return new Promise(async resolve => {
                 try {
                     const {callbackTrigger, shippingAddress, shippingOptionData} = intermediatePaymentData;
                     const paymentDataRequestUpdate = {};
@@ -56,11 +57,21 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
                         const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
 
-                        let shippingMethodsArray = response.shippingMethodsResponse;
+                        const shippingMethodsArray = response.shippingMethodsResponse;
+                        const newShippingMethodsArray = [];
+                        shippingMethodsArray.forEach((shippingMethod) => {
+                            newShippingMethodsArray.push(
+                                {
+                                    'id' : shippingMethod['id'],
+                                    'label' : shippingMethod['label'],
+                                    'description' : shippingMethod['description'],
+                                }
+                            )
+                        });
 
                         paymentDataRequestUpdate.newShippingOptionParameters = {
-                            defaultSelectedOptionId: shippingMethodsArray[0].id,
-                            shippingOptions: shippingMethodsArray
+                            defaultSelectedOptionId: newShippingMethodsArray[0].id,
+                            shippingOptions: newShippingMethodsArray
                         };
 
                         paymentDataRequestUpdate.newTransactionInfo = {
@@ -128,8 +139,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 },
                 isExpress: true,
                 callbackIntents: !userLoggedIn ? ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION', 'SHIPPING_OPTION'] : [],
-                shippingAddressRequired: !userLoggedIn ,
-                emailRequired: !userLoggedIn ,
+                shippingAddressRequired: !userLoggedIn,
+                emailRequired: !userLoggedIn,
                 shippingAddressParameters: {
                     allowedCountryCodes: [],
                     phoneNumberRequired: true
@@ -139,7 +150,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 onAuthorized: paymentData => {
                     console.log('Shopper details', paymentData);
                 },
-                buttonColor : "white",
+                buttonColor: "white",
                 paymentDataCallbacks: !userLoggedIn ?
                     {
                         onPaymentDataChanged: onPaymentDataChanged,
@@ -155,7 +166,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
             document.querySelector('.product-detail-quantity-input');
 
-        if(this.quantityInput) {
+        if (this.quantityInput) {
             console.log("kolicina" + this.quantityInput.value)
         }
 
@@ -165,7 +176,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         this.mountExpressCheckoutComponents({
             countryCode: adyenExpressCheckoutOptions.countryCode,
-            amount:  adyenExpressCheckoutOptions.amount,
+            amount: adyenExpressCheckoutOptions.amount,
             currency: adyenExpressCheckoutOptions.currency,
             paymentMethodsResponse: JSON.parse(adyenExpressCheckoutOptions.paymentMethodsResponse),
             // shippingMethodsResponse: adyenExpressCheckoutOptions.paymentMethodsResponse,
@@ -181,7 +192,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this._client.post(
                 url,
                 JSON.stringify({
-                    quantity:  this.quantityInput ? this.quantityInput.value : -1,
+                    quantity: this.quantityInput ? this.quantityInput.value : -1,
                     productId: productId,
                     ...extraData
                 }),
@@ -232,7 +243,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         for (let i = 0; i < checkoutElements.length; i++) {
             let type = checkoutElements[i].getElementsByClassName('adyen-type')[0].value;
-            if (availableTypes.includes(type)){
+            if (availableTypes.includes(type)) {
                 this.initializeCheckoutComponent(data).then(function (checkoutInstance) {
                     this.mountElement(type, checkoutInstance, checkoutElements[i]);
                 }.bind(this));
@@ -263,7 +274,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             clientKey,
             environment,
             showPayButton: true,
-            countryCode:data.countryCode,
+            countryCode: data.countryCode,
             amount: {
                 value: data.amount,
                 currency: data.currency,
@@ -279,7 +290,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 console.log(state);
                 const productMeta = document.querySelector('meta[itemprop="productID"]');
                 const productId = productMeta ? productMeta.content : '-1';
-                const quantity =  this.quantityInput ? this.quantityInput.value : -1;
+                const quantity = this.quantityInput ? this.quantityInput.value : -1;
                 // SUBMIT PAYMENT
                 const type = state.data.paymentMethod.type;
                 // check what method -gp, ap, pp
@@ -334,7 +345,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             return;
         }
 
-        if(order.url){
+        if (order.url) {
             location.href = order.url;
 
             return;
@@ -348,7 +359,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.finishUrl.searchParams.set('orderId', this.orderId);
         this.errorUrl = new URL(
             location.origin + adyenExpressCheckoutOptions.paymentErrorUrl);
-        this.errorUrl.searchParams.set('orderId', this.orderId );
+        this.errorUrl.searchParams.set('orderId', this.orderId);
 
         let customerId = '';
         if(order.customerId) {
@@ -478,17 +489,44 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
     }
 
-    afterQuantityUpdated(response){
+    afterQuantityUpdated(response) {
         try {
             const responseObject = JSON.parse(response);
             this.mountExpressCheckoutComponents({
                 countryCode: responseObject.countryCode,
-                amount:  responseObject.amount,
+                amount: responseObject.amount,
                 currency: responseObject.currency,
                 paymentMethodsResponse: JSON.parse(responseObject.paymentMethodsResponse),
             })
         } catch (e) {
             window.location.reload();
         }
+    }
+
+    onShippingAddressChanged(data, actions, component) {
+        this._client.post(
+            adyenExpressCheckoutOptions.expressCheckoutUpdatePayPalOrder,
+            JSON.stringify({
+                quantity: this.quantityInput ? this.quantityInput.value : -1,
+                productId: productId,
+                ...extraData
+            }),
+            (response) => {
+                try {
+                    const parsedResponse = JSON.parse(response);
+
+                    if (this._client._request.status >= 400) {
+                        actions.reject(new Error('fail'));
+
+                        return;
+                    }
+
+                    component.updatePaymentData(response.paymentData);
+                    actions.resolve();
+                } catch (error) {
+                    actions.reject(new Error('fail'));
+                }
+            }
+        );
     }
 }
