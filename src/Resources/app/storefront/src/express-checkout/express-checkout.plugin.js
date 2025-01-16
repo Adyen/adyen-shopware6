@@ -504,8 +504,22 @@ export default class ExpressCheckoutPlugin extends Plugin {
     }
 
     onShippingAddressChanged(data, actions, component) {
+        const currentPaymentData = component.paymentData;
+        const shippingAddress = data.shippingAddress;
+
+        const productMeta = document.querySelector('meta[itemprop="productID"]');
+        const productId = productMeta ? productMeta.content : '-1';
+
+        const extraData = {};
+
+        if (shippingAddress) {
+            this.newAddress = extraData.newAddress = shippingAddress;
+        }
+
+        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
+
         this._client.post(
-            adyenExpressCheckoutOptions.expressCheckoutUpdatePayPalOrder,
+            adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl,
             JSON.stringify({
                 quantity: this.quantityInput ? this.quantityInput.value : -1,
                 productId: productId,

@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\ExpressCheckout;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
@@ -160,5 +161,57 @@ class ExpressCheckoutController
     public function changeContext(string $customerId, SalesChannelContext $salesChannelContext): SalesChannelContext
     {
         return $this->expressCheckoutService->changeContext($customerId, $salesChannelContext);
+    }
+
+    /**
+     * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
+     * @return JsonResponse
+     *
+     * @throws AdyenException
+     */
+    public function updatePayPalOrder(
+        Request             $request,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse
+    {
+        $productId = $request->request->get('productId');
+        $quantity = (int)$request->request->get('quantity');
+        $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';
+        $newAddress = $request->request->all()['newAddress'] ?? null;
+        $newShipping = $request->request->all()['newShippingMethod'] ?? null;
+
+        if ($newAddress === null) {
+            $newAddress = [];
+        }
+
+        if ($newShipping === null) {
+            $newShipping = [];
+        }
+
+        $config = $this->expressCheckoutService->getExpressCheckoutConfig(
+            $productId,
+            $quantity,
+            $salesChannelContext,
+            $newAddress,
+            $newShipping,
+            $formattedHandlerIdentifier
+        );
+
+        $shippingMethods = $config['shippingMethodsResponse'];
+        $paymentData = $request->request->get('paymentData');
+        $pspReference = $request->request->get('pspReference');
+
+        $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
+            [
+                'amount' => $config['amount'],
+                'paymentData' => $paymentData,
+                'pspReference' => $pspReference,
+            ],
+            $shippingMethods,
+            $salesChannelContext
+        );
+
+        return new JsonResponse($paypalUpdateOrderResponse->toArray());
     }
 }

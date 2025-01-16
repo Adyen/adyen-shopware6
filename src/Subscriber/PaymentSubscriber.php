@@ -322,6 +322,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             'paymentFailed' => true,
                         ]
                     ),
+                    'expressCheckoutUpdatePaypalOrderUrl' =>
+                        $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
                     'amount' => $amountInMinorUnits,
                     'countryCode' => $this->expressCheckoutService->getCountryCode(
                         $salesChannelContext->getCustomer(),
@@ -385,6 +387,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             'paymentFailed' => true,
                         ]
                     ),
+                    'expressCheckoutUpdatePaypalOrderUrl' =>
+                        $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
                     'userLoggedIn' => json_encode($userLoggedIn)
                     ],
                     $this->expressCheckoutService->getExpressCheckoutConfig(

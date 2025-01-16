@@ -477,4 +477,20 @@ class FrontendProxyController extends StorefrontController
     ): JsonResponse {
         return $this->expressCheckoutController->getExpressCheckoutConfig($request, $salesChannelContext);
     }
+
+    /**
+     * @Route(
+     *     "/adyen/proxy-express-checkout-update-paypal-order",
+     *     name="payment.adyen.proxy-express-checkout-update-paypal-order",
+     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *     methods={"POST"}
+     * )
+     */
+    public function payPalUpdateOrder(
+        Request             $request,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse
+    {
+        return $this->expressCheckoutController->updatePayPalOrder($request, $salesChannelContext);
+    }
 }

@@ -2,6 +2,12 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\AdyenException;
+use Adyen\Model\Checkout\Amount;
+use Adyen\Model\Checkout\DeliveryMethod;
+use Adyen\Model\Checkout\PaypalUpdateOrderRequest;
+use Adyen\Model\Checkout\PaypalUpdateOrderResponse;
+use Adyen\Service\Checkout\UtilityApi;
 use Adyen\Shopware\Service\Repository\ExpressCheckoutRepository;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
@@ -40,6 +46,11 @@ class ExpressCheckoutService
     private Currency $currencyUtil;
 
     /**
+     * @var ClientService
+     */
+    protected ClientService $clientService;
+
+    /**
      * @var bool
      */
     private bool $isVersion64;
@@ -53,12 +64,14 @@ class ExpressCheckoutService
         CartService                 $cartService,
         ExpressCheckoutRepository   $expressCheckoutRepository,
         PaymentMethodsFilterService $paymentMethodsFilterService,
+        ClientService $clientService,
         Currency                    $currencyUtil,
         KernelInterface             $kernel
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
+        $this->clientService = $clientService;
         $this->currencyUtil = $currencyUtil;
         $this->isVersion64 = $this->isVersion64($kernel->getContainer()->getParameter('kernel.shopware_version'));
     }
@@ -104,6 +117,7 @@ class ExpressCheckoutService
             $formattedHandlerIdentifier
         );
 
+        /** @var Cart $cart */
         $cart = $cartData['cart'];
 
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
@@ -308,6 +322,43 @@ class ExpressCheckoutService
         );
 
         return $updatedSalesChannelContext;
+    }
+
+    /**
+     * @param array $data
+     * @param array $shippingMethods
+     * @param SalesChannelContext $salesChannelContext
+     * @return PaypalUpdateOrderResponse
+     * @throws AdyenException
+     */
+    public function paypalUpdateOrder(
+        array               $data,
+        array               $shippingMethods,
+        SalesChannelContext $salesChannelContext,
+    ): PaypalUpdateOrderResponse
+    {
+        $utilityApiService = new UtilityApi(
+            $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
+        );
+
+        $paypalUpdateOrderRequest = new PaypalUpdateOrderRequest($data);
+        $deliveryMethods = [];
+        foreach ($shippingMethods as $shippingMethod) {
+            $deliveryMethods[] = new DeliveryMethod(
+                [
+                    'amount' => new Amount($shippingMethod),
+                    'description' => $shippingMethod['label'],
+                    'reference' => $shippingMethod['id'],
+                    'selected' => $shippingMethod['selected'],
+                    'type' => $shippingMethod['type'],
+                ]
+            );
+        }
+
+        $paypalUpdateOrderRequest->setDeliveryMethods($deliveryMethods);
+
+        return $utilityApiService
+            ->updatesOrderForPaypalExpressCheckout($paypalUpdateOrderRequest);
     }
 
     /**
