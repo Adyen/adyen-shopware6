@@ -34,6 +34,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.formattedHandlerIdentifier = '';
         this.newAddress = {};
         this.newShippingMethod = {};
+        this.email = '';
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             console.log("onPaymentDataChanged triggered", intermediatePaymentData);
@@ -109,6 +110,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         let onPaymentAuthorized = (intermediatePaymentData) => {
             console.log("onPaymentAuthorized triggered", intermediatePaymentData);
+            this.email = intermediatePaymentData.email;
+            this.newAddress = intermediatePaymentData.shippingAddress;
+            this.newShippingMethod = intermediatePaymentData.shippingOptionData;
             return new Promise(resolve => {
                 resolve({transactionState: "SUCCESS",});
             });
@@ -292,6 +296,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 formData.append('formattedHandlerIdentifier', this.formattedHandlerIdentifier);
                 formData.append('newAddress', JSON.stringify(this.newAddress));
                 formData.append('newShippingMethod', JSON.stringify(this.newShippingMethod));
+                formData.append('email', this.email);
                 let extraParams = {
                     stateData: JSON.stringify(state.data)
                 };
@@ -345,10 +350,16 @@ export default class ExpressCheckoutPlugin extends Plugin {
             location.origin + adyenExpressCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', this.orderId );
 
+        let customerId = '';
+        if(order.customerId) {
+            customerId = order.customerId;
+        }
+
         let params = {
             'orderId': this.orderId,
             'finishUrl': this.finishUrl.toString(),
             'errorUrl': this.errorUrl.toString(),
+            'customerId': customerId
         };
         console.log("params" + params);
 

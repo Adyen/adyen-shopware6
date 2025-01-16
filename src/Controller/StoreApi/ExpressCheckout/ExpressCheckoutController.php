@@ -139,9 +139,26 @@ class ExpressCheckoutController
         SalesChannelContext $salesChannelContext,
         array $newAddress = [],
         array $newShipping = [],
-        string $formattedHandlerIdentifier = ''
+        string $formattedHandlerIdentifier = '',
+        string $guestEmail = '',
+        bool $makeNewCustomer = false
     ): array {
         return $this->expressCheckoutService
-            ->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier);
+            ->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier, $guestEmail, $makeNewCustomer);
+    }
+
+    /**
+     * Updates the SalesChannelContext for guest customer.
+     *
+     * @param string $customerId The ID of the customer whose context should be updated.
+     * @param SalesChannelContext $salesChannelContext The existing sales channel context to be updated.
+     *
+     * @throws \Exception If the customer cannot be found.
+     *
+     * @return SalesChannelContext The updated SalesChannelContext with the customer's details.
+     */
+    public function changeContext(string $customerId, SalesChannelContext $salesChannelContext): SalesChannelContext
+    {
+        return $this->expressCheckoutService->changeContext($customerId, $salesChannelContext);
     }
 }

@@ -33,6 +33,7 @@ use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Util\ShopwarePaymentTokenValidator;
 use Error;
+use Exception;
 use Shopware\Core\Checkout\Cart\Exception\InvalidCartException;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
@@ -230,19 +231,20 @@ class FrontendProxyController extends StorefrontController
         $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
         $newAddress = $data->get('newAddress') ?? '{}';
         $newShipping = $data->get('newShippingMethod') ?? '{}';
+        $guestEmail = $data->get('email');
 
         $newAddress = json_decode($newAddress, true);
         $newShipping = json_decode($newShipping, true);
 
-        $cartData = $this->expressCheckoutController->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier);
-        $cart = $cartData['cart'];
-        $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
-
         try {
+            $makeNewCustomer = $salesChannelContext->getCustomer() === null;
+            $cartData = $this->expressCheckoutController->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier, $guestEmail, $makeNewCustomer);
+            $cart = $cartData['cart'];
+            $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
             $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
 
-            return new JsonResponse(['id' => $order->getId()]);
-        } catch (InvalidCartException|Error|EmptyCartException $exception) {
+            return new JsonResponse(['id' => $order->getId(), 'customerId' => $cartData['customerId']]);
+        } catch (InvalidCartException|EmptyCartException|Error|Exception $exception) {
             $this->addCartErrors(
                 $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)
             );
@@ -272,6 +274,13 @@ class FrontendProxyController extends StorefrontController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
+        $customer = $salesChannelContext->getCustomer();
+
+        if ($customer === null) { // TO DO
+            $customerId = $request->request->get('customerId');
+            $salesChannelContext = $this->expressCheckoutController->changeContext($customerId, $salesChannelContext);
+        }
+
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
         return new JsonResponse($routeResponse->getObject());

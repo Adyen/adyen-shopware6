@@ -28,6 +28,9 @@
         </service>
         <service id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository" autowire="true">
             <argument type="service" id="shipping_method.repository"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="country_state.repository"/>
+            <argument type="service" id="salutation.repository"/>
             <argument type="service" id="country.repository"/>
         </service>
     </services>
