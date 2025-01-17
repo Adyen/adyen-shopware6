@@ -133,6 +133,11 @@ class ExpressCheckoutRepository
             $criteria->addFilter(new EqualsFilter('iso', $countryIso));
         }
 
+        // Filter by sales channel id
+        $criteria->addFilter(
+            new EqualsFilter('salesChannels.id', $salesChannelContext->getSalesChannel()->getId())
+        );
+
         $country = $this->countryRepository->search($criteria, $salesChannelContext->getContext())->first();
 
         if (!$country) {
@@ -248,8 +253,8 @@ class ExpressCheckoutRepository
     {
         // Guest data
         $customerId = Uuid::randomHex();
-        $firstName = 'Guest';
-        $lastName = 'Guest';
+        $firstName = !empty($newAddress['firstName']) ? $newAddress['firstName'] : 'Guest';
+        $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : 'Guest';
         $guest = true;
         $email = $guestEmail;
         //$salutationId = '939ce876c042403793ce9e39706ed266'; // TO DO
@@ -266,12 +271,12 @@ class ExpressCheckoutRepository
         $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
         //$stateID = $this->getStateId('CA', 'US', $salesChannelContext); // TO DO
         $stateID = null;
-        if ($newAddress['administrativeArea'] && $newAddress['countryCode']) {
-            $stateID = $this->getStateId($newAddress['administrativeArea'], $newAddress['countryCode'], $salesChannelContext);
+        if ($newAddress['state'] && $newAddress['countryCode']) {
+            $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
         }
-        $city =  $newAddress['locality'];
-        $street = $newAddress['address1'];
-        $zipcode = $newAddress['postalCode'];
+        $city =  $newAddress['city'];
+        $street = $newAddress['street'];
+        $zipcode = $newAddress['zipcode'];
         $additionalAddressLine1 = $newAddress['address2'];
         $additionalAddressLine2 = $newAddress['address3'];
 

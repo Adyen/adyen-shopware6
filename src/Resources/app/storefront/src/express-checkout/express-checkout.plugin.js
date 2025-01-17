@@ -121,8 +121,21 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         let onPaymentAuthorized = (intermediatePaymentData) => {
             console.log("onPaymentAuthorized triggered", intermediatePaymentData);
+
+            let transformedAddress = {
+                state: intermediatePaymentData.shippingAddress.administrativeArea,
+                zipcode: intermediatePaymentData.shippingAddress.postalCode,
+                street: intermediatePaymentData.shippingAddress.address1,
+                address2: intermediatePaymentData.shippingAddress.address2,
+                address3: intermediatePaymentData.shippingAddress.address3,
+                city: intermediatePaymentData.shippingAddress.locality,
+                countryCode: intermediatePaymentData.shippingAddress.countryCode,
+                firstName: '',
+                lastName: ''
+            };
+
             this.email = intermediatePaymentData.email;
-            this.newAddress = intermediatePaymentData.shippingAddress;
+            this.newAddress = transformedAddress;
             this.newShippingMethod = intermediatePaymentData.shippingOptionData;
             return new Promise(resolve => {
                 resolve({transactionState: "SUCCESS",});
