@@ -156,7 +156,7 @@ class ExpressCheckoutService
         $paymentMethods = $cartData['paymentMethods'];
 
         // Delete temporary cart for product
-        if($productId !== '-1') {
+        if ($productId !== '-1') {
             $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
         }
 
@@ -240,7 +240,11 @@ class ExpressCheckoutService
         }
 
         if ($makeNewCustomer) {
-            $newCustomer = $this->expressCheckoutRepository->createGuestCustomer($salesChannelContext, $guestEmail, $newAddress);
+            $newCustomer = $this->expressCheckoutRepository->createGuestCustomer(
+                $salesChannelContext,
+                $guestEmail,
+                $newAddress
+            );
             $shippingLocation = ShippingLocation::createFromAddress($newCustomer->getDefaultBillingAddress());
         }
 
@@ -280,11 +284,9 @@ class ExpressCheckoutService
         // Recalculate the cart
         $cart = $this->cartService->recalculate($cart, $updatedSalesChannelContext);
 
-        if (!$makeNewCustomer) { // TO DO
-            // Fetch available express checkout payment methods
-            $filteredPaymentMethods = $this->paymentMethodsFilterService
-                ->getAvailableExpressCheckoutPaymentMethods($cart, $updatedSalesChannelContext);
-        }
+        // Fetch available express checkout payment methods
+        $filteredPaymentMethods = $this->paymentMethodsFilterService
+            ->getAvailableExpressCheckoutPaymentMethods($cart, $updatedSalesChannelContext);
 
         return [
             'cart' => $cart,
@@ -345,8 +347,7 @@ class ExpressCheckoutService
         array               $data,
         array               $shippingMethods,
         SalesChannelContext $salesChannelContext
-    ): PaypalUpdateOrderResponse
-    {
+    ): PaypalUpdateOrderResponse {
         $utilityApiService = new UtilityApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );

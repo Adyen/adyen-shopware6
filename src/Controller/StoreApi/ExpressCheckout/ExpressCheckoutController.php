@@ -145,7 +145,16 @@ class ExpressCheckoutController
         bool $makeNewCustomer = false
     ): array {
         return $this->expressCheckoutService
-            ->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier, $guestEmail, $makeNewCustomer);
+            ->createCart(
+                $productId,
+                $quantity,
+                $salesChannelContext,
+                $newAddress,
+                $newShipping,
+                $formattedHandlerIdentifier,
+                $guestEmail,
+                $makeNewCustomer
+            );
     }
 
     /**
@@ -173,8 +182,7 @@ class ExpressCheckoutController
     public function updatePayPalOrder(
         Request             $request,
         SalesChannelContext $salesChannelContext
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $productId = $request->request->get('productId');
         $quantity = (int)$request->request->get('quantity');
         $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';

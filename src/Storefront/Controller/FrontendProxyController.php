@@ -238,7 +238,16 @@ class FrontendProxyController extends StorefrontController
 
         try {
             $makeNewCustomer = $salesChannelContext->getCustomer() === null;
-            $cartData = $this->expressCheckoutController->createCart($productId, $quantity, $salesChannelContext, $newAddress, $newShipping, $formattedHandlerIdentifier, $guestEmail, $makeNewCustomer);
+            $cartData = $this->expressCheckoutController->createCart(
+                $productId,
+                $quantity,
+                $salesChannelContext,
+                $newAddress,
+                $newShipping,
+                $formattedHandlerIdentifier,
+                $guestEmail,
+                $makeNewCustomer
+            );
             $cart = $cartData['cart'];
             $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
             $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
@@ -489,8 +498,7 @@ class FrontendProxyController extends StorefrontController
     public function payPalUpdateOrder(
         Request             $request,
         SalesChannelContext $salesChannelContext
-    ): JsonResponse
-    {
+    ): JsonResponse {
         return $this->expressCheckoutController->updatePayPalOrder($request, $salesChannelContext);
     }
 }

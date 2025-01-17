@@ -200,8 +200,11 @@ class ExpressCheckoutRepository
      *
      * @return string|null The ID of the state if found, or null if not found.
      */
-    public function getStateId(string $administrativeArea, string $countryCode, SalesChannelContext $salesChannelContext): ?string
-    {
+    public function getStateId(
+        string $administrativeArea,
+        string $countryCode,
+        SalesChannelContext $salesChannelContext
+    ): ?string {
         $shortCode = $countryCode . '-' . $administrativeArea;
 
         $criteria = new Criteria();
@@ -209,7 +212,11 @@ class ExpressCheckoutRepository
         $state = $this->countryStateRepository->search($criteria, $salesChannelContext->getContext())->first();
 
         if (!$state) {
-            throw new \Exception(sprintf('State with country code "%s" and administrative area "%s" not found.', $countryCode, $administrativeArea));
+            throw new \Exception(sprintf(
+                'State with country code "%s" and administrative area "%s" not found.',
+                $countryCode,
+                $administrativeArea
+            ));
         }
 
         return $state->getId();
@@ -243,14 +250,18 @@ class ExpressCheckoutRepository
 
     /**
      * Creates a guest customer with a default billing and shipping address.
-     * @param SalesChannelContext $salesChannelContext The sales channel context containing customer group and payment method details.
+     * @param SalesChannelContext $salesChannelContext The sales channel context containing customer group and payment
+     * method details.
      * @param string $guestEmail The email address for the guest customer.
      * @param array $newAddress The address details for the customer
      * @throws \Exception If the customer could not be found after creation.
      * @return CustomerEntity The created guest customer entity.
      */
-    public function createGuestCustomer(SalesChannelContext $salesChannelContext, string $guestEmail, array $newAddress): CustomerEntity
-    {
+    public function createGuestCustomer(
+        SalesChannelContext $salesChannelContext,
+        string $guestEmail,
+        array $newAddress
+    ): CustomerEntity {
         // Guest data
         $customerId = Uuid::randomHex();
         $firstName = !empty($newAddress['firstName']) ? $newAddress['firstName'] : 'Guest';
