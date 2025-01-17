@@ -72,6 +72,7 @@
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsFilterService"/>
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
+            <argument>%kernel.shopware_version%</argument>
         </service>
         <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
