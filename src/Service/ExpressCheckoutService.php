@@ -155,6 +155,11 @@ class ExpressCheckoutService
         // Available payment methods
         $paymentMethods = $cartData['paymentMethods'];
 
+        // Delete temporary cart for product
+        if($productId !== '-1') {
+            $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
+        }
+
         return [
             'currency' => $currency,
             'amount' => $amountInMinorUnits,
