@@ -337,7 +337,7 @@ class ExpressCheckoutService
     public function paypalUpdateOrder(
         array               $data,
         array               $shippingMethods,
-        SalesChannelContext $salesChannelContext,
+        SalesChannelContext $salesChannelContext
     ): PaypalUpdateOrderResponse
     {
         $utilityApiService = new UtilityApi(
