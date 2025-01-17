@@ -292,28 +292,31 @@ export default class ExpressCheckoutPlugin extends Plugin {
                         this.responseHandler = paypalComponentConfig.responseHandler.bind(component, this);
                     }
                 }
-                const formData = new FormData();
-                formData.append('productId', productId);
-                formData.append('quantity', quantity);
-                formData.append('formattedHandlerIdentifier', this.formattedHandlerIdentifier);
-                formData.append('newAddress', JSON.stringify(this.newAddress));
-                formData.append('newShippingMethod', JSON.stringify(this.newShippingMethod));
-                formData.append('email', this.email);
+
+                const requestData = {
+                    productId: productId,
+                    quantity: quantity,
+                    formattedHandlerIdentifier: this.formattedHandlerIdentifier,
+                    newAddress: this.newAddress,
+                    newShippingMethod: this.newShippingMethod,
+                    email: this.email,
+                };
+
                 let extraParams = {
                     stateData: JSON.stringify(state.data)
                 };
 
-                this.createOrder(formData, extraParams);
+                this.createOrder(JSON.stringify(requestData), extraParams);
             }.bind(this)
         };
 
         return Promise.resolve(await AdyenCheckout(ADYEN_EXPRESS_CHECKOUT_CONFIG));
     }
 
-    createOrder(formData, extraParams) {
+    createOrder(requestData, extraParams) {
         this._client.post(
             adyenExpressCheckoutOptions.checkoutOrderExpressUrl,
-            formData,
+            requestData,
             this.afterCreateOrder.bind(this, extraParams)
         );
     }
