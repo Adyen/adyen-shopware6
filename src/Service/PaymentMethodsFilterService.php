@@ -94,7 +94,7 @@ class PaymentMethodsFilterService
         ExpressCheckoutRepository  $expressCheckoutRepository,
         Currency                   $currency,
         AbstractPaymentMethodRoute $paymentMethodRoute,
-        $paymentMethodRepository
+        EntityRepository $paymentMethodRepository
     ) {
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
@@ -437,22 +437,22 @@ class PaymentMethodsFilterService
         string $formattedHandlerIdentifier,
         Context $context
     ): ?PaymentMethodEntity {
+
+        $handlerMap = [
+            'handler_adyen_googlepaypaymentmethodhandler' => 'Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler',
+            'handler_adyen_applepaypaymentmethodhandler' => 'Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler',
+            'handler_adyen_paypalpaymentmethodhandler' => 'Adyen\Shopware\Handlers\PayPalPaymentMethodHandler',
+        ];
+
+        $handlerIdentifier = $handlerMap[$formattedHandlerIdentifier];
+
+        // Build criteria to filter by $handlerIdentifier
         $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('handlerIdentifier', $handlerIdentifier));
 
-        // Fetch all payment methods
-        /** @var PaymentMethodEntity[] $paymentMethods */
-        $paymentMethods = $this->paymentMethodRepository->search($criteria, $context)->getEntities();
-
-        // Filter by formattedHandlerIdentifier
-        foreach ($paymentMethods as $paymentMethod) {
-            if ($paymentMethod->getFormattedHandlerIdentifier() === $formattedHandlerIdentifier) {
-                return $paymentMethod;
-            }
-        }
-
-        return null; // Return null if no match found
+        /** @var PaymentMethodEntity|null $paymentMethod */
+        return $this->paymentMethodRepository->search($criteria, $context)->first();
     }
-
 
     /**
      * @param Cart $cart

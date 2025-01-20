@@ -1,5 +1,6 @@
 <div id="adyen-express-checkout">
     <div id="adyen-express-checkout-options"
+         data-payment-status-url="{{ adyenFrontendData.paymentStatusUrl }}"
          data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}"
          data-checkout-order-express-url="{{ adyenFrontendData.checkoutOrderExpressUrl }}"
          data-express-checkout-config-url="{{ adyenFrontendData.expressCheckoutConfigUrl }}"
@@ -8,6 +9,7 @@
          data-payment-details-url="{{ adyenFrontendData.paymentDetailsUrl }}"
          data-payment-finish-url="{{ adyenFrontendData.paymentFinishUrl }}"
          data-payment-error-url="{{ adyenFrontendData.paymentErrorUrl }}"
+         data-express-checkout-update-paypal-order-url="{{ adyenFrontendData.expressCheckoutUpdatePaypalOrderUrl }}"
          data-country-code="{{ adyenFrontendData.countryCode }}"
          data-amount="{{ adyenFrontendData.amount }}"
          data-currency="{{ adyenFrontendData.currency }}"

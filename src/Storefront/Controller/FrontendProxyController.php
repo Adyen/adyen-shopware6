@@ -215,8 +215,46 @@ class FrontendProxyController extends StorefrontController
         RequestDataBag $data,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        // TO DO
-        return new JsonResponse();
+        $productId = $data->get('productId');
+        $quantity = (int)$data->get('quantity');
+        $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
+        $newAddress = $data->get('newAddress')->all();
+        $newShipping = $data->get('newShippingMethod')->all();
+        $guestEmail = $data->get('email');
+
+        try {
+            $makeNewCustomer = $salesChannelContext->getCustomer() === null;
+            $cartData = $this->expressCheckoutController->createCart(
+                $productId,
+                $quantity,
+                $salesChannelContext,
+                $newAddress,
+                $newShipping,
+                $formattedHandlerIdentifier,
+                $guestEmail,
+                $makeNewCustomer
+            );
+            $cart = $cartData['cart'];
+            $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
+            $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
+
+            return new JsonResponse(['id' => $order->getId(), 'customerId' => $cartData['customerId']]);
+        } catch (InvalidCartException|EmptyCartException|Error|Exception $exception) {
+            $this->addCartErrors(
+                $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)
+            );
+
+            return new JsonResponse(
+                [
+                    'url' => $this->generateUrl(
+                        'frontend.checkout.cart.page',
+                        [],
+                        UrlGeneratorInterface::ABSOLUTE_URL
+                    )
+                ],
+                400
+            );
+        }
     }
 
     #[Route(
@@ -229,7 +267,13 @@ class FrontendProxyController extends StorefrontController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        // TO DO
+        $customer = $salesChannelContext->getCustomer();
+
+        if ($customer === null) {
+            $customerId = $request->request->get('customerId');
+            $salesChannelContext = $this->expressCheckoutController->changeContext($customerId, $salesChannelContext);
+        }
+
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
         return new JsonResponse($routeResponse->getObject());
@@ -427,5 +471,18 @@ class FrontendProxyController extends StorefrontController
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         return $this->expressCheckoutController->getExpressCheckoutConfig($request, $salesChannelContext);
+    }
+
+    #[Route(
+        '/adyen/proxy-express-checkout-update-paypal-order',
+        name: 'payment.adyen.proxy-express-checkout-update-paypal-order',
+        defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
+        methods: ['POST']
+    )]
+    public function payPalUpdateOrder(
+        Request             $request,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse {
+        return $this->expressCheckoutController->updatePayPalOrder($request, $salesChannelContext);
     }
 }

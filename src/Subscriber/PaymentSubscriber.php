@@ -245,6 +245,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
         $amountInMinorUnits = $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency);
 
+        $userLoggedIn = $salesChannelContext->getCustomer() !== null;
+
         //Filter Payment Methods
         $shopwarePaymentMethods = null;
         if ($page instanceof CheckoutCartPage) {
@@ -282,74 +284,22 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 array_merge(
                     $this->getComponentData($salesChannelContext),
                     [
-                    'giftcards' => $giftcards,
-                    'totalPrice' => $page->getCart()->getPrice()->getTotalPrice(),
-                    'totalInMinorUnits' => $amountInMinorUnits,
-                    'currency' => $currency,
-                    'currencySymbol' => $currencySymbol,
-                    'giftcardDiscount' => $giftcardDetails['giftcardDiscount'],
-                    'giftcardBalance' => $giftcardDetails['giftcardBalance'],
-                    'checkBalanceUrl' => $this->router
-                        ->generate('payment.adyen.proxy-check-balance'),
-                    'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
-                    'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
-                    'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
-                    'fetchRedeemedGiftcardsUrl' => $this->router
-                        ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
-                    'expressCheckoutConfigUrl' =>
-                        $this->router->generate('payment.adyen.proxy-express-checkout-config'),
-                    'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
-                    'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
-                    'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
-                    'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
-                    'paymentFinishUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        ['orderId' => '']
-                    ),
-                    'paymentErrorUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        [
-                            'orderId' => '',
-                            'changedPayment' => false,
-                            'paymentFailed' => true,
-                        ]
-                    ),
-                    'amount' => $amountInMinorUnits,
-                    'countryCode' => $this->expressCheckoutService->getCountryCode(
-                        $salesChannelContext->getCustomer(),
-                        $salesChannelContext
-                    ),
-                    'userLoggedIn' => json_encode($salesChannelContext->getCustomer() !== null)
-                    ],
-                    $this->expressCheckoutService->getExpressCheckoutConfig(
-                        '-1',
-                        -1,
-                        $salesChannelContext
-                    )
-                )
-            )
-        );
-    }
-
-    /**
-     * @param PageLoadedEvent $event
-     *
-     * @return void
-     *
-     */
-    public function onProductPageLoaded(PageLoadedEvent $event): void
-    {
-        /** @var ProductPage $page */
-        $page = $event->getPage();
-        $salesChannelContext = $event->getSalesChannelContext();
-        $productId = $page->getProduct()->getId();
-
-        $page->addExtension(
-            self::ADYEN_DATA_EXTENSION_ID,
-            new ArrayEntity(
-                array_merge(
-                    $this->getComponentData($salesChannelContext),
-                    [
+                        'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
+                        'giftcards' => $giftcards,
+                        'totalPrice' => $page->getCart()->getPrice()->getTotalPrice(),
+                        'totalInMinorUnits' => $amountInMinorUnits,
+                        'currency' => $currency,
+                        'currencySymbol' => $currencySymbol,
+                        'giftcardDiscount' => $giftcardDetails['giftcardDiscount'],
+                        'giftcardBalance' => $giftcardDetails['giftcardBalance'],
+                        'checkBalanceUrl' => $this->router
+                            ->generate('payment.adyen.proxy-check-balance'),
+                        'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
+                        'removeGiftcardUrl' => $this->router
+                            ->generate('payment.adyen.proxy-remove-giftcard-state-data'),
+                        'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
+                        'fetchRedeemedGiftcardsUrl' => $this->router
+                            ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
                         'expressCheckoutConfigUrl' =>
                             $this->router->generate('payment.adyen.proxy-express-checkout-config'),
                         'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
@@ -374,7 +324,74 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'userLoggedIn' => json_encode($salesChannelContext->getCustomer() !== null)
+                        'expressCheckoutUpdatePaypalOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
+                        'amount' => $amountInMinorUnits,
+                        'countryCode' => $this->expressCheckoutService->getCountryCode(
+                            $salesChannelContext->getCustomer(),
+                            $salesChannelContext
+                        ),
+                        'userLoggedIn' => json_encode($userLoggedIn)
+                    ],
+                    $this->expressCheckoutService->getExpressCheckoutConfig(
+                        '-1',
+                        -1,
+                        $salesChannelContext
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * @param PageLoadedEvent $event
+     *
+     * @return void
+     *
+     */
+    public function onProductPageLoaded(PageLoadedEvent $event): void
+    {
+        /** @var ProductPage $page */
+        $page = $event->getPage();
+        $salesChannelContext = $event->getSalesChannelContext();
+        $productId = $page->getProduct()->getId();
+
+        $userLoggedIn = $salesChannelContext->getCustomer() !== null;
+
+        $page->addExtension(
+            self::ADYEN_DATA_EXTENSION_ID,
+            new ArrayEntity(
+                array_merge(
+                    $this->getComponentData($salesChannelContext),
+                    [
+                        'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
+                        'expressCheckoutConfigUrl' =>
+                            $this->router->generate('payment.adyen.proxy-express-checkout-config'),
+                        'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                        'checkoutOrderExpressUrl' => $this->router->generate(
+                            'payment.adyen.proxy-checkout-order-express-product'
+                        ),
+                        'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
+                        'paymentHandleExpressUrl' => $this->router->generate(
+                            'payment.adyen.proxy-handle-payment-express-product'
+                        ),
+                        'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
+                        'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
+                        'paymentFinishUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            ['orderId' => '']
+                        ),
+                        'paymentErrorUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            [
+                                'orderId' => '',
+                                'changedPayment' => false,
+                                'paymentFailed' => true,
+                            ]
+                        ),
+                        'expressCheckoutUpdatePaypalOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
+                        'userLoggedIn' => json_encode($userLoggedIn)
                     ],
                     $this->expressCheckoutService->getExpressCheckoutConfig(
                         $productId,

@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Controller\StoreApi\ExpressCheckout;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
@@ -120,5 +121,105 @@ class ExpressCheckoutController
                 ]
             ], 500);
         }
+    }
+
+    /**
+     * Creates a cart with the provided product and calculates it with the resolved shipping location and method.
+     *
+     * @param string $productId The ID of the product.
+     * @param int $quantity The quantity of the product.
+     * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     * @param array $newAddress Optional new address details.
+     * @param array $newShipping Optional new shipping method details.
+     * @return array The cart, shipping methods, selected shipping method, and payment methods.
+     * @throws \Exception
+     */
+    public function createCart(
+        string $productId,
+        int $quantity,
+        SalesChannelContext $salesChannelContext,
+        array $newAddress = [],
+        array $newShipping = [],
+        string $formattedHandlerIdentifier = '',
+        string $guestEmail = '',
+        bool $makeNewCustomer = false
+    ): array {
+        return $this->expressCheckoutService
+            ->createCart(
+                $productId,
+                $quantity,
+                $salesChannelContext,
+                $newAddress,
+                $newShipping,
+                $formattedHandlerIdentifier,
+                $guestEmail,
+                $makeNewCustomer
+            );
+    }
+
+    /**
+     * Updates the SalesChannelContext for guest customer.
+     *
+     * @param string $customerId The ID of the customer whose context should be updated.
+     * @param SalesChannelContext $salesChannelContext The existing sales channel context to be updated.
+     *
+     * @throws \Exception If the customer cannot be found.
+     *
+     * @return SalesChannelContext The updated SalesChannelContext with the customer's details.
+     */
+    public function changeContext(string $customerId, SalesChannelContext $salesChannelContext): SalesChannelContext
+    {
+        return $this->expressCheckoutService->changeContext($customerId, $salesChannelContext);
+    }
+
+    /**
+     * @param Request $request
+     * @param SalesChannelContext $salesChannelContext
+     * @return JsonResponse
+     *
+     * @throws AdyenException
+     */
+    public function updatePayPalOrder(
+        Request             $request,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse {
+        $productId = $request->request->get('productId');
+        $quantity = (int)$request->request->get('quantity');
+        $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';
+        $newAddress = $request->request->all()['newAddress'] ?? null;
+        $newShipping = $request->request->all()['newShippingMethod'] ?? null;
+
+        if ($newAddress === null) {
+            $newAddress = [];
+        }
+
+        if ($newShipping === null) {
+            $newShipping = [];
+        }
+
+        $config = $this->expressCheckoutService->getExpressCheckoutConfig(
+            $productId,
+            $quantity,
+            $salesChannelContext,
+            $newAddress,
+            $newShipping,
+            $formattedHandlerIdentifier
+        );
+
+        $shippingMethods = $config['shippingMethodsResponse'];
+        $paymentData = $request->request->get('paymentData');
+        $pspReference = $request->request->get('pspReference');
+
+        $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
+            [
+                'amount' => $config['amount'],
+                'paymentData' => $paymentData,
+                'pspReference' => $pspReference,
+            ],
+            $shippingMethods,
+            $salesChannelContext
+        );
+
+        return new JsonResponse($paypalUpdateOrderResponse->toArray());
     }
 }

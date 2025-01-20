@@ -2,6 +2,12 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\AdyenException;
+use Adyen\Model\Checkout\Amount;
+use Adyen\Model\Checkout\DeliveryMethod;
+use Adyen\Model\Checkout\PaypalUpdateOrderRequest;
+use Adyen\Model\Checkout\PaypalUpdateOrderResponse;
+use Adyen\Service\Checkout\UtilityApi;
 use Adyen\Shopware\Service\Repository\ExpressCheckoutRepository;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
@@ -11,10 +17,13 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 class ExpressCheckoutService
 {
@@ -37,19 +46,21 @@ class ExpressCheckoutService
     private Currency $currencyUtil;
 
     /**
-     * @var bool
+     * @var ClientService
      */
-    private bool $isLoggedIn;
+    protected ClientService $clientService;
 
     public function __construct(
         CartService                 $cartService,
         ExpressCheckoutRepository   $expressCheckoutRepository,
         PaymentMethodsFilterService $paymentMethodsFilterService,
-        Currency                    $currencyUtil
+        ClientService               $clientService,
+        Currency                    $currencyUtil,
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
+        $this->clientService = $clientService;
         $this->currencyUtil = $currencyUtil;
     }
 
@@ -64,12 +75,12 @@ class ExpressCheckoutService
      * @return array The configuration for express checkout.
      */
     public function getExpressCheckoutConfig(
-        string $productId,
-        int $quantity,
+        string              $productId,
+        int                 $quantity,
         SalesChannelContext $salesChannelContext,
         array               $newAddress = [],
         array               $newShipping = [],
-        string $formattedHandlerIdentifier = ''
+        string              $formattedHandlerIdentifier = ''
     ): array {
         // Creating new cart
         $cartData = $this->createCart(
@@ -81,22 +92,48 @@ class ExpressCheckoutService
             $formattedHandlerIdentifier
         );
 
+        /** @var Cart $cart */
         $cart = $cartData['cart'];
 
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amountInMinorUnits = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
 
         // Available shipping methods for the given address
-        $shippingMethods = array_map(function (ShippingMethodEntity $method) {
+        $shippingMethods = array_map(function (ShippingMethodEntity $method) use ($currency, $cartData) {
+            /** @var ShippingMethodEntity $shippingMethod */
+            $shippingMethod = $cartData['shippingMethod'];
+
+            /** @var ShippingMethodPriceEntity $shippingMethodPriceEntity */
+            $shippingMethodPriceEntity = $method->getPrices()->first();
+
+            /** @var null|Price $price */
+            $price = null;
+            if ($shippingMethodPriceEntity && $shippingMethodPriceEntity->getCurrencyPrice()) {
+                $price = $shippingMethodPriceEntity->getCurrencyPrice()->first();
+            }
+
+            $value = 0;
+            if ($price) {
+                $value = $this->currencyUtil->sanitize($price->getGross(), $currency);
+            }
+
             return [
                 'id' => $method->getId(),
                 'label' => $method->getName(),
-                'description' => $method->getDescription() ?? ''
+                'description' => $method->getDescription() ?? '',
+                'value' => $value,
+                'currency' => $currency,
+                'selected' => $shippingMethod->getId() === $method->getId(),
             ];
         }, $cartData['shippingMethods']->getElements());
 
         // Available payment methods
         $paymentMethods = $cartData['paymentMethods'];
+
+        // Delete temporary cart for product
+        if ($productId !== '-1') {
+            $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
+        }
 
         return [
             'currency' => $currency,
@@ -141,10 +178,14 @@ class ExpressCheckoutService
         SalesChannelContext $salesChannelContext,
         array               $newAddress = [],
         array               $newShipping = [],
-        string $formattedHandlerIdentifier = ''
+        string              $formattedHandlerIdentifier = '',
+        string              $guestEmail = '',
+        bool                $makeNewCustomer = false
     ): array {
+        $newCustomer = $salesChannelContext->getCustomer();
+
         // Check if the user is guest or customer
-        $this->isLoggedIn = $salesChannelContext->getCustomer() !== null;
+        $isLoggedIn = $newCustomer !== null;
 
         $token = $salesChannelContext->getToken();
         $cart = $this->cartService->getCart($token, $salesChannelContext);
@@ -165,16 +206,30 @@ class ExpressCheckoutService
                 ->getPaymentMethodByFormattedHandler($formattedHandlerIdentifier, $salesChannelContext->getContext());
         }
 
-        // Resolving shipping location
-        $country = $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
-        $shippingLocation = ShippingLocation::createFromCountry($country);
+        $shippingLocation = $salesChannelContext->getShippingLocation();
 
-        // Check Shopware version and create context accordingly
-        $updatedSalesChannelContext = $this->createSalesChannelContext(
+        // Resolving shipping location for guest
+        if (!$isLoggedIn) {
+            $country = $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
+            $shippingLocation = ShippingLocation::createFromCountry($country);
+        }
+
+        if ($makeNewCustomer) {
+            $newCustomer = $this->expressCheckoutRepository->createGuestCustomer(
+                $salesChannelContext,
+                $guestEmail,
+                $newAddress
+            );
+            $shippingLocation = ShippingLocation::createFromAddress($newCustomer->getDefaultBillingAddress());
+        }
+
+        // Create updated context
+        $updatedSalesChannelContext = $this->createContext(
             $salesChannelContext,
             $token,
             $shippingLocation,
-            $paymentMethod
+            $paymentMethod,
+            $newCustomer
         );
 
         // recalculate the cart
@@ -188,11 +243,12 @@ class ExpressCheckoutService
         $shippingMethod = $this->resolveShippingMethod($updatedSalesChannelContext, $cart, $newShipping);
 
         // Recreate context with selected shipping method
-        $updatedSalesChannelContext = $this->createSalesChannelContext(
+        $updatedSalesChannelContext = $this->createContext(
             $salesChannelContext,
             $token,
             $shippingLocation,
             $paymentMethod,
+            $newCustomer,
             $shippingMethod
         );
 
@@ -209,7 +265,76 @@ class ExpressCheckoutService
             'shippingMethod' => $shippingMethod,
             'shippingLocation' => $shippingLocation,
             'paymentMethods' => $filteredPaymentMethods,
+            'updatedSalesChannelContext' => $updatedSalesChannelContext,
+            'customerId' => $newCustomer ? $newCustomer->getId() : '',
         ];
+    }
+
+    /**
+     * Updates the SalesChannelContext for guest customer.
+     *
+     * @param string $customerId The ID of the customer whose context should be updated.
+     * @param SalesChannelContext $salesChannelContext The existing sales channel context to be updated.
+     *
+     * @throws \Exception If the customer cannot be found.
+     *
+     * @return SalesChannelContext The updated SalesChannelContext with the customer's details.
+     */
+    public function changeContext(string $customerId, SalesChannelContext $salesChannelContext): SalesChannelContext
+    {
+        // Fetch the customer by ID
+        $customer = $this->expressCheckoutRepository->findCustomerById($customerId, $salesChannelContext);
+
+        // Update the remote address
+        $customer->setRemoteAddress($_SERVER['REMOTE_ADDR']);
+
+        // Create the shipping location from the customer's billing address
+        $shippingLocation = ShippingLocation::createFromAddress($customer->getDefaultBillingAddress());
+
+        // Update the context
+        return $this->createContext(
+            $salesChannelContext,
+            $salesChannelContext->getToken(),
+            $shippingLocation,
+            $salesChannelContext->getPaymentMethod(),
+            $customer
+        );
+    }
+
+    /**
+     * @param array $data
+     * @param array $shippingMethods
+     * @param SalesChannelContext $salesChannelContext
+     * @return PaypalUpdateOrderResponse
+     * @throws AdyenException
+     */
+    public function paypalUpdateOrder(
+        array               $data,
+        array               $shippingMethods,
+        SalesChannelContext $salesChannelContext
+    ): PaypalUpdateOrderResponse {
+        $utilityApiService = new UtilityApi(
+            $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
+        );
+
+        $paypalUpdateOrderRequest = new PaypalUpdateOrderRequest($data);
+        $deliveryMethods = [];
+        foreach ($shippingMethods as $shippingMethod) {
+            $deliveryMethods[] = new DeliveryMethod(
+                [
+                    'amount' => new Amount($shippingMethod),
+                    'description' => $shippingMethod['label'],
+                    'reference' => $shippingMethod['id'],
+                    'selected' => $shippingMethod['selected'],
+                    'type' => $shippingMethod['type'],
+                ]
+            );
+        }
+
+        $paypalUpdateOrderRequest->setDeliveryMethods($deliveryMethods);
+
+        return $utilityApiService
+            ->updatesOrderForPaypalExpressCheckout($paypalUpdateOrderRequest);
     }
 
     /**
@@ -245,21 +370,23 @@ class ExpressCheckoutService
     }
 
     /**
-     * Creates a SalesChannelContext for Shopware 6.6.
+     * Creates a SalesChannelContext
      *
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      * @param string $token The token to be associated with the new context.
      * @param ShippingLocation $shippingLocation The shipping location to be used.
      * @param PaymentMethodEntity $paymentMethod The payment method entity to set in the context.
+     * @param CustomerEntity|null $customer The customer entity (optional).
      * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
      *
-     * @return SalesChannelContext A new SalesChannelContext for Shopware 6.5.
+     * @return SalesChannelContext The created SalesChannelContext.
      */
-    private function createSalesChannelContext(
-        SalesChannelContext $salesChannelContext,
-        string $token,
-        ShippingLocation $shippingLocation,
-        PaymentMethodEntity $paymentMethod,
+    public function createContext(
+        SalesChannelContext   $salesChannelContext,
+        string                $token,
+        ShippingLocation      $shippingLocation,
+        PaymentMethodEntity   $paymentMethod,
+        ?CustomerEntity       $customer = null,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
         return new SalesChannelContext(
@@ -273,7 +400,7 @@ class ExpressCheckoutService
             $paymentMethod,
             $shippingMethod ?? $salesChannelContext->getShippingMethod(),
             $shippingLocation,
-            $salesChannelContext->getCustomer(),
+            $customer ?? $salesChannelContext->getCustomer(),
             $salesChannelContext->getItemRounding(),
             $salesChannelContext->getTotalRounding()
         );
