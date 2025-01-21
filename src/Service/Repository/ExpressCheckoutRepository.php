@@ -276,7 +276,6 @@ class ExpressCheckoutRepository
         $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : 'Guest';
         $guest = true;
         $email = $guestEmail !== '' ? $guestEmail : 'adyen.guest@guest.com';
-        //$salutationId = '939ce876c042403793ce9e39706ed266'; // TO DO
         $salutationId = $this->getSalutationId($salesChannelContext);
         $password = null;
         $groupId = $salesChannelContext->getCurrentCustomerGroup()->getId();
@@ -286,9 +285,7 @@ class ExpressCheckoutRepository
 
         // Address data
         $addressId = Uuid::randomHex();
-        //$countryId = 'cca78a472edb484f9ddf9b51432f8948'; // TO DO
         $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
-        //$stateID = $this->getStateId('CA', 'US', $salesChannelContext); // TO DO
         $stateID = null;
         if ($newAddress['state'] && $newAddress['countryCode']) {
             $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);

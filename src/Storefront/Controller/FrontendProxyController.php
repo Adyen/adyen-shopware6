@@ -229,12 +229,9 @@ class FrontendProxyController extends StorefrontController
         $productId = $data->get('productId');
         $quantity = (int)$data->get('quantity');
         $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
-        $newAddress = $data->get('newAddress') ?? '{}';
-        $newShipping = $data->get('newShippingMethod') ?? '{}';
+        $newAddress = $data->get('newAddress')->all();
+        $newShipping = $data->get('newShippingMethod')->all();
         $guestEmail = $data->get('email');
-
-        $newAddress = json_decode($newAddress, true);
-        $newShipping = json_decode($newShipping, true);
 
         try {
             $makeNewCustomer = $salesChannelContext->getCustomer() === null;
@@ -285,7 +282,7 @@ class FrontendProxyController extends StorefrontController
     ): JsonResponse {
         $customer = $salesChannelContext->getCustomer();
 
-        if ($customer === null) { // TO DO
+        if ($customer === null) {
             $customerId = $request->request->get('customerId');
             $salesChannelContext = $this->expressCheckoutController->changeContext($customerId, $salesChannelContext);
         }
