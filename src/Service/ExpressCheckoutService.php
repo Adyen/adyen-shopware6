@@ -414,6 +414,7 @@ class ExpressCheckoutService
                 $token,
                 $shippingLocation,
                 $paymentMethod,
+                $customer,
                 $shippingMethod
             );
         }
