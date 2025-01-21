@@ -36,6 +36,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.newAddress = {};
         this.newShippingMethod = {};
         this.email = '';
+        this.pspReference = '';
+        this.paymentData = null;
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             console.log("onPaymentDataChanged triggered", intermediatePaymentData);
@@ -62,9 +64,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
                         shippingMethodsArray.forEach((shippingMethod) => {
                             newShippingMethodsArray.push(
                                 {
-                                    'id' : shippingMethod['id'],
-                                    'label' : shippingMethod['label'],
-                                    'description' : shippingMethod['description'],
+                                    'id': shippingMethod['id'],
+                                    'label': shippingMethod['label'],
+                                    'description': shippingMethod['description'],
                                 }
                             )
                         });
@@ -172,7 +174,13 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     {}
             },
             "googlepay": {},
-            "paypal": {},
+            "paypal": {
+                isExpress: true,
+                // onShopperDetails: this.onShopperDetails,
+                blockPayPalCreditButton: true,
+                blockPayPalPayLaterButton: true,
+                onShippingAddressChange: this.onShippingAddressChanged.bind(this)
+            },
             "applepay": {}
         };
 
@@ -375,7 +383,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.errorUrl.searchParams.set('orderId', this.orderId);
 
         let customerId = '';
-        if(order.customerId) {
+        if (order.customerId) {
             customerId = order.customerId;
         }
 
@@ -520,40 +528,31 @@ export default class ExpressCheckoutPlugin extends Plugin {
         const currentPaymentData = component.paymentData;
         const shippingAddress = data.shippingAddress;
 
-        const productMeta = document.querySelector('meta[itemprop="productID"]');
-        const productId = productMeta ? productMeta.content : '-1';
-
         const extraData = {};
 
         if (shippingAddress) {
             this.newAddress = extraData.newAddress = shippingAddress;
         }
 
-        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
+        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
+        extraData.currentPaymentData = currentPaymentData;
+        extraData.pspReference = this.pspReference;
+        extraData.orderId = this.orderId;
 
         this._client.post(
-            adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl,
+            `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
             JSON.stringify({
-                quantity: this.quantityInput ? this.quantityInput.value : -1,
-                productId: productId,
                 ...extraData
             }),
-            (response) => {
-                try {
-                    const parsedResponse = JSON.parse(response);
-
-                    if (this._client._request.status >= 400) {
-                        actions.reject(new Error('fail'));
-
-                        return;
-                    }
-
-                    component.updatePaymentData(response.paymentData);
-                    actions.resolve();
-                } catch (error) {
-                    actions.reject(new Error('fail'));
+            function (response) {
+                const responseObject = JSON.parse(response);
+                if (this._client._request.status !== 200) {
+                    return actions.reject();
                 }
-            }
+
+                console.log('Response payment data ' + responseObject.paymentData)
+                component.updatePaymentData(responseObject.paymentData);
+            }.bind(this)
         );
     }
 }

@@ -7,6 +7,7 @@ use Exception;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -43,18 +44,25 @@ class ExpressCheckoutRepository
      */
     private EntityRepository $countryRepository;
 
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $orderRepository;
+
     public function __construct(
         EntityRepository $shippingMethodRepository,
         EntityRepository $customerRepository,
         EntityRepository $countryStateRepository,
         EntityRepository $salutationRepository,
-        EntityRepository $countryRepository
+        EntityRepository $countryRepository,
+        EntityRepository $orderRepository
     ) {
         $this->shippingMethodRepository = $shippingMethodRepository;
         $this->customerRepository = $customerRepository;
         $this->countryStateRepository = $countryStateRepository;
         $this->salutationRepository = $salutationRepository;
         $this->countryRepository = $countryRepository;
+        $this->orderRepository = $orderRepository;
     }
 
     /**
@@ -267,7 +275,7 @@ class ExpressCheckoutRepository
         $firstName = !empty($newAddress['firstName']) ? $newAddress['firstName'] : 'Guest';
         $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : 'Guest';
         $guest = true;
-        $email = $guestEmail;
+        $email = $guestEmail !== '' ? $guestEmail : 'adyen.guest@guest.com';
         //$salutationId = '939ce876c042403793ce9e39706ed266'; // TO DO
         $salutationId = $this->getSalutationId($salesChannelContext);
         $password = null;
@@ -285,11 +293,11 @@ class ExpressCheckoutRepository
         if ($newAddress['state'] && $newAddress['countryCode']) {
             $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
         }
-        $city =  $newAddress['city'];
-        $street = $newAddress['street'];
-        $zipcode = $newAddress['zipcode'];
-        $additionalAddressLine1 = $newAddress['address2'];
-        $additionalAddressLine2 = $newAddress['address3'];
+        $city =  $newAddress['city'] ?? 'Adyen Guest City';
+        $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
+        $zipcode = $newAddress['zipcode'] ?? '';
+        $additionalAddressLine1 = $newAddress['address2'] ?? '';
+        $additionalAddressLine2 = $newAddress['address3'] ?? '';
 
         $customerData = [
             [
@@ -349,5 +357,18 @@ class ExpressCheckoutRepository
         }
 
         return $customer;
+    }
+
+    /**
+     * @param string $orderId
+     * @param SalesChannelContext $salesChannelContext
+     * @return OrderEntity|null
+     */
+    public function getOrderById(string $orderId, SalesChannelContext $salesChannelContext): ?OrderEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('id', $orderId));
+
+        return $this->orderRepository->search($criteria, $salesChannelContext->getContext())->first();
     }
 }

@@ -82,6 +82,21 @@ export default {
                     if (response.isFinal) {
                         location.href = plugin.returnUrl;
                     }
+
+                    if (!response.action) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    if (response.pspReference) {
+                        plugin.pspReference = response.pspReference;
+                    }
+
+                    plugin.paymentData = null;
+                    if (response.action.paymentData) {
+                        plugin.paymentData = response.action.paymentData;
+                    }
+
                     // Load Paypal popup window with component.handleAction
                     this.handleAction(response.action);
                 } catch (e) {

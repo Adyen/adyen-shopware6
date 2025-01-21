@@ -183,11 +183,9 @@ class ExpressCheckoutController
         Request             $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        $productId = $request->request->get('productId');
-        $quantity = (int)$request->request->get('quantity');
-        $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';
         $newAddress = $request->request->all()['newAddress'] ?? null;
         $newShipping = $request->request->all()['newShippingMethod'] ?? null;
+        $orderId = $request->request->all()['orderId'] ?? '';
 
         if ($newAddress === null) {
             $newAddress = [];
@@ -197,26 +195,15 @@ class ExpressCheckoutController
             $newShipping = [];
         }
 
-        $config = $this->expressCheckoutService->getExpressCheckoutConfig(
-            $productId,
-            $quantity,
-            $salesChannelContext,
-            $newAddress,
-            $newShipping,
-            $formattedHandlerIdentifier
-        );
-
-        $shippingMethods = $config['shippingMethodsResponse'];
-        $paymentData = $request->request->get('paymentData');
+        $paymentData = $request->request->get('currentPaymentData');
         $pspReference = $request->request->get('pspReference');
 
         $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
+            $orderId,
             [
-                'amount' => $config['amount'],
                 'paymentData' => $paymentData,
                 'pspReference' => $pspReference,
             ],
-            $shippingMethods,
             $salesChannelContext
         );
 

@@ -761,6 +761,20 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $paymentRequest->setOrder($encryptedOrderData);
         }
 
+        if ($paymentMethodType === 'paypal'
+            && $salesChannelContext->getCustomer()
+            && $salesChannelContext->getCustomer()->getGuest()
+        ) {
+            $payPalPaymentRequest = new IntegrationPaymentRequest([]);
+            $payPalPaymentRequest->setPaymentMethod($paymentRequest->getPaymentMethod());
+            $payPalPaymentRequest->setAmount($paymentRequest->getAmount());
+            $payPalPaymentRequest->setMerchantAccount($paymentRequest->getMerchantAccount());
+            $payPalPaymentRequest->setReference($paymentRequest->getReference());
+            $payPalPaymentRequest->setReturnUrl($paymentRequest->getReturnUrl());
+
+            return $payPalPaymentRequest;
+        }
+
         return $paymentRequest;
     }
 

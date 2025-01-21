@@ -13,9 +13,11 @@ use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
+use Shopware\Core\Checkout\Cart\Exception\OrderNotFoundException;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
@@ -233,6 +235,10 @@ class ExpressCheckoutService
 
         $shippingLocation = $salesChannelContext->getShippingLocation();
 
+        if ($formattedHandlerIdentifier === 'handler_adyen_paypalpaymentmethodhandler' && empty($newAddress)) {
+            $newAddress['countryCode'] = $shippingLocation->getCountry()->getIso();
+        }
+
         // Resolving shipping location for guest
         if (!$this->isLoggedIn) {
             $country = $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
@@ -337,36 +343,37 @@ class ExpressCheckoutService
     }
 
     /**
+     * @param string $orderId
      * @param array $data
-     * @param array $shippingMethods
      * @param SalesChannelContext $salesChannelContext
      * @return PaypalUpdateOrderResponse
      * @throws AdyenException
      */
     public function paypalUpdateOrder(
+        string $orderId,
         array               $data,
-        array               $shippingMethods,
         SalesChannelContext $salesChannelContext
     ): PaypalUpdateOrderResponse {
+
+        /** @var OrderEntity $order */
+        $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext);
+        if (!$order) {
+            throw new OrderNotFoundException($orderId);
+        }
+
         $utilityApiService = new UtilityApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );
 
-        $paypalUpdateOrderRequest = new PaypalUpdateOrderRequest($data);
-        $deliveryMethods = [];
-        foreach ($shippingMethods as $shippingMethod) {
-            $deliveryMethods[] = new DeliveryMethod(
-                [
-                    'amount' => new Amount($shippingMethod),
-                    'description' => $shippingMethod['label'],
-                    'reference' => $shippingMethod['id'],
-                    'selected' => $shippingMethod['selected'],
-                    'type' => $shippingMethod['type'],
-                ]
-            );
-        }
+        $amount = new Amount();
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $amountInMinorUnits = $this->currencyUtil->sanitize($order->getAmountTotal(), $currency);
 
-        $paypalUpdateOrderRequest->setDeliveryMethods($deliveryMethods);
+        $amount->setCurrency($currency);
+        $amount->setValue($amountInMinorUnits);
+        $data['amount'] = $amount;
+
+        $paypalUpdateOrderRequest = new PaypalUpdateOrderRequest($data);
 
         return $utilityApiService
             ->updatesOrderForPaypalExpressCheckout($paypalUpdateOrderRequest);
