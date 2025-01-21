@@ -204,7 +204,8 @@ class ExpressCheckoutController
                 'paymentData' => $paymentData,
                 'pspReference' => $pspReference,
             ],
-            $salesChannelContext
+            $salesChannelContext,
+            $newAddress
         );
 
         return new JsonResponse($paypalUpdateOrderResponse->toArray());

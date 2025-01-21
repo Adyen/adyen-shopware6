@@ -489,7 +489,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     return actions.reject();
                 }
 
-                console.log('Response payment data ' + responseObject.paymentData)
                 component.updatePaymentData(responseObject.paymentData);
             }.bind(this)
         );

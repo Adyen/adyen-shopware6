@@ -324,7 +324,8 @@ class ExpressCheckoutService
     public function paypalUpdateOrder(
         string $orderId,
         array               $data,
-        SalesChannelContext $salesChannelContext
+        SalesChannelContext $salesChannelContext,
+        array               $newAddress = [],
     ): PaypalUpdateOrderResponse {
 
         /** @var OrderEntity $order */
@@ -332,6 +333,19 @@ class ExpressCheckoutService
         if (!$order) {
             throw new OrderNotFoundException($orderId);
         }
+
+        $orderAddress =$this->expressCheckoutRepository->createOrderAddress(
+            $newAddress,
+            $order,
+            $salesChannelContext
+        );
+
+        if (!$orderAddress) {
+            throw new OrderNotFoundException($orderId);
+        }
+
+        $order->setBillingAddress($orderAddress);
+        $this->expressCheckoutRepository->updateOrder($order, $salesChannelContext);
 
         $utilityApiService = new UtilityApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())

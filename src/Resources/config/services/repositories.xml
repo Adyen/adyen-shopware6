@@ -32,6 +32,8 @@
             <argument type="service" id="country_state.repository"/>
             <argument type="service" id="salutation.repository"/>
             <argument type="service" id="country.repository"/>
+            <argument type="service" id="order.repository"/>
+            <argument type="service" id="order_address.repository"/>
         </service>
     </services>
 </container>
