@@ -440,7 +440,6 @@ class ExpressCheckoutService
         ?CustomerEntity       $customer = null,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
-        $test = $customer;
         return new SalesChannelContext(
             $salesChannelContext->getContext(),
             $token,
@@ -475,6 +474,7 @@ class ExpressCheckoutService
         string                $token,
         ShippingLocation      $shippingLocation,
         PaymentMethodEntity   $paymentMethod,
+        ?CustomerEntity       $customer = null,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
         return new SalesChannelContext(
@@ -488,7 +488,7 @@ class ExpressCheckoutService
             $paymentMethod,
             $shippingMethod ?? $salesChannelContext->getShippingMethod(),
             $shippingLocation,
-            $salesChannelContext->getCustomer(),
+            $customer,
             $salesChannelContext->getItemRounding(),
             $salesChannelContext->getTotalRounding()
         );
