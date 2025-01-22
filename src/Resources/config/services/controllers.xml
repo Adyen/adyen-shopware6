@@ -17,6 +17,7 @@
             <argument type="service" id="state_machine.repository"/>
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ExpressCheckoutService"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>

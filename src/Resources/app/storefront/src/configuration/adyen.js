@@ -80,11 +80,14 @@ export default {
                 try {
                     response = JSON.parse(response);
                     if (response.isFinal) {
-                        location.href = plugin.returnUrl;
+                        window.location.href = plugin.returnUrl;
+
+                        return;
                     }
 
                     if (!response.action) {
                         window.location.reload();
+
                         return;
                     }
 

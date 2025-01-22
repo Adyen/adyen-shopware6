@@ -28,6 +28,7 @@ use Adyen\AdyenException;
 use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
+use Exception;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -177,7 +178,6 @@ class ExpressCheckoutController
      * @param SalesChannelContext $salesChannelContext
      * @return JsonResponse
      *
-     * @throws AdyenException
      */
     public function updatePayPalOrder(
         Request             $request,
@@ -198,16 +198,20 @@ class ExpressCheckoutController
         $paymentData = $request->request->get('currentPaymentData');
         $pspReference = $request->request->get('pspReference');
 
-        $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
-            $orderId,
-            [
-                'paymentData' => $paymentData,
-                'pspReference' => $pspReference,
-            ],
-            $salesChannelContext,
-            $newAddress
-        );
+        try {
+            $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
+                $orderId,
+                [
+                    'paymentData' => $paymentData,
+                    'pspReference' => $pspReference,
+                ],
+                $salesChannelContext,
+                $newAddress
+            );
 
-        return new JsonResponse($paypalUpdateOrderResponse->toArray());
+            return new JsonResponse($paypalUpdateOrderResponse->toArray());
+        } catch (Exception $exception) {
+            return new JsonResponse(['message' => $exception->getMessage()], 400);
+        }
     }
 }

@@ -168,7 +168,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             "googlepay": {},
             "paypal": {
                 isExpress: true,
-                // onShopperDetails: this.onShopperDetails,
+                onShopperDetails: this.onShopperDetails.bind(this),
                 blockPayPalCreditButton: true,
                 blockPayPalPayLaterButton: true,
                 onShippingAddressChange: this.onShippingAddressChanged.bind(this)
@@ -418,7 +418,11 @@ export default class ExpressCheckoutPlugin extends Plugin {
     handleOnAdditionalDetails(state) {
         this._client.post(
             `${adyenExpressCheckoutOptions.paymentDetailsUrl}`,
-            JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
+            JSON.stringify({
+                orderId: this.orderId,
+                stateData: JSON.stringify(state.data),
+                newAddress: this.newAddress,
+            }),
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     location.href = this.errorUrl.toString();
@@ -492,5 +496,19 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 component.updatePaymentData(responseObject.paymentData);
             }.bind(this)
         );
+    }
+
+    onShopperDetails(shopperDetails, rawData, actions) {
+        this.newAddress = {
+            firstName: shopperDetails.shopperName.firstName,
+            lastName: shopperDetails.shopperName.lastName,
+            street: shopperDetails.shippingAddress.street,
+            postalCode: shopperDetails.shippingAddress.postalCode,
+            city: shopperDetails.shippingAddress.city,
+            countryCode: shopperDetails.shippingAddress.country,
+            phoneNumber: shopperDetails.telephoneNumber
+        }
+
+        actions.resolve();
     }
 }

@@ -8,9 +8,11 @@ use Adyen\Model\Checkout\DeliveryMethod;
 use Adyen\Model\Checkout\PaypalUpdateOrderRequest;
 use Adyen\Model\Checkout\PaypalUpdateOrderResponse;
 use Adyen\Service\Checkout\UtilityApi;
+use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\Repository\ExpressCheckoutRepository;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
+use Exception;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopware\Core\Checkout\Cart\Exception\OrderNotFoundException;
@@ -187,7 +189,7 @@ class ExpressCheckoutService
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
-     * @throws \Exception
+     * @throws Exception
      */
     public function createCart(
         string              $productId,
@@ -297,7 +299,7 @@ class ExpressCheckoutService
      * @param string $customerId The ID of the customer whose context should be updated.
      * @param SalesChannelContext $salesChannelContext The existing sales channel context to be updated.
      *
-     * @throws \Exception If the customer cannot be found.
+     * @throws Exception If the customer cannot be found.
      *
      * @return SalesChannelContext The updated SalesChannelContext with the customer's details.
      */
@@ -334,34 +336,18 @@ class ExpressCheckoutService
      * @param string $orderId
      * @param array $data
      * @param SalesChannelContext $salesChannelContext
+     * @param array $newAddress
      * @return PaypalUpdateOrderResponse
      * @throws AdyenException
+     * @throws PaymentFailedException
      */
     public function paypalUpdateOrder(
         string $orderId,
         array               $data,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
+        array               $newAddress = []
     ): PaypalUpdateOrderResponse {
-
-        /** @var OrderEntity $order */
-        $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext);
-        if (!$order) {
-            throw new OrderNotFoundException($orderId);
-        }
-
-        $orderAddress =$this->expressCheckoutRepository->createOrderAddress(
-            $newAddress,
-            $order,
-            $salesChannelContext
-        );
-
-        if (!$orderAddress) {
-            throw new OrderNotFoundException($orderId);
-        }
-
-        $order->setBillingAddress($orderAddress);
-        $this->expressCheckoutRepository->updateOrder($order, $salesChannelContext);
+        $order = $this->updateOrder($orderId, $salesChannelContext, $newAddress);
 
         $utilityApiService = new UtilityApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
@@ -370,7 +356,6 @@ class ExpressCheckoutService
         $amount = new Amount();
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amountInMinorUnits = $this->currencyUtil->sanitize($order->getAmountTotal(), $currency);
-
         $amount->setCurrency($currency);
         $amount->setValue($amountInMinorUnits);
         $data['amount'] = $amount;
@@ -382,13 +367,49 @@ class ExpressCheckoutService
     }
 
     /**
+     * @param string $orderId
+     * @param array $newAddress
+     * @param SalesChannelContext $salesChannelContext
+     * @return OrderEntity
+     *
+     * @throws PaymentFailedException
+     * @throws Exception
+     */
+    public function updateOrder(
+        string $orderId,
+        SalesChannelContext $salesChannelContext,
+        array $newAddress = []
+    ): OrderEntity {
+        /** @var OrderEntity $order */
+        $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext);
+        if (!$order) {
+            throw new PaymentFailedException();
+        }
+
+        $orderAddress =$this->expressCheckoutRepository->createOrderAddress(
+            $newAddress,
+            $order,
+            $salesChannelContext
+        );
+
+        if (!$orderAddress) {
+            throw new PaymentFailedException();
+        }
+
+        $order->setBillingAddress($orderAddress);
+        $this->expressCheckoutRepository->updateOrder($order, $salesChannelContext);
+
+        return $order;
+    }
+
+    /**
      * Resolves the shipping method based on the provided cart and new shipping details.
      *
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      * @param Cart $cart The cart to calculate shipping for.
      * @param array $newShipping Optional new shipping method details.
      * @return ShippingMethodEntity The resolved shipping method.
-     * @throws \Exception If no valid shipping method is available.
+     * @throws Exception If no valid shipping method is available.
      */
     private function resolveShippingMethod(
         SalesChannelContext $salesChannelContext,
@@ -424,7 +445,7 @@ class ExpressCheckoutService
      * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
      *
      * @return SalesChannelContext The created SalesChannelContext.
-     * @throws \Exception If the Shopware version is unsupported.
+     * @throws Exception If the Shopware version is unsupported.
      */
     public function createContext(
         SalesChannelContext   $salesChannelContext,
@@ -456,7 +477,7 @@ class ExpressCheckoutService
             );
         }
 
-        throw new \Exception(sprintf('Unsupported Shopware version: %s', $this->shopwareVersion));
+        throw new Exception(sprintf('Unsupported Shopware version: %s', $this->shopwareVersion));
     }
 
     /**

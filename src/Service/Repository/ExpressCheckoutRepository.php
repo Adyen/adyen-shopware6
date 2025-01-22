@@ -396,7 +396,11 @@ class ExpressCheckoutRepository
         $city = $newAddress['city'] ?? 'Adyen Guest City';
         $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
         $zipcode = $newAddress['postalCode'] ?? '';
+        $phoneNumber = $newAddress['phoneNumber'] ?? '';
         $customer = $order->getOrderCustomer();
+
+        $firstName = $newAddress['firstName'] ?? ( $customer ? $customer->getFirstName() : 'Guest' );
+        $lastName = $newAddress['lastName'] ?? ( $customer ? $customer->getLastName() : 'Guest' );
 
         $addressData = [
             [
@@ -407,10 +411,11 @@ class ExpressCheckoutRepository
                 'city' => $city,
                 'street' => $street,
                 'zipcode' => $zipcode,
-                'firstName' => $customer ? $customer->getFirstName() : '',
-                'lastName' => $customer ? $customer->getLastName() : '',
+                'firstName' => $firstName,
+                'lastName' => $lastName,
                 'salutationId' => $customer ? $customer->getSalutationId() : '',
                 'orderId' => $order->getId(),
+                'phoneNumber' => $phoneNumber
             ],
         ];
 

@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Controller\StoreApi\Payment;
 
 use Adyen\Model\Checkout\PaymentDetailsRequest;
+use Adyen\Shopware\Service\ExpressCheckoutService;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
@@ -110,6 +111,9 @@ class PaymentController
      * @var ConfigurationService
      */
     private $configurationService;
+
+    /** @var ExpressCheckoutService */
+    private $expressCheckoutService;
     /**
      * @var OrderTransactionStateHandler
      */
@@ -150,6 +154,7 @@ class PaymentController
         EntityRepository $stateMachineRepo,
         EntityRepository $orderTransactionRepository,
         ConfigurationService $configurationService,
+        ExpressCheckoutService $expressCheckoutService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         LoggerInterface $logger
     ) {
@@ -164,6 +169,7 @@ class PaymentController
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
+        $this->expressCheckoutService = $expressCheckoutService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->stateMachineRepo = $stateMachineRepo;
         $this->logger = $logger;
@@ -226,7 +232,13 @@ class PaymentController
             return new JsonResponse($message, 400);
         }
 
+        $newAddress = $request->request->all()['newAddress'] ?? [];
+
         try {
+            if ($newAddress) {
+                $this->expressCheckoutService->updateOrder($orderId, $context, $newAddress);
+            }
+
             $result = $this->paymentDetailsService->getPaymentDetails(
                 new PaymentDetailsRequest($stateData),
                 $paymentResponse->getOrderTransaction()
