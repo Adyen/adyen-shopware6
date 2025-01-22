@@ -367,19 +367,20 @@ export default class ConfirmOrderPlugin extends Plugin {
                     .mount('[data-adyen-payment-action-container]');
                 const modalActionTypes = ['threeDS2', 'qrCode']
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
-                    const bootstrapVersion = window.jQuery && $.fn.tooltip && $.fn.tooltip.Constructor && $.fn.tooltip.Constructor.VERSION;
-                    const isBootstrap4 = bootstrapVersion && bootstrapVersion.startsWith('4');
-                    if (window.jQuery && isBootstrap4) {
-                        // Bootstrap v4 support
-                        $('[data-adyen-payment-action-modal]').modal({show: true});
-                    } else {
-                        // Bootstrap v5 support
-                        var adyenPaymentModal = new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
+                    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+                        // Bootstrap 5 modal support
+                        const adyenPaymentModal = new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
                             keyboard: false
                         });
                         adyenPaymentModal.show();
+                    } else if (window.jQuery && typeof $.fn.modal === 'function') {
+                        // Bootstrap 4 modal support
+                        $('[data-adyen-payment-action-modal]').modal({ show: true });
+                    } else {
+                        console.error("No modal implementation found. Please check your setup.");
                     }
                 }
+
             }
         } catch (e) {
             console.log(e);
