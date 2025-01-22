@@ -341,7 +341,7 @@ class ExpressCheckoutService
         string $orderId,
         array               $data,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
+        array               $newAddress = []
     ): PaypalUpdateOrderResponse {
 
         /** @var OrderEntity $order */
