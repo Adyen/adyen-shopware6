@@ -1,7 +1,8 @@
+
 name: E2E Test
 run-name: Headless E2E tests for Adyen Shopware Plugin
 
-on: 
+on:
   pull_request:
   workflow_dispatch:
 
@@ -14,8 +15,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       fail-fast: false
-    # if: ${{ github.actor != 'renovate[bot]' || github.actor != 'lgtm-com[bot]' }}
-    if: false
+    if: ${{ github.actor != 'renovate[bot]' && github.actor != 'lgtm-com[bot]' }}
     # Prevent bots from initiating E2E pipeline
     steps:
       - name: Clone Code
@@ -32,14 +32,15 @@ jobs:
           docker exec shopware6 bash -c "sudo mysql -u root -proot shopware -e \"UPDATE sales_channel_domain SET url='https://local.shopware.shop' WHERE url NOT LIKE 'default.%';\""
           docker exec shopware6 bash -c \
             "sudo mysql -u root -proot shopware -e \"SELECT @RULE_ID := id FROM rule WHERE name = 'All customers'; UPDATE shipping_method SET availability_rule_id = @RULE_ID;\""
-          
+          docker exec shopware6 bash -c "sudo mysql -u root -proot shopware -e \"UPDATE system_config SET configuration_value='{\"enabled\": false}' WHERE configuration_key='core.basicInformation.cookieConsent';\""
+
           docker network create localnetwork
           docker network connect --alias local.shopware.shop localnetwork shopware6
 
       - name: Install/Configure Plugin
         run: |
           docker exec shopware6 bash -c "composer config --json repositories.local '{\"type\": \"path\", \"url\": \"/data/extensions/workdir\", \"options\": { \"symlink\": false } }'"
-          docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6:*'
+          docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6:*@RC'
           docker exec shopware6 bash -c 'php bin/console plugin:refresh'
           docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
           docker exec shopware6 bash -c 'php bin/console cache:clear'
@@ -55,7 +56,6 @@ jobs:
       - name: Run E2E Tests
         run: docker compose -f .github/workflows/templates/docker-compose.playwright.yml run --rm playwright /e2e.sh
         env:
-          INTEGRATION_TESTS_BRANCH: develop
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
           PAYPAL_USERNAME: ${{secrets.PLAYWRIGHT_PAYPAL_USERNAME}}
           PAYPAL_PASSWORD: ${{secrets.PLAYWRIGHT_PAYPAL_PASSWORD}}
@@ -66,3 +66,25 @@ jobs:
         with:
           name: html-report
           path: test-report
+
+      - name: Copy Adyen api logs from container if available
+        if: always()
+        run: |
+          # Create a local directory for logs
+          mkdir -p logs
+
+          # Check if the log file exists in the container
+          if docker exec shopware6 test -f /var/www/html/var/log/adyen/api.log; then
+            echo "Log file exists. Copying..."
+            docker cp shopware6:/var/www/html/var/log/adyen/api.log logs
+          else
+            echo "Log file does not exist. Skipping copy."
+          fi
+        shell: bash
+
+      - name: Upload Adyen api Logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: adyen-api-logs
+          path: logs/*
