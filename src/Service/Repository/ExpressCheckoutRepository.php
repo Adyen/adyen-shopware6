@@ -290,6 +290,7 @@ class ExpressCheckoutRepository
         $paymentMethodId = $salesChannelContext->getPaymentMethod()->getId();
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
         $customerNumber = Uuid::randomHex();
+        $remoteAddress = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
         // Address data
         $addressId = Uuid::randomHex();
@@ -317,6 +318,7 @@ class ExpressCheckoutRepository
                 'defaultPaymentMethodId' => $paymentMethodId,
                 'salesChannelId' => $salesChannelId,
                 'customerNumber' => $customerNumber,
+                'remoteAddress' => $remoteAddress,
                 'defaultBillingAddress' => [
                     'id' => $addressId,
                     'countryId' => $countryId,

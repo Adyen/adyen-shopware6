@@ -308,9 +308,6 @@ class ExpressCheckoutService
         // Fetch the customer by ID
         $customer = $this->expressCheckoutRepository->findCustomerById($customerId, $salesChannelContext);
 
-        // Update the remote address
-        $customer->setRemoteAddress($_SERVER['REMOTE_ADDR']);
-
         // Create the shipping location from the customer's billing address
         $shippingLocation = ShippingLocation::createFromAddress($customer->getDefaultBillingAddress());
 
