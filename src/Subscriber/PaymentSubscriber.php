@@ -246,6 +246,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $userLoggedIn = $salesChannelContext->getCustomer() !== null;
 
+        $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+
         //Filter Payment Methods
         $shopwarePaymentMethods = null;
         if ($page instanceof CheckoutCartPage) {
@@ -329,7 +332,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         $salesChannelContext->getCustomer(),
                         $salesChannelContext
                     ),
-                    'userLoggedIn' => json_encode($userLoggedIn)
+                    'userLoggedIn' => json_encode($userLoggedIn),
+                     'affiliateCode' => $affiliateCode,
+                     'campaignCode' => $campaignCode,
                     ],
                     $this->expressCheckoutService->getExpressCheckoutConfig(
                         '-1',
@@ -355,6 +360,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $productId = $page->getProduct()->getId();
 
         $userLoggedIn = $salesChannelContext->getCustomer() !== null;
+
+        $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -389,7 +397,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     ),
                     'expressCheckoutUpdatePaypalOrderUrl' =>
                         $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
-                    'userLoggedIn' => json_encode($userLoggedIn)
+                    'userLoggedIn' => json_encode($userLoggedIn),
+                    'affiliateCode' => $affiliateCode,
+                    'campaignCode' => $campaignCode,
                     ],
                     $this->expressCheckoutService->getExpressCheckoutConfig(
                         $productId,

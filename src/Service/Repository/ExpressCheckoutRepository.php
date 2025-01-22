@@ -84,7 +84,8 @@ class ExpressCheckoutRepository
     ): ShippingMethodCollection {
         $criteria = new Criteria();
         $criteria->addAssociation('availabilityRule');
-        $criteria->addFilter(new EqualsFilter('shippingMethod.salesChannels.id', $salesChannelContext->getSalesChannel()->getId()));
+        $criteria->addAssociation('salesChannels');
+        $criteria->addFilter(new EqualsFilter('salesChannels.id', $salesChannelContext->getSalesChannel()->getId()));
 
         /** @var ShippingMethodCollection $shippingMethods */
         $shippingMethods = $this->shippingMethodRepository->search($criteria, $salesChannelContext->getContext())
