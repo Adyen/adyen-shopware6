@@ -21,6 +21,7 @@ use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethod
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -50,18 +51,25 @@ class ExpressCheckoutService
      */
     protected ClientService $clientService;
 
+    /**
+     * @var SalesChannelContextPersister
+     */
+    private SalesChannelContextPersister $contextPersister;
+
     public function __construct(
         CartService                 $cartService,
         ExpressCheckoutRepository   $expressCheckoutRepository,
         PaymentMethodsFilterService $paymentMethodsFilterService,
         ClientService               $clientService,
         Currency                    $currencyUtil,
+        SalesChannelContextPersister $contextPersister
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
         $this->clientService = $clientService;
         $this->currencyUtil = $currencyUtil;
+        $this->contextPersister = $contextPersister;
     }
 
     /**
@@ -285,20 +293,25 @@ class ExpressCheckoutService
         // Fetch the customer by ID
         $customer = $this->expressCheckoutRepository->findCustomerById($customerId, $salesChannelContext);
 
-        // Update the remote address
-        $customer->setRemoteAddress($_SERVER['REMOTE_ADDR']);
-
         // Create the shipping location from the customer's billing address
         $shippingLocation = ShippingLocation::createFromAddress($customer->getDefaultBillingAddress());
 
         // Update the context
-        return $this->createContext(
+        $salesChannelContext = $this->createContext(
             $salesChannelContext,
             $salesChannelContext->getToken(),
             $shippingLocation,
             $salesChannelContext->getPaymentMethod(),
             $customer
         );
+
+        $this->contextPersister->save(
+            $salesChannelContext->getToken(),
+            [SalesChannelContextService::CUSTOMER_ID => $customerId],
+            $salesChannelContext->getSalesChannel()->getId()
+        );
+
+        return $salesChannelContext;
     }
 
     /**
@@ -400,7 +413,7 @@ class ExpressCheckoutService
             $paymentMethod,
             $shippingMethod ?? $salesChannelContext->getShippingMethod(),
             $shippingLocation,
-            $customer ?? $salesChannelContext->getCustomer(),
+            $customer,
             $salesChannelContext->getItemRounding(),
             $salesChannelContext->getTotalRounding()
         );

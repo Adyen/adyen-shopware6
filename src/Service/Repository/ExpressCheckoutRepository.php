@@ -70,6 +70,8 @@ class ExpressCheckoutRepository
     ): ShippingMethodCollection {
         $criteria = new Criteria();
         $criteria->addAssociation('availabilityRule');
+        $criteria->addAssociation('salesChannels');
+        $criteria->addFilter(new EqualsFilter('salesChannels.id', $salesChannelContext->getSalesChannel()->getId()));
 
         /** @var ShippingMethodCollection $shippingMethods */
         $shippingMethods = $this->shippingMethodRepository->search($criteria, $salesChannelContext->getContext())
@@ -274,6 +276,7 @@ class ExpressCheckoutRepository
         $paymentMethodId = $salesChannelContext->getPaymentMethod()->getId();
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
         $customerNumber = Uuid::randomHex();
+        $remoteAddress = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
         // Address data
         $addressId = Uuid::randomHex();
@@ -301,6 +304,7 @@ class ExpressCheckoutRepository
                 'defaultPaymentMethodId' => $paymentMethodId,
                 'salesChannelId' => $salesChannelId,
                 'customerNumber' => $customerNumber,
+                'remoteAddress' => $remoteAddress,
                 'defaultBillingAddress' => [
                     'id' => $addressId,
                     'countryId' => $countryId,

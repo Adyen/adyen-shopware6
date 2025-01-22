@@ -302,6 +302,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     newAddress: this.newAddress,
                     newShippingMethod: this.newShippingMethod,
                     email: this.email,
+                    affiliateCode: adyenExpressCheckoutOptions.affiliateCode,
+                    campaignCode: adyenExpressCheckoutOptions.campaignCode
                 };
 
                 let extraParams = {
