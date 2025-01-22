@@ -167,7 +167,8 @@ class NotificationReceiverService
             print_r($notificationItem, true));
 
         // check if notification already exists
-        if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
+        if (!$this->notificationService->isDuplicateNotification($notificationItem)
+            && !empty($notificationItem['merchantReference'])) {
             try {
                 $this->notificationService->insertNotification($notificationItem);
                 return true;
