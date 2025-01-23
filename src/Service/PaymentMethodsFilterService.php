@@ -404,15 +404,15 @@ class PaymentMethodsFilterService
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, '', $amount)
             ->getPaymentMethods();
         $allowedMethods = [];
-        $googlePayAvailable ? $allowedMethods['paywithgoogle'] = true : false;
-        $payPalAvailable ? $allowedMethods['paypal'] = true : false;
-        $applePayAvailable ? $allowedMethods['applepay'] = true : false;
+        $allowedMethods['paywithgoogle'] = (bool)$googlePayAvailable;
+        $allowedMethods['paypal'] = (bool)$payPalAvailable;
+        $allowedMethods['applepay'] = (bool)$applePayAvailable;
 
 //         Filter methods by type and configuration
         $filteredMethods = array_values(
             array_filter($paymentMethods, function ($method) use ($allowedMethods) {
                 $type = $method['type'];
-                if (!isset($allowedMethods[$type])) {
+                if (!$allowedMethods[$type]) {
                     return false;
                 }
 
