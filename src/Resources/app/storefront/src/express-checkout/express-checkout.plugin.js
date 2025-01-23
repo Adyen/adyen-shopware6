@@ -171,7 +171,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 onShopperDetails: this.onShopperDetails.bind(this),
                 blockPayPalCreditButton: true,
                 blockPayPalPayLaterButton: true,
-                onShippingAddressChange: this.onShippingAddressChanged.bind(this)
+                onShippingAddressChange: this.onShippingAddressChanged.bind(this),
+                onShippingOptionsChange: this.onShippingOptionsChange.bind(this)
             },
             "applepay": {}
         };
@@ -473,16 +474,39 @@ export default class ExpressCheckoutPlugin extends Plugin {
         const currentPaymentData = component.paymentData;
         const shippingAddress = data.shippingAddress;
 
-        const extraData = {};
+        const extraData = this.getDataForPayPalCallbacks();
+        extraData.currentPaymentData = currentPaymentData;
 
         if (shippingAddress) {
             this.newAddress = extraData.newAddress = shippingAddress;
         }
 
-        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
+        this._client.post(
+            `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
+            JSON.stringify({
+                ...extraData
+            }),
+            function (response) {
+                const responseObject = JSON.parse(response);
+                if (this._client._request.status !== 200) {
+                    return actions.reject();
+                }
+
+                component.updatePaymentData(responseObject.paymentData);
+            }.bind(this)
+        );
+    }
+
+    onShippingOptionsChange(data, actions, component) {
+        const currentPaymentData = component.paymentData;
+        const selectedShippingOption = data.selectedShippingOption;
+
+        const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
-        extraData.pspReference = this.pspReference;
-        extraData.orderId = this.orderId;
+
+        if (selectedShippingOption) {
+            this.newShippingMethod = extraData.newShippingMethod = selectedShippingOption;
+        }
 
         this._client.post(
             `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
@@ -512,5 +536,15 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
 
         actions.resolve();
+    }
+
+    getDataForPayPalCallbacks() {
+        const extraData = {};
+
+        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
+        extraData.pspReference = this.pspReference;
+        extraData.orderId = this.orderId;
+
+        return extraData;
     }
 }
