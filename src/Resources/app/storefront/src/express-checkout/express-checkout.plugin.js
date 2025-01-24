@@ -425,6 +425,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 orderId: this.orderId,
                 stateData: JSON.stringify(state.data),
                 newAddress: this.newAddress,
+                newShipping: this.newShippingMethod,
             }),
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
@@ -532,7 +533,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
             postalCode: shopperDetails.shippingAddress.postalCode,
             city: shopperDetails.shippingAddress.city,
             countryCode: shopperDetails.shippingAddress.country,
-            phoneNumber: shopperDetails.telephoneNumber
+            phoneNumber: shopperDetails.telephoneNumber,
+            email: shopperDetails.shopperEmail
         }
 
         actions.resolve();

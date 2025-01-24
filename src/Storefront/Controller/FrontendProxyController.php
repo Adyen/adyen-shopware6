@@ -226,24 +226,10 @@ class FrontendProxyController extends StorefrontController
         RequestDataBag $data,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        $productId = $data->get('productId');
-        $quantity = (int)$data->get('quantity');
-        $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
-        $newAddress = $data->get('newAddress')->all();
-        $newShipping = $data->get('newShippingMethod')->all();
-        $guestEmail = $data->get('email');
-
         try {
-            $makeNewCustomer = $salesChannelContext->getCustomer() === null;
             $cartData = $this->expressCheckoutController->createCart(
-                $productId,
-                $quantity,
-                $salesChannelContext,
-                $newAddress,
-                $newShipping,
-                $formattedHandlerIdentifier,
-                $guestEmail,
-                $makeNewCustomer
+                $data,
+                $salesChannelContext
             );
             $cart = $cartData['cart'];
             $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];

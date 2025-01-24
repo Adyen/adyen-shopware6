@@ -29,6 +29,7 @@ use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
 use Exception;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -127,24 +128,24 @@ class ExpressCheckoutController
     /**
      * Creates a cart with the provided product and calculates it with the resolved shipping location and method.
      *
-     * @param string $productId The ID of the product.
-     * @param int $quantity The quantity of the product.
+     * @param RequestDataBag $data
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
-     * @param array $newAddress Optional new address details.
-     * @param array $newShipping Optional new shipping method details.
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
-     * @throws \Exception
+     * @throws Exception
      */
     public function createCart(
-        string $productId,
-        int $quantity,
-        SalesChannelContext $salesChannelContext,
-        array $newAddress = [],
-        array $newShipping = [],
-        string $formattedHandlerIdentifier = '',
-        string $guestEmail = '',
-        bool $makeNewCustomer = false
+        RequestDataBag      $data,
+        SalesChannelContext $salesChannelContext
     ): array {
+        $productId = $data->get('productId');
+        $quantity = (int)$data->get('quantity');
+        $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
+        $newAddress = $data->get('newAddress')->all();
+        $newShipping = $data->get('newShippingMethod')->all();
+        $guestEmail = $data->get('email');
+
+        $makeNewCustomer = $salesChannelContext->getCustomer() === null;
+
         return $this->expressCheckoutService
             ->createCart(
                 $productId,
@@ -206,7 +207,8 @@ class ExpressCheckoutController
                     'pspReference' => $pspReference,
                 ],
                 $salesChannelContext,
-                $newAddress
+                $newAddress,
+                $newShipping
             );
 
             return new JsonResponse($paypalUpdateOrderResponse->toArray());

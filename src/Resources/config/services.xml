@@ -74,6 +74,8 @@
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <argument>%kernel.shopware_version%</argument>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
+            <argument type="service" id="Shopware\Core\Framework\Api\Controller\ApiController"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Order\OrderConverter"/>
         </service>
         <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>

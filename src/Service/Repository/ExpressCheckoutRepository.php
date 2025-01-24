@@ -6,11 +6,12 @@ use Adyen\Shopware\Exception\ResolveCountryException;
 use Exception;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Rule\CartRuleScope;
+use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
-use Shopware\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -53,6 +54,12 @@ class ExpressCheckoutRepository
     /** @var EntityRepository */
     private EntityRepository $orderAddressRepository;
 
+    /** @var EntityRepository */
+    private EntityRepository $customerAddressRepository;
+
+    /** @var EntityRepository */
+    private EntityRepository $orderCustomerRepository;
+
     public function __construct(
         EntityRepository $shippingMethodRepository,
         EntityRepository $customerRepository,
@@ -60,7 +67,9 @@ class ExpressCheckoutRepository
         EntityRepository $salutationRepository,
         EntityRepository $countryRepository,
         EntityRepository $orderRepository,
-        EntityRepository $orderAddressRepository
+        EntityRepository $orderAddressRepository,
+        EntityRepository $customerAddressRepository,
+        EntityRepository $orderCustomerRepository
     ) {
         $this->shippingMethodRepository = $shippingMethodRepository;
         $this->customerRepository = $customerRepository;
@@ -69,6 +78,8 @@ class ExpressCheckoutRepository
         $this->countryRepository = $countryRepository;
         $this->orderRepository = $orderRepository;
         $this->orderAddressRepository = $orderAddressRepository;
+        $this->customerAddressRepository = $customerAddressRepository;
+        $this->orderCustomerRepository = $orderCustomerRepository;
     }
 
     /**
@@ -85,6 +96,7 @@ class ExpressCheckoutRepository
         $criteria = new Criteria();
         $criteria->addAssociation('availabilityRule');
         $criteria->addAssociation('salesChannels');
+        $criteria->addAssociation('prices');
         $criteria->addFilter(new EqualsFilter('salesChannels.id', $salesChannelContext->getSalesChannel()->getId()));
 
         /** @var ShippingMethodCollection $shippingMethods */
@@ -294,14 +306,16 @@ class ExpressCheckoutRepository
 
         // Address data
         $addressId = Uuid::randomHex();
-        $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
+        $countryCode = $newAddress['countryCode'] ??
+            $salesChannelContext->getShippingLocation()->getCountry()->getIso();
+        $countryId = $this->getCountryId($countryCode, $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $newAddress['countryCode']) {
-            $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
+        if ($newAddress['state'] && $countryCode) {
+            $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
         $city =  $newAddress['city'] ?? 'Adyen Guest City';
         $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
-        $zipcode = $newAddress['zipcode'] ?? '';
+        $zipcode = $newAddress['zipcode'] ?? '1111';
         $additionalAddressLine1 = $newAddress['address2'] ?? '';
         $additionalAddressLine2 = $newAddress['address3'] ?? '';
 
@@ -368,30 +382,52 @@ class ExpressCheckoutRepository
 
     /**
      * @param string $orderId
-     * @param SalesChannelContext $salesChannelContext
+     * @param Context $context
      * @return OrderEntity|null
      */
-    public function getOrderById(string $orderId, SalesChannelContext $salesChannelContext): ?OrderEntity
+    public function getOrderById(string $orderId, Context $context): ?OrderEntity
     {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('id', $orderId));
+        $criteria->addFilter(new EqualsFilter('id', $orderId))
+        ->addAssociation('lineItems')
+        ->addAssociation('lineItems.downloads')
+        ->addAssociation('transactions')
+        ->addAssociation('deliveries.shippingMethod')
+        ->addAssociation('deliveries.positions.orderLineItem')
+        ->addAssociation('deliveries.shippingOrderAddress.country')
+        ->addAssociation('deliveries.shippingOrderAddress.countryState');
 
-        return $this->orderRepository->search($criteria, $salesChannelContext->getContext())->first();
+        return $this->orderRepository->search($criteria, $context)->first();
+    }
+
+    /**
+     * @param array $orderData
+     * @param Context $context
+     * @return void
+     */
+    public function upsertOrder(array $orderData, Context $context): void
+    {
+        $context->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($orderData): void {
+            $this->orderRepository->upsert([$orderData], $context);
+        });
     }
 
     /**
      * @param array $newAddress
-     * @param OrderEntity $order
+     * @param CustomerEntity $customer
+     * @param string $orderAddressId
+     * @param string $customerOrderId
      * @param SalesChannelContext $salesChannelContext
-     * @return OrderAddressEntity|null
+     * @return CustomerAddressEntity
      * @throws Exception
      */
-    public function createOrderAddress(
+    public function updateOrderAddressAndCustomer(
         array               $newAddress,
-        OrderEntity         $order,
+        CustomerEntity      $customer,
+        string              $orderAddressId,
+        string              $customerOrderId,
         SalesChannelContext $salesChannelContext
-    ): ?OrderAddressEntity {
-        $addressId = Uuid::randomHex();
+    ): CustomerAddressEntity {
         $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
         $stateID = null;
         if ($newAddress['state'] && $newAddress['countryCode']) {
@@ -399,17 +435,15 @@ class ExpressCheckoutRepository
         }
         $city = $newAddress['city'] ?? 'Adyen Guest City';
         $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
-        $zipcode = $newAddress['postalCode'] ?? '';
+        $zipcode = $newAddress['postalCode'] ?? '1111';
         $phoneNumber = $newAddress['phoneNumber'] ?? '';
-        $customer = $order->getOrderCustomer();
 
-        $firstName = $newAddress['firstName'] ?? ( $customer ? $customer->getFirstName() : 'Guest' );
-        $lastName = $newAddress['lastName'] ?? ( $customer ? $customer->getLastName() : 'Guest' );
+        $firstName = $newAddress['firstName'] ??  $customer->getFirstName();
+        $lastName = $newAddress['lastName'] ?? $customer->getLastName();
 
         $addressData = [
             [
-
-                'id' => $addressId,
+                'id' => $orderAddressId,
                 'countryId' => $countryId,
                 'countryStateId' => $stateID,
                 'city' => $city,
@@ -417,42 +451,70 @@ class ExpressCheckoutRepository
                 'zipcode' => $zipcode,
                 'firstName' => $firstName,
                 'lastName' => $lastName,
-                'salutationId' => $customer ? $customer->getSalutationId() : '',
-                'orderId' => $order->getId(),
+                'salutationId' => $customer->getSalutationId() ?? '',
                 'phoneNumber' => $phoneNumber
             ],
         ];
 
-        // Create order address
-        $this->orderAddressRepository->create($addressData, $salesChannelContext->getContext());
+        // Update order address
+        $this->orderAddressRepository->update($addressData, $salesChannelContext->getContext());
 
-        // Get order address by id
+        $customerAddressId = $customer->getDefaultBillingAddress()->getId();
+        $customerAddressData = [
+            [
+                'id' => $customerAddressId,
+                'countryId' => $countryId,
+                'countryStateId' => $stateID,
+                'city' => $city,
+                'street' => $street,
+                'zipcode' => $zipcode,
+                'firstName' => $firstName,
+                'lastName' => $lastName,
+                'salutationId' => $customer->getSalutationId() ?? '',
+                'phoneNumber' => $phoneNumber
+            ],
+        ];
+
+        // Update customer address
+        $this->customerAddressRepository->update($customerAddressData, $salesChannelContext->getContext());
+
+        if ($newAddress['email']) {
+            $customerData = [
+                [
+                    'id' => $customer->getId(),
+                    'firstName' => $firstName,
+                    'lastName' => $lastName,
+                    'salutationId' => $customer->getSalutationId() ?? '',
+                    'email' => $newAddress['email']
+                ],
+            ];
+
+            // Update customer data
+            $this->customerRepository->update($customerData, $salesChannelContext->getContext());
+
+            $customerOrderData = [
+                [
+                    'id' => $customerOrderId,
+                    'firstName' => $firstName,
+                    'lastName' => $lastName,
+                    'salutationId' => $customer->getSalutationId() ?? '',
+                    'email' => $newAddress['email']
+                ],
+            ];
+
+            // Update order customer data
+            $this->orderCustomerRepository->update($customerOrderData, $salesChannelContext->getContext());
+        }
+
+        // Get customer address by id
         $criteria = new Criteria();
         $criteria->addAssociation('country');
         $criteria->addAssociation('countryState');
-        $criteria->addFilter(new EqualsFilter('id', $addressId));
+        $criteria->addFilter(new EqualsFilter('id', $customerAddressId));
 
-        /** @var OrderAddressEntity|null $orderAddress */
-        $orderAddress = $this->orderAddressRepository->search($criteria, $salesChannelContext->getContext())->first();
-
-        return $orderAddress;
-    }
-
-    /**
-     * @param OrderEntity $order
-     * @param SalesChannelContext $salesChannelContext
-     * @return void
-     */
-    public function updateOrder(OrderEntity $order, SalesChannelContext $salesChannelContext): void
-    {
-        $this->orderRepository->update(
-            [
-                [
-                    'id' => $order->getId(),
-                    'billingAddressId' => $order->getBillingAddress() ? $order->getBillingAddress()->getId() : '',
-                ],
-            ],
+        return $this->customerAddressRepository->search(
+            $criteria,
             $salesChannelContext->getContext()
-        );
+        )->first();
     }
 }

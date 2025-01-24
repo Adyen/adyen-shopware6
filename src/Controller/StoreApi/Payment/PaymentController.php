@@ -233,10 +233,11 @@ class PaymentController
         }
 
         $newAddress = $request->request->all()['newAddress'] ?? [];
+        $newShipping = $request->request->all()['newShipping'] ?? [];
 
         try {
-            if ($newAddress) {
-                $this->expressCheckoutService->updateOrder($orderId, $context, $newAddress);
+            if ($newAddress || $newShipping) {
+                $this->expressCheckoutService->updateShopOrder($request, $orderId, $context, $newAddress, $newShipping);
             }
 
             $result = $this->paymentDetailsService->getPaymentDetails(
