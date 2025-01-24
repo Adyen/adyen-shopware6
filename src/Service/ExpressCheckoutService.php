@@ -83,7 +83,7 @@ class ExpressCheckoutService
         string                       $shopwareVersion,
         SalesChannelContextPersister $contextPersister,
         ApiController                $apiController,
-        OrderConverter               $orderConverter,
+        OrderConverter               $orderConverter
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
@@ -188,7 +188,7 @@ class ExpressCheckoutService
         string              $formattedHandlerIdentifier = '',
         string              $guestEmail = '',
         bool                $makeNewCustomer = false,
-        OrderEntity         $order = null,
+        OrderEntity         $order = null
     ): array {
         $newCustomer = $salesChannelContext->getCustomer();
 
