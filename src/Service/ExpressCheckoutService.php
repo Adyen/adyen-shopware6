@@ -8,7 +8,7 @@ use Adyen\Model\Checkout\DeliveryMethod;
 use Adyen\Model\Checkout\PaypalUpdateOrderRequest;
 use Adyen\Model\Checkout\PaypalUpdateOrderResponse;
 use Adyen\Service\Checkout\UtilityApi;
-use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Service\Repository\ExpressCheckoutRepository;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
@@ -177,7 +177,7 @@ class ExpressCheckoutService
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
-     * @throws Exception
+     * @throws ResolveCountryException|ResolveShippingMethodException
      */
     public function createCart(
         string              $productId,
@@ -223,6 +223,7 @@ class ExpressCheckoutService
             }
 
             if ($newAddress) {
+                $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
                 $address = $this->expressCheckoutRepository->updateOrderAddressAndCustomer(
                     $newAddress,
                     $newCustomer,
@@ -350,8 +351,7 @@ class ExpressCheckoutService
      * @param array $newAddress
      * @param array $newShipping
      * @return PaypalUpdateOrderResponse
-     * @throws AdyenException
-     * @throws Exception
+     * @throws AdyenException|ResolveCountryException|ResolveShippingMethodException
      */
     public function paypalUpdateOrder(
         string              $orderId,
@@ -417,9 +417,9 @@ class ExpressCheckoutService
      * @param SalesChannelContext $salesChannelContext
      * @param array $newAddress
      * @param array $newShipping
-     * @return OrderEntity
-     *
-     * @throws Exception
+     * @return void
+     * @throws ResolveCountryException
+     * @throws ResolveShippingMethodException
      */
     public function updateShopOrder(
         Request             $request,
@@ -427,7 +427,7 @@ class ExpressCheckoutService
         SalesChannelContext $salesChannelContext,
         array               $newAddress = [],
         array               $newShipping = []
-    ): OrderEntity {
+    ): void {
         /** @var OrderEntity $order */
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
         $cartData = $this->createCart(
@@ -449,7 +449,7 @@ class ExpressCheckoutService
             $updatedSalesChannelContext->getContext(),
             'order',
             $orderId
-        )->getContent(), true, 512, JSON_THROW_ON_ERROR)['versionId'];
+        )->getContent(), true)['versionId'];
 
         $contextWithNewVersion = $updatedSalesChannelContext->getContext()->createWithVersionId($versionId);
         /** @var OrderEntity $orderWithNewVersion */
@@ -471,8 +471,6 @@ class ExpressCheckoutService
         $this->apiController->mergeVersion($contextWithNewVersion, 'order', $versionId);
 
         $this->cartService->deleteCart($updatedSalesChannelContext);
-
-        return $order;
     }
 
     /**
@@ -482,7 +480,7 @@ class ExpressCheckoutService
      * @param Cart $cart The cart to calculate shipping for.
      * @param array $newShipping Optional new shipping method details.
      * @return ShippingMethodEntity The resolved shipping method.
-     * @throws Exception If no valid shipping method is available.
+     * @throws ResolveShippingMethodException
      */
     private function resolveShippingMethod(
         SalesChannelContext $salesChannelContext,

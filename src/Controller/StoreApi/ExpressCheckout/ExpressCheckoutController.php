@@ -121,7 +121,7 @@ class ExpressCheckoutController
                     'reason' => 'OTHER_ERROR',
                     'message' => $e->getMessage(),
                 ]
-            ], 500);
+            ], 400);
         }
     }
 
@@ -212,8 +212,29 @@ class ExpressCheckoutController
             );
 
             return new JsonResponse($paypalUpdateOrderResponse->toArray());
-        } catch (Exception $exception) {
-            return new JsonResponse(['message' => $exception->getMessage()], 400);
+        } catch (ResolveCountryException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'SHIPPING_ADDRESS_INVALID',
+                    'message' => $e->getMessage(),
+                    'intent' => 'SHIPPING_ADDRESS',
+                ]
+            ], 400);
+        } catch (ResolveShippingMethodException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'SHIPPING_OPTION_INVALID',
+                    'message' => $e->getMessage(),
+                    'intent' => 'SHIPPING_OPTION',
+                ]
+            ], 400);
+        } catch (AdyenException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'OTHER_ERROR',
+                    'message' => $e->getMessage(),
+                ]
+            ], 400);
         }
     }
 }

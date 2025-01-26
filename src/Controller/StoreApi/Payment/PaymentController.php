@@ -25,6 +25,8 @@
 namespace Adyen\Shopware\Controller\StoreApi\Payment;
 
 use Adyen\Model\Checkout\PaymentDetailsRequest;
+use Adyen\Shopware\Exception\ResolveCountryException;
+use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
@@ -244,6 +246,13 @@ class PaymentController
                 new PaymentDetailsRequest($stateData),
                 $paymentResponse->getOrderTransaction()
             );
+        } catch (ResolveCountryException|ResolveShippingMethodException $e) {
+            $this->logger->error(
+                $e->getMessage(),
+                ['orderId' => $orderId, 'paymentDetails' => $stateData]
+            );
+
+            return new JsonResponse($e->getMessage(), 400);
         } catch (PaymentFailedException $exception) {
             $message = 'Error occurred finalizing payment';
             $this->logger->error(

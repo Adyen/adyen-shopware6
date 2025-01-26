@@ -38,6 +38,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.email = '';
         this.pspReference = '';
         this.paymentData = null;
+        this.blockPayPalShippingOptionChange = false;
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             return new Promise(async resolve => {
@@ -291,9 +292,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 const productMeta = document.querySelector('meta[itemprop="productID"]');
                 const productId = productMeta ? productMeta.content : '-1';
                 const quantity = this.quantityInput ? this.quantityInput.value : -1;
-                // SUBMIT PAYMENT
                 const type = state.data.paymentMethod.type;
-                // check what method -gp, ap, pp
                 if (type === 'paypal') {
                     this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
                     const paypalComponentConfig = adyenConfiguration.componentsWithPayButton['paypal'];
@@ -471,7 +470,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
     }
 
-    onShippingAddressChanged(data, actions, component) {
+    async onShippingAddressChanged(data, actions, component) {
+        this.blockPayPalShippingOptionChange = false;
+        this.newShippingMethod = {};
         const currentPaymentData = component.paymentData;
         const shippingAddress = data.shippingAddress;
 
@@ -482,23 +483,39 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this.newAddress = extraData.newAddress = shippingAddress;
         }
 
-        this._client.post(
-            `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
-            JSON.stringify({
-                ...extraData
-            }),
-            function (response) {
-                const responseObject = JSON.parse(response);
-                if (this._client._request.status !== 200) {
-                    return actions.reject();
-                }
+        try {
+            const response = await new Promise((resolve, reject) => {
+                this._client.post(
+                    `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
+                    JSON.stringify(extraData),
+                    function (response) {
+                        try {
+                            const responseObject = JSON.parse(response);
 
-                component.updatePaymentData(responseObject.paymentData);
-            }.bind(this)
-        );
+                            if (!responseObject || this._client._request.status !== 200) {
+                                reject(new Error('Server error or invalid response'));
+                            } else {
+                                resolve(responseObject);
+                            }
+                        } catch (error) {
+                            reject(error);
+                        }
+                    }.bind(this)
+                );
+            });
+
+            component.updatePaymentData(response.paymentData);
+        } catch (error) {
+            this.blockPayPalShippingOptionChange = true;
+            return actions.reject(data.errors.COUNTRY_ERROR);
+        }
     }
 
-    onShippingOptionsChange(data, actions, component) {
+    async onShippingOptionsChange(data, actions, component) {
+        if(this.blockPayPalShippingOptionChange === true){
+            return actions.reject(data.errors.METHOD_UNAVAILABLE);
+        }
+
         const currentPaymentData = component.paymentData;
         const selectedShippingOption = data.selectedShippingOption;
 
@@ -509,20 +526,31 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this.newShippingMethod = extraData.newShippingMethod = selectedShippingOption;
         }
 
-        this._client.post(
-            `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
-            JSON.stringify({
-                ...extraData
-            }),
-            function (response) {
-                const responseObject = JSON.parse(response);
-                if (this._client._request.status !== 200) {
-                    return actions.reject();
-                }
+        try {
+            const response = await new Promise((resolve, reject) => {
+                this._client.post(
+                    `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
+                    JSON.stringify(extraData),
+                    function (response) {
+                        try {
+                            const responseObject = JSON.parse(response);
 
-                component.updatePaymentData(responseObject.paymentData);
-            }.bind(this)
-        );
+                            if (!responseObject || this._client._request.status !== 200) {
+                                reject(new Error('onShippingOptionsChange Server error or invalid response'));
+                            } else {
+                                resolve(responseObject);
+                            }
+                        } catch (error) {
+                            reject(error);
+                        }
+                    }.bind(this)
+                );
+            });
+
+            component.updatePaymentData(response.paymentData);
+        } catch (error) {
+            return actions.reject(data.errors.METHOD_UNAVAILABLE);
+        }
     }
 
     onShopperDetails(shopperDetails, rawData, actions) {
