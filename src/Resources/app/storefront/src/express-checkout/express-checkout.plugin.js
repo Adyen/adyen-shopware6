@@ -173,7 +173,23 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 blockPayPalCreditButton: true,
                 blockPayPalPayLaterButton: true,
                 onShippingAddressChange: this.onShippingAddressChanged.bind(this),
-                onShippingOptionsChange: this.onShippingOptionsChange.bind(this)
+                onShippingOptionsChange: this.onShippingOptionsChange.bind(this),
+                onCancel: (data, component) => {
+                    ElementLoadingIndicatorUtil.remove(document.body);
+                    adyenConfiguration.componentsWithPayButton['paypal'].onCancel(data, component, this);
+                },
+                onError: (error, component) => {
+                    if (error.name === 'CANCEL') {
+                        this._client.post(
+                            `${adyenExpressCheckoutOptions.cancelOrderTransactionUrl}`,
+                            JSON.stringify({orderId: this.orderId})
+                        );
+                    }
+
+                    ElementLoadingIndicatorUtil.remove(document.body);
+                    adyenConfiguration.componentsWithPayButton['paypal'].onError(error, component, this);
+                    console.log(error);
+                }
             },
             "applepay": {}
         };
