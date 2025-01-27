@@ -18,6 +18,8 @@
          data-affiliate-code="{{ adyenFrontendData.affiliateCode }}"
          data-campaign-code="{{ adyenFrontendData.campaignCode }}"
          data-shipping-methods-response="{{ adyenFrontendData.shippingMethodsResponse }}"
+         data-google-merchant-id="{{ adyenFrontendData.googleMerchantId }}"
+         data-gateway-merchant-id="{{ adyenFrontendData.gatewayMerchantId }}"
     ></div>
     {% set adyenExpressCheckoutPaymentTypes = ['applepay', 'paywithgoogle', 'paypal'] %}
     {% for adyenPaymentMethodType in adyenExpressCheckoutPaymentTypes %}
