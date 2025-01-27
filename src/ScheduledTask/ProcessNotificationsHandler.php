@@ -26,6 +26,7 @@ namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
+use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
@@ -195,6 +196,15 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $orderTransaction = $this->getOrderTransaction($order, $notification, $logContext);
                 if (is_null($orderTransaction)) {
                     continue;
+                }
+
+                $customFields = $orderTransaction->getCustomFields();
+
+                if (empty($customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE])) {
+                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] =
+                        $notification->getOriginalReference();
+                    $orderTransaction->setCustomFields($customFields);
+                    $this->orderTransactionRepository->updateCustomFields($orderTransaction);
                 }
 
                 $currentTransactionState = $this->getCurrentTransactionState($orderTransaction, $notification);
