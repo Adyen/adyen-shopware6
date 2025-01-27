@@ -52,11 +52,8 @@ jobs:
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.adyenGivingDonationAmounts "1,5,10"'
           docker exec shopware6 bash -c 'php bin/console adyen:payment-method:enable --all'
           docker exec shopware6 bash -c 'php bin/console adyen:fetch-logos'
-          
           docker exec shopware6 bash -c 'echo "Merchant Account secret: "${{secrets.ADYEN_MERCHANT}}"'
           docker exec shopware6 bash -c 'echo "Client Key secret: "${{secrets.ADYEN_TEST_CLIENT_KEY}}"'
-          docker exec -it shopware6 bash -c 'php bin/console system:config:get AdyenPaymentShopware6.config.merchantAccount'
-          docker exec -it shopware6 bash -c 'php bin/console system:config:get AdyenPaymentShopware6.config.clientKeyTest'
 
       - name: Get Merchant Account Value
         run: |
