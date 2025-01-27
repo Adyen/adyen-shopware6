@@ -14,6 +14,7 @@ use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
 use Exception;
 use Shopware\Core\Checkout\Cart\Cart;
+use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\Order\OrderConversionContext;
@@ -22,10 +23,8 @@ use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
-use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Framework\Api\Controller\ApiController;
-use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
@@ -553,23 +552,33 @@ class ExpressCheckoutService
 
     private function getAvailableShippingMethods(array $cartData, string $currency): array
     {
-        return array_map(function (ShippingMethodEntity $method) use ($currency, $cartData) {
-            /** @var ShippingMethodEntity $shippingMethod */
-            $shippingMethod = $cartData['shippingMethod'];
+        /** @var ShippingMethodEntity $selectedShippingMethod */
+        $selectedShippingMethod =  $cartData['shippingMethod'];
+        /** @var Cart $cart */
+        $cart = $cartData['cart'];
+        /** @var SalesChannelContext $salesChannelContext */
+        $salesChannelContext = $cartData['updatedSalesChannelContext'];
 
-            /** @var ShippingMethodPriceEntity $shippingMethodPriceEntity */
-            $shippingMethodPriceEntity = $method->getPrices()->first();
+        $availableShippingMethods = array_map(function (ShippingMethodEntity $method) use (
+            $currency,
+            $salesChannelContext,
+            $selectedShippingMethod,
+            $cart
+        ) {
+            $salesChannelWithCurrentShippingMethod = $this->createContext(
+                $salesChannelContext,
+                $salesChannelContext->getToken(),
+                $salesChannelContext->getShippingLocation(),
+                $salesChannelContext->getPaymentMethod(),
+                $salesChannelContext->getCustomer(),
+                $method
+            );
 
-            /** @var null|Price $price */
-            $price = null;
-            if ($shippingMethodPriceEntity && $shippingMethodPriceEntity->getCurrencyPrice()) {
-                $price = $shippingMethodPriceEntity->getCurrencyPrice()->first();
-            }
-
-            $value = 0;
-            if ($price) {
-                $value = $this->currencyUtil->sanitize($price->getGross(), $currency);
-            }
+            $cart = $this->cartService->recalculate($cart, $salesChannelWithCurrentShippingMethod);
+            /** @var Delivery $delivery */
+            $delivery =$cart->getDeliveries()->first();
+            $price = $delivery->getShippingCosts()->getTotalPrice();
+            $value = $this->currencyUtil->sanitize($price, $currency);
 
             return [
                 'id' => $method->getId(),
@@ -577,9 +586,20 @@ class ExpressCheckoutService
                 'description' => $method->getDescription() ?? '',
                 'value' => $value,
                 'currency' => $currency,
-                'selected' => $shippingMethod->getId() === $method->getId(),
+                'selected' => $selectedShippingMethod->getId() === $method->getId(),
             ];
         }, $cartData['shippingMethods']->getElements());
+
+        $this->createContext(
+            $salesChannelContext,
+            $salesChannelContext->getToken(),
+            $salesChannelContext->getShippingLocation(),
+            $salesChannelContext->getPaymentMethod(),
+            $salesChannelContext->getCustomer(),
+            $selectedShippingMethod
+        );
+
+        return $availableShippingMethods;
     }
 
     /**
