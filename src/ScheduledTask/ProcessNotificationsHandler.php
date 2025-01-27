@@ -196,7 +196,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $customFields = $orderTransaction->getCustomFields();
 
                 if (empty($customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE])) {
-                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] = $notification->getOriginalReference();
+                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] =
+                        $notification->getOriginalReference();
                     $orderTransaction->setCustomFields($customFields);
                     $this->orderTransactionRepository->updateCustomFields($orderTransaction);
                 }
