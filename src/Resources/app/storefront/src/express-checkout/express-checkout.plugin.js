@@ -36,6 +36,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.newAddress = {};
         this.newShippingMethod = {};
         this.email = '';
+        this.pspReference = '';
+        this.paymentData = null;
+        this.blockPayPalShippingOptionChange = false;
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             return new Promise(async resolve => {
@@ -60,9 +63,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
                         shippingMethodsArray.forEach((shippingMethod) => {
                             newShippingMethodsArray.push(
                                 {
-                                    'id' : shippingMethod['id'],
-                                    'label' : shippingMethod['label'],
-                                    'description' : shippingMethod['description'],
+                                    'id': shippingMethod['id'],
+                                    'label': shippingMethod['label'],
+                                    'description': shippingMethod['description'],
                                 }
                             )
                         });
@@ -164,22 +167,43 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     {}
             },
             "googlepay": {},
-            "paypal": {},
+            "paypal": {
+                isExpress: true,
+                onShopperDetails: this.onShopperDetails.bind(this),
+                blockPayPalCreditButton: true,
+                blockPayPalPayLaterButton: true,
+                onShippingAddressChange: this.onShippingAddressChanged.bind(this),
+                onShippingOptionsChange: this.onShippingOptionsChange.bind(this),
+                onCancel: (data, component) => {
+                    ElementLoadingIndicatorUtil.remove(document.body);
+                    adyenConfiguration.componentsWithPayButton['paypal'].onCancel(data, component, this);
+                },
+                onError: (error, component) => {
+                    if (error.name === 'CANCEL') {
+                        this._client.post(
+                            `${adyenExpressCheckoutOptions.cancelOrderTransactionUrl}`,
+                            JSON.stringify({orderId: this.orderId})
+                        );
+                    }
+
+                    ElementLoadingIndicatorUtil.remove(document.body);
+                    adyenConfiguration.componentsWithPayButton['paypal'].onError(error, component, this);
+                    console.log(error);
+                }
+            },
             "applepay": {}
         };
 
-        this.productDetailPageBuyProductForm = document.getElementById('productDetailPageBuyProductForm');
-        if (this.productDetailPageBuyProductForm) {
-            this.quantityInput = this.productDetailPageBuyProductForm.querySelector('.js-quantity-selector');
-        }
+        this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
+            document.querySelector('.product-detail-quantity-input');
 
         this.listenOnQuantityChange();
 
         this.mountExpressCheckoutComponents({
             countryCode: adyenExpressCheckoutOptions.countryCode,
-            amount:  adyenExpressCheckoutOptions.amount,
+            amount: adyenExpressCheckoutOptions.amount,
             currency: adyenExpressCheckoutOptions.currency,
-            paymentMethodsResponse: JSON.parse(adyenExpressCheckoutOptions.paymentMethodsResponse),
+            paymentMethodsResponse: JSON.parse(adyenExpressCheckoutOptions.paymentMethodsResponse)
         });
 
     }
@@ -284,9 +308,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 const productMeta = document.querySelector('meta[itemprop="productID"]');
                 const productId = productMeta ? productMeta.content : '-1';
                 const quantity = this.quantityInput ? this.quantityInput.value : -1;
-                // SUBMIT PAYMENT
                 const type = state.data.paymentMethod.type;
-                // check what method -gp, ap, pp
                 if (type === 'paypal') {
                     this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
                     const paypalComponentConfig = adyenConfiguration.componentsWithPayButton['paypal'];
@@ -350,7 +372,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.errorUrl.searchParams.set('orderId', this.orderId);
 
         let customerId = '';
-        if(order.customerId) {
+        if (order.customerId) {
             customerId = order.customerId;
         }
 
@@ -414,33 +436,40 @@ export default class ExpressCheckoutPlugin extends Plugin {
     handleOnAdditionalDetails(state) {
         this._client.post(
             `${adyenExpressCheckoutOptions.paymentDetailsUrl}`,
-            JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
+            JSON.stringify({
+                orderId: this.orderId,
+                stateData: JSON.stringify(state.data),
+                newAddress: this.newAddress,
+                newShipping: this.newShippingMethod,
+            }),
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     location.href = this.errorUrl.toString();
                     return;
                 }
 
-                // this.responseHandler(paymentResponse);
+                this.responseHandler(paymentResponse);
             }.bind(this)
         );
     }
 
     listenOnQuantityChange() {
-        this.quantityInput?.addEventListener('change', (event) => {
-            const newQuantity = event.target.value;
-            const productMeta = document.querySelector('meta[itemprop="productID"]');
-            const productId = productMeta ? productMeta.content : '-1';
-            this._client.post(
-                adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
-                JSON.stringify({
-                    quantity: newQuantity,
-                    productId: productId
-                }),
-                this.afterQuantityUpdated.bind(this)
-            );
+        if (this.quantityInput) {
+            this.quantityInput.addEventListener('change', (event) => {
+                const newQuantity = event.target.value;
+                const productMeta = document.querySelector('meta[itemprop="productID"]');
+                const productId = productMeta ? productMeta.content : '-1';
 
-        });
+                this._client.post(
+                    adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
+                    JSON.stringify({
+                        quantity: newQuantity,
+                        productId: productId
+                    }),
+                    this.afterQuantityUpdated.bind(this)
+                );
+            });
+        }
     }
 
     afterQuantityUpdated(response) {
@@ -457,44 +486,111 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
     }
 
-    onShippingAddressChanged(data, actions, component) {
+    async onShippingAddressChanged(data, actions, component) {
+        this.blockPayPalShippingOptionChange = false;
+        this.newShippingMethod = {};
         const currentPaymentData = component.paymentData;
         const shippingAddress = data.shippingAddress;
 
-        const productMeta = document.querySelector('meta[itemprop="productID"]');
-        const productId = productMeta ? productMeta.content : '-1';
-
-        const extraData = {};
+        const extraData = this.getDataForPayPalCallbacks();
+        extraData.currentPaymentData = currentPaymentData;
 
         if (shippingAddress) {
             this.newAddress = extraData.newAddress = shippingAddress;
         }
 
-        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
+        try {
+            const response = await new Promise((resolve, reject) => {
+                this._client.post(
+                    `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
+                    JSON.stringify(extraData),
+                    function (response) {
+                        try {
+                            const responseObject = JSON.parse(response);
 
-        this._client.post(
-            adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl,
-            JSON.stringify({
-                quantity: this.quantityInput ? this.quantityInput.value : -1,
-                productId: productId,
-                ...extraData
-            }),
-            (response) => {
-                try {
-                    const parsedResponse = JSON.parse(response);
+                            if (!responseObject || this._client._request.status !== 200) {
+                                reject(new Error('Server error or invalid response'));
+                            } else {
+                                resolve(responseObject);
+                            }
+                        } catch (error) {
+                            reject(error);
+                        }
+                    }.bind(this)
+                );
+            });
 
-                    if (this._client._request.status >= 400) {
-                        actions.reject(new Error('fail'));
+            component.updatePaymentData(response.paymentData);
+        } catch (error) {
+            this.blockPayPalShippingOptionChange = true;
+            return actions.reject(data.errors.COUNTRY_ERROR);
+        }
+    }
 
-                        return;
-                    }
+    async onShippingOptionsChange(data, actions, component) {
+        if(this.blockPayPalShippingOptionChange === true){
+            return actions.reject(data.errors.METHOD_UNAVAILABLE);
+        }
 
-                    component.updatePaymentData(response.paymentData);
-                    actions.resolve();
-                } catch (error) {
-                    actions.reject(new Error('fail'));
-                }
-            }
-        );
+        const currentPaymentData = component.paymentData;
+        const selectedShippingOption = data.selectedShippingOption;
+
+        const extraData = this.getDataForPayPalCallbacks();
+        extraData.currentPaymentData = currentPaymentData;
+
+        if (selectedShippingOption) {
+            this.newShippingMethod = extraData.newShippingMethod = selectedShippingOption;
+        }
+
+        try {
+            const response = await new Promise((resolve, reject) => {
+                this._client.post(
+                    `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
+                    JSON.stringify(extraData),
+                    function (response) {
+                        try {
+                            const responseObject = JSON.parse(response);
+
+                            if (!responseObject || this._client._request.status !== 200) {
+                                reject(new Error('onShippingOptionsChange Server error or invalid response'));
+                            } else {
+                                resolve(responseObject);
+                            }
+                        } catch (error) {
+                            reject(error);
+                        }
+                    }.bind(this)
+                );
+            });
+
+            component.updatePaymentData(response.paymentData);
+        } catch (error) {
+            return actions.reject(data.errors.METHOD_UNAVAILABLE);
+        }
+    }
+
+    onShopperDetails(shopperDetails, rawData, actions) {
+        this.newAddress = {
+            firstName: shopperDetails.shopperName.firstName,
+            lastName: shopperDetails.shopperName.lastName,
+            street: shopperDetails.shippingAddress.street,
+            postalCode: shopperDetails.shippingAddress.postalCode,
+            city: shopperDetails.shippingAddress.city,
+            countryCode: shopperDetails.shippingAddress.country,
+            phoneNumber: shopperDetails.telephoneNumber,
+            email: shopperDetails.shopperEmail
+        }
+
+        actions.resolve();
+    }
+
+    getDataForPayPalCallbacks() {
+        const extraData = {};
+
+        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
+        extraData.pspReference = this.pspReference;
+        extraData.orderId = this.orderId;
+
+        return extraData;
     }
 }

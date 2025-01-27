@@ -8,22 +8,28 @@ use Adyen\Model\Checkout\DeliveryMethod;
 use Adyen\Model\Checkout\PaypalUpdateOrderRequest;
 use Adyen\Model\Checkout\PaypalUpdateOrderResponse;
 use Adyen\Service\Checkout\UtilityApi;
+use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Service\Repository\ExpressCheckoutRepository;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
+use Exception;
 use Shopware\Core\Checkout\Cart\Cart;
+use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+use Shopware\Core\Checkout\Cart\Order\OrderConversionContext;
+use Shopware\Core\Checkout\Cart\Order\OrderConverter;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
-use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
-use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
+use Shopware\Core\Framework\Api\Controller\ApiController;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 class ExpressCheckoutService
@@ -52,24 +58,41 @@ class ExpressCheckoutService
     protected ClientService $clientService;
 
     /**
+     * @var string
+     */
+    private string $shopwareVersion;
+
+    /**
      * @var SalesChannelContextPersister
      */
     private SalesChannelContextPersister $contextPersister;
 
+    /** @var ApiController */
+    private ApiController $apiController;
+
+    /** @var OrderConverter */
+    private OrderConverter $orderConverter;
+
     public function __construct(
-        CartService                 $cartService,
-        ExpressCheckoutRepository   $expressCheckoutRepository,
-        PaymentMethodsFilterService $paymentMethodsFilterService,
-        ClientService               $clientService,
-        Currency                    $currencyUtil,
-        SalesChannelContextPersister $contextPersister
+        CartService                  $cartService,
+        ExpressCheckoutRepository    $expressCheckoutRepository,
+        PaymentMethodsFilterService  $paymentMethodsFilterService,
+        ClientService                $clientService,
+        Currency                     $currencyUtil,
+        string                       $shopwareVersion,
+        SalesChannelContextPersister $contextPersister,
+        ApiController                $apiController,
+        OrderConverter               $orderConverter
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
         $this->clientService = $clientService;
         $this->currencyUtil = $currencyUtil;
+        $this->shopwareVersion = $shopwareVersion;
         $this->contextPersister = $contextPersister;
+        $this->apiController = $apiController;
+        $this->orderConverter = $orderConverter;
     }
 
     /**
@@ -81,6 +104,7 @@ class ExpressCheckoutService
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
      * @return array The configuration for express checkout.
+     * @throws Exception
      */
     public function getExpressCheckoutConfig(
         string              $productId,
@@ -107,33 +131,7 @@ class ExpressCheckoutService
         $amountInMinorUnits = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
 
         // Available shipping methods for the given address
-        $shippingMethods = array_map(function (ShippingMethodEntity $method) use ($currency, $cartData) {
-            /** @var ShippingMethodEntity $shippingMethod */
-            $shippingMethod = $cartData['shippingMethod'];
-
-            /** @var ShippingMethodPriceEntity $shippingMethodPriceEntity */
-            $shippingMethodPriceEntity = $method->getPrices()->first();
-
-            /** @var null|Price $price */
-            $price = null;
-            if ($shippingMethodPriceEntity && $shippingMethodPriceEntity->getCurrencyPrice()) {
-                $price = $shippingMethodPriceEntity->getCurrencyPrice()->first();
-            }
-
-            $value = 0;
-            if ($price) {
-                $value = $this->currencyUtil->sanitize($price->getGross(), $currency);
-            }
-
-            return [
-                'id' => $method->getId(),
-                'label' => $method->getName(),
-                'description' => $method->getDescription() ?? '',
-                'value' => $value,
-                'currency' => $currency,
-                'selected' => $shippingMethod->getId() === $method->getId(),
-            ];
-        }, $cartData['shippingMethods']->getElements());
+        $shippingMethods = $this->getAvailableShippingMethods($cartData, $currency);
 
         // Available payment methods
         $paymentMethods = $cartData['paymentMethods'];
@@ -178,7 +176,7 @@ class ExpressCheckoutService
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
-     * @throws \Exception
+     * @throws ResolveCountryException|ResolveShippingMethodException
      */
     public function createCart(
         string              $productId,
@@ -188,7 +186,8 @@ class ExpressCheckoutService
         array               $newShipping = [],
         string              $formattedHandlerIdentifier = '',
         string              $guestEmail = '',
-        bool                $makeNewCustomer = false
+        bool                $makeNewCustomer = false,
+        OrderEntity         $order = null
     ): array {
         $newCustomer = $salesChannelContext->getCustomer();
 
@@ -206,6 +205,36 @@ class ExpressCheckoutService
             $token = $tokenNew;
         }
 
+        // If order already exists for PayPal payments
+        if ($order) {
+            $cart = $this->cartService->createNew($tokenNew = Uuid::randomHex());
+            $token = $tokenNew;
+
+            $orderLineItems = $order->getLineItems();
+            foreach ($orderLineItems as $orderLineItem) {
+                $lineItem = new LineItem(
+                    $orderLineItem->getProductId(),
+                    'product',
+                    $orderLineItem->getProductId(),
+                    $orderLineItem->getQuantity()
+                );
+                $cart->add($lineItem);
+            }
+
+            if ($newAddress) {
+                $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
+                $address = $this->expressCheckoutRepository->updateOrderAddressAndCustomer(
+                    $newAddress,
+                    $newCustomer,
+                    $order->getBillingAddressId(),
+                    $order->getOrderCustomer() ? $order->getOrderCustomer()->getId() : '',
+                    $salesChannelContext
+                );
+
+                $shippingLocation = ShippingLocation::createFromAddress($address);
+            }
+        }
+
         // Get payment method
         $paymentMethod = $salesChannelContext->getPaymentMethod();
         if ($formattedHandlerIdentifier !== '') {
@@ -214,7 +243,7 @@ class ExpressCheckoutService
                 ->getPaymentMethodByFormattedHandler($formattedHandlerIdentifier, $salesChannelContext->getContext());
         }
 
-        $shippingLocation = $salesChannelContext->getShippingLocation();
+        $shippingLocation = $shippingLocation ?? $salesChannelContext->getShippingLocation();
 
         // Resolving shipping location for guest
         if (!$isLoggedIn) {
@@ -284,9 +313,9 @@ class ExpressCheckoutService
      * @param string $customerId The ID of the customer whose context should be updated.
      * @param SalesChannelContext $salesChannelContext The existing sales channel context to be updated.
      *
-     * @throws \Exception If the customer cannot be found.
-     *
      * @return SalesChannelContext The updated SalesChannelContext with the customer's details.
+     * @throws Exception If the customer cannot be found.
+     *
      */
     public function changeContext(string $customerId, SalesChannelContext $salesChannelContext): SalesChannelContext
     {
@@ -315,39 +344,132 @@ class ExpressCheckoutService
     }
 
     /**
+     * @param string $orderId
      * @param array $data
-     * @param array $shippingMethods
      * @param SalesChannelContext $salesChannelContext
+     * @param array $newAddress
+     * @param array $newShipping
      * @return PaypalUpdateOrderResponse
-     * @throws AdyenException
+     * @throws AdyenException|ResolveCountryException|ResolveShippingMethodException
      */
     public function paypalUpdateOrder(
+        string              $orderId,
         array               $data,
-        array               $shippingMethods,
-        SalesChannelContext $salesChannelContext
+        SalesChannelContext $salesChannelContext,
+        array               $newAddress = [],
+        array               $newShipping = []
     ): PaypalUpdateOrderResponse {
+        /** @var OrderEntity $order */
+        $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
+        $cartData = $this->createCart(
+            '-1',
+            -1,
+            $salesChannelContext,
+            $newAddress,
+            $newShipping,
+            'handler_adyen_paypalpaymentmethodhandler',
+            '',
+            false,
+            $order
+        );
+        /** @var Cart $cart */
+        $cart = $cartData['cart'];
+
         $utilityApiService = new UtilityApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );
 
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $amountInMinorUnits = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
+        $amount = new Amount();
+        $amount->setCurrency($currency);
+        $amount->setValue($amountInMinorUnits);
+        $data['amount'] = $amount;
         $paypalUpdateOrderRequest = new PaypalUpdateOrderRequest($data);
+
         $deliveryMethods = [];
+        $shippingMethods = $this->getAvailableShippingMethods($cartData, $currency);
         foreach ($shippingMethods as $shippingMethod) {
             $deliveryMethods[] = new DeliveryMethod(
                 [
                     'amount' => new Amount($shippingMethod),
                     'description' => $shippingMethod['label'],
                     'reference' => $shippingMethod['id'],
-                    'selected' => $shippingMethod['selected'],
-                    'type' => $shippingMethod['type'],
+                    'selected' => (!empty($newShipping) && $newShipping['id'] === $shippingMethod['id']) ?
+                        $newShipping['selected'] : $shippingMethod['selected'],
+                    'type' => 'SHIPPING',
                 ]
             );
         }
 
         $paypalUpdateOrderRequest->setDeliveryMethods($deliveryMethods);
 
+        $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
+
         return $utilityApiService
             ->updatesOrderForPaypalExpressCheckout($paypalUpdateOrderRequest);
+    }
+
+    /**
+     * @param Request $request
+     * @param string $orderId
+     * @param SalesChannelContext $salesChannelContext
+     * @param array $newAddress
+     * @param array $newShipping
+     * @return void
+     * @throws ResolveCountryException
+     * @throws ResolveShippingMethodException
+     */
+    public function updateShopOrder(
+        Request             $request,
+        string              $orderId,
+        SalesChannelContext $salesChannelContext,
+        array               $newAddress = [],
+        array               $newShipping = []
+    ): void {
+        /** @var OrderEntity $order */
+        $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
+        $cartData = $this->createCart(
+            '-1',
+            1,
+            $salesChannelContext,
+            $newAddress,
+            $newShipping,
+            'handler_adyen_paypalpaymentmethodhandler',
+            '',
+            false,
+            $order
+        );
+        /** @var SalesChannelContext $updatedSalesChannelContext */
+        $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
+
+        $versionId = json_decode($this->apiController->createVersion(
+            $request,
+            $updatedSalesChannelContext->getContext(),
+            'order',
+            $orderId
+        )->getContent(), true)['versionId'];
+
+        $contextWithNewVersion = $updatedSalesChannelContext->getContext()->createWithVersionId($versionId);
+        /** @var OrderEntity $orderWithNewVersion */
+        $orderWithNewVersion = $this->expressCheckoutRepository->getOrderById(
+            $orderId,
+            $contextWithNewVersion
+        );
+        $cartFromOrder = $this->orderConverter->convertToCart($orderWithNewVersion, $contextWithNewVersion);
+        $recalculatedCart = $this->cartService->recalculate($cartFromOrder, $updatedSalesChannelContext);
+
+        $newOrderData = $this->orderConverter->convertToOrder(
+            $recalculatedCart,
+            $updatedSalesChannelContext,
+            new OrderConversionContext()
+        );
+        $newOrderData['id'] = $order->getId();
+
+        $this->expressCheckoutRepository->upsertOrder($newOrderData, $contextWithNewVersion);
+        $this->apiController->mergeVersion($contextWithNewVersion, 'order', $versionId);
+
+        $this->cartService->deleteCart($updatedSalesChannelContext);
     }
 
     /**
@@ -357,7 +479,7 @@ class ExpressCheckoutService
      * @param Cart $cart The cart to calculate shipping for.
      * @param array $newShipping Optional new shipping method details.
      * @return ShippingMethodEntity The resolved shipping method.
-     * @throws \Exception If no valid shipping method is available.
+     * @throws ResolveShippingMethodException
      */
     private function resolveShippingMethod(
         SalesChannelContext $salesChannelContext,
@@ -383,7 +505,7 @@ class ExpressCheckoutService
     }
 
     /**
-     * Creates a SalesChannelContext
+     * Creates a SalesChannelContext based on the Shopware version.
      *
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      * @param string $token The token to be associated with the new context.
@@ -393,8 +515,142 @@ class ExpressCheckoutService
      * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
      *
      * @return SalesChannelContext The created SalesChannelContext.
+     * @throws Exception If the Shopware version is unsupported.
      */
     public function createContext(
+        SalesChannelContext   $salesChannelContext,
+        string                $token,
+        ShippingLocation      $shippingLocation,
+        PaymentMethodEntity   $paymentMethod,
+        ?CustomerEntity       $customer = null,
+        ?ShippingMethodEntity $shippingMethod = null
+    ): SalesChannelContext {
+        if (str_starts_with($this->shopwareVersion, '6.4')) {
+            return $this->createContextFor64(
+                $salesChannelContext,
+                $token,
+                $shippingLocation,
+                $paymentMethod,
+                $customer,
+                $shippingMethod
+            );
+        }
+
+        if (str_starts_with($this->shopwareVersion, '6.5')) {
+            return $this->createContextFor65(
+                $salesChannelContext,
+                $token,
+                $shippingLocation,
+                $paymentMethod,
+                $customer,
+                $shippingMethod
+            );
+        }
+
+        throw new Exception(sprintf('Unsupported Shopware version: %s', $this->shopwareVersion));
+    }
+
+    private function getAvailableShippingMethods(array $cartData, string $currency): array
+    {
+        /** @var ShippingMethodEntity $selectedShippingMethod */
+        $selectedShippingMethod =  $cartData['shippingMethod'];
+        /** @var Cart $cart */
+        $cart = $cartData['cart'];
+        /** @var SalesChannelContext $salesChannelContext */
+        $salesChannelContext = $cartData['updatedSalesChannelContext'];
+
+        $availableShippingMethods = array_map(function (ShippingMethodEntity $method) use (
+            $currency,
+            $salesChannelContext,
+            $selectedShippingMethod,
+            $cart
+        ) {
+            $salesChannelWithCurrentShippingMethod = $this->createContext(
+                $salesChannelContext,
+                $salesChannelContext->getToken(),
+                $salesChannelContext->getShippingLocation(),
+                $salesChannelContext->getPaymentMethod(),
+                $salesChannelContext->getCustomer(),
+                $method
+            );
+
+            $cart = $this->cartService->recalculate($cart, $salesChannelWithCurrentShippingMethod);
+            /** @var Delivery $delivery */
+            $delivery =$cart->getDeliveries()->first();
+            $price = $delivery->getShippingCosts()->getTotalPrice();
+            $value = $this->currencyUtil->sanitize($price, $currency);
+
+            return [
+                'id' => $method->getId(),
+                'label' => $method->getName(),
+                'description' => $method->getDescription() ?? '',
+                'value' => $value,
+                'currency' => $currency,
+                'selected' => $selectedShippingMethod->getId() === $method->getId(),
+            ];
+        }, $cartData['shippingMethods']->getElements());
+
+        $this->createContext(
+            $salesChannelContext,
+            $salesChannelContext->getToken(),
+            $salesChannelContext->getShippingLocation(),
+            $salesChannelContext->getPaymentMethod(),
+            $salesChannelContext->getCustomer(),
+            $selectedShippingMethod
+        );
+
+        return $availableShippingMethods;
+    }
+
+    /**
+     * Creates a SalesChannelContext for Shopware 6.4.
+     *
+     * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     * @param string $token The token to be associated with the new context.
+     * @param ShippingLocation $shippingLocation The shipping location to be used.
+     * @param PaymentMethodEntity $paymentMethod The payment method entity to set in the context.
+     * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
+     *
+     * @return SalesChannelContext A new SalesChannelContext for Shopware 6.4.
+     */
+    private function createContextFor64(
+        SalesChannelContext   $salesChannelContext,
+        string                $token,
+        ShippingLocation      $shippingLocation,
+        PaymentMethodEntity   $paymentMethod,
+        ?CustomerEntity       $customer = null,
+        ?ShippingMethodEntity $shippingMethod = null
+    ): SalesChannelContext {
+        return new SalesChannelContext(
+            $salesChannelContext->getContext(),
+            $token,
+            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
+            $salesChannelContext->getSalesChannel(),
+            $salesChannelContext->getCurrency(),
+            $salesChannelContext->getCurrentCustomerGroup(),
+            $salesChannelContext->getCurrentCustomerGroup(),
+            $salesChannelContext->getTaxRules(),
+            $paymentMethod,
+            $shippingMethod ?? $salesChannelContext->getShippingMethod(),
+            $shippingLocation,
+            $customer,
+            $salesChannelContext->getItemRounding(),
+            $salesChannelContext->getTotalRounding()
+        );
+    }
+
+    /**
+     * Creates a SalesChannelContext for Shopware 6.5.
+     *
+     * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     * @param string $token The token to be associated with the new context.
+     * @param ShippingLocation $shippingLocation The shipping location to be used.
+     * @param PaymentMethodEntity $paymentMethod The payment method entity to set in the context.
+     * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
+     *
+     * @return SalesChannelContext A new SalesChannelContext for Shopware 6.5.
+     */
+    private function createContextFor65(
         SalesChannelContext   $salesChannelContext,
         string                $token,
         ShippingLocation      $shippingLocation,
