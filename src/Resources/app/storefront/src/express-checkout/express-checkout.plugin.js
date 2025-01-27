@@ -190,9 +190,18 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     adyenConfiguration.componentsWithPayButton['paypal'].onError(error, component, this);
                     console.log(error);
                 }
-            },
-            "applepay": {}
+            }
         };
+
+        // if(!userLoggedIn){
+        //     this.paymentMethodSpecificConfig.applepay = {
+        //         isExpress: true,
+        //         requiredBillingContactFields: ['postalAddress'],
+        //         requiredShippingContactFields: ['postalAddress', 'name', 'phoneticName', 'phone', 'email'],
+        //         onAuthorized: this.onAuthorized.bind(this),
+        //         onShippingContactSelected: this.onShippingContactSelected.bind(this),
+        //     }
+        // }
 
         this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
             document.querySelector('.product-detail-quantity-input');
@@ -223,17 +232,24 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 (response) => {
                     try {
                         const parsedResponse = JSON.parse(response);
+                        console.log('parsedResponse')
 
                         if (this._client._request.status >= 400) {
                             // if valid resonse, but contains error data
                             reject({
                                 error: parsedResponse.error
                             });
+
+                            console.log('>=400')
+
                             return;
                         }
 
                         resolve(parsedResponse);
                     } catch (error) {
+
+                        console.log('catch')
+
                         reject({
                             status: 500,
                             message: "Failed to parse server response.",
@@ -315,6 +331,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     if ('responseHandler' in paypalComponentConfig) {
                         this.responseHandler = paypalComponentConfig.responseHandler.bind(component, this);
                     }
+                }
+                if (type === 'applepay') {
+                    this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
                 }
 
                 const requestData = {
@@ -592,5 +611,90 @@ export default class ExpressCheckoutPlugin extends Plugin {
         extraData.orderId = this.orderId;
 
         return extraData;
+    }
+
+    async onShippingContactSelected(resolve, reject, event) {
+        console.log('onShippingContactSelected')
+        const shippingContact = event.payment.shippingContact;
+        const shippingAddress = {
+            firstName: shippingContact.givenName,
+            lastName: shippingContact.familyName,
+            street: shippingContact.addressLines.length > 0 ? shippingContact.addressLines[0] : '',
+            city: shippingContact.locality,
+            state: shippingContact.administrativeArea,
+            country: shippingContact.countryCode,
+            zipCode: shippingContact.postalCode,
+            phone: shippingContact.phoneNumber,
+        };
+
+        const extraData = {};
+
+        if (shippingAddress) {
+            this.newAddress = extraData.newAddress = shippingAddress;
+        }
+
+        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
+
+        console.log('onShippingContactSelected before request')
+
+        const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
+
+        console.log('onShippingContactSelected response: ' + JSON.stringify(response));
+
+
+        let amount = 0;
+        let applePayShippingMethodUpdate = {};
+
+        if(response){
+            console.log('onShippingContactSelected success!');
+
+            amount = parseInt(response.amount) / 100;
+
+            applePayShippingMethodUpdate.newTotal = {
+                type: 'final',
+                label: 'Total amount',
+                amount: (amount).toString()
+            };
+
+            resolve(applePayShippingMethodUpdate);
+
+            return;
+        }
+
+
+        console.log('onShippingContactSelected NOT success!');
+
+        let update = {
+            newTotal: {
+                type: 'final',
+                label: 'Total amount',
+                amount: (amount).toString()
+            },
+            errors: [new ApplePayError(
+                'shippingContactInvalid',
+                'countryCode',
+                'Error message')
+            ]
+        };
+        resolve(update);
+
+
+        // const shippingMethodsArray = response.shippingMethodsResponse;
+        // const newShippingMethodsArray = [];
+        // shippingMethodsArray.forEach((shippingMethod) => {
+        //     newShippingMethodsArray.push(
+        //         {
+        //             'id': shippingMethod['id'],
+        //             'label': shippingMethod['label'],
+        //             'description': shippingMethod['description'],
+        //         }
+        //     )
+        // });
+        //
+        // applePayShippingMethodUpdate.newShippingOptionParameters = {
+        //     defaultSelectedOptionId: newShippingMethodsArray[0].id,
+        //     shippingOptions: newShippingMethodsArray
+        // };
+
     }
 }
