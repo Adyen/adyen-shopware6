@@ -351,9 +351,12 @@ class PaymentMethodsFilterService
             return new PaymentMethodsResponse();
         }
 
-        $isSafari = preg_match('/^((?!chrome|android).)*safari/', strtolower($_SERVER['HTTP_USER_AGENT']));
-        if (!$isSafari) {
-            $applePayAvailable = false;
+        if (!empty($_SERVER['HTTP_USER_AGENT'])) {
+            $userAgent = $_SERVER['HTTP_USER_AGENT'];
+
+            if ((!strpos($userAgent, 'Safari') || strpos($userAgent, 'Chrome'))) {
+                $applePayAvailable = false;
+            }
         }
 
         $googlePayInSalesChannel = false;
