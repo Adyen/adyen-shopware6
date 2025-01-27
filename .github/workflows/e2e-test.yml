@@ -44,8 +44,6 @@ jobs:
           docker exec shopware6 bash -c 'php bin/console plugin:refresh'
           docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
           docker exec shopware6 bash -c 'php bin/console cache:clear'
-          docker exec shopware6 bash -c 'echo "Merchant Account secret: "${{secrets.ADYEN_MERCHANT}}"'
-          docker exec shopware6 bash -c 'echo "Client Key secret: "${{secrets.ADYEN_TEST_CLIENT_KEY}}"'
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.apiKeyTest "${{secrets.ADYEN_API_KEY}}"'
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.merchantAccount "${{secrets.ADYEN_MERCHANT}}"'
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.clientKeyTest "${{secrets.ADYEN_CLIENT_KEY}}"'
