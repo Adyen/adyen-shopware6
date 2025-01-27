@@ -292,13 +292,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
          */
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
+        $billieData = [];
         $companyName = $dataBag->get('companyName');
         $registrationNumber = $dataBag->get('registrationNumber');
 
-        $billieData = [
-            'companyName' => $companyName,
-            'registrationNumber' => $registrationNumber,
-        ];
+        if ($companyName && $registrationNumber) {
+            $billieData = [
+                'companyName' => $companyName,
+                'registrationNumber' => $registrationNumber,
+            ];
+        }
 
         /*
          * If there are more than one stateData and /payments calls have been completed,
@@ -773,7 +776,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $billieData = []
     ) {
         $transactionId = $transaction->getOrderTransaction()->getId();
-        $stateData['billieData'] = $billieData;
+        if ($billieData !== []) {
+            $stateData['billieData'] = $billieData;
+        }
+
         try {
             $request = $this->preparePaymentsRequest(
                 $salesChannelContext,
