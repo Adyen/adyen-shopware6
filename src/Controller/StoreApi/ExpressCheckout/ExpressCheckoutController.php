@@ -28,6 +28,8 @@ use Adyen\AdyenException;
 use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
+use Exception;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -119,31 +121,31 @@ class ExpressCheckoutController
                     'reason' => 'OTHER_ERROR',
                     'message' => $e->getMessage(),
                 ]
-            ], 500);
+            ], 400);
         }
     }
 
     /**
      * Creates a cart with the provided product and calculates it with the resolved shipping location and method.
      *
-     * @param string $productId The ID of the product.
-     * @param int $quantity The quantity of the product.
+     * @param RequestDataBag $data
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
-     * @param array $newAddress Optional new address details.
-     * @param array $newShipping Optional new shipping method details.
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
-     * @throws \Exception
+     * @throws Exception
      */
     public function createCart(
-        string $productId,
-        int $quantity,
-        SalesChannelContext $salesChannelContext,
-        array $newAddress = [],
-        array $newShipping = [],
-        string $formattedHandlerIdentifier = '',
-        string $guestEmail = '',
-        bool $makeNewCustomer = false
+        RequestDataBag      $data,
+        SalesChannelContext $salesChannelContext
     ): array {
+        $productId = $data->get('productId');
+        $quantity = (int)$data->get('quantity');
+        $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
+        $newAddress = $data->get('newAddress')->all();
+        $newShipping = $data->get('newShippingMethod')->all();
+        $guestEmail = $data->get('email');
+
+        $makeNewCustomer = $salesChannelContext->getCustomer() === null;
+
         return $this->expressCheckoutService
             ->createCart(
                 $productId,
@@ -177,17 +179,14 @@ class ExpressCheckoutController
      * @param SalesChannelContext $salesChannelContext
      * @return JsonResponse
      *
-     * @throws AdyenException
      */
     public function updatePayPalOrder(
         Request             $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
-        $productId = $request->request->get('productId');
-        $quantity = (int)$request->request->get('quantity');
-        $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';
         $newAddress = $request->request->all()['newAddress'] ?? null;
         $newShipping = $request->request->all()['newShippingMethod'] ?? null;
+        $orderId = $request->request->all()['orderId'] ?? '';
 
         if ($newAddress === null) {
             $newAddress = [];
@@ -197,29 +196,45 @@ class ExpressCheckoutController
             $newShipping = [];
         }
 
-        $config = $this->expressCheckoutService->getExpressCheckoutConfig(
-            $productId,
-            $quantity,
-            $salesChannelContext,
-            $newAddress,
-            $newShipping,
-            $formattedHandlerIdentifier
-        );
-
-        $shippingMethods = $config['shippingMethodsResponse'];
-        $paymentData = $request->request->get('paymentData');
+        $paymentData = $request->request->get('currentPaymentData');
         $pspReference = $request->request->get('pspReference');
 
-        $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
-            [
-                'amount' => $config['amount'],
-                'paymentData' => $paymentData,
-                'pspReference' => $pspReference,
-            ],
-            $shippingMethods,
-            $salesChannelContext
-        );
+        try {
+            $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
+                $orderId,
+                [
+                    'paymentData' => $paymentData,
+                    'pspReference' => $pspReference,
+                ],
+                $salesChannelContext,
+                $newAddress,
+                $newShipping
+            );
 
-        return new JsonResponse($paypalUpdateOrderResponse->toArray());
+            return new JsonResponse($paypalUpdateOrderResponse->toArray());
+        } catch (ResolveCountryException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'SHIPPING_ADDRESS_INVALID',
+                    'message' => $e->getMessage(),
+                    'intent' => 'SHIPPING_ADDRESS',
+                ]
+            ], 400);
+        } catch (ResolveShippingMethodException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'SHIPPING_OPTION_INVALID',
+                    'message' => $e->getMessage(),
+                    'intent' => 'SHIPPING_OPTION',
+                ]
+            ], 400);
+        } catch (AdyenException $e) {
+            return new JsonResponse([
+                'error' => [
+                    'reason' => 'OTHER_ERROR',
+                    'message' => $e->getMessage(),
+                ]
+            ], 400);
+        }
     }
 }
