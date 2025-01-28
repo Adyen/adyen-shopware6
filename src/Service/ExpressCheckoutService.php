@@ -58,11 +58,6 @@ class ExpressCheckoutService
     protected ClientService $clientService;
 
     /**
-     * @var string
-     */
-    private string $shopwareVersion;
-
-    /**
      * @var SalesChannelContextPersister
      */
     private SalesChannelContextPersister $contextPersister;
@@ -79,7 +74,6 @@ class ExpressCheckoutService
         PaymentMethodsFilterService  $paymentMethodsFilterService,
         ClientService                $clientService,
         Currency                     $currencyUtil,
-        string                       $shopwareVersion,
         SalesChannelContextPersister $contextPersister,
         ApiController                $apiController,
         OrderConverter               $orderConverter
@@ -89,7 +83,6 @@ class ExpressCheckoutService
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
         $this->clientService = $clientService;
         $this->currencyUtil = $currencyUtil;
-        $this->shopwareVersion = $shopwareVersion;
         $this->contextPersister = $contextPersister;
         $this->apiController = $apiController;
         $this->orderConverter = $orderConverter;
@@ -505,7 +498,7 @@ class ExpressCheckoutService
     }
 
     /**
-     * Creates a SalesChannelContext based on the Shopware version.
+     * Creates a SalesChannelContext
      *
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      * @param string $token The token to be associated with the new context.
@@ -515,7 +508,6 @@ class ExpressCheckoutService
      * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
      *
      * @return SalesChannelContext The created SalesChannelContext.
-     * @throws Exception If the Shopware version is unsupported.
      */
     public function createContext(
         SalesChannelContext   $salesChannelContext,
@@ -525,29 +517,21 @@ class ExpressCheckoutService
         ?CustomerEntity       $customer = null,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
-        if (str_starts_with($this->shopwareVersion, '6.4')) {
-            return $this->createContextFor64(
-                $salesChannelContext,
-                $token,
-                $shippingLocation,
-                $paymentMethod,
-                $customer,
-                $shippingMethod
-            );
-        }
-
-        if (str_starts_with($this->shopwareVersion, '6.5')) {
-            return $this->createContextFor65(
-                $salesChannelContext,
-                $token,
-                $shippingLocation,
-                $paymentMethod,
-                $customer,
-                $shippingMethod
-            );
-        }
-
-        throw new Exception(sprintf('Unsupported Shopware version: %s', $this->shopwareVersion));
+        return new SalesChannelContext(
+            $salesChannelContext->getContext(),
+            $token,
+            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
+            $salesChannelContext->getSalesChannel(),
+            $salesChannelContext->getCurrency(),
+            $salesChannelContext->getCurrentCustomerGroup(),
+            $salesChannelContext->getTaxRules(),
+            $paymentMethod,
+            $shippingMethod ?? $salesChannelContext->getShippingMethod(),
+            $shippingLocation,
+            $customer,
+            $salesChannelContext->getItemRounding(),
+            $salesChannelContext->getTotalRounding()
+        );
     }
 
     private function getAvailableShippingMethods(array $cartData, string $currency): array
@@ -600,78 +584,5 @@ class ExpressCheckoutService
         );
 
         return $availableShippingMethods;
-    }
-
-    /**
-     * Creates a SalesChannelContext for Shopware 6.4.
-     *
-     * @param SalesChannelContext $salesChannelContext The current sales channel context.
-     * @param string $token The token to be associated with the new context.
-     * @param ShippingLocation $shippingLocation The shipping location to be used.
-     * @param PaymentMethodEntity $paymentMethod The payment method entity to set in the context.
-     * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
-     *
-     * @return SalesChannelContext A new SalesChannelContext for Shopware 6.4.
-     */
-    private function createContextFor64(
-        SalesChannelContext   $salesChannelContext,
-        string                $token,
-        ShippingLocation      $shippingLocation,
-        PaymentMethodEntity   $paymentMethod,
-        ?CustomerEntity       $customer = null,
-        ?ShippingMethodEntity $shippingMethod = null
-    ): SalesChannelContext {
-        return new SalesChannelContext(
-            $salesChannelContext->getContext(),
-            $token,
-            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
-            $salesChannelContext->getSalesChannel(),
-            $salesChannelContext->getCurrency(),
-            $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getTaxRules(),
-            $paymentMethod,
-            $shippingMethod ?? $salesChannelContext->getShippingMethod(),
-            $shippingLocation,
-            $customer,
-            $salesChannelContext->getItemRounding(),
-            $salesChannelContext->getTotalRounding()
-        );
-    }
-
-    /**
-     * Creates a SalesChannelContext for Shopware 6.5.
-     *
-     * @param SalesChannelContext $salesChannelContext The current sales channel context.
-     * @param string $token The token to be associated with the new context.
-     * @param ShippingLocation $shippingLocation The shipping location to be used.
-     * @param PaymentMethodEntity $paymentMethod The payment method entity to set in the context.
-     * @param ShippingMethodEntity|null $shippingMethod The optional shipping method entity to set in the context.
-     *
-     * @return SalesChannelContext A new SalesChannelContext for Shopware 6.5.
-     */
-    private function createContextFor65(
-        SalesChannelContext   $salesChannelContext,
-        string                $token,
-        ShippingLocation      $shippingLocation,
-        PaymentMethodEntity   $paymentMethod,
-        ?CustomerEntity       $customer = null,
-        ?ShippingMethodEntity $shippingMethod = null
-    ): SalesChannelContext {
-        return new SalesChannelContext(
-            $salesChannelContext->getContext(),
-            $token,
-            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
-            $salesChannelContext->getSalesChannel(),
-            $salesChannelContext->getCurrency(),
-            $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getTaxRules(),
-            $paymentMethod,
-            $shippingMethod ?? $salesChannelContext->getShippingMethod(),
-            $shippingLocation,
-            $customer,
-            $salesChannelContext->getItemRounding(),
-            $salesChannelContext->getTotalRounding()
-        );
     }
 }
