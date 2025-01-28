@@ -214,6 +214,16 @@
         </input-field>
     </card>
     <card>
+        <title>Google Merchant ID</title>
+        <input-field type="text">
+            <name>googleMerchantId</name>
+            <label>Google Merchant ID</label>
+            <helpText>
+                Enter the Google Mechant ID to use as the primary value when initializing the Google Pay component. If not specified, the ID configured in the Adyen Customer Area will be used as a fallback.
+            </helpText>
+        </input-field>
+    </card>
+    <card>
         <title>Adyen Giving</title>
         <input-field type="bool">
             <name>adyenGivingEnabled</name>
