@@ -778,8 +778,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     ): IntegrationPaymentRequest {
         $payPalPaymentRequest = new IntegrationPaymentRequest([]);
 
+        $price = $transaction->getOrder()->getPrice()->getPositionPrice();
+        $customer = $salesChannelContext->getCustomer();
+        if ($customer && !$customer->getGuest()) {
+            $price = $transaction->getOrder()->getPrice()->getTotalPrice();
+        }
+
         $amount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getPositionPrice(),
+            $price,
             $salesChannelContext->getCurrency()->getIsoCode()
         );
         $amountInfo = new Amount();

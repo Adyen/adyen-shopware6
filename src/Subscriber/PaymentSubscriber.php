@@ -244,7 +244,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
         $amountInMinorUnits = $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency);
 
-        $userLoggedIn = $salesChannelContext->getCustomer() !== null;
+        $userLoggedIn = $salesChannelContext->getCustomer() && !$salesChannelContext->getCustomer()->getGuest();
 
         $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
         $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
@@ -364,7 +364,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $salesChannelContext = $event->getSalesChannelContext();
         $productId = $page->getProduct()->getId();
 
-        $userLoggedIn = $salesChannelContext->getCustomer() !== null;
+        $userLoggedIn = $salesChannelContext->getCustomer() && !$salesChannelContext->getCustomer()->getGuest();
 
         $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
         $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
