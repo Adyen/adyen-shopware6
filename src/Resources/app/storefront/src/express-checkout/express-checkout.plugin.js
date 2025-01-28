@@ -194,8 +194,10 @@ export default class ExpressCheckoutPlugin extends Plugin {
             "applepay": {}
         };
 
-        this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
-            document.querySelector('.product-detail-quantity-input');
+        this.productDetailPageBuyProductForm = document.getElementById('productDetailPageBuyProductForm');
+        if (this.productDetailPageBuyProductForm) {
+            this.quantityInput = this.productDetailPageBuyProductForm.querySelector('.js-quantity-selector');
+        }
 
         this.listenOnQuantityChange();
 
