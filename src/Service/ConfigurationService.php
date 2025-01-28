@@ -299,6 +299,18 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|mixed|null
      */
+    public function getGooglePayMerchantId(string $salesChannelId = null)
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.googleMerchantId',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|mixed|null
+     */
     public function isPayPalExpressCheckoutEnabled(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
