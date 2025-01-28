@@ -295,6 +295,14 @@ export default class ExpressCheckoutPlugin extends Plugin {
             paymentMethodConfig.countryCode = checkoutInstance.options.countryCode;
         }
 
+        if((paymentType === "paywithgoogle" || paymentType === "googlepay")
+            && (adyenExpressCheckoutOptions.googleMerchantId !== "" && adyenExpressCheckoutOptions.gatewayMerchantId !== "")) {
+            paymentMethodConfig.configuration = {
+                merchantId: adyenExpressCheckoutOptions.googleMerchantId,
+                gatewayMerchantId: adyenExpressCheckoutOptions.gatewayMerchantId
+            };
+        }
+
         checkoutInstance.create(
             paymentType,
             paymentMethodConfig
