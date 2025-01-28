@@ -185,7 +185,7 @@ class ExpressCheckoutService
         $newCustomer = $salesChannelContext->getCustomer();
 
         // Check if the user is guest or customer
-        $isLoggedIn = $newCustomer !== null;
+        $isLoggedIn = $newCustomer && !$newCustomer->getGuest();
 
         $token = $salesChannelContext->getToken();
         $cart = $this->cartService->getCart($token, $salesChannelContext);
@@ -242,6 +242,10 @@ class ExpressCheckoutService
         if (!$isLoggedIn) {
             $country = $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
             $shippingLocation = ShippingLocation::createFromCountry($country);
+
+            if ($newCustomer) {
+                $shippingLocation = ShippingLocation::createFromAddress($newCustomer->getDefaultBillingAddress());
+            }
         }
 
         if ($makeNewCustomer) {
