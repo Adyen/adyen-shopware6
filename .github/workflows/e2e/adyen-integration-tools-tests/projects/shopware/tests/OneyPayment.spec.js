@@ -18,7 +18,7 @@ test.describe.parallel("Payment via Oney", () => {
         await doPrePaymentChecks(page);
     });
 
-    test.skip("should succeed", async ({ page }) => {
+    test("should succeed", async ({ page }) => {
         await payViaOney(page);
     });
 });
