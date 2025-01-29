@@ -105,3 +105,13 @@
     color: #666;
     font-size: 90%;
 }
+
+#adyen-express-checkout,
+#adyen-express-checkout-paypal {
+    margin-top: 10px;
+}
+
+#adyen-express-checkout-paywithgoogle button,
+#adyen-express-checkout-applepay button {
+    width: 100%;
+}

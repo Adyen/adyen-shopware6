@@ -1,0 +1,12 @@
+{% sw_extends '@Storefront/storefront/component/buy-widget/buy-widget-form.html.twig' %}
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\StorefrontSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+
+{% block buy_widget_buy_container %}
+
+    {{ parent() }}
+
+    {% if buyable %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
+    {% endif %}
+{% endblock %}
