@@ -116,4 +116,19 @@ class OrderTransactionRepository
 
         return $this->repository->search($criteria, Context::createDefaultContext())->first();
     }
+
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     *
+     * @return void
+     *
+     * @throws \JsonException
+     */
+    public function updateCustomFields(OrderTransactionEntity $orderTransactionEntity): void
+    {
+        $this->repository->update([
+            'id' => $orderTransactionEntity->getId(),
+            'customFields' => json_encode($orderTransactionEntity->getCustomFields(), JSON_THROW_ON_ERROR)
+        ], Context::createDefaultContext());
+    }
 }
