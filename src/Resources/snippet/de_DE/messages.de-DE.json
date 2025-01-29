@@ -10,6 +10,14 @@
             "remainingBalance": "Verbleibendes guthaben der geschenkkarte",
             "remainingAmount": "Restbetrag",
             "discount": "Geschenkkarten-Rabatt"
+        },
+        "billie": {
+            "companyName": "Firmenname*",
+            "companyNamePlaceholder": "Firmenname eingeben",
+            "companyNumber": "Registernummer",
+            "companyNumberPlaceholder": "Registernummer eingeben",
+            "requiredFields": "Die mit einem Stern (*) markierten Felder sind Pflichtfelder.",
+            "companyNameRequired": "Firmenname ist erforderlich."
         }
     }
 }
