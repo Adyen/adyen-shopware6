@@ -53,16 +53,6 @@ jobs:
           docker exec shopware6 bash -c 'php bin/console adyen:payment-method:enable --all'
           docker exec shopware6 bash -c 'php bin/console adyen:fetch-logos'
 
-      - name: Get Merchant Account Value
-        run: |
-          VALUE=$(docker exec shopware6 bash -c 'php bin/console system:config:get AdyenPaymentShopware6.config.merchantAccount')
-          echo "Merchant Account value: $VALUE"
-
-      - name: Get Client Key Value
-        run: |
-          VALUE=$(docker exec shopware6 bash -c 'php bin/console system:config:get AdyenPaymentShopware6.config.clientKeyTest')
-          echo "Client Key value: $VALUE"
-
       - name: Run E2E Tests
         run: docker compose -f .github/workflows/templates/docker-compose.playwright.yml run --rm playwright /e2e.sh
         env:
