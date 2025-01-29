@@ -11,6 +11,14 @@
             "deductedAmount": "Deducted Amount",
             "remainingAmount": "Remaining amount",
             "discount": "Giftcard discount"
+        },
+        "billie": {
+            "companyName": "Company Name*",
+            "companyNamePlaceholder": "Enter your company name",
+            "companyNumber": "Company Registration Number",
+            "companyNumberPlaceholder": "Enter your registration number",
+            "requiredFields": "Fields marked with asterisks (*) are required.",
+            "companyNameRequired": "Company name is required."
         }
     }
 }
