@@ -168,6 +168,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $logContext = ['eventCode' => $notification->getEventCode()];
 
                 if (is_null($notification->getMerchantReference())) {
+                    $this->markAsDone($notification->getId(), '');
                     continue;
                 }
 
