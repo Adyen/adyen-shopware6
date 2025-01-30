@@ -134,24 +134,14 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         if (this.selectedAdyenPaymentMethod === "klarna_b2b") {
             const companyNameElement = DomAccess.querySelector(document, '#adyen-company-name');
-            const registrationNumberElement = DomAccess.querySelector(document, '#adyen-registration-number');
-
             const companyName = companyNameElement ? companyNameElement.value.trim() : '';
-            const registrationNumber = registrationNumberElement ? registrationNumberElement.value.trim() : '';
             const companyNameError = DomAccess.querySelector(document, '#adyen-company-name-error');
-            const registrationNumberError = DomAccess.querySelector(document, '#adyen-registration-number-error');
             companyNameError.style.display = 'none';
-            registrationNumberError.style.display = 'none';
 
             let hasError = false;
 
             if (!companyName) {
                 companyNameError.style.display = 'block';
-                hasError = true;
-            }
-
-            if (!registrationNumber) {
-                registrationNumberError.style.display = 'block';
                 hasError = true;
             }
 
@@ -367,17 +357,20 @@ export default class ConfirmOrderPlugin extends Plugin {
                     .mount('[data-adyen-payment-action-container]');
                 const modalActionTypes = ['threeDS2', 'qrCode']
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
-                    if (window.jQuery) {
-                        // Bootstrap v4 support
-                        $('[data-adyen-payment-action-modal]').modal({show: true});
-                    } else {
-                        // Bootstrap v5 support
-                        var adyenPaymentModal = new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
+                    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+                        // Bootstrap 5 modal support
+                        const adyenPaymentModal = new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
                             keyboard: false
                         });
                         adyenPaymentModal.show();
+                    } else if (window.jQuery && typeof $.fn.modal === 'function') {
+                        // Bootstrap 4 modal support
+                        $('[data-adyen-payment-action-modal]').modal({ show: true });
+                    } else {
+                        console.error("No modal implementation found. Please check your setup.");
                     }
                 }
+
             }
         } catch (e) {
             console.log(e);
