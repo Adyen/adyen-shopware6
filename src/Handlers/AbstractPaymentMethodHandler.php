@@ -291,13 +291,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
          */
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
+        $billieData = [];
         $companyName = $dataBag->get('companyName');
         $registrationNumber = $dataBag->get('registrationNumber');
 
-        $billieData = [
-            'companyName' => $companyName,
-            'registrationNumber' => $registrationNumber,
-        ];
+        if ($companyName && $registrationNumber) {
+            $billieData = [
+                'companyName' => $companyName,
+                'registrationNumber' => $registrationNumber,
+            ];
+        }
 
         /*
          * If there are more than one stateData and /payments calls have been completed,
@@ -321,7 +324,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $this->paymentStateDataService->deletePaymentStateDataFromId($storedStateData['id']);
             }
 
-            $paymentMethodType = $stateData['paymentMethod']['type'];
+            $paymentMethodType = array_key_exists('paymentMethod', $stateData) ?
+                $stateData['paymentMethod']['type'] : '';
             if ($paymentMethodType === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
                 $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
             ) {
@@ -361,7 +365,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         // Payment had no error, continue the process
 
         // If Bancontact mobile payment is used, redirect to proxy finalize transaction endpoint
-        if ($stateData['paymentMethod']['type'] === 'bcmc_mobile') {
+        if (array_key_exists('paymentMethod', $stateData) && $stateData['paymentMethod']['type'] === 'bcmc_mobile') {
             return new RedirectResponse($this->getReturnUrl($transaction));
         }
 
@@ -812,7 +816,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $billieData = []
     ) {
         $transactionId = $transaction->getOrderTransaction()->getId();
-        $stateData['billieData'] = $billieData;
+        if (!empty($billieData)) {
+            $stateData['billieData'] = $billieData;
+        }
+
         try {
             $request = $this->preparePaymentsRequest(
                 $salesChannelContext,
