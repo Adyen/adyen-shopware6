@@ -317,8 +317,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'frontend.checkout.finish.page',
                         ['orderId' => '']
                     ),
-                    'googleMerchantId' => $this->configurationService->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
-                    'gatewayMerchantId' => $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                    'googleMerchantId' => $this->configurationService
+                        ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                    'gatewayMerchantId' => $this->configurationService
+                        ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
                     'paymentErrorUrl' => $this->router->generate(
                         'frontend.checkout.finish.page',
                         [
@@ -408,8 +410,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'userLoggedIn' => json_encode($userLoggedIn),
                     'affiliateCode' => $affiliateCode,
                     'campaignCode' => $campaignCode,
-                    'googleMerchantId' => $this->configurationService->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
-                    'gatewayMerchantId' => $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannelId())
+                    'googleMerchantId' => $this->configurationService
+                        ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                    'gatewayMerchantId' => $this->configurationService
+                        ->getMerchantAccount($salesChannelContext->getSalesChannelId())
                     ],
                     $this->expressCheckoutService->getExpressCheckoutConfig(
                         $productId,
@@ -537,8 +541,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
                         'companyName' => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCompany(),
-                        'googleMerchantId' => $this->configurationService->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
-                        'gatewayMerchantId' => $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannelId())
+                        'googleMerchantId' => $this->configurationService
+                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                        'gatewayMerchantId' => $this->configurationService
+                            ->getMerchantAccount($salesChannelContext->getSalesChannelId())
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
