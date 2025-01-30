@@ -152,7 +152,7 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         }
     }
 
-    private function getPaymentMethodConfigByType(SalesChannelContext $context, string $type)
+    private function getPaymentMethodConfigByType(SalesChannelContext $context, string $type): ?array
     {
         $paymentMethodsResponse = $this->getPaymentMethodsResponse($context);
         if (empty($paymentMethodsResponse->getPaymentMethods())) {
@@ -160,7 +160,7 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         }
         foreach ($paymentMethodsResponse->getPaymentMethods() as $paymentMethodConfig) {
             if (($paymentMethodConfig->getType() ?? null) == $type) {
-                return $paymentMethodConfig;
+                return $paymentMethodConfig->toArray();
             }
         }
 
