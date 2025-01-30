@@ -62,29 +62,7 @@ jobs:
 
       - name: Archive test result artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: html-report
           path: test-report
-
-      - name: Copy Adyen api logs from container if available
-        if: always()
-        run: |
-          # Create a local directory for logs
-          mkdir -p logs
-
-          # Check if the log file exists in the container
-          if docker exec shopware6 test -f /var/www/html/var/log/adyen/api.log; then
-            echo "Log file exists. Copying..."
-            docker cp shopware6:/var/www/html/var/log/adyen/api.log logs
-          else
-            echo "Log file does not exist. Skipping copy."
-          fi
-        shell: bash
-
-      - name: Upload Adyen api Logs
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: adyen-api-logs
-          path: logs/*

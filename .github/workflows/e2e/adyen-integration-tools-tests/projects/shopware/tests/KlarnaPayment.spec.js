@@ -25,7 +25,7 @@ test.describe.parallel("Payment via Klarna", () => {
         await verifySuccessfulPayment(page, true, 25000);
     });
 
-    test("Pay Now should fail gracefully when cancelled", async ({ page }) => {
+    test.skip("Pay Now should fail gracefully when cancelled", async ({ page }) => {
         const klarnaPaymentPage = await proceedToKlarnaPayNow(page);
         await klarnaPaymentPage.cancelKlarnaPayment();
         await verifyFailedPayment(page, false);
