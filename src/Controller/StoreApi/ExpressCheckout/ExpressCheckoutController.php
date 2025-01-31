@@ -144,7 +144,9 @@ class ExpressCheckoutController
         $newShipping = $data->get('newShippingMethod')->all();
         $guestEmail = $data->get('email');
 
-        $makeNewCustomer = $salesChannelContext->getCustomer() === null;
+        $customer = $salesChannelContext->getCustomer();
+        $makeNewCustomer = $customer === null;
+        $createNewAddress = $customer && $customer->getGuest();
 
         return $this->expressCheckoutService
             ->createCart(
@@ -155,7 +157,8 @@ class ExpressCheckoutController
                 $newShipping,
                 $formattedHandlerIdentifier,
                 $guestEmail,
-                $makeNewCustomer
+                $makeNewCustomer,
+                $createNewAddress
             );
     }
 
