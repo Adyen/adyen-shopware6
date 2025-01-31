@@ -23,6 +23,7 @@ use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
+use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Framework\Api\Controller\ApiController;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -103,8 +104,10 @@ class ExpressCheckoutService
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
+     * @param string $formattedHandlerIdentifier
      * @return array The configuration for express checkout.
-     * @throws Exception
+     * @throws ResolveCountryException
+     * @throws ResolveShippingMethodException
      */
     public function getExpressCheckoutConfig(
         string              $productId,
@@ -131,7 +134,11 @@ class ExpressCheckoutService
         $amountInMinorUnits = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
 
         // Available shipping methods for the given address
-        $shippingMethods = $this->getAvailableShippingMethods($cartData, $currency);
+        $shippingMethods = $this->getFormatedShippingMethods($cartData, $currency);
+
+        if (empty($shippingMethods)) {
+            throw new ResolveShippingMethodException('No shipping method found!');
+        }
 
         // Available payment methods
         $paymentMethods = $cartData['paymentMethods'];
@@ -345,7 +352,12 @@ class ExpressCheckoutService
         $paypalUpdateOrderRequest = new PaypalUpdateOrderRequest($data);
 
         $deliveryMethods = [];
-        $shippingMethods = $this->getAvailableShippingMethods($cartData, $currency);
+        $shippingMethods = $this->getFormatedShippingMethods($cartData, $currency);
+
+        if (empty($shippingMethods)) {
+            throw new ResolveShippingMethodException('No shipping method found!');
+        }
+
         foreach ($shippingMethods as $shippingMethod) {
             $deliveryMethods[] = new DeliveryMethod(
                 [
@@ -450,19 +462,7 @@ class ExpressCheckoutService
         CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
     ) :array {
-        $cart = $this->cartService->createNew($tokenNew = Uuid::randomHex());
-        $token = $tokenNew;
-
-        $orderLineItems = $order->getLineItems();
-        foreach ($orderLineItems as $orderLineItem) {
-            $lineItem = new LineItem(
-                $orderLineItem->getProductId(),
-                'product',
-                $orderLineItem->getProductId(),
-                $orderLineItem->getQuantity()
-            );
-            $cart->add($lineItem);
-        }
+        $cart = $this->orderConverter->convertToCart($order, $salesChannelContext->getContext());
 
         $shippingLocation = $salesChannelContext->getShippingLocation();
 
@@ -481,7 +481,7 @@ class ExpressCheckoutService
 
         return  $this->returnExpressCheckoutCartData(
             $cart,
-            $token,
+            $salesChannelContext->getToken(),
             $formattedHandlerIdentifier,
             $newShipping,
             $shippingLocation,
@@ -622,7 +622,7 @@ class ExpressCheckoutService
             ->fetchAvailableShippingMethods($updatedSalesChannelContext, $cart);
 
         // Fetch shipping method
-        $shippingMethod = $this->resolveShippingMethod($updatedSalesChannelContext, $cart, $newShipping);
+        $shippingMethod = $this->resolveShippingMethod($shippingMethods, $newShipping);
 
         // Recreate context with selected shipping method
         $updatedSalesChannelContext = $this->createContext(
@@ -655,20 +655,15 @@ class ExpressCheckoutService
     /**
      * Resolves the shipping method based on the provided cart and new shipping details.
      *
-     * @param SalesChannelContext $salesChannelContext The current sales channel context.
-     * @param Cart $cart The cart to calculate shipping for.
+     * @param ShippingMethodCollection $filteredMethods
      * @param array $newShipping Optional new shipping method details.
      * @return ShippingMethodEntity The resolved shipping method.
      * @throws ResolveShippingMethodException
      */
     private function resolveShippingMethod(
-        SalesChannelContext $salesChannelContext,
-        Cart                $cart,
+        ShippingMethodCollection  $filteredMethods,
         array               $newShipping
     ): ShippingMethodEntity {
-        // Fetch available shipping methods
-        $filteredMethods = $this->expressCheckoutRepository->fetchAvailableShippingMethods($salesChannelContext, $cart);
-
         // Check if a specific shipping method ID is provided in the new shipping data
         $newShippingMethodId = $newShipping['id'] ?? null;
 
@@ -682,62 +677,6 @@ class ExpressCheckoutService
         }
 
         return $shippingMethod;
-    }
-
-    private function getAvailableShippingMethods(array $cartData, string $currency): array
-    {
-        /** @var ShippingMethodEntity $selectedShippingMethod */
-        $selectedShippingMethod =  $cartData['shippingMethod'];
-        /** @var Cart $cart */
-        $cart = $cartData['cart'];
-        /** @var SalesChannelContext $salesChannelContext */
-        $salesChannelContext = $cartData['updatedSalesChannelContext'];
-
-        $availableShippingMethods = array_map(function (ShippingMethodEntity $method) use (
-            $currency,
-            $salesChannelContext,
-            $selectedShippingMethod,
-            $cart
-        ) {
-            $salesChannelWithCurrentShippingMethod = $this->createContext(
-                $salesChannelContext,
-                $salesChannelContext->getToken(),
-                $salesChannelContext->getShippingLocation(),
-                $salesChannelContext->getPaymentMethod(),
-                $salesChannelContext->getCustomer(),
-                $method
-            );
-
-            $cart = $this->cartService->recalculate($cart, $salesChannelWithCurrentShippingMethod);
-            /** @var Delivery $delivery */
-            $delivery =$cart->getDeliveries()->first();
-            $price = $delivery->getShippingCosts()->getTotalPrice();
-            $value = $this->currencyUtil->sanitize($price, $currency);
-
-            return [
-                'id' => $method->getId(),
-                'label' => $method->getName(),
-                'description' => $method->getDescription() ?? '',
-                'value' => $value,
-                'currency' => $currency,
-                'selected' => $selectedShippingMethod->getId() === $method->getId(),
-            ];
-        }, $cartData['shippingMethods']->getElements());
-
-        $this->createContext(
-            $salesChannelContext,
-            $salesChannelContext->getToken(),
-            $salesChannelContext->getShippingLocation(),
-            $salesChannelContext->getPaymentMethod(),
-            $salesChannelContext->getCustomer(),
-            $selectedShippingMethod
-        );
-
-        return $availableShippingMethods;
-    }
-
-    private function getCartForPayPalPayment()
-    {
     }
 
     /**
@@ -784,6 +723,63 @@ class ExpressCheckoutService
         }
 
         throw new Exception(sprintf('Unsupported Shopware version: %s', $this->shopwareVersion));
+    }
+
+    private function getFormatedShippingMethods(array $cartData, string $currency): array
+    {
+        /** @var ShippingMethodEntity $selectedShippingMethod */
+        $selectedShippingMethod =  $cartData['shippingMethod'];
+        /** @var Cart $cart */
+        $cart = $cartData['cart'];
+        /** @var SalesChannelContext $salesChannelContext */
+        $salesChannelContext = $cartData['updatedSalesChannelContext'];
+        $shippingMethods = $cartData['shippingMethods'];
+
+        if (empty($shippingMethods)) {
+            return [];
+        }
+
+        $availableShippingMethods = array_map(function (ShippingMethodEntity $method) use (
+            $currency,
+            $salesChannelContext,
+            $selectedShippingMethod,
+            $cart
+        ) {
+            $salesChannelWithCurrentShippingMethod = $this->createContext(
+                $salesChannelContext,
+                $salesChannelContext->getToken(),
+                $salesChannelContext->getShippingLocation(),
+                $salesChannelContext->getPaymentMethod(),
+                $salesChannelContext->getCustomer(),
+                $method
+            );
+
+            $cart = $this->cartService->recalculate($cart, $salesChannelWithCurrentShippingMethod);
+            /** @var Delivery $delivery */
+            $delivery =$cart->getDeliveries()->first();
+            $price = $delivery->getShippingCosts()->getTotalPrice();
+            $value = $this->currencyUtil->sanitize($price, $currency);
+
+            return [
+                'id' => $method->getId(),
+                'label' => $method->getName(),
+                'description' => $method->getDescription() ?? '',
+                'value' => $value,
+                'currency' => $currency,
+                'selected' => $selectedShippingMethod->getId() === $method->getId(),
+            ];
+        }, $shippingMethods->getElements());
+
+        $this->createContext(
+            $salesChannelContext,
+            $salesChannelContext->getToken(),
+            $salesChannelContext->getShippingLocation(),
+            $salesChannelContext->getPaymentMethod(),
+            $salesChannelContext->getCustomer(),
+            $selectedShippingMethod
+        );
+
+        return $availableShippingMethods;
     }
 
     /**
