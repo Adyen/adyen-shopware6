@@ -97,6 +97,16 @@ class ExpressCheckoutController
                 $formattedHandlerIdentifier
             );
 
+            if (array_key_exists('error', $config)) {
+                if ($config['error'] === 'ResolveCountryException') {
+                    throw new  ResolveCountryException($config['message']);
+                }
+
+                if ($config['error'] === 'ResolveShippingMethodException') {
+                    throw new  ResolveShippingMethodException($config['message']);
+                }
+            }
+
             return new JsonResponse($config);
         } catch (ResolveCountryException $e) {
             return new JsonResponse([

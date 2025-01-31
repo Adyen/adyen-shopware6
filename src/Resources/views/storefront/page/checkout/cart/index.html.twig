@@ -10,6 +10,8 @@
 
 {% block page_checkout_cart_action_proceed %}
     {{ parent() }}
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
+    {% if adyenFrontendData.expressCheckoutConfigurationAvailable %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
+    {% endif %}
 {% endblock %}

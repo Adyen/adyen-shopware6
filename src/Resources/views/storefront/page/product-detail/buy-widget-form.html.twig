@@ -3,7 +3,7 @@
 
 {% block page_product_detail_buy_container %}
     {{ parent() }}
-    {% if buyable %}
+    {% if buyable and adyenFrontendData.expressCheckoutConfigurationAvailable %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
     {% endif %}

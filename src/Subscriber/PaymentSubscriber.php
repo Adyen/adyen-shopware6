@@ -280,6 +280,17 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $page->getCart()->getPrice()->getTotalPrice()
         );
 
+        $expressCheckoutConfigurationAvailable = true;
+        $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
+            '-1',
+            -1,
+            $salesChannelContext
+        );
+        if (array_key_exists('error', $expressCheckoutConfiguration)) {
+            $expressCheckoutConfigurationAvailable = false;
+            $expressCheckoutConfiguration = [];
+        }
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -342,12 +353,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'userLoggedIn' => json_encode($userLoggedIn),
                      'affiliateCode' => $affiliateCode,
                      'campaignCode' => $campaignCode,
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
                     ],
-                    $this->expressCheckoutService->getExpressCheckoutConfig(
-                        '-1',
-                        -1,
-                        $salesChannelContext
-                    )
+                    $expressCheckoutConfiguration
                 )
             )
         );
@@ -370,6 +378,17 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
         $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+
+        $expressCheckoutConfigurationAvailable = true;
+        $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
+            '-1',
+            -1,
+            $salesChannelContext
+        );
+        if (array_key_exists('error', $expressCheckoutConfiguration)) {
+            $expressCheckoutConfigurationAvailable = false;
+            $expressCheckoutConfiguration = [];
+        }
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -413,13 +432,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'googleMerchantId' => $this->configurationService
                         ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                     'gatewayMerchantId' => $this->configurationService
-                        ->getMerchantAccount($salesChannelContext->getSalesChannelId())
+                        ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                    'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
                     ],
-                    $this->expressCheckoutService->getExpressCheckoutConfig(
-                        $productId,
-                        1,
-                        $salesChannelContext
-                    )
+                    $expressCheckoutConfiguration
                 )
             )
         );
