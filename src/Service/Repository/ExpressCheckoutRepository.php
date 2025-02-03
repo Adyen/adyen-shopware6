@@ -91,7 +91,7 @@ class ExpressCheckoutRepository
      */
     public function fetchAvailableShippingMethods(
         SalesChannelContext $salesChannelContext,
-        Cart $cart
+        Cart                $cart
     ): ShippingMethodCollection {
         $criteria = new Criteria();
         $criteria->addAssociation('availabilityRule');
@@ -230,8 +230,8 @@ class ExpressCheckoutRepository
      * @throws ResolveCountryException
      */
     public function getStateId(
-        string $administrativeArea,
-        string $countryCode,
+        string              $administrativeArea,
+        string              $countryCode,
         SalesChannelContext $salesChannelContext
     ): ?string {
         $shortCode = $countryCode . '-' . $administrativeArea;
@@ -258,7 +258,7 @@ class ExpressCheckoutRepository
      * @param SalesChannelContext $salesChannelContext The sales channel context for the query.
      *
      * @return CustomerEntity The customer entity.
-     *@throws Exception If the customer is not found.
+     * @throws Exception If the customer is not found.
      *
      */
     public function findCustomerById(string $customerId, SalesChannelContext $salesChannelContext): CustomerEntity
@@ -288,8 +288,8 @@ class ExpressCheckoutRepository
      */
     public function createGuestCustomer(
         SalesChannelContext $salesChannelContext,
-        string $guestEmail,
-        array $newAddress
+        string              $guestEmail,
+        array               $newAddress
     ): CustomerEntity {
         // Guest data
         $customerId = Uuid::randomHex();
@@ -314,7 +314,7 @@ class ExpressCheckoutRepository
         if ($newAddress['state'] && $countryCode) {
             $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city =  $newAddress['city'] ?? 'Adyen Guest City';
+        $city = $newAddress['city'] ?? 'Adyen Guest City';
         $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
         $zipcode = $newAddress['zipcode'] ?? '1111';
         $additionalAddressLine1 = $newAddress['address2'] ?? '';
@@ -382,6 +382,65 @@ class ExpressCheckoutRepository
     }
 
     /**
+     * @param array $newAddress
+     * @param CustomerEntity $customer
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return CustomerAddressEntity
+     *
+     * @throws ResolveCountryException
+     */
+    public function createAddress(
+        array $newAddress,
+        CustomerEntity $customer,
+        SalesChannelContext $salesChannelContext
+    ): CustomerAddressEntity {
+        $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
+        $stateID = null;
+        if ($newAddress['state'] && $newAddress['countryCode']) {
+            $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
+        }
+        $city = !empty($newAddress['city']) ? $newAddress['city']  : 'Adyen Guest City';
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
+        $zipcode = !empty($newAddress['postalCode']) ? $newAddress['postalCode'] : '1111';
+        $phoneNumber = $newAddress['phoneNumber'] ?? '';
+
+        $firstName = !empty($newAddress['firstName']) ?  $newAddress['firstName'] : $customer->getFirstName();
+        $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : $customer->getLastName();
+        $addressId = Uuid::randomHex();
+
+        $addressData = [
+            [
+                'id' => $addressId,
+                'customerId' => $customer->getId(),
+                'countryId' => $countryId,
+                'countryStateId' => $stateID,
+                'city' => $city,
+                'street' => $street,
+                'zipcode' => $zipcode,
+                'firstName' => $firstName,
+                'lastName' => $lastName,
+                'salutationId' => $customer->getSalutationId() ?? '',
+                'phoneNumber' => $phoneNumber
+            ],
+        ];
+
+        // Create order address
+        $this->customerAddressRepository->create($addressData, $salesChannelContext->getContext());
+
+        // Get customer address by id
+        $criteria = new Criteria();
+        $criteria->addAssociation('country');
+        $criteria->addAssociation('countryState');
+        $criteria->addFilter(new EqualsFilter('id', $addressId));
+
+        return $this->customerAddressRepository->search(
+            $criteria,
+            $salesChannelContext->getContext()
+        )->first();
+    }
+
+    /**
      * @param string $orderId
      * @param Context $context
      * @return OrderEntity|null
@@ -439,7 +498,7 @@ class ExpressCheckoutRepository
         $zipcode = $newAddress['postalCode'] ?? '1111';
         $phoneNumber = $newAddress['phoneNumber'] ?? '';
 
-        $firstName = $newAddress['firstName'] ??  $customer->getFirstName();
+        $firstName = $newAddress['firstName'] ?? $customer->getFirstName();
         $lastName = $newAddress['lastName'] ?? $customer->getLastName();
 
         $addressData = [
