@@ -99,8 +99,6 @@ class ExpressCheckoutService
      * @param array $newShipping Optional new shipping method details.
      * @param string $formattedHandlerIdentifier
      * @return array The configuration for express checkout.
-     * @throws ResolveCountryException
-     * @throws ResolveShippingMethodException
      */
     public function getExpressCheckoutConfig(
         string              $productId,
@@ -110,47 +108,58 @@ class ExpressCheckoutService
         array               $newShipping = [],
         string              $formattedHandlerIdentifier = ''
     ): array {
-        // Creating new cart
-        $cartData = $this->createCart(
-            $productId,
-            $quantity,
-            $salesChannelContext,
-            $newAddress,
-            $newShipping,
-            $formattedHandlerIdentifier
-        );
+        try {
+            $cartData = $this->createCart(
+                $productId,
+                $quantity,
+                $salesChannelContext,
+                $newAddress,
+                $newShipping,
+                $formattedHandlerIdentifier
+            );
 
-        /** @var Cart $cart */
-        $cart = $cartData['cart'];
+            /** @var Cart $cart */
+            $cart = $cartData['cart'];
 
-        $currency = $salesChannelContext->getCurrency()->getIsoCode();
-        $amountInMinorUnits = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
+            $currency = $salesChannelContext->getCurrency()->getIsoCode();
+            $amountInMinorUnits = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
 
-        // Available shipping methods for the given address
-        $shippingMethods = $this->getFormatedShippingMethods($cartData, $currency);
+            // Available shipping methods for the given address
+            $shippingMethods = $this->getFormatedShippingMethods($cartData, $currency);
 
-        if (empty($shippingMethods)) {
-            throw new ResolveShippingMethodException('No shipping method found!');
+            if (empty($shippingMethods)) {
+                throw new ResolveShippingMethodException('No shipping method found!');
+            }
+
+            // Available payment methods
+            $paymentMethods = $cartData['paymentMethods'];
+
+            // Delete temporary cart for product
+            if ($productId !== '-1') {
+                $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
+            }
+
+            return [
+                'currency' => $currency,
+                'amount' => $amountInMinorUnits,
+                'countryCode' => $this->getCountryCode(
+                    $salesChannelContext->getCustomer(),
+                    $salesChannelContext
+                ),
+                'paymentMethodsResponse' => json_encode($paymentMethods),
+                'shippingMethodsResponse' => array_values($shippingMethods),
+            ];
+        } catch (ResolveCountryException $exception) {
+            return [
+                'error' => 'ResolveCountryException',
+                'message' => $exception->getMessage()
+            ];
+        } catch (ResolveShippingMethodException $exception) {
+            return [
+                'error' => 'ResolveShippingMethodException',
+                'message' => $exception->getMessage()
+            ];
         }
-
-        // Available payment methods
-        $paymentMethods = $cartData['paymentMethods'];
-
-        // Delete temporary cart for product
-        if ($productId !== '-1') {
-            $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
-        }
-
-        return [
-            'currency' => $currency,
-            'amount' => $amountInMinorUnits,
-            'countryCode' => $this->getCountryCode(
-                $salesChannelContext->getCustomer(),
-                $salesChannelContext
-            ),
-            'paymentMethodsResponse' => json_encode($paymentMethods),
-            'shippingMethodsResponse' => array_values($shippingMethods),
-        ];
     }
 
     /**
@@ -740,8 +749,8 @@ class ExpressCheckoutService
 
             $cart = $this->cartService->recalculate($cart, $salesChannelWithCurrentShippingMethod);
             /** @var Delivery $delivery */
-            $delivery =$cart->getDeliveries()->first();
-            $price = $delivery->getShippingCosts()->getTotalPrice();
+            $delivery = $cart->getDeliveries()->first();
+            $price = $delivery ? $delivery->getShippingCosts()->getTotalPrice() : 0;
             $value = $this->currencyUtil->sanitize($price, $currency);
 
             return [
