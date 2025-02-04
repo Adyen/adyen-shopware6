@@ -438,6 +438,14 @@ class ExpressCheckoutService
         );
         $newOrderData['id'] = $order->getId();
 
+        $orderDelivery = $order->getDeliveries()?->first();
+        if ($orderDelivery) {
+            $deliveryFromNewOrderData = ($newOrderData['deliveries'] && count($newOrderData['deliveries']) > 0) ?
+                $newOrderData['deliveries'][0] : [];
+            $deliveryFromNewOrderData['id'] = $orderDelivery->getId();
+            $newOrderData['deliveries'][0] = $deliveryFromNewOrderData;
+        }
+
         $this->expressCheckoutRepository->upsertOrder($newOrderData, $contextWithNewVersion);
         $this->apiController->mergeVersion($contextWithNewVersion, 'order', $versionId);
 
