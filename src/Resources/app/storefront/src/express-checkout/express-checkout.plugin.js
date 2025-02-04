@@ -208,24 +208,17 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 (response) => {
                     try {
                         const parsedResponse = JSON.parse(response);
-                        console.log('parsedResponse')
 
                         if (this._client._request.status >= 400) {
                             // if valid resonse, but contains error data
                             reject({
                                 error: parsedResponse.error
                             });
-
-                            console.log('>=400')
-
                             return;
                         }
 
                         resolve(parsedResponse);
                     } catch (error) {
-
-                        console.log('catch')
-
                         reject({
                             status: 500,
                             message: "Failed to parse server response.",
