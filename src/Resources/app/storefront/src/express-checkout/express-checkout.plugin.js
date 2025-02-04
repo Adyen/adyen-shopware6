@@ -510,32 +510,28 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this.newAddress = extraData.newAddress = shippingAddress;
         }
 
-        try {
-            const response = await new Promise((resolve, reject) => {
-                this._client.post(
-                    `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
-                    JSON.stringify(extraData),
-                    function (response) {
-                        try {
-                            const responseObject = JSON.parse(response);
+        return new Promise((resolve, reject) => {
+            this._client.post(
+                `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
+                JSON.stringify(extraData),
+                function (response) {
+                    try {
+                        const responseObject = JSON.parse(response);
 
-                            if (!responseObject || this._client._request.status !== 200) {
-                                reject(new Error('Server error or invalid response'));
-                            } else {
-                                resolve(responseObject);
-                            }
-                        } catch (error) {
-                            reject(error);
+                        if (!responseObject || this._client._request.status !== 200) {
+                            this.blockPayPalShippingOptionChange = true;
+                            reject(data.errors.COUNTRY_ERROR);
+                        } else {
+                            component.updatePaymentData(responseObject.paymentData);
+                            resolve();
                         }
-                    }.bind(this)
-                );
-            });
-
-            component.updatePaymentData(response.paymentData);
-        } catch (error) {
-            this.blockPayPalShippingOptionChange = true;
-            return actions.reject(data.errors.COUNTRY_ERROR);
-        }
+                    } catch (error) {
+                        this.blockPayPalShippingOptionChange = true;
+                        reject(data.errors.COUNTRY_ERROR);
+                    }
+                }.bind(this)
+            );
+        });
     }
 
     async onShippingOptionsChange(data, actions, component) {
@@ -553,31 +549,26 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this.newShippingMethod = extraData.newShippingMethod = selectedShippingOption;
         }
 
-        try {
-            const response = await new Promise((resolve, reject) => {
-                this._client.post(
-                    `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
-                    JSON.stringify(extraData),
-                    function (response) {
-                        try {
-                            const responseObject = JSON.parse(response);
+        return new Promise((resolve, reject) => {
+            this._client.post(
+                `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
+                JSON.stringify(extraData),
+                function (response) {
+                    try {
+                        const responseObject = JSON.parse(response);
 
-                            if (!responseObject || this._client._request.status !== 200) {
-                                reject(new Error('onShippingOptionsChange Server error or invalid response'));
-                            } else {
-                                resolve(responseObject);
-                            }
-                        } catch (error) {
-                            reject(error);
+                        if (!responseObject || this._client._request.status !== 200) {
+                            reject(data.errors.METHOD_UNAVAILABLE);
+                        } else {
+                            component.updatePaymentData(responseObject.paymentData);
+                            resolve();
                         }
-                    }.bind(this)
-                );
-            });
-
-            component.updatePaymentData(response.paymentData);
-        } catch (error) {
-            return actions.reject(data.errors.METHOD_UNAVAILABLE);
-        }
+                    } catch (error) {
+                        reject(data.errors.METHOD_UNAVAILABLE);
+                    }
+                }.bind(this)
+            );
+        });
     }
 
     onShopperDetails(shopperDetails, rawData, actions) {
