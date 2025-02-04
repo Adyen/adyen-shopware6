@@ -98,6 +98,7 @@ class ExpressCheckoutRepository
         $criteria->addAssociation('salesChannels');
         $criteria->addAssociation('prices');
         $criteria->addFilter(new EqualsFilter('salesChannels.id', $salesChannelContext->getSalesChannel()->getId()));
+        $criteria->addFilter(new EqualsFilter('active', 1));
 
         /** @var ShippingMethodCollection $shippingMethods */
         $shippingMethods = $this->shippingMethodRepository->search($criteria, $salesChannelContext->getContext())
