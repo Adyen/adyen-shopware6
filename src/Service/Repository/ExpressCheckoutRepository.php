@@ -452,8 +452,7 @@ class ExpressCheckoutRepository
         CustomerAddressEntity $customerAddress,
         CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
-    ): void
-    {
+    ): void {
         $data = [
             [
                 'id' => $customer->getId(),
