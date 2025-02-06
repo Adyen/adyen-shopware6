@@ -536,6 +536,13 @@ class ExpressCheckoutService
                 $customer,
                 $salesChannelContext
             );
+
+            $this->expressCheckoutRepository->updateDefaultCustomerAddress(
+                $guestCustomerAddress,
+                $customer,
+                $salesChannelContext
+            );
+
             $shippingLocation = ShippingLocation::createFromAddress($guestCustomerAddress);
             $customer->setActiveBillingAddress($guestCustomerAddress);
             $customer->setActiveShippingAddress($guestCustomerAddress);

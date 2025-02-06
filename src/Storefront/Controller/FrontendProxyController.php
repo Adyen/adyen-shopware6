@@ -268,7 +268,7 @@ class FrontendProxyController extends StorefrontController
     ): JsonResponse {
         $customer = $salesChannelContext->getCustomer();
 
-        if ($customer === null) {
+        if ($customer === null || $customer->getGuest()) {
             $customerId = $request->request->get('customerId');
             $salesChannelContext = $this->expressCheckoutController->changeContext($customerId, $salesChannelContext);
         }

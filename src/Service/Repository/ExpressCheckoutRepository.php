@@ -442,6 +442,29 @@ class ExpressCheckoutRepository
     }
 
     /**
+     * @param CustomerAddressEntity $customerAddress
+     * @param CustomerEntity $customer
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return void
+     */
+    public function updateDefaultCustomerAddress(
+        CustomerAddressEntity $customerAddress,
+        CustomerEntity $customer,
+        SalesChannelContext $salesChannelContext
+    ): void {
+        $data = [
+            [
+                'id' => $customer->getId(),
+                'defaultBillingAddressId' => $customerAddress->getId(),
+                'defaultShippingAddressId' => $customerAddress->getId()
+            ]
+        ];
+
+        $this->customerRepository->update($data, $salesChannelContext->getContext());
+    }
+
+    /**
      * @param string $orderId
      * @param Context $context
      * @return OrderEntity|null
