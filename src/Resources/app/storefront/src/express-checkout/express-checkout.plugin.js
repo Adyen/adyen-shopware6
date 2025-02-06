@@ -31,7 +31,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.paymentMethodInstance = null;
         this.responseHandler = this.handlePaymentAction;
 
-        const userLoggedIn = adyenExpressCheckoutOptions.userLoggedIn === "true";
+        this.userLoggedIn = adyenExpressCheckoutOptions.userLoggedIn === "true";
         this.formattedHandlerIdentifier = '';
         this.newAddress = {};
         this.newShippingMethod = {};
@@ -39,6 +39,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.pspReference = '';
         this.paymentData = null;
         this.blockPayPalShippingOptionChange = false;
+        this.stateData = {};
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             return new Promise(async resolve => {
@@ -147,19 +148,19 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     resolve();
                 },
                 isExpress: true,
-                callbackIntents: !userLoggedIn ? ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION', 'SHIPPING_OPTION'] : [],
-                shippingAddressRequired: !userLoggedIn,
-                emailRequired: !userLoggedIn,
+                callbackIntents: !this.userLoggedIn ? ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION', 'SHIPPING_OPTION'] : [],
+                shippingAddressRequired: !this.userLoggedIn,
+                emailRequired: !this.userLoggedIn,
                 shippingAddressParameters: {
                     allowedCountryCodes: [],
                     phoneNumberRequired: true
                 },
-                shippingOptionRequired: !userLoggedIn,
+                shippingOptionRequired: !this.userLoggedIn,
                 buttonSizeMode: "fill",
                 onAuthorized: paymentData => {
                 },
                 buttonColor: "white",
-                paymentDataCallbacks: !userLoggedIn ?
+                paymentDataCallbacks: !this.userLoggedIn ?
                     {
                         onPaymentDataChanged: onPaymentDataChanged,
                         onPaymentAuthorized: onPaymentAuthorized
@@ -168,7 +169,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             }
         };
 
-        if (!userLoggedIn) {
+        if (!this.userLoggedIn) {
             this.paymentMethodSpecificConfig.paypal = {
                 isExpress: true,
                 onShopperDetails: this.onShopperDetails.bind(this),
@@ -176,7 +177,16 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 blockPayPalPayLaterButton: true,
                 onShippingAddressChange: this.onShippingAddressChanged.bind(this),
                 onShippingOptionsChange: this.onShippingOptionsChange.bind(this),
-            }
+            };
+
+            this.paymentMethodSpecificConfig.applepay = {
+                isExpress: true,
+                requiredBillingContactFields: ['postalAddress'],
+                requiredShippingContactFields: ['postalAddress', 'name', 'phoneticName', 'phone', 'email'],
+                onAuthorized: this.handleApplePayAuthorization.bind(this),
+                onShippingContactSelected: this.onShippingContactSelected.bind(this),
+                onShippingMethodSelected: this.onShippingMethodSelected.bind(this),
+            };
         }
 
         this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
@@ -313,19 +323,27 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     return;
                 }
 
+                const type = state.data.paymentMethod.type;
+                if (type === 'applepay') {
+                    if(!this.userLoggedIn){
+                        this.stateData = state.data;
+
+                        return;
+                    }
+
+                    this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
+                }
+
                 const productMeta = document.querySelector('meta[itemprop="productID"]');
                 const productId = productMeta ? productMeta.content : '-1';
                 const quantity = this.quantityInput ? this.quantityInput.value : -1;
-                const type = state.data.paymentMethod.type;
+
                 if (type === 'paypal') {
                     this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
                     const paypalComponentConfig = adyenConfiguration.componentsWithPayButton['paypal'];
                     if ('responseHandler' in paypalComponentConfig) {
                         this.responseHandler = paypalComponentConfig.responseHandler.bind(component, this);
                     }
-                }
-                if (type === 'applepay') {
-                    this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
                 }
 
                 const requestData = {
@@ -497,6 +515,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
     }
 
+    // Callback for PayPal payment method
     async onShippingAddressChanged(data, actions, component) {
         this.blockPayPalShippingOptionChange = false;
         this.newShippingMethod = {};
@@ -534,6 +553,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         });
     }
 
+    // Callback for PayPal payment method
     async onShippingOptionsChange(data, actions, component) {
         if (this.blockPayPalShippingOptionChange === true) {
             return actions.reject(data.errors.METHOD_UNAVAILABLE);
@@ -571,6 +591,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         });
     }
 
+    // Callback for PayPal payment method
     onShopperDetails(shopperDetails, rawData, actions) {
         this.newAddress = {
             firstName: shopperDetails.shopperName.firstName,
@@ -592,6 +613,173 @@ export default class ExpressCheckoutPlugin extends Plugin {
         extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
         extraData.pspReference = this.pspReference;
         extraData.orderId = this.orderId;
+
+        return extraData;
+    }
+
+    // Callback for ApplePay payment method
+    handleApplePayAuthorization(resolve, reject, event) {
+        let shippingContact = event.payment.shippingContact;
+        const shippingAddress = {
+            firstName: shippingContact.givenName,
+            lastName: shippingContact.familyName,
+            street: shippingContact.addressLines.length > 0 ? shippingContact.addressLines[0] : '',
+            zipcode: shippingContact.postalCode,
+            city: shippingContact.locality,
+            countryCode: shippingContact.countryCode,
+            phoneNumber: shippingContact.phoneNumber,
+            email: shippingContact.emailAddress
+        }
+
+        if (shippingAddress) {
+            this.newAddress = shippingAddress;
+            this.email = shippingAddress.email
+        }
+
+        this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
+
+        const productMeta = document.querySelector('meta[itemprop="productID"]');
+        const productId = productMeta ? productMeta.content : '-1';
+        const quantity = this.quantityInput ? this.quantityInput.value : -1;
+
+        let extraParams = {
+            stateData: JSON.stringify(this.stateData)
+        };
+
+        const requestData = {
+            productId: productId,
+            quantity: quantity,
+            formattedHandlerIdentifier: this.formattedHandlerIdentifier,
+            newAddress: this.newAddress,
+            newShippingMethod: this.newShippingMethod,
+            affiliateCode: adyenExpressCheckoutOptions.affiliateCode,
+            campaignCode: adyenExpressCheckoutOptions.campaignCode,
+            email: this.email
+        };
+
+        this.createOrder(JSON.stringify(requestData), extraParams);
+    }
+
+    // Callback for ApplePay payment method
+    async onShippingContactSelected(resolve, reject, event) {
+        const address = event.shippingContact;
+        const shippingAddress = {
+            firstName: 'Temp',
+            lastName: 'Temp',
+            street: 'Street 123',
+            city: address.locality,
+            state: address.administrativeArea,
+            countryCode: address.countryCode,
+            postalCode: address.postalCode
+        };
+
+        const extraData = this.getDataForApplePayCallbacks();
+
+        if (shippingAddress) {
+            this.newAddress = extraData.newAddress = shippingAddress;
+        }
+
+        this.getApplePayExpressCheckoutConfiguration(resolve, reject, extraData);
+    }
+
+    // Callback for ApplePay payment method
+    async onShippingMethodSelected(resolve, reject, event) {
+        const shippingMethodData = event.shippingMethod;
+        const shippingMethod = {
+            id: shippingMethodData.identifier,
+        };
+
+        const extraData = this.getDataForApplePayCallbacks();
+
+        if (shippingMethod) {
+            this.newShippingMethod = extraData.newShippingMethod = shippingMethod;
+        }
+
+        this.getApplePayExpressCheckoutConfiguration(resolve, reject, extraData);
+    }
+
+    getApplePayExpressCheckoutConfiguration(resolve, reject, extraData){
+        let amount = 0;
+        let applePayShippingMethodUpdate = {};
+
+        this._client.post(
+            adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
+            JSON.stringify({
+                ...extraData
+            }),
+            function (response) {
+                try {
+                    const responseObject = JSON.parse(response);
+
+                    if (!responseObject || this._client._request.status !== 200) {
+                        let update = {
+                            newTotal: {
+                                type: 'final',
+                                label: 'Total amount',
+                                amount: (amount).toString()
+                            },
+                            errors: [new ApplePayError(
+                                'shippingContactInvalid',
+                                'countryCode',
+                                'Error message')
+                            ]
+                        };
+                        resolve(update);
+                    } else {
+                        amount = parseInt(responseObject.amount) / 100;
+
+                        applePayShippingMethodUpdate.newTotal = {
+                            type: 'final',
+                            label: 'Total amount',
+                            amount: (amount).toString()
+                        };
+
+                        const shippingMethodsArray = responseObject.shippingMethodsResponse;
+                        const newShippingMethodsArray = [];
+                        shippingMethodsArray.forEach((shippingMethod) => {
+                            newShippingMethodsArray.push(
+                                {
+                                    'identifier': shippingMethod['id'],
+                                    'label': shippingMethod['label'],
+                                    'detail': shippingMethod['description'],
+                                    'amount': parseInt(shippingMethod['value']) / 100,
+                                    'selected': shippingMethod['selected']
+                                }
+                            )
+                        });
+
+                        applePayShippingMethodUpdate.newShippingMethods = newShippingMethodsArray;
+                        resolve(applePayShippingMethodUpdate);
+                    }
+                } catch (error) {
+                    let update = {
+                        newTotal: {
+                            type: 'final',
+                            label: 'Total amount',
+                            amount: (amount).toString()
+                        },
+                        errors: [new ApplePayError(
+                            'shippingContactInvalid',
+                            'countryCode',
+                            'Error message')
+                        ]
+                    };
+                    resolve(update);
+                }
+            }.bind(this)
+        );
+    }
+
+    getDataForApplePayCallbacks() {
+        const extraData = {};
+
+        const productMeta = document.querySelector('meta[itemprop="productID"]');
+        const productId = productMeta ? productMeta.content : '-1';
+        const quantity = this.quantityInput ? this.quantityInput.value : -1;
+
+        extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
+        extraData.productId = productId;
+        extraData.quantity = quantity;
 
         return extraData;
     }
