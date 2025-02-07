@@ -383,8 +383,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $expressCheckoutConfigurationAvailable = true;
         $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
-            '-1',
-            -1,
+            $productId,
+            1,
             $salesChannelContext
         );
         if (array_key_exists('error', $expressCheckoutConfiguration)) {
