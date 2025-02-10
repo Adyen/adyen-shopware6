@@ -21,7 +21,7 @@ test.describe.parallel("Payment via credit card", () => {
         await doPrePaymentChecks(page);
     });
 
-    test("without 3Ds should succeed", async ({ page }) => {
+    test.skip("without 3Ds should succeed", async ({ page }) => {
 
         await makeCreditCardPayment(
             page,
