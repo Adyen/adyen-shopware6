@@ -273,11 +273,11 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
-     * @return array|mixed|null
+     * @return bool
      */
     public function isApplePayExpressCheckoutEnabled(string $salesChannelId = null)
     {
-        return $this->systemConfigService->get(
+        return (bool)$this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.applePayExpressCheckoutEnabled',
             $salesChannelId
         );
@@ -285,11 +285,11 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
-     * @return array|mixed|null
+     * @return bool
      */
     public function isGooglePayExpressCheckoutEnabled(string $salesChannelId = null)
     {
-        return $this->systemConfigService->get(
+        return (bool)$this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googlePayExpressCheckoutEnabled',
             $salesChannelId
         );
@@ -309,11 +309,11 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
-     * @return array|mixed|null
+     * @return bool
      */
     public function isPayPalExpressCheckoutEnabled(string $salesChannelId = null)
     {
-        return $this->systemConfigService->get(
+        return (bool)$this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.payPalExpressCheckoutEnabled',
             $salesChannelId
         );

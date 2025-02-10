@@ -727,7 +727,7 @@ class ExpressCheckoutService
         return new SalesChannelContext(
             $salesChannelContext->getContext(),
             $token,
-            $options[SalesChannelContextService::DOMAIN_ID] ?? null,
+            null,
             $salesChannelContext->getSalesChannel(),
             $salesChannelContext->getCurrency(),
             $salesChannelContext->getCurrentCustomerGroup(),
