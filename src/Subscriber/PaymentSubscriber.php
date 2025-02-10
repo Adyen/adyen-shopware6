@@ -281,14 +281,26 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         );
 
         $expressCheckoutConfigurationAvailable = true;
-        $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
-            '-1',
-            -1,
-            $salesChannelContext
-        );
-        if (array_key_exists('error', $expressCheckoutConfiguration)) {
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+
+        // If express checkout feature is disabled, returns empty payment method response
+        if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
             $expressCheckoutConfigurationAvailable = false;
             $expressCheckoutConfiguration = [];
+        }
+
+        if ($expressCheckoutConfigurationAvailable) {
+            $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
+                '-1',
+                -1,
+                $salesChannelContext
+            );
+            if (array_key_exists('error', $expressCheckoutConfiguration)) {
+                $expressCheckoutConfigurationAvailable = false;
+                $expressCheckoutConfiguration = [];
+            }
         }
 
         $page->addExtension(
@@ -380,14 +392,26 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
 
         $expressCheckoutConfigurationAvailable = true;
-        $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
-            $productId,
-            1,
-            $salesChannelContext
-        );
-        if (array_key_exists('error', $expressCheckoutConfiguration)) {
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+
+        // If express checkout feature is disabled, returns empty payment method response
+        if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
             $expressCheckoutConfigurationAvailable = false;
             $expressCheckoutConfiguration = [];
+        }
+
+        if ($expressCheckoutConfigurationAvailable) {
+            $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
+                $productId,
+                1,
+                $salesChannelContext
+            );
+            if (array_key_exists('error', $expressCheckoutConfiguration)) {
+                $expressCheckoutConfigurationAvailable = false;
+                $expressCheckoutConfiguration = [];
+            }
         }
 
         $page->addExtension(
