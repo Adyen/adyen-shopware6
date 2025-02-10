@@ -27,6 +27,7 @@ namespace Adyen\Shopware\Subscriber;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\ExpressCheckoutService;
 use Adyen\Shopware\Service\PaymentMethodsFilterService;
 use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentStateDataService;
@@ -55,6 +56,8 @@ use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPage;
 use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Register\CheckoutRegisterPageLoadedEvent;
 use Shopware\Storefront\Page\PageLoadedEvent;
+use Shopware\Storefront\Page\Product\ProductPage;
+use Shopware\Storefront\Page\Product\ProductPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -92,6 +95,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @var PaymentMethodsService
      */
     private $paymentMethodsService;
+
+    /**
+     * @var ExpressCheckoutService
+     */
+    private $expressCheckoutService;
 
     /**
      * @var RequestStack $requestStack
@@ -165,6 +173,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         PaymentMethodsService $paymentMethodsService,
+        ExpressCheckoutService $expressCheckoutService,
         RequestStack $requestStack,
         $cartPersister,
         CartCalculator $cartCalculator,
@@ -181,6 +190,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->salesChannelRepository = $salesChannelRepository;
         $this->configurationService = $configurationService;
         $this->paymentMethodsService = $paymentMethodsService;
+        $this->expressCheckoutService = $expressCheckoutService;
         $this->requestStack = $requestStack;
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
@@ -200,6 +210,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             CheckoutCartPageLoadedEvent::class => 'onShoppingCartLoaded',
             OffcanvasCartPageLoadedEvent::class => 'onShoppingCartLoaded',
             CheckoutRegisterPageLoadedEvent::class => 'onShoppingCartLoaded',
+            ProductPageLoadedEvent::class => 'onProductPageLoaded',
             CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             AccountEditOrderPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
             RequestEvent::class => 'onKernelRequest',
@@ -233,6 +244,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $currencySymbol = $salesChannelContext->getCurrency()->getSymbol();
         $amountInMinorUnits = $this->currency->sanitize($page->getCart()->getPrice()->getTotalPrice(), $currency);
 
+        $userLoggedIn = $salesChannelContext->getCustomer() && !$salesChannelContext->getCustomer()->getGuest();
+
+        $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+
         //Filter Payment Methods
         $shopwarePaymentMethods = null;
         if ($page instanceof CheckoutCartPage) {
@@ -264,10 +280,36 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $page->getCart()->getPrice()->getTotalPrice()
         );
 
+        $expressCheckoutConfigurationAvailable = true;
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+
+        // If express checkout feature is disabled, returns empty payment method response
+        if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
+            $expressCheckoutConfigurationAvailable = false;
+            $expressCheckoutConfiguration = [];
+        }
+
+        if ($expressCheckoutConfigurationAvailable) {
+            $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
+                '-1',
+                -1,
+                $salesChannelContext
+            );
+            if (array_key_exists('error', $expressCheckoutConfiguration)) {
+                $expressCheckoutConfigurationAvailable = false;
+                $expressCheckoutConfiguration = [];
+            }
+        }
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
-                array_merge($this->getComponentData($salesChannelContext), [
+                array_merge(
+                    $this->getComponentData($salesChannelContext),
+                    [
+                    'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
                     'giftcards' => $giftcards,
                     'totalPrice' => $page->getCart()->getPrice()->getTotalPrice(),
                     'totalInMinorUnits' => $amountInMinorUnits,
@@ -282,7 +324,143 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
                     'fetchRedeemedGiftcardsUrl' => $this->router
                         ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
-                ])
+                    'expressCheckoutConfigUrl' =>
+                        $this->router->generate('payment.adyen.proxy-express-checkout-config'),
+                    'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                    'checkoutOrderExpressUrl' => $this->router->generate(
+                        'payment.adyen.proxy-checkout-order-express-product'
+                    ),
+                    'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
+                    'paymentHandleExpressUrl' => $this->router->generate(
+                        'payment.adyen.proxy-handle-payment-express-product'
+                    ),
+                    'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
+                    'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
+                    'paymentFinishUrl' => $this->router->generate(
+                        'frontend.checkout.finish.page',
+                        ['orderId' => '']
+                    ),
+                    'googleMerchantId' => $this->configurationService
+                        ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                    'gatewayMerchantId' => $this->configurationService
+                        ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                    'paymentErrorUrl' => $this->router->generate(
+                        'frontend.checkout.finish.page',
+                        [
+                            'orderId' => '',
+                            'changedPayment' => false,
+                            'paymentFailed' => true,
+                        ]
+                    ),
+                    'cancelOrderTransactionUrl' => $this->router->generate(
+                        'payment.adyen.proxy-cancel-order-transaction',
+                    ),
+                    'expressCheckoutUpdatePaypalOrderUrl' =>
+                        $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
+                    'amount' => $amountInMinorUnits,
+                    'countryCode' => $this->expressCheckoutService->getCountryCode(
+                        $salesChannelContext->getCustomer(),
+                        $salesChannelContext
+                    ),
+                    'userLoggedIn' => json_encode($userLoggedIn),
+                     'affiliateCode' => $affiliateCode,
+                     'campaignCode' => $campaignCode,
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
+                    ],
+                    $expressCheckoutConfiguration
+                )
+            )
+        );
+    }
+
+    /**
+     * @param PageLoadedEvent $event
+     *
+     * @return void
+     *
+     */
+    public function onProductPageLoaded(PageLoadedEvent $event): void
+    {
+        /** @var ProductPage $page */
+        $page = $event->getPage();
+        $salesChannelContext = $event->getSalesChannelContext();
+        $productId = $page->getProduct()->getId();
+
+        $userLoggedIn = $salesChannelContext->getCustomer() && !$salesChannelContext->getCustomer()->getGuest();
+
+        $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
+        $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+
+        $expressCheckoutConfigurationAvailable = true;
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+
+        // If express checkout feature is disabled, returns empty payment method response
+        if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
+            $expressCheckoutConfigurationAvailable = false;
+            $expressCheckoutConfiguration = [];
+        }
+
+        if ($expressCheckoutConfigurationAvailable) {
+            $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
+                $productId,
+                1,
+                $salesChannelContext
+            );
+            if (array_key_exists('error', $expressCheckoutConfiguration)) {
+                $expressCheckoutConfigurationAvailable = false;
+                $expressCheckoutConfiguration = [];
+            }
+        }
+
+        $page->addExtension(
+            self::ADYEN_DATA_EXTENSION_ID,
+            new ArrayEntity(
+                array_merge(
+                    $this->getComponentData($salesChannelContext),
+                    [
+                    'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
+                    'expressCheckoutConfigUrl' =>
+                        $this->router->generate('payment.adyen.proxy-express-checkout-config'),
+                    'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                    'checkoutOrderExpressUrl' => $this->router->generate(
+                        'payment.adyen.proxy-checkout-order-express-product'
+                    ),
+                    'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
+                    'paymentHandleExpressUrl' => $this->router->generate(
+                        'payment.adyen.proxy-handle-payment-express-product'
+                    ),
+                    'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
+                    'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
+                    'paymentFinishUrl' => $this->router->generate(
+                        'frontend.checkout.finish.page',
+                        ['orderId' => '']
+                    ),
+                    'paymentErrorUrl' => $this->router->generate(
+                        'frontend.checkout.finish.page',
+                        [
+                            'orderId' => '',
+                            'changedPayment' => false,
+                            'paymentFailed' => true,
+                        ]
+                    ),
+                    'cancelOrderTransactionUrl' => $this->router->generate(
+                        'payment.adyen.proxy-cancel-order-transaction',
+                    ),
+                    'expressCheckoutUpdatePaypalOrderUrl' =>
+                        $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
+                    'userLoggedIn' => json_encode($userLoggedIn),
+                    'affiliateCode' => $affiliateCode,
+                    'campaignCode' => $campaignCode,
+                    'googleMerchantId' => $this->configurationService
+                        ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                    'gatewayMerchantId' => $this->configurationService
+                        ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                    'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
+                    ],
+                    $expressCheckoutConfiguration
+                )
             )
         );
     }
@@ -390,7 +568,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'giftcardDiscount' => $giftcardDetails['giftcardDiscount'],
                         'currencySymbol' => $currencySymbol,
                         'payInFullWithGiftcard' => $payInFullWithGiftcard,
-                        'storedPaymentMethods' =>  $paymentMethodsArray['storedPaymentMethods'] ?? [],
+                        'storedPaymentMethods' => $paymentMethodsArray['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
                         'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),
                         'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
@@ -403,6 +581,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
                         'companyName' => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCompany(),
+                        'googleMerchantId' => $this->configurationService
+                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                        'gatewayMerchantId' => $this->configurationService
+                            ->getMerchantAccount($salesChannelContext->getSalesChannelId())
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )

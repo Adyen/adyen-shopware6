@@ -80,8 +80,26 @@ export default {
                 try {
                     response = JSON.parse(response);
                     if (response.isFinal) {
-                        location.href = plugin.returnUrl;
+                        window.location.href = plugin.returnUrl;
+
+                        return;
                     }
+
+                    if (!response.action) {
+                        window.location.reload();
+
+                        return;
+                    }
+
+                    if (response.pspReference) {
+                        plugin.pspReference = response.pspReference;
+                    }
+
+                    plugin.paymentData = null;
+                    if (response.action.paymentData) {
+                        plugin.paymentData = response.action.paymentData;
+                    }
+
                     // Load Paypal popup window with component.handleAction
                     this.handleAction(response.action);
                 } catch (e) {

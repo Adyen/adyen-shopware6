@@ -25,6 +25,9 @@
 namespace Adyen\Shopware\Controller\StoreApi\Payment;
 
 use Adyen\Model\Checkout\PaymentDetailsRequest;
+use Adyen\Shopware\Exception\ResolveCountryException;
+use Adyen\Shopware\Exception\ResolveShippingMethodException;
+use Adyen\Shopware\Service\ExpressCheckoutService;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
@@ -110,6 +113,9 @@ class PaymentController
      * @var ConfigurationService
      */
     private $configurationService;
+
+    /** @var ExpressCheckoutService */
+    private $expressCheckoutService;
     /**
      * @var OrderTransactionStateHandler
      */
@@ -150,6 +156,7 @@ class PaymentController
         EntityRepository $stateMachineRepo,
         EntityRepository $orderTransactionRepository,
         ConfigurationService $configurationService,
+        ExpressCheckoutService $expressCheckoutService,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         LoggerInterface $logger
     ) {
@@ -164,6 +171,7 @@ class PaymentController
         $this->stateMachineRegistry = $stateMachineRegistry;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->configurationService = $configurationService;
+        $this->expressCheckoutService = $expressCheckoutService;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->stateMachineRepo = $stateMachineRepo;
         $this->logger = $logger;
@@ -226,11 +234,25 @@ class PaymentController
             return new JsonResponse($message, 400);
         }
 
+        $newAddress = $request->request->all()['newAddress'] ?? [];
+        $newShipping = $request->request->all()['newShipping'] ?? [];
+
         try {
+            if ($newAddress || $newShipping) {
+                $this->expressCheckoutService->updateShopOrder($request, $orderId, $context, $newAddress, $newShipping);
+            }
+
             $result = $this->paymentDetailsService->getPaymentDetails(
                 new PaymentDetailsRequest($stateData),
                 $paymentResponse->getOrderTransaction()
             );
+        } catch (ResolveCountryException|ResolveShippingMethodException $e) {
+            $this->logger->error(
+                $e->getMessage(),
+                ['orderId' => $orderId, 'paymentDetails' => $stateData]
+            );
+
+            return new JsonResponse($e->getMessage(), 400);
         } catch (PaymentFailedException $exception) {
             $message = 'Error occurred finalizing payment';
             $this->logger->error(

@@ -17,6 +17,7 @@
             <argument type="service" id="state_machine.repository"/>
             <argument type="service" id="order_transaction.repository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ExpressCheckoutService"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
@@ -38,6 +39,9 @@
             <argument key="$orderTransactionRepository" type="service" id="order_transaction.repository"/>
             <tag name="controller.service_arguments"/>
         </service>
+        <service id="Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController" autowire="true">
+            <argument type="service" id="Adyen\Shopware\Service\ExpressCheckoutService"/>
+        </service>
         <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController">
             <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <call method="setContainer">
@@ -54,6 +58,7 @@
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Payment\PaymentController"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Donate\DonateController"/>
+            <argument type="service" id="Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController"/>
             <argument type="service" id="Adyen\Shopware\Util\ShopwarePaymentTokenValidator"/>
             <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
             <call method="setContainer">

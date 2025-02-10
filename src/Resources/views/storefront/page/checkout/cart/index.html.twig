@@ -7,3 +7,11 @@
     {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
     {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
 {% endblock %}
+
+{% block page_checkout_cart_action_proceed %}
+    {{ parent() }}
+    {% if adyenFrontendData.expressCheckoutConfigurationAvailable %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
+    {% endif %}
+{% endblock %}
