@@ -25,5 +25,16 @@
         <service id="Adyen\Shopware\Service\Repository\AdyenPaymentRepository" autowire="true">
             <argument key="$repository" type="service" id="adyen_payment.repository"/>
         </service>
+        <service id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository" autowire="true">
+            <argument type="service" id="shipping_method.repository"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="country_state.repository"/>
+            <argument type="service" id="salutation.repository"/>
+            <argument type="service" id="country.repository"/>
+            <argument type="service" id="order.repository"/>
+            <argument type="service" id="order_address.repository"/>
+            <argument type="service" id="customer_address.repository"/>
+            <argument type="service" id="order_customer.repository"/>
+        </service>
     </services>
 </container>

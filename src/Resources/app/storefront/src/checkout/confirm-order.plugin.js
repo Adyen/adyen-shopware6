@@ -471,6 +471,14 @@ export default class ConfirmOrderPlugin extends Plugin {
             }
         });
 
+        if((selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay")
+            && (adyenCheckoutOptions.googleMerchantId !== "" && adyenCheckoutOptions.gatewayMerchantId !== "")) {
+            PAY_BUTTON_CONFIG.configuration = {
+                merchantId: adyenCheckoutOptions.googleMerchantId,
+                gatewayMerchantId: adyenCheckoutOptions.gatewayMerchantId
+            };
+        }
+
         const paymentMethodInstance = this.adyenCheckout.create(
             selectedPaymentMethodObject.type,
             PAY_BUTTON_CONFIG
