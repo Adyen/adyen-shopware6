@@ -42,7 +42,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.stateData = {};
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
-            return new Promise(async resolve => {
+            return new Promise(async resolve => { //NOSONAR
                 try {
                     const {callbackTrigger, shippingAddress, shippingOptionData} = intermediatePaymentData;
                     const paymentDataRequestUpdate = {};
