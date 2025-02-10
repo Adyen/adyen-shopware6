@@ -13,6 +13,7 @@
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ExpressCheckoutService"/>
             <argument type="service" id="request_stack"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>

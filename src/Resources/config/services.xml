@@ -66,6 +66,17 @@
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
         </service>
+        <service id="Adyen\Shopware\Service\ExpressCheckoutService" autowire="true">
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository" />
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsFilterService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
+            <argument>%kernel.shopware_version%</argument>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
+            <argument type="service" id="Shopware\Core\Framework\Api\Controller\ApiController"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Order\OrderConverter"/>
+        </service>
         <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
             <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
@@ -84,6 +95,8 @@
         <service id="Adyen\Shopware\Service\PaymentMethodsFilterService">
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService" />
+            <argument type="service" id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository" />
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute" />
             <argument type="service" id="payment_method.repository"/>
         </service>
