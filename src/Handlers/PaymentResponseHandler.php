@@ -374,6 +374,7 @@ class PaymentResponseHandler
         $refusalReasonCode = $paymentResponseHandlerResult->getRefusalReasonCode();
         $action = $paymentResponseHandlerResult->getAction();
         $additionalData = $paymentResponseHandlerResult->getAdditionalData();
+        $pspReference = $paymentResponseHandlerResult->getPspReference();
 
         switch ($resultCode) {
             case self::AUTHORISED:
@@ -398,7 +399,8 @@ class PaymentResponseHandler
                 return [
                     "isFinal" => false,
                     "resultCode" => $resultCode,
-                    "action" => $action
+                    "action" => $action,
+                    "pspReference" => $pspReference,
                 ];
             case self::RECEIVED:
                 return [

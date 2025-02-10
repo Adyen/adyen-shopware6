@@ -15,9 +15,6 @@ rm -rf AdyenPaymentShopware6/vendor
 # Install dependencies
 composer install --no-dev --working-dir=./AdyenPaymentShopware6
 
-# Overwrite installed.php with an empty array
-echo "<?php return array();" > AdyenPaymentShopware6/vendor/composer/installed.php
-
 # Copy original the composer.json file
 cp adyen-shopware6/composer.json AdyenPaymentShopware6/.
 
