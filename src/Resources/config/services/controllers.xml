@@ -41,12 +41,17 @@
         </service>
         <service id="Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController" autowire="true">
             <argument type="service" id="Adyen\Shopware\Service\ExpressCheckoutService"/>
+            <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Storefront\Controller\NotificationReceiverController">
-            <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
+            <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Notification\NotificationController"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Adyen\Shopware\Controller\StoreApi\Notification\NotificationController">
+            <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Storefront\Controller\FrontendProxyController">
