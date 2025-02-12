@@ -31,6 +31,11 @@ use Adyen\Webhook\Receiver\NotificationReceiver;
 use Adyen\Shopware\Exception\AuthenticationException;
 use Adyen\Shopware\Exception\ValidationException;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -52,6 +57,11 @@ class NotificationReceiverService
     private NotificationReceiver $notificationReceiver;
 
     /**
+     * @var EntityRepository
+     */
+    private EntityRepository $salesChannelRepository;
+
+    /**
      * @var LoggerInterface
      */
     private LoggerInterface $logger;
@@ -62,22 +72,26 @@ class NotificationReceiverService
      * @param ConfigurationService $configurationService
      * @param NotificationService $notificationService
      * @param NotificationReceiver $notificationReceiver
+     * @param EntityRepository $salesChannelRepository
      * @param LoggerInterface $logger
      */
     public function __construct(
         ConfigurationService $configurationService,
         NotificationService $notificationService,
         NotificationReceiver $notificationReceiver,
+        EntityRepository $salesChannelRepository,
         LoggerInterface $logger
     ) {
         $this->configurationService = $configurationService;
         $this->notificationService = $notificationService;
         $this->notificationReceiver = $notificationReceiver;
+        $this->salesChannelRepository = $salesChannelRepository;
         $this->logger = $logger;
     }
 
     /**
      * @param Request $requestObject
+     * @param string $salesChannelId
      * @return JsonResponse
      * @throws AuthenticationException
      * @throws HMACKeyValidationException
@@ -86,10 +100,9 @@ class NotificationReceiverService
      * @throws ValidationException
      * @throws \Adyen\Webhook\Exception\AuthenticationException
      */
-    public function process(Request $requestObject): JsonResponse
+    public function process(Request $requestObject, string $salesChannelId): JsonResponse
     {
         $request = $requestObject->request->all();
-        $salesChannelId = $requestObject->attributes->get('sw-sales-channel-id');
         $notificationUsername = $this->configurationService->getNotificationUsername($salesChannelId);
         $notificationPassword = $this->configurationService->getNotificationPassword($salesChannelId);
 
@@ -142,6 +155,21 @@ class NotificationReceiverService
         $this->logger->info('The result is accepted');
 
         return new JsonResponse($acceptedMessage);
+    }
+
+    /**
+     * Returns sales channel by id if it is active
+     *
+     * @param string $salesChannelId
+     *
+     * @return SalesChannelEntity|null
+     */
+    public function getActiveSalesChannelById(string $salesChannelId): ?SalesChannelEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('id', $salesChannelId));
+        $criteria->addFilter(new EqualsFilter('active', 1));
+        return  $this->salesChannelRepository->search($criteria, Context::createDefaultContext())->first();
     }
 
     /**

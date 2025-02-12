@@ -1,4 +1,4 @@
-<?php declare(strict_types=1);
+<?php
 /**
  *                       ######
  *                       ######
@@ -15,40 +15,41 @@
  *
  * Adyen Payment Module
  *
- * Copyright (c) 2020 Adyen B.V.
+ * Copyright (c) 2022 Adyen N.V.
  * This file is open source and available under the MIT license.
  * See the LICENSE file for more info.
  *
  * Author: Adyen <shopware@adyen.com>
  */
 
-namespace Adyen\Shopware\Storefront\Controller;
+namespace Adyen\Shopware\Controller\StoreApi\Notification;
 
-use Adyen\Shopware\Controller\StoreApi\Notification\NotificationController;
 use Adyen\Shopware\Exception\AuthenticationException;
 use Adyen\Shopware\Exception\ValidationException;
+use Adyen\Shopware\Service\NotificationReceiverService;
 use Adyen\Webhook\Exception\HMACKeyValidationException;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Exception\MerchantAccountCodeException;
-use Shopware\Storefront\Controller\StorefrontController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route(defaults: ['_routeScope' => ['storefront']])]
-class NotificationReceiverController extends StorefrontController
+#[Route(defaults: ['_routeScope' => ['store-api']])]
+class NotificationController
 {
-    /** @var NotificationController */
-    private NotificationController $notificationController;
+    /**
+     * @var NotificationReceiverService
+     */
+    private NotificationReceiverService $notificationReceiverService;
 
     /**
-     * NotificationReceiverController constructor.
+     * NotificationController constructor.
      *
-     * @param NotificationController $notificationReceiverService
+     * @param NotificationReceiverService $notificationReceiverService
      */
-    public function __construct(NotificationController $notificationReceiverService)
+    public function __construct(NotificationReceiverService $notificationReceiverService)
     {
-        $this->notificationController = $notificationReceiverService;
+        $this->notificationReceiverService = $notificationReceiverService;
     }
 
     /**
@@ -56,18 +57,28 @@ class NotificationReceiverController extends StorefrontController
      * @throws InvalidDataException
      * @throws ValidationException
      * @throws MerchantAccountCodeException
-     * @throws HMACKeyValidationException
      * @throws \Adyen\Webhook\Exception\AuthenticationException
+     * @throws HMACKeyValidationException
      */
     #[Route(
-        '/adyen/notification',
-        name: 'payment.adyen.notification',
-        defaults: ['csrf_protected' => false],
+        '/store-api/adyen/notification/{salesChannelId}',
+        name: 'store-api.adyen.notification',
+        defaults: ['auth_required' => false],
         methods: ['POST']
     )]
-    public function execute(Request $request): JsonResponse
-    {
-        $salesChannelId = $request->attributes->get('sw-sales-channel-id');
-        return $this->notificationController->processNotification($salesChannelId, $request);
+    public function processNotification(
+        string  $salesChannelId,
+        Request $request
+    ): JsonResponse {
+        if (is_null($this->notificationReceiverService->getActiveSalesChannelById($salesChannelId))) {
+            return new JsonResponse(
+                [
+                    'success' => false,
+                    'message' => 'Unable to process payment notifications. Invalid sales channel id is provided'
+                ]
+            );
+        }
+
+        return $this->notificationReceiverService->process($request, $salesChannelId);
     }
 }
