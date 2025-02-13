@@ -75,7 +75,8 @@ class NotificationController
                 [
                     'success' => false,
                     'message' => 'Unable to process payment notifications. Invalid sales channel id is provided'
-                ]
+                ],
+                400
             );
         }
 
