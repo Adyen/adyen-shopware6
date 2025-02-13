@@ -262,7 +262,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         ));
         $paymentMethod = $this->paymentMethodRepository->search($criteria, $salesChannelContext->getContext())->first();
         $giftcards = [];
-        if ($paymentMethod && $paymentMethod->getActive()) {
+        if ($paymentMethod && $paymentMethod->getActive() &&
+            in_array(
+                $paymentMethodId,
+                $event->getSalesChannelContext()->getSalesChannel()->getPaymentMethodIds(),
+                true
+            )
+        ) {
             $giftcards = $this->paymentMethodsFilterService->filterAdyenPaymentMethodsByType(
                 $paymentMethods->getPaymentMethods() ?? [],
                 'giftcard'
