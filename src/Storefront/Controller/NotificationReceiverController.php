@@ -24,14 +24,15 @@
 
 namespace Adyen\Shopware\Storefront\Controller;
 
-use Adyen\AdyenException;
+use Adyen\Shopware\Controller\StoreApi\Notification\NotificationController;
 use Adyen\Shopware\Exception\AuthenticationException;
-use Adyen\Shopware\Exception\HMACKeyValidationException;
-use Adyen\Shopware\Exception\MerchantAccountCodeException;
+use Adyen\Shopware\Exception\ValidationException;
+use Adyen\Webhook\Exception\HMACKeyValidationException;
+use Adyen\Webhook\Exception\InvalidDataException;
+use Adyen\Webhook\Exception\MerchantAccountCodeException;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Adyen\Shopware\Service\NotificationReceiverService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -39,17 +40,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  */
 class NotificationReceiverController extends StorefrontController
 {
-    /** @var NotificationReceiverService */
-    private $notificationReceiverService;
+    /** @var NotificationController */
+    private NotificationController $notificationController;
 
     /**
      * NotificationReceiverController constructor.
      *
-     * @param NotificationReceiverService $notificationReceiverService
+     * @param NotificationController $notificationReceiverService
      */
-    public function __construct(NotificationReceiverService $notificationReceiverService)
+    public function __construct(NotificationController $notificationReceiverService)
     {
-        $this->notificationReceiverService = $notificationReceiverService;
+        $this->notificationController = $notificationReceiverService;
     }
 
     /**
@@ -61,13 +62,16 @@ class NotificationReceiverController extends StorefrontController
      *
      * @param Request $request
      * @return JsonResponse
-     * @throws AdyenException
      * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws \Adyen\Webhook\Exception\AuthenticationException
      * @throws HMACKeyValidationException
+     * @throws InvalidDataException
      * @throws MerchantAccountCodeException
      */
     public function execute(Request $request): JsonResponse
     {
-        return $this->notificationReceiverService->process($request);
+        $salesChannelId = $request->attributes->get('sw-sales-channel-id');
+        return $this->notificationController->processNotification($salesChannelId, $request);
     }
 }
