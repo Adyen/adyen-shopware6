@@ -21,20 +21,6 @@ test.describe.parallel("Payment via credit card", () => {
         await doPrePaymentChecks(page);
     });
 
-    test("without 3Ds should succeed", async ({ page }) => {
-
-        await makeCreditCardPayment(
-            page,
-            users.regular,
-            paymentResources.masterCardWithout3D,
-            paymentResources.expDate,
-            paymentResources.cvc
-        );
-
-        await verifySuccessfulPayment(page);
-
-    });
-
     test("with 3Ds2 should succeed", async ({ page }) => {
 
         await makeCreditCardPayment(
@@ -50,6 +36,20 @@ test.describe.parallel("Payment via credit card", () => {
         );
 
         await verifySuccessfulPayment(page);
+    });
+
+    test("without 3Ds should succeed", async ({ page }) => {
+
+        await makeCreditCardPayment(
+            page,
+            users.regular,
+            paymentResources.masterCardWithout3D,
+            paymentResources.expDate,
+            paymentResources.cvc
+        );
+
+        await verifySuccessfulPayment(page);
+
     });
 
     test("with wrong 3Ds2 credentials should fail", async ({ page }) => {
