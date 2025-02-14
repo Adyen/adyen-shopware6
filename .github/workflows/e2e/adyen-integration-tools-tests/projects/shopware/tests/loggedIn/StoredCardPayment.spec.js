@@ -40,7 +40,7 @@ test.describe.parallel("Payment via stored credit card", () => {
         await verifySuccessfulPayment(page);
 
         await goToShippingWithFullCart(page);
-        await doPrePaymentChecks(page, false);
+        await doPrePaymentChecks(page);
 
         const paymentDetailPage = new PaymentDetailsPage(page);
         const storedCardSection = await paymentDetailPage.selectStoredCard();
