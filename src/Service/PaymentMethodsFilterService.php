@@ -74,9 +74,9 @@ class PaymentMethodsFilterService
     /**
      * @var AbstractPaymentMethodRoute
      */
-    private AbstractPaymentMethodRoute $paymentMethodRoute;
+    private $paymentMethodRoute;
 
-    private EntityRepository $paymentMethodRepository;
+    private $paymentMethodRepository;
 
     /**
      * PaymentMethodsFilterService constructor.
@@ -415,7 +415,7 @@ class PaymentMethodsFilterService
         $filteredMethods = array_values(
             array_filter($paymentMethods, function ($method) use ($allowedMethods) {
                 $type = $method['type'];
-                if (!$allowedMethods[$type]) {
+                if (!array_key_exists($type, $allowedMethods) || !$allowedMethods[$type]) {
                     return false;
                 }
 
