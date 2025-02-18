@@ -74,9 +74,9 @@ class PaymentMethodsFilterService
     /**
      * @var AbstractPaymentMethodRoute
      */
-    private AbstractPaymentMethodRoute $paymentMethodRoute;
+    private $paymentMethodRoute;
 
-    private EntityRepository $paymentMethodRepository;
+    private $paymentMethodRepository;
 
     /**
      * PaymentMethodsFilterService constructor.
