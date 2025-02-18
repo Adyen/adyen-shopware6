@@ -59,7 +59,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
                         const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
 
-                        const shippingMethodsArray = response.shippingMethodsResponse;
+                        const shippingMethodsArray = JSON.parse(response.shippingMethodsResponse);
                         const newShippingMethodsArray = [];
                         shippingMethodsArray.forEach((shippingMethod) => {
                             newShippingMethodsArray.push(
@@ -736,7 +736,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                             amount: (amount).toString()
                         };
 
-                        const shippingMethodsArray = responseObject.shippingMethodsResponse;
+                        const shippingMethodsArray = JSON.parse(responseObject.shippingMethodsResponse);
                         const newShippingMethodsArray = [];
                         shippingMethodsArray.forEach((shippingMethod) => {
                             newShippingMethodsArray.push(

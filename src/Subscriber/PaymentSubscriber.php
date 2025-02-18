@@ -288,6 +288,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         );
 
         $expressCheckoutConfigurationAvailable = true;
+        $expressCheckoutConfiguration = [];
         $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
         $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
         $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
@@ -295,7 +296,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
             $expressCheckoutConfigurationAvailable = false;
-            $expressCheckoutConfiguration = [];
         }
 
         if ($expressCheckoutConfigurationAvailable) {
@@ -400,6 +400,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
 
         $expressCheckoutConfigurationAvailable = true;
+        $expressCheckoutConfiguration = [];
         $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
         $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
         $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
@@ -407,7 +408,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
             $expressCheckoutConfigurationAvailable = false;
-            $expressCheckoutConfiguration = [];
         }
 
         if ($expressCheckoutConfigurationAvailable) {

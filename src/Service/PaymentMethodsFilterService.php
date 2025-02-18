@@ -415,7 +415,7 @@ class PaymentMethodsFilterService
         $filteredMethods = array_values(
             array_filter($paymentMethods, function ($method) use ($allowedMethods) {
                 $type = $method['type'];
-                if (!isset($allowedMethods[$type])) {
+                if (!array_key_exists($type, $allowedMethods) || !$allowedMethods[$type]) {
                     return false;
                 }
 
