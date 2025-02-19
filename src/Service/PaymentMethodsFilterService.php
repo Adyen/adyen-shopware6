@@ -41,7 +41,6 @@ use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -86,7 +85,7 @@ class PaymentMethodsFilterService
      * @param ExpressCheckoutRepository $expressCheckoutRepository
      * @param Currency $currency
      * @param AbstractPaymentMethodRoute $paymentMethodRoute
-     * @param EntityRepository $paymentMethodRepository
+     * @param $paymentMethodRepository
      */
     public function __construct(
         ConfigurationService       $configurationService,
