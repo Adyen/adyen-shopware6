@@ -147,7 +147,7 @@ class ExpressCheckoutService
                     $salesChannelContext
                 ),
                 'paymentMethodsResponse' => json_encode($paymentMethods),
-                'shippingMethodsResponse' =>json_encode(array_values($shippingMethods)),
+                'shippingMethodsResponse' => array_values($shippingMethods),
             ];
         } catch (ResolveCountryException $exception) {
             return [
