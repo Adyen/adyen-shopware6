@@ -41,7 +41,6 @@ use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractPaymentMethodRoute;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -74,9 +73,9 @@ class PaymentMethodsFilterService
     /**
      * @var AbstractPaymentMethodRoute
      */
-    private AbstractPaymentMethodRoute $paymentMethodRoute;
+    private $paymentMethodRoute;
 
-    private EntityRepository $paymentMethodRepository;
+    private $paymentMethodRepository;
 
     /**
      * PaymentMethodsFilterService constructor.
@@ -86,7 +85,7 @@ class PaymentMethodsFilterService
      * @param ExpressCheckoutRepository $expressCheckoutRepository
      * @param Currency $currency
      * @param AbstractPaymentMethodRoute $paymentMethodRoute
-     * @param EntityRepository $paymentMethodRepository
+     * @param $paymentMethodRepository
      */
     public function __construct(
         ConfigurationService       $configurationService,
@@ -415,7 +414,7 @@ class PaymentMethodsFilterService
         $filteredMethods = array_values(
             array_filter($paymentMethods, function ($method) use ($allowedMethods) {
                 $type = $method['type'];
-                if (!$allowedMethods[$type]) {
+                if (!array_key_exists($type, $allowedMethods) || !$allowedMethods[$type]) {
                     return false;
                 }
 
