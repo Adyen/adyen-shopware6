@@ -429,6 +429,7 @@ class ExpressCheckoutService
             $contextWithNewVersion
         );
         $cartFromOrder = $this->orderConverter->convertToCart($orderWithNewVersion, $contextWithNewVersion);
+        $cartFromOrder->setRuleIds($contextWithNewVersion->getRuleIds());
         $recalculatedCart = $this->cartService->recalculate($cartFromOrder, $updatedSalesChannelContext);
 
         $newOrderData = $this->orderConverter->convertToOrder(
@@ -481,6 +482,7 @@ class ExpressCheckoutService
         SalesChannelContext $salesChannelContext
     ) :array {
         $cart = $this->orderConverter->convertToCart($order, $salesChannelContext->getContext());
+        $cart->setRuleIds($salesChannelContext->getRuleIds());
 
         $shippingLocation = $salesChannelContext->getShippingLocation();
 

@@ -312,7 +312,7 @@ class ExpressCheckoutRepository
             $salesChannelContext->getShippingLocation()->getCountry()->getIso();
         $countryId = $this->getCountryId($countryCode, $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $countryCode) {
+        if (isset($newAddress['state']) && $newAddress['state'] && $countryCode) {
             $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
         $city = $newAddress['city'] ?? 'Adyen Guest City';
@@ -514,7 +514,7 @@ class ExpressCheckoutRepository
     ): CustomerAddressEntity {
         $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $newAddress['countryCode']) {
+        if (isset($newAddress['state']) && $newAddress['state'] && $newAddress['countryCode']) {
             $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
         }
         $city = $newAddress['city'] ?? 'Adyen Guest City';
@@ -562,7 +562,7 @@ class ExpressCheckoutRepository
         // Update customer address
         $this->customerAddressRepository->update($customerAddressData, $salesChannelContext->getContext());
 
-        if ($newAddress['email']) {
+        if (isset($newAddress['email']) && $newAddress['email']) {
             $customerData = [
                 [
                     'id' => $customer->getId(),
