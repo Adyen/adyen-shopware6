@@ -70,6 +70,14 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Online Banking Finland
  - Online Banking Poland
 
+### Support for Webhook Handling in Headless integration
+Webhook handling is supported for headless integration.
+In this case, a webhook URL needs to be created using the following structure:
+
+- Your website URL followed by `/store-api/adyen/notification/{salesChannelId}`
+
+The `salesChannelId` parameter must be a valid sales channel ID of an active sales channel.
+
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
 <a href="https://github.com/Adyen/adyen-php-api-library" target="_blank">This library can be found here</a>
