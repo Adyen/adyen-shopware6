@@ -70,6 +70,17 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Online Banking Finland
  - Online Banking Poland
 
+### Webhook Setup
+For users with sales channels that have a storefront,
+webhooks should be configured following the standard process outlined
+in the [Adyen documentation](https://docs.adyen.com/plugins/shopware-6/#set-up-webhooks).
+
+If a user has **only** headless sales channels (i.e., channels without a storefront),
+webhook support is also available.
+In this case, the webhook URL should be structured as follows:  
+Sales channel domain URL followed by `/store-api/adyen/notification/{salesChannelId}`.  
+The `salesChannelId` parameter must be a valid sales channel ID of an active sales channel.
+
 ## API Library
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
 <a href="https://github.com/Adyen/adyen-php-api-library" target="_blank">This library can be found here</a>
