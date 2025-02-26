@@ -78,7 +78,7 @@ in the [Adyen documentation](https://docs.adyen.com/plugins/shopware-6/#set-up-w
 If a user has **only** headless sales channels (i.e., channels without a storefront),
 webhook support is also available.
 In this case, the webhook URL should be structured as follows:  
-Website URL followed by `/store-api/adyen/notification/{salesChannelId}`.  
+Sales channel domain URL followed by `/store-api/adyen/notification/{salesChannelId}`.  
 The `salesChannelId` parameter must be a valid sales channel ID of an active sales channel.
 
 ## API Library
