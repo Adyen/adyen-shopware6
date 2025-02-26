@@ -17,7 +17,7 @@
             <argument type="service" id="Adyen\Shopware\Handlers\ResultHandler"/>
             <argument type="service"
                       id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
-            <argument type="service" id="router.default"/>
+            <argument type="service" id="router"/>
             <argument type="service" id="request_stack"/>
             <argument type="service" id="currency.repository"/>
             <argument type="service" id="product.repository"/>

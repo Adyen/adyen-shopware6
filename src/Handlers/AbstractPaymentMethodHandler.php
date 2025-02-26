@@ -154,7 +154,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * @var RouterInterface
      */
-    protected $symfonyRouter;
+    protected $router;
 
     /**
      * @var EntityRepository
@@ -199,7 +199,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param ResultHandler $resultHandler
      * @param OrderTransactionStateHandler $orderTransactionStateHandler
-     * @param RouterInterface $symfonyRouter
+     * @param RouterInterface $router
      * @param RequestStack $requestStack
      * @param EntityRepository $currencyRepository
      * @param EntityRepository $productRepository
@@ -218,7 +218,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         PaymentResponseHandler $paymentResponseHandler,
         ResultHandler $resultHandler,
         OrderTransactionStateHandler $orderTransactionStateHandler,
-        RouterInterface $symfonyRouter,
+        RouterInterface $router,
         RequestStack $requestStack,
         EntityRepository $currencyRepository,
         EntityRepository $productRepository,
@@ -237,7 +237,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->resultHandler = $resultHandler;
         $this->logger = $logger;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
-        $this->symfonyRouter = $symfonyRouter;
+        $this->router = $router;
         $this->requestStack = $requestStack;
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
@@ -378,7 +378,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         parse_str($query, $params);
         $token =  $params['_sw_payment_token'] ?? '';
 
-        return $this->symfonyRouter->generate(
+        return $this->router->generate(
             'payment.adyen.proxy-finalize-transaction',
             [
                 '_sw_payment_token' => $token,
