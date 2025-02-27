@@ -403,6 +403,7 @@ class PaymentResponseHandler
      * @param string $resultCode
      * @param bool $requiresManualCapture
      * @return bool
+     * @throws PaymentCancelledException
      */
     private function isTransactionHandled(
         $transactionStateTechnicalName,
@@ -432,7 +433,7 @@ class PaymentResponseHandler
                 break;
             case self::CANCELLED:
                 if ($transactionStateTechnicalName === OrderTransactionStates::STATE_CANCELLED) {
-                    return true;
+                    throw new PaymentCancelledException();
                 }
                 break;
             default:

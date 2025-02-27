@@ -365,7 +365,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         // Payment had no error, continue the process
 
         // If Bancontact mobile payment is used, redirect to proxy finalize transaction endpoint
-        if (array_key_exists('paymentMethod', $stateData) && $stateData['paymentMethod']['type'] === 'bcmc_mobile') {
+        if (array_key_exists('paymentMethod', $stateData) &&
+            in_array($stateData['paymentMethod']['type'], ['bcmc_mobile', 'twint'])) {
             return new RedirectResponse($this->getReturnUrl($transaction));
         }
 
@@ -663,7 +664,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $paymentRequest->setDeviceFingerprint($this->ratePayFingerprintParamsProvider->getToken());
         }
 
-        if ($paymentMethodType === 'bcmc_mobile') {
+        if (in_array($paymentMethodType, ['bcmc_mobile', 'twint'])) {
             $paymentRequest->setReturnUrl($this->getReturnUrl($transaction));
         } else {
             $paymentRequest->setReturnUrl($transaction->getReturnUrl());
