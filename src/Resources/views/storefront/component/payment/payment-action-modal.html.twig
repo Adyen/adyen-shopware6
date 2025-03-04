@@ -7,13 +7,19 @@
     >
         <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-body">
-                    <div class="adyen-payment-action-container" data-adyen-payment-action-container>
-                        <div class="adyen-payment-container loader" role="status">
-                            <span class="sr-only">{{ "adyen.loading"|trans }}</span>
+                {% block adyen_payment_action_modal_header %}
+                {% endblock %}
+                {% block adyen_payment_action_modal_body %}
+                    <div class="modal-body">
+                        <div class="adyen-payment-action-container" data-adyen-payment-action-container>
+                            <div class="adyen-payment-container loader" role="status">
+                                <span class="sr-only">{{ "adyen.loading"|trans }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                {% endblock %}
+                {% block adyen_payment_action_modal_footer %}
+                {% endblock %}
             </div>
         </div>
     </div>
