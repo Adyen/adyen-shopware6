@@ -307,18 +307,18 @@ class ExpressCheckoutRepository
 
         // Address data
         $addressId = Uuid::randomHex();
-        $countryCode = $newAddress['countryCode'] ??
+        $countryCode = !empty($newAddress['countryCode']) ? $newAddress['countryCode'] :
             $salesChannelContext->getShippingLocation()->getCountry()->getIso();
         $countryId = $this->getCountryId($countryCode, $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $countryCode) {
+        if (!empty($newAddress['state']) && $countryCode) {
             $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = $newAddress['city'] ?? 'Adyen Guest City';
-        $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
-        $zipcode = $newAddress['zipcode'] ?? '1111';
-        $additionalAddressLine1 = $newAddress['address2'] ?? '';
-        $additionalAddressLine2 = $newAddress['address3'] ?? '';
+        $city = !empty($newAddress['city']) ? $newAddress['city'] : 'Adyen Guest City';
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
+        $zipcode = !empty($newAddress['zipcode']) ? $newAddress['zipcode'] : '1111';
+        $additionalAddressLine1 =  !empty($newAddress['address2']) ? $newAddress['address2'] : '';
+        $additionalAddressLine2 =  !empty($newAddress['address3']) ? $newAddress['address3'] : '';
 
         $customerData = [
             [
@@ -395,10 +395,12 @@ class ExpressCheckoutRepository
         CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
     ): CustomerAddressEntity {
-        $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
+        $countryCode = !empty($newAddress['countryCode']) ? $newAddress['countryCode'] :
+            $salesChannelContext->getShippingLocation()->getCountry()->getIso();
+        $countryId = $this->getCountryId($countryCode, $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $newAddress['countryCode']) {
-            $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
+        if (!empty($newAddress['state']) && $countryCode) {
+            $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
         $city = !empty($newAddress['city']) ? $newAddress['city']  : 'Adyen Guest City';
         $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
@@ -511,18 +513,20 @@ class ExpressCheckoutRepository
         string              $customerOrderId,
         SalesChannelContext $salesChannelContext
     ): CustomerAddressEntity {
-        $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
+        $countryCode = !empty($newAddress['countryCode']) ? $newAddress['countryCode'] :
+            $salesChannelContext->getShippingLocation()->getCountry()->getIso();
+        $countryId = $this->getCountryId($countryCode, $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $newAddress['countryCode']) {
-            $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
+        if (!empty($newAddress['state']) && $countryCode) {
+            $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = $newAddress['city'] ?? 'Adyen Guest City';
-        $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
-        $zipcode = $newAddress['postalCode'] ?? '1111';
+        $city = !empty($newAddress['city']) ? $newAddress['city']  : 'Adyen Guest City';
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
+        $zipcode = !empty($newAddress['postalCode']) ? $newAddress['postalCode'] : '1111';
         $phoneNumber = $newAddress['phoneNumber'] ?? '';
 
-        $firstName = $newAddress['firstName'] ?? $customer->getFirstName();
-        $lastName = $newAddress['lastName'] ?? $customer->getLastName();
+        $firstName = !empty($newAddress['firstName']) ?  $newAddress['firstName'] : $customer->getFirstName();
+        $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : $customer->getLastName();
 
         $addressData = [
             [
@@ -561,7 +565,7 @@ class ExpressCheckoutRepository
         // Update customer address
         $this->customerAddressRepository->update($customerAddressData, $salesChannelContext->getContext());
 
-        if ($newAddress['email']) {
+        if (isset($newAddress['email']) && $newAddress['email']) {
             $customerData = [
                 [
                     'id' => $customer->getId(),
