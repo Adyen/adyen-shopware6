@@ -796,8 +796,8 @@ class ExpressCheckoutService
 
             return [
                 'id' => $method->getId(),
-                'label' => $method->getName(),
-                'description' => $method->getDescription() ?? '',
+                'label' => $method->getTranslation('name') ?? '',
+                'description' => $method->getTranslation('description') ?? '',
                 'value' => $value,
                 'currency' => $currency,
                 'selected' => $selectedShippingMethod->getId() === $method->getId(),
