@@ -16,6 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -228,28 +229,26 @@ class ExpressCheckoutRepository
      * @param SalesChannelContext $salesChannelContext The sales channel context for repository operations.
      *
      * @return string|null The ID of the state if found, or null if not found.
-     * @throws ResolveCountryException
      */
     public function getStateId(
         string              $administrativeArea,
         string              $countryCode,
         SalesChannelContext $salesChannelContext
     ): ?string {
-        $shortCode = $countryCode . '-' . $administrativeArea;
-
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('shortCode', $shortCode));
+        $criteria->addFilter(new EqualsFilter('shortCode', $administrativeArea));
+        /** @var CountryStateEntity|null $state */
         $state = $this->countryStateRepository->search($criteria, $salesChannelContext->getContext())->first();
 
         if (!$state) {
-            throw new ResolveCountryException(sprintf(
-                'State with country code "%s" and administrative area "%s" not found.',
-                $countryCode,
-                $administrativeArea
-            ));
+            $shortCode = $countryCode . '-' . $administrativeArea;
+            $criteria = new Criteria();
+            $criteria->addFilter(new EqualsFilter('shortCode', $shortCode));
+            /** @var CountryStateEntity|null $state */
+            $state = $this->countryStateRepository->search($criteria, $salesChannelContext->getContext())->first();
         }
 
-        return $state->getId();
+        return $state ? $state->getId() : null;
     }
 
     /**
