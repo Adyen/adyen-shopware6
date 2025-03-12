@@ -248,7 +248,7 @@ class ExpressCheckoutRepository
             $state = $this->countryStateRepository->search($criteria, $salesChannelContext->getContext())->first();
         }
 
-        return $state ? $state->getId() : null;
+        return $state?->getId();
     }
 
     /**
