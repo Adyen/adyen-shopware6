@@ -85,12 +85,14 @@ export default class CartPlugin extends Plugin {
     }
 
     async initializeCheckoutComponent() {
+        const { AdyenCheckout } = window.AdyenWeb;
         const { locale, clientKey, environment } = adyenCheckoutConfiguration;
 
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
             clientKey,
             environment,
+            countryCode: adyenCheckoutConfiguration.countryCode,
             amount: {
                 currency: adyenGiftcardsConfiguration.currency,
                 value: adyenGiftcardsConfiguration.totalInMinorUnits,
@@ -136,7 +138,8 @@ export default class CartPlugin extends Plugin {
         });
 
         try {
-            this.paymentMethodInstance = this.adyenCheckout.create('giftcard', giftcardConfiguration);
+            //this.paymentMethodInstance = this.adyenCheckout.create('giftcard', giftcardConfiguration);
+            this.paymentMethodInstance = new AdyenWeb.Giftcard(this.adyenCheckout, giftcardConfiguration)
             this.paymentMethodInstance.mount('#adyen-giftcard-component');
         } catch (e) {
             console.log('giftcard not available');

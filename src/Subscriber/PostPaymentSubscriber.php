@@ -25,6 +25,8 @@
 namespace Adyen\Shopware\Subscriber;
 
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\ExpressCheckoutService;
+use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
@@ -66,17 +68,24 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     private $logger;
 
     /**
+     * @var ExpressCheckoutService
+     */
+    private $expressCheckoutService;
+
+    /**
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param RouterInterface $router
      * @param LoggerInterface $logger
+     * @param ExpressCheckoutService $expressCheckoutService
      */
     public function __construct(
         SalesChannelRepository $salesChannelRepository,
         ConfigurationService $configurationService,
         Currency $currency,
         RouterInterface $router,
+        ExpressCheckoutService $expressCheckoutService,
         LoggerInterface $logger
     ) {
         $this->configurationService = $configurationService;
@@ -84,6 +93,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         $this->currency = $currency;
         $this->router = $router;
         $this->logger = $logger;
+        $this->expressCheckoutService = $expressCheckoutService;
     }
 
     /**
@@ -114,6 +124,10 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
                 ->getLanguage()->getLocale()->getCode(),
             'environment' => $this->configurationService->getEnvironment($salesChannelId),
             'orderId' => $order->getId(),
+            'countryCode' => $this->expressCheckoutService->getCountryCode(
+                $salesChannelContext->getCustomer(),
+                $salesChannelContext
+            ),
         ];
 
         if ($this->configurationService->isAdyenGivingEnabled($salesChannelId)) {

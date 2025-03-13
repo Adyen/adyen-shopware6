@@ -282,13 +282,30 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
         }
 
-        checkoutInstance.create(
-            paymentType,
-            paymentMethodConfig
-        ).mount(mountElement);
+        let PaymentMethodClass = Object.values(AdyenWeb).find(cls => {
+            if (!cls) {
+                return false;
+            }
+            if (cls.type === paymentType) {
+                return true;
+            }
+            if (Array.isArray(cls.txVariants) && cls.txVariants.includes(paymentType)) {
+                return true;
+            }
+            return false;
+        });
+
+        if (!PaymentMethodClass) {
+            console.log(`Payment method "${selectedPaymentMethodObject.type}" is not available.`);
+            return false;
+        }
+
+        const paymentMethodInstance = new PaymentMethodClass(checkoutInstance, paymentMethodConfig);
+        paymentMethodInstance.mount(mountElement);
     }
 
     async initializeCheckoutComponent(data) {
+        const { AdyenCheckout } = window.AdyenWeb;
         const {locale, clientKey, environment} = adyenCheckoutConfiguration;
 
         const ADYEN_EXPRESS_CHECKOUT_CONFIG = {
