@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Subscriber;
 
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\ExpressCheckoutService;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
@@ -72,11 +73,17 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     private OrderTransactionRepository $orderTransactionRepository;
 
     /**
+     * @var ExpressCheckoutService
+     */
+    private ExpressCheckoutService $expressCheckoutService;
+
+    /**
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param RouterInterface $router
      * @param OrderTransactionRepository $orderTransactionRepository
+     * @param ExpressCheckoutService $expressCheckoutService
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -85,6 +92,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         Currency $currency,
         RouterInterface $router,
         OrderTransactionRepository $orderTransactionRepository,
+        ExpressCheckoutService $expressCheckoutService,
         LoggerInterface $logger
     ) {
         $this->configurationService = $configurationService;
@@ -92,6 +100,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         $this->currency = $currency;
         $this->router = $router;
         $this->orderTransactionRepository = $orderTransactionRepository;
+        $this->expressCheckoutService = $expressCheckoutService;
         $this->logger = $logger;
     }
 
@@ -123,6 +132,10 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
                 ->getLanguage()->getLocale()->getCode(),
             'environment' => $this->configurationService->getEnvironment($salesChannelId),
             'orderId' => $order->getId(),
+            'countryCode' => $this->expressCheckoutService->getCountryCode(
+                $salesChannelContext->getCustomer(),
+                $salesChannelContext
+            ),
         ];
 
         if ($this->configurationService->isAdyenGivingEnabled($salesChannelId)) {
