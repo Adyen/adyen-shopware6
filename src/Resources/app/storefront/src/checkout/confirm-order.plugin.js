@@ -616,7 +616,6 @@ export default class ConfirmOrderPlugin extends Plugin {
             };
         }
 
-
         if (!isOneClick && paymentMethod.type === 'scheme' && adyenCheckoutOptions.displaySaveCreditCardOption) {
             configuration.enableStoreDetails = true;
         }
@@ -636,8 +635,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             });
 
             if (!PaymentMethodClass) {
-                console.log(`Payment method "${paymentMethod.type}" is not available.`);
-                return false;
+                PaymentMethodClass = AdyenWeb.Redirect;
             }
 
             const paymentMethodInstance = new PaymentMethodClass(this.adyenCheckout, configuration);

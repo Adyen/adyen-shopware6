@@ -77,8 +77,8 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param RouterInterface $router
-     * @param LoggerInterface $logger
      * @param ExpressCheckoutService $expressCheckoutService
+     * @param LoggerInterface $logger
      */
     public function __construct(
         SalesChannelRepository $salesChannelRepository,
@@ -92,8 +92,8 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         $this->salesChannelRepository = $salesChannelRepository;
         $this->currency = $currency;
         $this->router = $router;
-        $this->logger = $logger;
         $this->expressCheckoutService = $expressCheckoutService;
+        $this->logger = $logger;
     }
 
     /**
