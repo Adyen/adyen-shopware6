@@ -466,4 +466,28 @@ class ConfigurationService
             $salesChannelId
         );
     }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string|null
+     */
+    public function getAdyenGivingTermsAndConditionsUrl(string $salesChannelId = null): ?string
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.adyenGivingTermsAndConditions',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string|null
+     */
+    public function getTosPageId(string $salesChannelId = null): ?string
+    {
+        return $this->systemConfigService->get(
+            'core.basicInformation.tosPage',
+            $salesChannelId
+        );
+    }
 }

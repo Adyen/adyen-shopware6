@@ -28,6 +28,7 @@ use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\ExpressCheckoutService;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
+use Adyen\Shopware\Service\TermsAndConditionsService;
 use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -78,12 +79,18 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     private ExpressCheckoutService $expressCheckoutService;
 
     /**
+     * @var TermsAndConditionsService
+     */
+    private TermsAndConditionsService $termsAndConditionsService;
+
+    /**
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param RouterInterface $router
      * @param OrderTransactionRepository $orderTransactionRepository
      * @param ExpressCheckoutService $expressCheckoutService
+     * @param TermsAndConditionsService $expressCheckoutService
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -93,6 +100,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         RouterInterface $router,
         OrderTransactionRepository $orderTransactionRepository,
         ExpressCheckoutService $expressCheckoutService,
+        TermsAndConditionsService $termsAndConditionsService,
         LoggerInterface $logger
     ) {
         $this->configurationService = $configurationService;
@@ -101,6 +109,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         $this->router = $router;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->expressCheckoutService = $expressCheckoutService;
+        $this->termsAndConditionsService = $termsAndConditionsService;
         $this->logger = $logger;
     }
 
@@ -189,6 +198,24 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amounts = $this->configurationService->getAdyenGivingDonationAmounts($salesChannelId);
 
+        $termsAndConditionsUrl = $this->configurationService->getAdyenGivingTermsAndConditionsUrl($salesChannelContext->getSalesChannel()->getId());
+
+        if (empty($termsAndConditionsUrl)) {
+            $tosPageId = $this->configurationService->getTosPageId(
+                $salesChannelContext->getSalesChannel()->getId()
+            );
+
+            $termsAndConditionsPath = $this->termsAndConditionsService->getShopTermsAndConditionsPath(
+                $tosPageId,
+                $salesChannelContext
+            );
+
+            if (!empty($termsAndConditionsPath)) {
+                $baseUrl = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
+                $termsAndConditionsUrl = $baseUrl . $termsAndConditionsPath;
+            }
+        }
+
         $donationAmounts = [];
         try {
             foreach (explode(',', $amounts) as $donationAmount) {
@@ -214,7 +241,8 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
             ),
             'continueActionUrl' => $this->router->generate(
                 'frontend.home.page'
-            )
+            ),
+            'termsAndConditionsUrl' => $termsAndConditionsUrl
         ];
 
         return array_merge($frontendData, $adyenGivingData);
