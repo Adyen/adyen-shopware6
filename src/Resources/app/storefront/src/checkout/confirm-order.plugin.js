@@ -38,7 +38,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
         this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
 
-        this.minorUnitsQuotient = adyenCheckoutOptions.amount/adyenCheckoutOptions.totalPrice;
+        this.minorUnitsQuotient = adyenCheckoutOptions.amount / adyenCheckoutOptions.totalPrice;
         this.giftcardDiscount = adyenCheckoutOptions.giftcardDiscount;
         this.remainingAmount = adyenCheckoutOptions.totalPrice - this.giftcardDiscount;
         this.responseHandler = this.handlePaymentAction;
@@ -84,8 +84,8 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
-    async initializeCheckoutComponent () {
-        const { locale, clientKey, environment, merchantAccount } = adyenCheckoutConfiguration;
+    async initializeCheckoutComponent() {
+        const {locale, clientKey, environment, merchantAccount} = adyenCheckoutConfiguration;
         const paymentMethodsResponse = adyenCheckoutOptions.paymentMethodsResponse;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
@@ -111,7 +111,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
-    handleOnAdditionalDetails (state) {
+    handleOnAdditionalDetails(state) {
         this._client.post(
             `${adyenCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
@@ -163,12 +163,12 @@ export default class ConfirmOrderPlugin extends Plugin {
             this.renderStoredPaymentMethodComponents();
             return;
         }
-        if(type === 'giftcard') {
+        if (type === 'giftcard') {
             return;
         }
 
         // Get the payment method object from paymentMethodsResponse
-        let paymentMethodConfigs = this.adyenCheckout.paymentMethodsResponse.paymentMethods.filter(function(paymentMethod) {
+        let paymentMethodConfigs = this.adyenCheckout.paymentMethodsResponse.paymentMethods.filter(function (paymentMethod) {
             return paymentMethod['type'] === type;
         });
         if (paymentMethodConfigs.length === 0) {
@@ -204,7 +204,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.showSelectedStoredPaymentMethod(null, selectedId);
     }
 
-    showSelectedStoredPaymentMethod(event, selectedId=null) {
+    showSelectedStoredPaymentMethod(event, selectedId = null) {
         // Only show the component for the selected stored payment method
         this.hideStorePaymentMethodComponents();
         selectedId = event ? event.target.value : selectedId;
@@ -220,7 +220,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
     }
 
-    confirmOrder(formData, extraParams= {}) {
+    confirmOrder(formData, extraParams = {}) {
         const orderId = adyenCheckoutOptions.orderId;
         formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
         formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
@@ -249,7 +249,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         );
     }
 
-    afterCreateOrder(extraParams={}, response) {
+    afterCreateOrder(extraParams = {}, response) {
         let order;
         try {
             order = JSON.parse(response);
@@ -259,7 +259,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        if(order.url){
+        if (order.url) {
             location.href = order.url;
 
             return;
@@ -300,7 +300,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         );
     }
 
-    afterSetPayment(extraParams={}, response) {
+    afterSetPayment(extraParams = {}, response) {
         try {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
@@ -471,7 +471,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             }
         });
 
-        if((selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay")
+        if ((selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay")
             && (adyenCheckoutOptions.googleMerchantId !== "" && adyenCheckoutOptions.gatewayMerchantId !== "")) {
             PAY_BUTTON_CONFIG.configuration = {
                 merchantId: adyenCheckoutOptions.googleMerchantId,
@@ -580,7 +580,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 billingAddress: activeBillingAddress,
                 deliveryAddress: activeShippingAddress
             },
-            onSubmit: function(state, component) {
+            onSubmit: function (state, component) {
                 if (state.isValid) {
                     if (isOneClick) {
                         state.data.paymentMethod.holderName = paymentMethod.holderName ?? '';
@@ -615,7 +615,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 event.preventDefault();
                 this.el.parentNode.scrollIntoView({
                     behavior: "smooth",
-                    block:    "start",
+                    block: "start",
                 });
                 paymentMethodInstance.submit();
             }.bind(this));
@@ -626,7 +626,7 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     appendGiftcardSummary() {
-        if(parseInt(adyenCheckoutOptions.giftcardDiscount, 10) && this.shoppingCartSummaryBlock.length) {
+        if (parseInt(adyenCheckoutOptions.giftcardDiscount, 10) && this.shoppingCartSummaryBlock.length) {
             let giftcardDiscount = parseFloat(this.giftcardDiscount).toFixed(2);
             let remainingAmount = parseFloat(this.remainingAmount).toFixed(2);
 
