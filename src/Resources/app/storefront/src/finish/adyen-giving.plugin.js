@@ -36,8 +36,7 @@ export default class AdyenGivingPlugin extends Plugin {
         const { AdyenCheckout } = window.AdyenWeb;
         const { locale, clientKey, environment } = adyenCheckoutConfiguration;
         const { currency, values, backgroundUrl,
-            logoUrl, name, description, url } = adyenGivingConfiguration;
-
+            logoUrl, name, description, url, termsAndConditionsUrl } = adyenGivingConfiguration;
 
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
@@ -57,7 +56,7 @@ export default class AdyenGivingPlugin extends Plugin {
             nonprofitDescription: description,
             nonprofitName: name,
             nonprofitUrl: url,
-            termsAndConditionsUrl: "https://www.google.com", // TO DO
+            termsAndConditionsUrl: termsAndConditionsUrl,
             showCancelButton: true,
             onDonate: this.handleOnDonate.bind(this),
             onCancel: this.handleOnCancel.bind(this)
