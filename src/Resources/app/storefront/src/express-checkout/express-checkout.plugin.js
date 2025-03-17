@@ -157,7 +157,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 },
                 shippingOptionRequired: !this.userLoggedIn,
                 buttonSizeMode: "fill",
-                onAuthorized: paymentData => {
+                onAuthorized: (paymentData,actions) => {
+                    actions.resolve();
                 },
                 buttonColor: "white",
                 paymentDataCallbacks: !this.userLoggedIn ?
@@ -172,7 +173,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         if (!this.userLoggedIn) {
             this.paymentMethodSpecificConfig.paypal = {
                 isExpress: true,
-                onShopperDetails: this.onShopperDetails.bind(this),
+                onAuthorized: this.onShopperDetails.bind(this),
                 blockPayPalCreditButton: true,
                 blockPayPalPayLaterButton: true,
                 onShippingAddressChange: this.onShippingAddressChanged.bind(this),
@@ -269,6 +270,13 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
     mountElement(paymentType, checkoutInstance, mountElement) {
         let paymentMethodConfig = this.paymentMethodSpecificConfig[paymentType] || null;
+
+        let selectedPaymentMethodObject = (checkoutInstance.paymentMethodsResponse.paymentMethods
+            .filter(item => item.type === paymentType))[0];
+
+        if (paymentMethodConfig && selectedPaymentMethodObject && selectedPaymentMethodObject.configuration) {
+            paymentMethodConfig.configuration = selectedPaymentMethodObject.configuration;
+        }
 
         // If there is applepay specific configuration then set country code to configuration
         if ('applepay' === paymentType &&
