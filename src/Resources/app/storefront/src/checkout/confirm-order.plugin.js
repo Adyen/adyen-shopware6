@@ -526,10 +526,26 @@ export default class ConfirmOrderPlugin extends Plugin {
                 console.log(error);
             }
         });
-        let paymentMethodInstance = this.adyenCheckout.create(
-            selectedPaymentMethodObject.type,
-            PRE_PAY_BUTTON
-        );
+
+        let PaymentMethodClass = Object.values(AdyenWeb).find(cls => {
+            if (!cls) {
+                return false;
+            }
+            if (cls.type === selectedPaymentMethodObject.type) {
+                return true;
+            }
+            if (Array.isArray(cls.txVariants) && cls.txVariants.includes(selectedPaymentMethodObject.type)) {
+                return true;
+            }
+            return false;
+        });
+
+        if (!PaymentMethodClass) {
+            console.log(`Payment method "${selectedPaymentMethodObject.type}" is not available.`);
+            return false;
+        }
+
+        const paymentMethodInstance = new PaymentMethodClass(this.adyenCheckout, PRE_PAY_BUTTON);
         this.mountCustomPayButton(paymentMethodInstance);
     }
 
@@ -538,7 +554,26 @@ export default class ConfirmOrderPlugin extends Plugin {
         // Check for pending payment session
         if (url.searchParams.has(config.sessionKey)) {
             ElementLoadingIndicatorUtil.create(document.body);
-            const paymentMethodInstance = this.adyenCheckout.create(paymentMethodType, {
+
+            let PaymentMethodClass = Object.values(AdyenWeb).find(cls => {
+                if (!cls) {
+                    return false;
+                }
+                if (cls.type === paymentMethodType) {
+                    return true;
+                }
+                if (Array.isArray(cls.txVariants) && cls.txVariants.includes(paymentMethodType)) {
+                    return true;
+                }
+                return false;
+            });
+
+            if (!PaymentMethodClass) {
+                console.log(`Payment method "${paymentMethodType}" is not available.`);
+                return false;
+            }
+
+            const paymentMethodInstance = new PaymentMethodClass(this.adyenCheckout, {
                 [config.sessionKey]: url.searchParams.get(config.sessionKey),
                 showOrderButton: false,
                 onSubmit: function (state, component) {
@@ -551,6 +586,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                     }
                 }.bind(this),
             });
+
             this.mountCustomPayButton(paymentMethodInstance);
             paymentMethodInstance.submit();
         }
