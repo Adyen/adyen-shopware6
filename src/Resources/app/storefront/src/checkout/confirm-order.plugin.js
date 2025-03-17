@@ -35,8 +35,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
-        this.confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
-        this.checkoutMainContent = DomAccess.querySelector(document, '#content-main');
+        this.checkoutMainContent = DomAccess.querySelector(document, '.content-main');
         this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
 
         this.minorUnitsQuotient = adyenCheckoutOptions.amount/adyenCheckoutOptions.totalPrice;
@@ -128,7 +127,8 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     onConfirmOrderSubmit(event) {
-        if (event.target !== this.confirmFormSubmit) {
+        const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
+        if (event.target !== confirmFormSubmit) {
             return;
         }
 
@@ -613,7 +613,8 @@ export default class ConfirmOrderPlugin extends Plugin {
             const paymentMethodInstance = this.adyenCheckout.create(paymentMethod.type, configuration);
             paymentMethodInstance.mount(componentSelector);
             this.checkoutMainContent.addEventListener('click', function (event) {
-                if (event.target !== this.confirmFormSubmit) {
+                const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
+                if (event.target !== confirmFormSubmit) {
                     return;
                 }
 
