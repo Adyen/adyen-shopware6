@@ -157,8 +157,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 },
                 shippingOptionRequired: !this.userLoggedIn,
                 buttonSizeMode: "fill",
-                onAuthorized: (paymentData,actions) => {
-                    actions.resolve();
+                onAuthorized: (paymentData, actions) => {
+                    actions.resolve({});
                 },
                 buttonColor: "white",
                 paymentDataCallbacks: !this.userLoggedIn ?
@@ -343,7 +343,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 componentWithPayButton.onError(error, component, this);
                 console.log(error);
             },
-            onSubmit: function (state, component) {
+            onSubmit: function (state, component, actions) {
                 if (!state.isValid) {
                     return;
                 }
@@ -386,28 +386,34 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     stateData: JSON.stringify(state.data)
                 };
 
-                this.createOrder(JSON.stringify(requestData), extraParams);
+                this.createOrder(JSON.stringify(requestData), extraParams, actions);
             }.bind(this)
         };
 
         return Promise.resolve(await AdyenCheckout(ADYEN_EXPRESS_CHECKOUT_CONFIG));
     }
 
-    createOrder(requestData, extraParams) {
-        this._client.post(
-            adyenExpressCheckoutOptions.checkoutOrderExpressUrl,
-            requestData,
-            this.afterCreateOrder.bind(this, extraParams)
-        );
+    createOrder(requestData, extraParams, actions) {
+        try {
+            this._client.post(
+                adyenExpressCheckoutOptions.checkoutOrderExpressUrl,
+                requestData,
+                this.afterCreateOrder.bind(this, extraParams, actions)
+            );
+        } catch (error) {
+            console.error("Error in createOrder:", error);
+            actions.reject({});
+        }
     }
 
-    afterCreateOrder(extraParams = {}, response) {
+    afterCreateOrder(extraParams = {}, actions, response) {
         let order;
         try {
             order = JSON.parse(response);
         } catch (error) {
             ElementLoadingIndicatorUtil.remove(document.body);
-            console.log('Error: invalid response from Shopware API', response);
+            console.log(error);
+            actions.reject({});
             return;
         }
 
@@ -442,28 +448,37 @@ export default class ExpressCheckoutPlugin extends Plugin {
             params[property] = extraParams[property];
         }
 
-        this._client.post(
-            adyenExpressCheckoutOptions.paymentHandleExpressUrl,
-            JSON.stringify(params),
-            this.afterPayOrder.bind(this, this.orderId),
-        );
+        try {
+            this._client.post(
+                adyenExpressCheckoutOptions.paymentHandleExpressUrl,
+                JSON.stringify(params),
+                this.afterPayOrder.bind(this, this.orderId, actions),
+            );
+        } catch (error) {
+            console.error("Error in afterCreateOrder:", error);
+            actions.reject({});
+        }
     }
 
-    afterPayOrder(orderId, response) {
+    afterPayOrder(orderId, actions, response) {
         try {
             response = JSON.parse(response);
             this.returnUrl = response.redirectUrl;
-        } catch (e) {
+        } catch (error) {
             ElementLoadingIndicatorUtil.remove(document.body);
-            console.log('Error: invalid response from Shopware API', response);
+            console.log(error);
+            actions.reject({});
             return;
         }
 
         // If payment call returns the errorUrl, then no need to proceed further.
         // Redirect to error page.
         if (this.returnUrl === this.errorUrl.toString()) {
+            actions.reject({});
             location.href = this.returnUrl;
         }
+
+        actions.resolve({});
 
         try {
             this._client.post(
@@ -471,8 +486,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 JSON.stringify({'orderId': orderId}),
                 this.responseHandler.bind(this),
             );
-        } catch (e) {
-            console.log(e);
+        } catch (error) {
+            console.log(error);
+            actions.reject({});
         }
     }
 
@@ -482,12 +498,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
             if (paymentResponse.isFinal || paymentResponse.action.type === 'voucher') {
                 location.href = this.returnUrl;
             }
-        } catch (e) {
-            console.log(e);
+        } catch (error) {
+            console.log(error);
         }
     }
 
-    handleOnAdditionalDetails(state) {
+    handleOnAdditionalDetails(state, component, actions) {
         this._client.post(
             `${adyenExpressCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({
@@ -499,9 +515,10 @@ export default class ExpressCheckoutPlugin extends Plugin {
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     location.href = this.errorUrl.toString();
+                    actions.reject({});
                     return;
                 }
-
+                actions.resolve({});
                 this.responseHandler(paymentResponse);
             }.bind(this)
         );
@@ -682,7 +699,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             email: this.email
         };
 
-        this.createOrder(JSON.stringify(requestData), extraParams);
+        this.createOrder(JSON.stringify(requestData), extraParams, { resolve, reject });
     }
 
     // Callback for ApplePay payment method
