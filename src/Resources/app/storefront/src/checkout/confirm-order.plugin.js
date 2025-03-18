@@ -101,16 +101,18 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
-    handleOnAdditionalDetails (state) {
+    handleOnAdditionalDetails (state, component, actions) {
         this._client.post(
             `${adyenCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     location.href = this.errorUrl.toString();
+                    actions.reject({});
                     return;
                 }
 
+                actions.resolve({});
                 this.responseHandler(paymentResponse);
             }.bind(this)
         );
@@ -210,42 +212,51 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
     }
 
-    confirmOrder(formData, extraParams= {}) {
+    confirmOrder(formData, extraParams= {}, actions = {}) {
         const orderId = adyenCheckoutOptions.orderId;
         formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
         formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
         if (!!orderId) { //Only used if the order is being edited
-            this.updatePayment(formData, orderId, extraParams)
+            this.updatePayment(formData, orderId, extraParams, actions)
         } else {
-            this.createOrder(formData, extraParams);
+            this.createOrder(formData, extraParams, actions);
         }
     }
 
-    updatePayment(formData, orderId, extraParams) {
+    updatePayment(formData, orderId, extraParams, actions) {
         formData.set('orderId', orderId);
-
-        this._client.post(
-            adyenCheckoutOptions.updatePaymentUrl,
-            formData,
-            this.afterSetPayment.bind(this, extraParams)
-        );
+        try {
+            this._client.post(
+                adyenCheckoutOptions.updatePaymentUrl,
+                formData,
+                this.afterSetPayment.bind(this, extraParams, actions)
+            );
+        } catch (e) {
+            console.log(e);
+            if(actions.reject) {
+                actions.reject({});
+            }
+        }
     }
 
-    createOrder(formData, extraParams) {
+    createOrder(formData, extraParams, actions) {
         this._client.post(
             adyenCheckoutOptions.checkoutOrderUrl,
             formData,
-            this.afterCreateOrder.bind(this, extraParams)
+            this.afterCreateOrder.bind(this, extraParams, actions)
         );
     }
 
-    afterCreateOrder(extraParams={}, response) {
+    afterCreateOrder(extraParams={}, actions, response) {
         let order;
         try {
             order = JSON.parse(response);
         } catch (error) {
             ElementLoadingIndicatorUtil.remove(document.body);
-            console.log('Error: invalid response from Shopware API', response);
+            console.log(error);
+            if (actions.reject) {
+                actions.reject({});
+            }
             return;
         }
 
@@ -283,41 +294,61 @@ export default class ConfirmOrderPlugin extends Plugin {
             params[property] = extraParams[property];
         }
 
-        this._client.post(
-            adyenCheckoutOptions.paymentHandleUrl,
-            JSON.stringify(params),
-            this.afterPayOrder.bind(this, this.orderId),
-        );
+        try {
+            this._client.post(
+                adyenCheckoutOptions.paymentHandleUrl,
+                JSON.stringify(params),
+                this.afterPayOrder.bind(this, this.orderId, actions),
+            );
+        } catch (error) {
+            console.error("Error in afterCreateOrder:", error);
+            if (actions.reject) {
+                actions.reject({});
+            }
+        }
     }
 
-    afterSetPayment(extraParams={}, response) {
+    afterSetPayment(extraParams={}, actions, response) {
         try {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
-                this.afterCreateOrder(extraParams,
+                this.afterCreateOrder(extraParams, actions,
                     JSON.stringify({id: adyenCheckoutOptions.orderId}));
             }
-        } catch (e) {
+        } catch (error) {
             ElementLoadingIndicatorUtil.remove(document.body);
-            console.log('Error: invalid response from Shopware API', response);
+            console.log(error);
+            if (actions.reject) {
+                actions.reject({});
+            }
             return;
         }
     }
 
-    afterPayOrder(orderId, response) {
+    afterPayOrder(orderId, actions, response) {
         try {
             response = JSON.parse(response);
             this.returnUrl = response.redirectUrl;
-        } catch (e) {
+        } catch (error) {
             ElementLoadingIndicatorUtil.remove(document.body);
-            console.log('Error: invalid response from Shopware API', response);
+            console.log(error);
+            if (actions.reject) {
+                actions.reject({});
+            }
             return;
         }
 
         // If payment call returns the errorUrl, then no need to proceed further.
         // Redirect to error page.
         if (this.returnUrl === this.errorUrl.toString()) {
+            if (actions.reject) {
+                actions.reject({});
+            }
             location.href = this.returnUrl;
+        }
+
+        if (actions.resolve) {
+            actions.resolve({});
         }
 
         try {
@@ -418,7 +449,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 }
                 ElementLoadingIndicatorUtil.create(document.body);
             },
-            onSubmit: function (state, component) {
+            onSubmit: function (state, component, actions) {
                 if (state.isValid) {
                     let extraParams = {
                         stateData: JSON.stringify(state.data)
@@ -429,7 +460,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                         this.responseHandler = componentConfig.responseHandler.bind(component, this);
                     }
 
-                    this.confirmOrder(formData, extraParams);
+                    this.confirmOrder(formData, extraParams, actions);
                 } else {
                     component.showValidation();
                     if (this.adyenCheckout.options.environment === 'test') {
@@ -576,13 +607,13 @@ export default class ConfirmOrderPlugin extends Plugin {
             const paymentMethodInstance = new PaymentMethodClass(this.adyenCheckout, {
                 [config.sessionKey]: url.searchParams.get(config.sessionKey),
                 showOrderButton: false,
-                onSubmit: function (state, component) {
+                onSubmit: function (state, component, actions) {
                     if (state.isValid) {
                         let extraParams = {
                             stateData: JSON.stringify(state.data)
                         };
                         let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
-                        this.confirmOrder(formData, extraParams);
+                        this.confirmOrder(formData, extraParams, actions);
                     }
                 }.bind(this),
             });
@@ -621,7 +652,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 billingAddress: activeBillingAddress,
                 deliveryAddress: activeShippingAddress
             },
-            onSubmit: function(state, component) {
+            onSubmit: function(state, component, actions) {
                 if (state.isValid) {
                     if (isOneClick) {
                         state.data.paymentMethod.holderName = paymentMethod.holderName ?? '';
@@ -632,7 +663,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                     };
                     let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
                     ElementLoadingIndicatorUtil.create(document.body);
-                    this.confirmOrder(formData, extraParams);
+                    this.confirmOrder(formData, extraParams, actions);
                 } else {
                     component.showValidation();
                     if (this.adyenCheckout.options.environment === 'test') {
