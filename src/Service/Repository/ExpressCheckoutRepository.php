@@ -22,6 +22,10 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class ExpressCheckoutRepository
 {
+    private const  DEFAULT_ADYEN_GUEST_CITY = 'Adyen Guest City';
+
+    private const  DEFAULT_ADYEN_GUEST_STREET = 'Adyen Guest Street 1';
+
     /**
      * @var EntityRepository
      */
@@ -314,8 +318,8 @@ class ExpressCheckoutRepository
         if (!empty($newAddress['state']) && $countryCode) {
             $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = !empty($newAddress['city']) ? $newAddress['city'] : 'Adyen Guest City';
-        $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
+        $city = !empty($newAddress['city']) ? $newAddress['city'] : self::DEFAULT_ADYEN_GUEST_CITY;
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : self::DEFAULT_ADYEN_GUEST_STREET;
         $zipcode = !empty($newAddress['zipcode']) ? $newAddress['zipcode'] : '1111';
         $additionalAddressLine1 =  !empty($newAddress['address2']) ? $newAddress['address2'] : '';
         $additionalAddressLine2 =  !empty($newAddress['address3']) ? $newAddress['address3'] : '';
@@ -402,8 +406,8 @@ class ExpressCheckoutRepository
         if (!empty($newAddress['state']) && $countryCode) {
             $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = !empty($newAddress['city']) ? $newAddress['city']  : 'Adyen Guest City';
-        $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
+        $city = !empty($newAddress['city']) ? $newAddress['city']  : self::DEFAULT_ADYEN_GUEST_CITY;
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : self::DEFAULT_ADYEN_GUEST_STREET;
         $zipcode = !empty($newAddress['postalCode']) ? $newAddress['postalCode'] : '1111';
         $phoneNumber = $newAddress['phoneNumber'] ?? '';
 
@@ -520,8 +524,8 @@ class ExpressCheckoutRepository
         if (!empty($newAddress['state']) && $countryCode) {
             $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = !empty($newAddress['city']) ? $newAddress['city']  : 'Adyen Guest City';
-        $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
+        $city = !empty($newAddress['city']) ? $newAddress['city']  : self::DEFAULT_ADYEN_GUEST_CITY;
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : self::DEFAULT_ADYEN_GUEST_STREET;
         $zipcode = !empty($newAddress['postalCode']) ? $newAddress['postalCode'] : '1111';
         $phoneNumber = $newAddress['phoneNumber'] ?? '';
 
