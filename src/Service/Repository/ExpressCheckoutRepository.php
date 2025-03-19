@@ -16,11 +16,16 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class ExpressCheckoutRepository
 {
+    private const  DEFAULT_ADYEN_GUEST_CITY = 'Adyen Guest City';
+
+    private const  DEFAULT_ADYEN_GUEST_STREET = 'Adyen Guest Street 1';
+
     /**
      * @var EntityRepository
      */
@@ -228,28 +233,26 @@ class ExpressCheckoutRepository
      * @param SalesChannelContext $salesChannelContext The sales channel context for repository operations.
      *
      * @return string|null The ID of the state if found, or null if not found.
-     * @throws ResolveCountryException
      */
     public function getStateId(
         string              $administrativeArea,
         string              $countryCode,
         SalesChannelContext $salesChannelContext
     ): ?string {
-        $shortCode = $countryCode . '-' . $administrativeArea;
-
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('shortCode', $shortCode));
+        $criteria->addFilter(new EqualsFilter('shortCode', $administrativeArea));
+        /** @var CountryStateEntity|null $state */
         $state = $this->countryStateRepository->search($criteria, $salesChannelContext->getContext())->first();
 
         if (!$state) {
-            throw new ResolveCountryException(sprintf(
-                'State with country code "%s" and administrative area "%s" not found.',
-                $countryCode,
-                $administrativeArea
-            ));
+            $shortCode = $countryCode . '-' . $administrativeArea;
+            $criteria = new Criteria();
+            $criteria->addFilter(new EqualsFilter('shortCode', $shortCode));
+            /** @var CountryStateEntity|null $state */
+            $state = $this->countryStateRepository->search($criteria, $salesChannelContext->getContext())->first();
         }
 
-        return $state->getId();
+        return $state?->getId();
     }
 
     /**
@@ -308,18 +311,18 @@ class ExpressCheckoutRepository
 
         // Address data
         $addressId = Uuid::randomHex();
-        $countryCode = $newAddress['countryCode'] ??
+        $countryCode = !empty($newAddress['countryCode']) ? $newAddress['countryCode'] :
             $salesChannelContext->getShippingLocation()->getCountry()->getIso();
         $countryId = $this->getCountryId($countryCode, $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $countryCode) {
+        if (!empty($newAddress['state']) && $countryCode) {
             $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = $newAddress['city'] ?? 'Adyen Guest City';
-        $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
-        $zipcode = $newAddress['zipcode'] ?? '1111';
-        $additionalAddressLine1 = $newAddress['address2'] ?? '';
-        $additionalAddressLine2 = $newAddress['address3'] ?? '';
+        $city = !empty($newAddress['city']) ? $newAddress['city'] : self::DEFAULT_ADYEN_GUEST_CITY;
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : self::DEFAULT_ADYEN_GUEST_STREET;
+        $zipcode = !empty($newAddress['zipcode']) ? $newAddress['zipcode'] : '1111';
+        $additionalAddressLine1 =  !empty($newAddress['address2']) ? $newAddress['address2'] : '';
+        $additionalAddressLine2 =  !empty($newAddress['address3']) ? $newAddress['address3'] : '';
 
         $customerData = [
             [
@@ -396,13 +399,15 @@ class ExpressCheckoutRepository
         CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
     ): CustomerAddressEntity {
-        $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
+        $countryCode = !empty($newAddress['countryCode']) ? $newAddress['countryCode'] :
+            $salesChannelContext->getShippingLocation()->getCountry()->getIso();
+        $countryId = $this->getCountryId($countryCode, $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $newAddress['countryCode']) {
-            $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
+        if (!empty($newAddress['state']) && $countryCode) {
+            $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = !empty($newAddress['city']) ? $newAddress['city']  : 'Adyen Guest City';
-        $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
+        $city = !empty($newAddress['city']) ? $newAddress['city']  : self::DEFAULT_ADYEN_GUEST_CITY;
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : self::DEFAULT_ADYEN_GUEST_STREET;
         $zipcode = !empty($newAddress['postalCode']) ? $newAddress['postalCode'] : '1111';
         $phoneNumber = $newAddress['phoneNumber'] ?? '';
 
@@ -512,18 +517,20 @@ class ExpressCheckoutRepository
         string              $customerOrderId,
         SalesChannelContext $salesChannelContext
     ): CustomerAddressEntity {
-        $countryId = $this->getCountryId($newAddress['countryCode'], $salesChannelContext);
+        $countryCode = !empty($newAddress['countryCode']) ? $newAddress['countryCode'] :
+            $salesChannelContext->getShippingLocation()->getCountry()->getIso();
+        $countryId = $this->getCountryId($countryCode, $salesChannelContext);
         $stateID = null;
-        if ($newAddress['state'] && $newAddress['countryCode']) {
-            $stateID = $this->getStateId($newAddress['state'], $newAddress['countryCode'], $salesChannelContext);
+        if (!empty($newAddress['state']) && $countryCode) {
+            $stateID = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = $newAddress['city'] ?? 'Adyen Guest City';
-        $street = $newAddress['street'] ?? 'Adyen Guest Street 1';
-        $zipcode = $newAddress['postalCode'] ?? '1111';
+        $city = !empty($newAddress['city']) ? $newAddress['city']  : self::DEFAULT_ADYEN_GUEST_CITY;
+        $street = !empty($newAddress['street']) ? $newAddress['street'] : self::DEFAULT_ADYEN_GUEST_STREET;
+        $zipcode = !empty($newAddress['postalCode']) ? $newAddress['postalCode'] : '1111';
         $phoneNumber = $newAddress['phoneNumber'] ?? '';
 
-        $firstName = $newAddress['firstName'] ?? $customer->getFirstName();
-        $lastName = $newAddress['lastName'] ?? $customer->getLastName();
+        $firstName = !empty($newAddress['firstName']) ?  $newAddress['firstName'] : $customer->getFirstName();
+        $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : $customer->getLastName();
 
         $addressData = [
             [
@@ -562,7 +569,7 @@ class ExpressCheckoutRepository
         // Update customer address
         $this->customerAddressRepository->update($customerAddressData, $salesChannelContext->getContext());
 
-        if ($newAddress['email']) {
+        if (isset($newAddress['email']) && $newAddress['email']) {
             $customerData = [
                 [
                     'id' => $customer->getId(),
