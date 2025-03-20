@@ -211,7 +211,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     /**
      * @param array $frontendData
      * @param OrderEntity $order
-     * @return void
+     * @return array
      */
     private function setOrderProcessingNotification(array $frontendData, OrderEntity $order): array
     {
