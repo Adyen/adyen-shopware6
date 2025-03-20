@@ -198,25 +198,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amounts = $this->configurationService->getAdyenGivingDonationAmounts($salesChannelId);
 
-        $termsAndConditionsUrl = $this->configurationService->getAdyenGivingTermsAndConditionsUrl(
-            $salesChannelContext->getSalesChannel()->getId()
-        );
-
-        if (empty($termsAndConditionsUrl)) {
-            $tosPageId = $this->configurationService->getTosPageId(
-                $salesChannelContext->getSalesChannel()->getId()
-            );
-
-            $termsAndConditionsPath = $this->termsAndConditionsService->getShopTermsAndConditionsPath(
-                $tosPageId,
-                $salesChannelContext
-            );
-
-            if (!empty($termsAndConditionsPath)) {
-                $baseUrl = $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
-                $termsAndConditionsUrl = $baseUrl . $termsAndConditionsPath;
-            }
-        }
+        $termsAndConditionsUrl = $this->termsAndConditionsService->getTermsAndConditionsUrl($salesChannelContext);
 
         $donationAmounts = [];
         try {
