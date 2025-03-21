@@ -2,6 +2,9 @@
     "adyen": {
         "updateDetails": "Zahlungsdetails aktualisieren",
         "loading": "Laden...",
+        "notification": {
+            "message": "Ihre Bestellung wird bearbeitet!"
+        },
         "paymentMethodSelectionError": "Leider ist beim Speichern der Auswahl der Zahlungsmethode ein Fehler aufgetreten. Bitte wählen Sie eine andere Zahlungsmethode.",
         "giftcard": {
             "addGiftcards": "Geschenkkarten hinzufügen",
