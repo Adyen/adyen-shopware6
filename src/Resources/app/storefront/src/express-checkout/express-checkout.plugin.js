@@ -290,25 +290,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
         }
 
-        let PaymentMethodClass = Object.values(AdyenWeb).find(cls => {
-            if (!cls) {
-                return false;
-            }
-            if (cls.type === paymentType) {
-                return true;
-            }
-            if (Array.isArray(cls.txVariants) && cls.txVariants.includes(paymentType)) {
-                return true;
-            }
-            return false;
-        });
-
-        if (!PaymentMethodClass) {
-            console.log(`Payment method "${selectedPaymentMethodObject.type}" is not available.`);
-            return false;
-        }
-
-        const paymentMethodInstance = new PaymentMethodClass(checkoutInstance, paymentMethodConfig);
+        const paymentMethodInstance = AdyenWeb.createComponent(paymentType, checkoutInstance, paymentMethodConfig);
         paymentMethodInstance.mount(mountElement);
     }
 
@@ -634,16 +616,16 @@ export default class ExpressCheckoutPlugin extends Plugin {
     }
 
     // Callback for PayPal payment method
-    onShopperDetails(shopperDetails, rawData, actions) {
+    onShopperDetails({authorizedEvent, billingAddress, deliveryAddress}, actions) {
         this.newAddress = {
-            firstName: shopperDetails.shopperName.firstName,
-            lastName: shopperDetails.shopperName.lastName,
-            street: shopperDetails.shippingAddress.street,
-            postalCode: shopperDetails.shippingAddress.postalCode,
-            city: shopperDetails.shippingAddress.city,
-            countryCode: shopperDetails.shippingAddress.country,
-            phoneNumber: shopperDetails.telephoneNumber,
-            email: shopperDetails.shopperEmail
+            firstName: deliveryAddress.firstName.split(" ")[0],
+            lastName: deliveryAddress.firstName.split(" ")[1],
+            street: deliveryAddress.street,
+            postalCode: deliveryAddress.postalCode,
+            city: deliveryAddress.city,
+            countryCode: deliveryAddress.country,
+            phoneNumber: authorizedEvent.payer.phone.phone_number.national_number,
+            email: authorizedEvent.payer.email_address
         }
 
         actions.resolve();
