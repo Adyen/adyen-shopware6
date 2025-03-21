@@ -500,25 +500,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             };
         }
 
-        let PaymentMethodClass = Object.values(AdyenWeb).find(cls => {
-            if (!cls) {
-                return false;
-            }
-            if (cls.type === selectedPaymentMethodObject.type) {
-                return true;
-            }
-            if (Array.isArray(cls.txVariants) && cls.txVariants.includes(selectedPaymentMethodObject.type)) {
-                return true;
-            }
-            return false;
-        });
-
-        if (!PaymentMethodClass) {
-            console.log(`Payment method "${selectedPaymentMethodObject.type}" is not available.`);
-            return false;
-        }
-
-        const paymentMethodInstance = new PaymentMethodClass(this.adyenCheckout, PAY_BUTTON_CONFIG);
+        const paymentMethodInstance = AdyenWeb.createComponent(selectedPaymentMethodObject.type, this.adyenCheckout, PAY_BUTTON_CONFIG);
 
         try {
             if ('isAvailable' in paymentMethodInstance) {
@@ -558,25 +540,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             }
         });
 
-        let PaymentMethodClass = Object.values(AdyenWeb).find(cls => {
-            if (!cls) {
-                return false;
-            }
-            if (cls.type === selectedPaymentMethodObject.type) {
-                return true;
-            }
-            if (Array.isArray(cls.txVariants) && cls.txVariants.includes(selectedPaymentMethodObject.type)) {
-                return true;
-            }
-            return false;
-        });
-
-        if (!PaymentMethodClass) {
-            console.log(`Payment method "${selectedPaymentMethodObject.type}" is not available.`);
-            return false;
-        }
-
-        const paymentMethodInstance = new PaymentMethodClass(this.adyenCheckout, PRE_PAY_BUTTON);
+        const paymentMethodInstance = AdyenWeb.createComponent(selectedPaymentMethodObject.type, this.adyenCheckout, PRE_PAY_BUTTON);
         this.mountCustomPayButton(paymentMethodInstance);
     }
 
@@ -586,25 +550,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (url.searchParams.has(config.sessionKey)) {
             ElementLoadingIndicatorUtil.create(document.body);
 
-            let PaymentMethodClass = Object.values(AdyenWeb).find(cls => {
-                if (!cls) {
-                    return false;
-                }
-                if (cls.type === paymentMethodType) {
-                    return true;
-                }
-                if (Array.isArray(cls.txVariants) && cls.txVariants.includes(paymentMethodType)) {
-                    return true;
-                }
-                return false;
-            });
-
-            if (!PaymentMethodClass) {
-                console.log(`Payment method "${paymentMethodType}" is not available.`);
-                return false;
-            }
-
-            const paymentMethodInstance = new PaymentMethodClass(this.adyenCheckout, {
+            const paymentMethodInstance = AdyenWeb.createComponent(paymentMethodType, this.adyenCheckout,  {
                 [config.sessionKey]: url.searchParams.get(config.sessionKey),
                 showOrderButton: false,
                 onSubmit: function (state, component, actions) {
@@ -687,24 +633,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
         let componentSelector = isOneClick ? selector : '#' + this.el.id;
         try {
-            let PaymentMethodClass = Object.values(AdyenWeb).find(cls => {
-                if (!cls) {
-                    return false;
-                }
-                if (cls.type === paymentMethod.type) {
-                    return true;
-                }
-                if (Array.isArray(cls.txVariants) && cls.txVariants.includes(paymentMethod.type)) {
-                    return true;
-                }
-                return false;
-            });
-
-            if (!PaymentMethodClass) {
-                PaymentMethodClass = AdyenWeb.Redirect;
-            }
-
-            const paymentMethodInstance = new PaymentMethodClass(this.adyenCheckout, configuration);
+            const paymentMethodInstance = AdyenWeb.createComponent(paymentMethod.type, this.adyenCheckout, configuration);
             paymentMethodInstance.mount(componentSelector);
             this.confirmFormSubmit.addEventListener('click', function(event) {
                 const form =  DomAccess.querySelector(document, '#confirmOrderForm');
