@@ -9,7 +9,7 @@
     {% if adyenFrontendData %}
         <script>window.localStorage.removeItem('confirmOrderForm.tos');</script>
         {% if adyenFrontendData.notification %}
-            <h2 style="text-align: center; margin-bottom: 40px">Your order is being processed!</h2>
+            <h2 style="text-align: center; margin-bottom: 40px">{{ "adyen.notification.message"|trans }}</h2>
         {% endif %}
         {% if adyenFrontendData.givingEnabled %}
             {% sw_include '@AdyenPaymentShopware6/storefront/component/adyen-giving/adyen-giving-component.html.twig' %}
