@@ -645,17 +645,16 @@ export default class ExpressCheckoutPlugin extends Plugin {
     }
 
     // Callback for ApplePay payment method
-    handleApplePayAuthorization(resolve, reject, event) {
-        let shippingContact = event.payment.shippingContact;
+    handleApplePayAuthorization({ authorizedEvent, billingAddress, deliveryAddress }, actions) {
         const shippingAddress = {
-            firstName: shippingContact.givenName,
-            lastName: shippingContact.familyName,
-            street: shippingContact.addressLines.length > 0 ? shippingContact.addressLines[0] : '',
-            zipcode: shippingContact.postalCode,
-            city: shippingContact.locality,
-            countryCode: shippingContact.countryCode,
-            phoneNumber: shippingContact.phoneNumber,
-            email: shippingContact.emailAddress
+            firstName: deliveryAddress.firstName,
+            lastName: deliveryAddress.lastName,
+            street: deliveryAddress.street,
+            zipcode: deliveryAddress.postalCode,
+            city: deliveryAddress.city,
+            countryCode: deliveryAddress.country,
+            phoneNumber: authorizedEvent.payment.shippingContact.phoneNumber,
+            email: authorizedEvent.payment.shippingContact.emailAddress
         }
 
         if (shippingAddress) {
@@ -684,7 +683,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             email: this.email
         };
 
-        this.createOrder(JSON.stringify(requestData), extraParams, { resolve, reject });
+        this.createOrder(JSON.stringify(requestData), extraParams, actions);
     }
 
     // Callback for ApplePay payment method
