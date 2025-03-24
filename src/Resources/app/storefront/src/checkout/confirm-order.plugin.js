@@ -645,6 +645,17 @@ export default class ConfirmOrderPlugin extends Plugin {
                     behavior: "smooth",
                     block:    "start",
                 });
+
+                if(isOneClick) {
+                    const data = paymentMethodInstance.data || {};
+                    const state = {
+                        isValid: true,
+                        data: data
+                    };
+                    configuration.onSubmit(state, paymentMethodInstance, {});
+                    return;
+                }
+
                 paymentMethodInstance.submit();
             }.bind(this));
         } catch (err) {
