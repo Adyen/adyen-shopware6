@@ -336,8 +336,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 if (type === 'applepay') {
                     if(!this.userLoggedIn){
                         this.stateData = state.data;
-
-                        return;
                     }
 
                     this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
@@ -662,28 +660,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this.email = shippingAddress.email
         }
 
-        this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
-
-        const productMeta = document.querySelector('meta[itemprop="productID"]');
-        const productId = productMeta ? productMeta.content : '-1';
-        const quantity = this.quantityInput ? this.quantityInput.value : -1;
-
-        let extraParams = {
-            stateData: JSON.stringify(this.stateData)
-        };
-
-        const requestData = {
-            productId: productId,
-            quantity: quantity,
-            formattedHandlerIdentifier: this.formattedHandlerIdentifier,
-            newAddress: this.newAddress,
-            newShippingMethod: this.newShippingMethod,
-            affiliateCode: adyenExpressCheckoutOptions.affiliateCode,
-            campaignCode: adyenExpressCheckoutOptions.campaignCode,
-            email: this.email
-        };
-
-        this.createOrder(JSON.stringify(requestData), extraParams, actions);
+        actions.resolve();
     }
 
     // Callback for ApplePay payment method
