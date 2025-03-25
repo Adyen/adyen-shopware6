@@ -471,6 +471,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentRequest->setPaymentMethod($paymentMethod);
 
         if ($paymentMethodType === 'paypal'
+            && $paymentMethod->getSubtype() === 'express'
             && $salesChannelContext->getCustomer()
             && $salesChannelContext->getCustomer()->getGuest()
         ) {
@@ -790,11 +791,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $payPalPaymentRequest = new IntegrationPaymentRequest([]);
 
         $price = $transaction->getOrder()->getPrice()->getPositionPrice();
-        $customer = $salesChannelContext->getCustomer();
-        if ($customer && !$customer->getGuest()) {
-            $price = $transaction->getOrder()->getPrice()->getTotalPrice();
-        }
-
         $amount = $this->currency->sanitize(
             $price,
             $salesChannelContext->getCurrency()->getIsoCode()
