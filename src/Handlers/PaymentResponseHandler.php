@@ -301,6 +301,8 @@ class PaymentResponseHandler
             $transactionCustomFields[self::DONATION_TOKEN] = $donationToken;
         }
 
+        $transactionCustomFields['resultCode'] = $resultCode;
+
         // read custom fields before writing to it so we don't mess with other plugins
         $customFields = array_merge(
             $storedTransactionCustomFields,
