@@ -130,6 +130,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         }
 
         $frontendData = $this->buildVoucherActionData($frontendData, $order);
+        $frontendData = $this->setOrderProcessingNotification($frontendData, $order);
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -205,6 +206,32 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         ];
 
         return array_merge($frontendData, $adyenGivingData);
+    }
+
+    /**
+     * @param array $frontendData
+     * @param OrderEntity $order
+     * @return array
+     */
+    private function setOrderProcessingNotification(array $frontendData, OrderEntity $order): array
+    {
+        $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
+            $order->getId(),
+            [OrderTransactionStates::STATE_IN_PROGRESS]
+        );
+
+        if (is_null($orderTransaction)) {
+            return $frontendData;
+        }
+
+        $customFields = $orderTransaction->getCustomFields();
+
+        if (isset($customFields['resultCode']) &&
+            in_array($customFields['resultCode'], ['Received', 'Pending'], true)) {
+            $frontendData['notification'] = true;
+        }
+
+        return $frontendData;
     }
 
     /**

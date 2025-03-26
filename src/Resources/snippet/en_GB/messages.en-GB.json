@@ -2,6 +2,9 @@
     "adyen": {
         "updateDetails": "Update payment details",
         "loading": "Loading...",
+        "notification": {
+            "message": "Your order is being processed!"
+        },
         "paymentMethodSelectionError": "Unfortunately, something went wrong saving the payment method selection. Please select a different payment method.",
         "giftcard": {
             "addGiftcards": "Add Giftcards",
