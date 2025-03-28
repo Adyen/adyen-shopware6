@@ -101,18 +101,16 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
-    handleOnAdditionalDetails (state, component, actions) {
+    handleOnAdditionalDetails (state) {
         this._client.post(
             `${adyenCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
             function (paymentResponse) {
                 if (this._client._request.status !== 200) {
                     location.href = this.errorUrl.toString();
-                    actions.reject({});
                     return;
                 }
 
-                actions.resolve({});
                 this.responseHandler(paymentResponse);
             }.bind(this)
         );
