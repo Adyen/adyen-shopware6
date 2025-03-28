@@ -434,7 +434,7 @@ class CaptureService
      */
     public function isManualCaptureActive(string $salesChannelId = null)
     {
-        return $this->configurationService->ismanualCaptureActive($salesChannelId);
+        return $this->configurationService->isManualCaptureActive($salesChannelId);
     }
 
     /**
