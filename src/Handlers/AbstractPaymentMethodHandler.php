@@ -278,7 +278,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $countStoredStateData = $this->paymentStateDataService->countStoredStateData($salesChannelContext);
         $countStateData += $countStoredStateData;
         //If condition to check more than 1 PM
-        if ($countStateData > 1) {
+        if ($countStateData > 1 || ($countStateData === 1 && static::getPaymentMethodCode() !== 'giftcard')) {
             $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction);
             $this->handleAdyenOrderPayment($transaction, $adyenOrderResponse, $salesChannelContext);
         }
