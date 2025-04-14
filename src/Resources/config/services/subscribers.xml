@@ -39,6 +39,7 @@
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\CartCalculator"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
+            <argument type="service" id="request_stack"/>
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Adyen\Shopware\Subscriber\Response\PaymentMethodRouteResponseSubscriber">
