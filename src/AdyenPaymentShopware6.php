@@ -181,6 +181,7 @@ class AdyenPaymentShopware6 extends Plugin
                     'handlerIdentifier' => $method->getPaymentHandler(),
                     'name' => $method->getName(),
                     'description' => $method->getDescription(),
+                    'technicalName' => 'adyen_payment-' . $method->getGatewayCode()
                 ];
 
                 $paymentRepository->update([$paymentMethodData], $context);
@@ -200,7 +201,8 @@ class AdyenPaymentShopware6 extends Plugin
             'name' => $paymentMethod->getName(),
             'description' => $paymentMethod->getDescription(),
             'pluginId' => $pluginId,
-            'afterOrderEnabled' => true
+            'afterOrderEnabled' => true,
+            'technicalName' => 'adyen_payment-' . $paymentMethod->getGatewayCode(),
         ];
 
         $paymentRepository->create([$paymentData], $context);

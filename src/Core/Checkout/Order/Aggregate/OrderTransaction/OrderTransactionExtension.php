@@ -95,4 +95,9 @@ class OrderTransactionExtension extends EntityExtension
         $collection->add($captureField);
         $collection->add($paymentField);
     }
+
+    public function getEntityName(): string
+    {
+        return 'order_transaction';
+    }
 }

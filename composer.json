@@ -10,8 +10,8 @@
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "require": {
-        "shopware/core": "~6.6.0",
-        "shopware/storefront": "~6.6.0",
+        "shopware/core": "~6.7.0",
+        "shopware/storefront": "~6.7.0",
         "adyen/php-api-library": "^20.2.0",
         "adyen/php-webhook-module": "^1",
         "ext-json": "*"

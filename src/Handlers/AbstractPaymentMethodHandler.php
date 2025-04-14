@@ -53,7 +53,10 @@ use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
@@ -61,6 +64,7 @@ use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
@@ -72,7 +76,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
-abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 {
     const SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
     const SHOPPER_INTERACTION_ECOMMERCE = 'Ecommerce';
@@ -245,6 +249,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->contextSwitchRoute = $contextSwitchRoute;
     }
 
+
+    public function supports(PaymentHandlerType $type, string $paymentMethodId, Context $context): bool
+    {
+        return false;
+    }
     abstract public static function getPaymentMethodCode();
 
     public static function getBrand(): ?string
@@ -253,24 +262,28 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param RequestDataBag $dataBag
-     * @param SalesChannelContext $salesChannelContext
+     * @param Request $request
+     * @param PaymentTransactionStruct $transaction
+     * @param Context $context
+     * @param Struct|null $validateStruct
+     *
      * @return RedirectResponse
+     *
      * @throws AdyenException
      */
     public function pay(
-        AsyncPaymentTransactionStruct $transaction,
-        RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext
+        Request $request,
+        PaymentTransactionStruct $transaction,
+        Context $context,
+        ?Struct $validateStruct
     ): RedirectResponse {
 
         $this->paymentsApiService = new PaymentsApi(
-            $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
+            $this->clientService->getClient($context->getSalesChannel()->getId())
         );
 
         $countStateData= 0;
-        $requestStateData = $dataBag->get('stateData');
+        $requestStateData = $request->get('stateData');
         if ($requestStateData) {
             $requestStateData = json_decode($requestStateData, true);
             $countStateData++;
@@ -414,11 +427,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @return void
      */
     public function finalize(
-        AsyncPaymentTransactionStruct $transaction,
         Request $request,
-        SalesChannelContext $salesChannelContext
+        PaymentTransactionStruct $transaction,
+        Context $context
     ): void {
-        $transactionId = $transaction->getOrderTransaction()->getId();
+        $transactionId = $transaction->getOrderTransactionId();
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentCancelledException $exception) {
@@ -959,7 +972,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @return void
      */
     public function handleAdyenOrderPayment(
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         $adyenOrderResponse,
         SalesChannelContext $salesChannelContext
     ): void {
