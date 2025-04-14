@@ -34,6 +34,7 @@ use Shopware\Core\System\SalesChannel\Event\SalesChannelContextRestoredEvent;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenChangeEvent;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class ContextSubscriber implements EventSubscriberInterface
 {
@@ -44,6 +45,7 @@ class ContextSubscriber implements EventSubscriberInterface
     private CartCalculator $cartCalculator;
     private Currency $currency;
 
+    private RequestStack $requestStack;
 
     public function __construct(
         ConfigurationService $configurationService,
@@ -51,7 +53,8 @@ class ContextSubscriber implements EventSubscriberInterface
         AbstractContextSwitchRoute $contextSwitchRoute,
         $cartPersister,
         CartCalculator $cartCalculator,
-        Currency $currency
+        Currency $currency,
+        RequestStack $requestStack
     ) {
         $this->configurationService = $configurationService;
         $this->paymentStateDataService = $paymentStateDataService;
@@ -59,6 +62,7 @@ class ContextSubscriber implements EventSubscriberInterface
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
         $this->currency = $currency;
+        $this->requestStack = $requestStack;
     }
 
     public static function getSubscribedEvents()
@@ -73,7 +77,7 @@ class ContextSubscriber implements EventSubscriberInterface
     public function onContextRestored(SalesChannelContextRestoredEvent $event): void
     {
         $token = $event->getRestoredSalesChannelContext()->getToken();
-        $oldToken = $_SESSION['_sf2_attributes']['sw-context-token'];
+        $oldToken = $this->requestStack->getCurrentRequest()->headers->get('sw-context-token');
 
         $stateData = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken($oldToken);
         foreach ($stateData->getElements() as $statedataArray) {

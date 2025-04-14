@@ -160,6 +160,12 @@ export default class CartPlugin extends Plugin {
                 if (!response.hasOwnProperty('pspReference')) {
                     reject(response.resultCode);
                 } else {
+                    if (!response.hasOwnProperty('balance')) {
+                        reject(response.resultCode);
+
+                        return;
+                    }
+
                     // 0. compare balance to total amount to be paid
                     const consumableBalance = (response.transactionLimit ? parseFloat(response.transactionLimit.value) : parseFloat(response.balance.value));
 
