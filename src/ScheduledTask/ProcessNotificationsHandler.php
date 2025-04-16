@@ -41,6 +41,7 @@ use Adyen\Webhook\Processor\ProcessorFactory;
 use Adyen\Webhook\EventCodes;
 use Adyen\Webhook\Processor\ProcessorInterface;
 use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -137,6 +138,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
+        LoggerInterface $logger,
         NotificationService $notificationService,
         OrderRepository $orderRepository,
         EntityRepository $paymentMethodRepository,
@@ -146,7 +148,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         WebhookHandlerFactory $webhookHandlerFactory,
         PaymentResponseService $paymentResponseService
     ) {
-        parent::__construct($scheduledTaskRepository);
+        parent::__construct($scheduledTaskRepository, $logger);
         $this->notificationService = $notificationService;
         $this->orderRepository = $orderRepository;
         $this->paymentMethodRepository = $paymentMethodRepository;

@@ -25,14 +25,14 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
-use Adyen\Model\Checkout\PaymentCompletionDetails;
 use Adyen\Model\Checkout\PaymentDetailsRequest;
 use Adyen\Shopware\Util\DataArrayValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
-use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\PaymentDetailsService;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 use Adyen\Shopware\Service\PaymentResponseService;
@@ -71,6 +71,7 @@ class ResultHandler
      * @var PaymentResponseHandlerResult
      */
     private $paymentResponseHandlerResult;
+    private EntityRepository $orderTransactionRepository;
 
     /**
      * ResultHandler constructor.
@@ -86,13 +87,15 @@ class ResultHandler
         LoggerInterface $logger,
         PaymentResponseHandler $paymentResponseHandler,
         PaymentDetailsService $paymentDetailsService,
-        PaymentResponseHandlerResult $paymentResponseHandlerResult
+        PaymentResponseHandlerResult $paymentResponseHandlerResult,
+        EntityRepository $orderTransactionRepository
     ) {
         $this->paymentResponseService = $paymentResponseService;
         $this->logger = $logger;
         $this->paymentResponseHandler = $paymentResponseHandler;
         $this->paymentDetailsService = $paymentDetailsService;
         $this->paymentResponseHandlerResult = $paymentResponseHandlerResult;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
     /**
@@ -103,12 +106,19 @@ class ResultHandler
      * @throws PaymentCancelledException
      */
     public function processResult(
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         Request $request,
         SalesChannelContext $salesChannelContext
     ) {
+        $orderTransactionId = $transaction->getOrderTransactionId();
+
+        // 1. Load OrderTransaction to get Order ID
+        $orderTransaction = $this->orderTransactionRepository
+            ->search(new Criteria([$orderTransactionId]), $salesChannelContext->getContext())
+            ->get($orderTransactionId);
+
         // Retrieve paymentResponse and if it exists
-        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($transaction->getOrderTransaction());
+        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($orderTransaction);
 
         if (!$paymentResponse) {
             throw new PaymentFailedException('Payment response not found.');
@@ -135,7 +145,7 @@ class ResultHandler
                 $error = 'Payment details are missing.';
                 $this->logger->error(
                     $error,
-                    ['orderId' => $transaction->getOrder()->getId()]
+                    ['orderId' => $orderTransaction->getOrder()->getId()]
                 );
                 throw new PaymentFailedException($error);
             }
@@ -146,13 +156,13 @@ class ResultHandler
 
             $result = $this->paymentDetailsService->getPaymentDetails(
                 $paymentDetailRequest,
-                $transaction->getOrderTransaction()
+                $orderTransaction
             );
         }
 
         // Process the result and handle the transaction
         $this->paymentResponseHandler->handleShopwareAPIs(
-            $transaction,
+            $orderTransaction,
             $salesChannelContext,
             [$result]
         );
