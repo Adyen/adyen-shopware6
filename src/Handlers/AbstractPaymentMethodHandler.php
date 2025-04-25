@@ -68,6 +68,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
@@ -327,9 +328,12 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
             $customerGroupId = $customer->getGroupId();
         }
 
+        $request = $this->requestStack->getCurrentRequest();
+        $contextToken = $request->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
+
         // 3. Build SalesChannelContext
         $salesChannelContext = $this->salesChannelContextFactory->create(
-            $order->getDeepLinkCode() ?? $orderId,
+            $contextToken,
             $order->getSalesChannelId(),
                 [
                     SalesChannelContextService::CURRENCY_ID => $order->getCurrencyId(),
