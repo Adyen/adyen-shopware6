@@ -360,8 +360,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $countStateData += $countStoredStateData;
         //If condition to check more than 1 PM
         if ($countStateData > 1) {
-            $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction);
-            $this->handleAdyenOrderPayment($transaction, $adyenOrderResponse, $salesChannelContext);
+            $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction, $order);
+            $this->handleAdyenOrderPayment($transaction, $adyenOrderResponse, $salesChannelContext, $order, $orderTransaction);
         }
 
         $transactionId = $transaction->getOrderTransactionId();
@@ -479,12 +479,12 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @param $transaction
      * @return array
      */
-    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction): array
+    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction, OrderEntity $order): array
     {
         $uuid = Uuid::randomHex();
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $order->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
         return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
@@ -1100,7 +1100,9 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     public function handleAdyenOrderPayment(
         PaymentTransactionStruct $transaction,
         $adyenOrderResponse,
-        SalesChannelContext $salesChannelContext
+        SalesChannelContext $salesChannelContext,
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction
     ): void {
         if (empty($adyenOrderResponse)) {
             return;
@@ -1109,7 +1111,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
         //New Multi-Gift-card implementation
         $remainingOrderAmount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $order->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
 
@@ -1132,14 +1134,16 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
             $giftcardPaymentRequest = $this->getPaymentRequest(
                 $salesChannelContext,
+                $orderTransaction,
                 $transaction,
+                $order,
                 $storedStateData,
                 $partialAmount,
                 $this->orderRequestData
             );
 
             //make /payments call
-            $this->paymentsCall($salesChannelContext, $giftcardPaymentRequest, $transaction);
+            $this->paymentsCall($salesChannelContext, $giftcardPaymentRequest, $orderTransaction);
 
             $remainingOrderAmount -= $partialAmount;
 
