@@ -31,13 +31,13 @@ export class ShippingDetailsPage extends SPRBasePage {
         this.shippingFormContainer = page.locator(".register-form");
 
         this.salutationDropDown = this.shippingFormContainer.locator("#personalSalutation");
-        this.firstNameField = this.shippingFormContainer.locator("#personalFirstName");
-        this.lastNameField = this.shippingFormContainer.locator("#personalLastName");
+        this.firstNameField = this.shippingFormContainer.locator("#billingAddress-personalFirstName");
+        this.lastNameField = this.shippingFormContainer.locator("#billingAddress-personalLastName");
         this.createCustomerAccountCheckBox = this.shippingFormContainer.locator("label[for='personalGuest']");
         this.emailField = this.shippingFormContainer.locator("#personalMail");
         this.passwordField = this.shippingFormContainer.locator("#personalPassword");
 
-        this.addressField = this.shippingFormContainer.locator("#billingAddressAddressStreet");
+        this.addressField = this.shippingFormContainer.locator("#billingAddress-AddressStreet");
         this.postCodeField = this.shippingFormContainer.locator("#billingAddressAddressZipcode");
         this.cityField = this.shippingFormContainer.locator("#billingAddressAddressCity");
         this.countrySelectDropdown = this.shippingFormContainer.locator("#billingAddressAddressCountry");
