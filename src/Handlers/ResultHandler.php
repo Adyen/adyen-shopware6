@@ -113,8 +113,11 @@ class ResultHandler
         $orderTransactionId = $transaction->getOrderTransactionId();
 
         // 1. Load OrderTransaction to get Order ID
+        $criteria = new Criteria([$orderTransactionId]);
+        $criteria->addAssociation('order');
+
         $orderTransaction = $this->orderTransactionRepository
-            ->search(new Criteria([$orderTransactionId]), $salesChannelContext->getContext())
+            ->search($criteria, $salesChannelContext->getContext())
             ->get($orderTransactionId);
 
         // Retrieve paymentResponse and if it exists

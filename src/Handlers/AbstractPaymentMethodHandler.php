@@ -309,6 +309,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $criteria->addAssociation('language');
         $criteria->addAssociation('salesChannel');
         $criteria->addAssociation('customer');
+        $criteria->addAssociation('lineItems');
 
         $order = $this->orderRepository->search($criteria, $context)->first();
 
@@ -1037,6 +1038,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
         $criteria->addAssociation('cover');
         $criteria->addAssociation('categories');
+        $criteria->addAssociation('cover.media');
 
         /** @var ProductCollection $productCollection */
         $productCollection = $this->productRepository->search($criteria, $context);
