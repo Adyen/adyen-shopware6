@@ -99,7 +99,7 @@ class ResultHandler
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
      * @throws PaymentFailedException

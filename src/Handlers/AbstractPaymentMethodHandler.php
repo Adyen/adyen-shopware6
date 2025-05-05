@@ -452,13 +452,13 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         // If Bancontact mobile payment is used, redirect to proxy finalize transaction endpoint
         if (array_key_exists('paymentMethod', $stateData) &&
             in_array($stateData['paymentMethod']['type'], ['bcmc_mobile', 'twint'])) {
-            return new RedirectResponse($this->getReturnUrl($transaction));
+            return new RedirectResponse($this->getReturnUrl($transaction, $order));
         }
 
         return new RedirectResponse($transaction->getReturnUrl());
     }
 
-    private function getReturnUrl(PaymentTransactionStruct $transaction): string
+    private function getReturnUrl(PaymentTransactionStruct $transaction, OrderEntity $orderEntity): string
     {
         $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
         parse_str($query, $params);
@@ -468,8 +468,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
             'payment.adyen.proxy-finalize-transaction',
             [
                 '_sw_payment_token' => $token,
-                'orderId' => $transaction->getOrder()->getId(),
-                'transactionId' => $transaction->getOrderTransaction()->getId()
+                'orderId' => $orderEntity->getId(),
+                'transactionId' => $transaction->getOrderTransactionId()
             ],
             UrlGeneratorInterface::ABSOLUTE_URL
         );
@@ -492,9 +492,9 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
-     * @param SalesChannelContext $salesChannelContext
+     * @param PaymentTransactionStruct $transaction
+     * @param Context $context
      * @return void
      */
     public function finalize(
@@ -566,7 +566,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
     /**
      * @param SalesChannelContext $salesChannelContext
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param array $request
      * @param int|null $partialAmount
      * @param array|null $adyenOrderData
@@ -612,7 +612,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
             && $salesChannelContext->getCustomer()
             && $salesChannelContext->getCustomer()->getGuest()
         ) {
-            return $this->getPayPalPaymentRequest($salesChannelContext, $transaction, $paymentMethod);
+            return $this->getPayPalPaymentRequest($salesChannelContext, $transaction, $paymentMethod, $orderEntity);
         }
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
@@ -802,7 +802,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
         if (in_array($paymentMethodType, ['bcmc_mobile', 'twint'])) {
-            $paymentRequest->setReturnUrl($this->getReturnUrl($transaction));
+            $paymentRequest->setReturnUrl($this->getReturnUrl($transaction, $orderEntity));
         } else {
             $paymentRequest->setReturnUrl($transaction->getReturnUrl());
         }
@@ -916,18 +916,19 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
     /**
      * @param SalesChannelContext $salesChannelContext
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param CheckoutPaymentMethod $paymentMethod
      * @return IntegrationPaymentRequest
      */
     private function getPayPalPaymentRequest(
         SalesChannelContext $salesChannelContext,
         PaymentTransactionStruct $transaction,
-        CheckoutPaymentMethod $paymentMethod
+        CheckoutPaymentMethod $paymentMethod,
+        OrderEntity $orderEntity
     ): IntegrationPaymentRequest {
         $payPalPaymentRequest = new IntegrationPaymentRequest([]);
 
-        $price = $transaction->getOrder()->getPrice()->getPositionPrice();
+        $price = $orderEntity->getPrice()->getPositionPrice();
         $amount = $this->currency->sanitize(
             $price,
             $salesChannelContext->getCurrency()->getIsoCode()
@@ -938,7 +939,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $payPalPaymentRequest->setAmount($amountInfo);
 
         $payPalPaymentRequest->setPaymentMethod($paymentMethod);
-        $payPalPaymentRequest->setReference($transaction->getOrder()->getOrderNumber());
+        $payPalPaymentRequest->setReference($orderEntity->getOrderNumber());
         $payPalPaymentRequest->setMerchantAccount(
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
@@ -989,7 +990,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param IntegrationPaymentRequest $request
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param OrderTransactionEntity $transaction
      * @return void
      */
     private function paymentsCall(
@@ -1094,9 +1095,11 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param $adyenOrderResponse
      * @param SalesChannelContext $salesChannelContext
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
      * @return void
      */
     public function handleAdyenOrderPayment(
