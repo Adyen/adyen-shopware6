@@ -53,7 +53,7 @@ class ConfigurationService
      */
     public function __construct(
         SystemConfigService $systemConfigService,
-        $mediaRepository
+                            $mediaRepository
     ) {
         $this->systemConfigService = $systemConfigService;
         $this->mediaRepository = $mediaRepository;
@@ -212,7 +212,7 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|bool|float|int|string|null
      */
-    public function isManualCaptureActive(string $salesChannelId = null)
+    public function isManualCaptureActive(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.manualCaptureEnabled', $salesChannelId);
     }
@@ -233,7 +233,7 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|bool|float|int|string|null
      */
-    public function isCaptureOnShipmentEnabled(string $salesChannelId)
+    public function isCaptureOnShipmentEnabled(?string $salesChannelId)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.captureOnShipmentEnabled',
