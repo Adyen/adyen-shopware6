@@ -295,9 +295,13 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 'success' => $notification->isSuccess()
             ]);
 
+            $isAutoCapture = !($this->captureService->isManualCaptureActive()
+                || $this->captureService->isCaptureOnShipmentEnabled());
+
             return ProcessorFactory::create(
                 $notificationItem,
-                $currentTransactionState
+                $currentTransactionState,
+                $isAutoCapture
             );
         } catch (InvalidDataException $exception) {
             $logContext['notification'] = $notification->getVars();
@@ -320,8 +324,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         NotificationEntity $notification
     ): ?string {
         $currentTransactionState = self::WEBHOOK_MODULE_STATE_MAPPING[
-            $orderTransaction->getStateMachineState()->getTechnicalName()
-            ] ?? '';
+        $orderTransaction->getStateMachineState()->getTechnicalName()
+        ] ?? '';
 
         if (empty($currentTransactionState)) {
             $logContext['paymentState'] = $orderTransaction->getStateMachineState()->getTechnicalName();
