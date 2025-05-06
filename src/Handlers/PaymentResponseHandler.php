@@ -231,7 +231,7 @@ class PaymentResponseHandler
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param OrderTransactionEntity $transaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResults
      * @throws PaymentCancelledException
