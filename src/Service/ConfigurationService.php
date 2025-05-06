@@ -53,7 +53,7 @@ class ConfigurationService
      */
     public function __construct(
         SystemConfigService $systemConfigService,
-                            $mediaRepository
+        $mediaRepository
     ) {
         $this->systemConfigService = $systemConfigService;
         $this->mediaRepository = $mediaRepository;
