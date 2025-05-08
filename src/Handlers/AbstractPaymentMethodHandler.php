@@ -592,7 +592,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
         //set payment method
         if (!empty($request)) {
-            $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
+            $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod'] ?? null);
         } else {
             $paymentMethod = new CheckoutPaymentMethod();
         }
@@ -979,7 +979,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         } catch (\Exception $exception) {
             $message = sprintf(
                 "There was an error with the payment method. Order number: %s Missing data: %s",
-                $transaction->getOrder()->getOrderNumber(),
+                $order->getOrderNumber(),
                 $exception->getMessage()
             );
             $this->logger->error($message);
