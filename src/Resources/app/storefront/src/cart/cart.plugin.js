@@ -131,6 +131,7 @@ export default class CartPlugin extends Plugin {
         //Add Giftcard image and name
         var imgElement = document.createElement('img');
         imgElement.src = 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/'+giftcard.brand+'.svg';
+        imgElement.alt = giftcard.brand + ' logo';
         imgElement.classList.add('adyen-giftcard-logo');
 
         this.giftcardItem.insertBefore(imgElement, this.giftcardItem.firstChild);
@@ -203,6 +204,7 @@ export default class CartPlugin extends Plugin {
                 let giftcardElement = document.createElement('div');
                 var imgElement = document.createElement('img');
                 imgElement.src = 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/'+giftcard.brand+'.svg';
+                imgElement.alt = giftcard.brand + ' logo';
                 imgElement.classList.add('adyen-giftcard-logo');
 
                 let removeElement = document.createElement('a');

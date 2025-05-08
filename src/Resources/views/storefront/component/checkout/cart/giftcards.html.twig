@@ -25,7 +25,7 @@
             ></div>
             <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
             {# loop through giftcards and display logo #}
-            <select id="giftcardDropdown" style="display: none">
+            <select id="giftcardDropdown" style="display: none" aria-label="Choose a gift card">
                 <option value="" disabled selected>{{ "Please select a giftcard..." | trans }}</option>
                 {% for giftcard in adyenFrontendData.giftcards %}
                     <option class="adyen-giftcard"
