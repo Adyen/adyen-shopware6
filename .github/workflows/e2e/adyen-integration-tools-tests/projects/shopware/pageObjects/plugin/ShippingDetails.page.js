@@ -6,27 +6,27 @@ export class ShippingDetailsPage extends SPRBasePage {
         this.page = page;
 
         //Alert message
-        this.alertMessage = page.locator(".alert-content");
+        this.alertMessage = page.locator(".alert-content-container");
         
         //Change Billing Address Form
         this.changeBillingAddressButton = page.locator("text=Change billing address");
         
-        this.currentAddressModal = page.locator(".address-editor-modal");
-        this.editAddressButton = this.currentAddressModal.locator("text=Edit address").first();
+        this.currentAddressModal = page.locator(".address-manager-modal");
+        this.billingPanel = page.locator('#billing-address-tab-pane');
 
-        this.editAddressEditorWrapper = page.locator(".address-editor-create-address-wrapper").first();
+        this.editAddressEditorWrapper = page.locator(".address-manager-modal-address-form").first();
         
-        this.editSalutationDropDown = this.editAddressEditorWrapper.locator("#billing-addresspersonalSalutation");
-        this.editFirstNameField = this.editAddressEditorWrapper.locator("#billing-addresspersonalFirstName");
-        this.editLastNameField = this.editAddressEditorWrapper.locator("#billing-addresspersonalLastName");
-        this.editAddressField = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressStreet");
-        this.editPostCodeField = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressZipcode");
-        this.editCityField = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressCity");
-        this.editCountrySelectDropdown = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressCountry");
-        this.editStateSelectDropDown = this.editAddressEditorWrapper.locator("#billing-edit-addressAddressCountryState");
-        
-        this.editSaveAddressButton = this.editAddressEditorWrapper.locator("button[type='submit']");
-        
+        this.editSalutationDropDown = page.locator("#addresspersonalSalutation");
+        this.editFirstNameField = page.locator("#address-personalFirstName");
+        this.editLastNameField = page.locator("#address-personalLastName");
+        this.editAddressField = page.locator("#address-AddressStreet");
+        this.editPostCodeField = page.locator("#addressAddressZipcode");
+        this.editCityField = page.locator("#addressAddressCity");
+        this.editCountrySelectDropdown = page.locator("#addressAddressCountry");
+        this.editStateSelectDropDown = page.locator("#addressAddressCountryState");
+
+        this.editSaveAddressButton = page.locator("button[type='submit']:has-text('Save address')");
+
         // Shipping details form
         this.shippingFormContainer = page.locator(".register-form");
 
@@ -81,8 +81,14 @@ export class ShippingDetailsPage extends SPRBasePage {
     async changeBillingAddress(user) {
         await this.changeBillingAddressButton.click();
         await this.currentAddressModal.waitFor({ state: "visible", timeout: 10000});
-        await this.editAddressButton.click();
-        await this.editSaveAddressButton.waitFor({ state: "visible", timeout: 10000});
+
+        await this.billingPanel
+            .locator('button[id^="address-manager-item-dropdown-btn"]')
+            .click();
+
+        await this.billingPanel
+            .locator('a.address-manager-modal-address-form:has-text("Edit")')
+            .click();
 
         await this.editAddressField.fill(user.firstName);
         await this.editPostCodeField.fill(user.postCode);
