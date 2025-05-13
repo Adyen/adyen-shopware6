@@ -402,6 +402,14 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $merchantReference = $notification->getMerchantReference();
         }
 
+        if ($merchantReference === null) {
+            $errorMessage = $notification->getPspreference() === null
+                ? "Skipped: Can not find merchant reference in notification data"
+                : "Skipped: Unable to identify merchant reference linked to order {$notification->getPspreference()}";
+            $this->logger->error($errorMessage, $logContext);
+            return null;
+        }
+
         $order = $this->orderRepository->getOrderByOrderNumber(
             $merchantReference,
             $context,
