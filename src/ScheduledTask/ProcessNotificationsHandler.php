@@ -404,6 +404,14 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $merchantReference = $notification->getMerchantReference();
         }
 
+        if($merchantReference === null) {
+            $errorMessage = "Skipped: Order with order_number {$notification->getMerchantReference()} not found.";
+            $this->logger->error($errorMessage, $logContext);
+            $this->logNotificationFailure($notification, $errorMessage);
+            $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+            return null;
+        }
+
         $order = $this->orderRepository->getOrderByOrderNumber(
             $merchantReference,
             $context,
