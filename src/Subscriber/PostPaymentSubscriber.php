@@ -151,7 +151,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     ): array {
         $orderTransaction = $this->orderTransactionRepository->getFirstAdyenOrderTransactionByStates(
             $order->getId(),
-            [OrderTransactionStates::STATE_AUTHORIZED]
+            [OrderTransactionStates::STATE_AUTHORIZED, OrderTransactionStates::STATE_IN_PROGRESS]
         );
 
         if (is_null($orderTransaction)) {
