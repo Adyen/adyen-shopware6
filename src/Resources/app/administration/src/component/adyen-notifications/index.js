@@ -58,6 +58,23 @@ Component.register('adyen-notifications', {
         }
     },
 
+    watch: {
+        'order.id': {
+            immediate: false,
+            handler(newOrderId) {
+                this.showWidget = false;
+                this.notifications = [];
+
+                this.adyenService.isAdyenOrder(this.order).then((isAdyen) => {
+                    this.showWidget = isAdyen;
+                    if (isAdyen) {
+                        this.fetchNotifications();
+                    }
+                });
+            }
+        }
+    },
+
     methods: {
         fetchNotifications() {
             this.adyenService.fetchNotifications(this.order.id).then((res) => {
