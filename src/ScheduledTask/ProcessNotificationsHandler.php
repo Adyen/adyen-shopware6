@@ -295,9 +295,15 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 'success' => $notification->isSuccess()
             ]);
 
+            $isManual = (bool) $this->captureService->isManualCaptureActive();
+            $isOnShipment = (bool) $this->captureService->isCaptureOnShipmentEnabled();
+
+            $isAutoCapture = !($isManual || $isOnShipment);
+
             return ProcessorFactory::create(
                 $notificationItem,
-                $currentTransactionState
+                $currentTransactionState,
+                $isAutoCapture
             );
         } catch (InvalidDataException $exception) {
             $logContext['notification'] = $notification->getVars();
