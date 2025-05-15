@@ -35,7 +35,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this._client = new HttpClient();
         this.selectedAdyenPaymentMethod = this.getSelectedPaymentMethodKey();
         this.confirmOrderForm = DomAccess.querySelector(document, '#confirmOrderForm');
-        this.checkoutMainContent = DomAccess.querySelector(document, '#content-main');
+        this.checkoutMainContent = DomAccess.querySelector(document, '.content-main');
         this.shoppingCartSummaryBlock = DomAccess.querySelectorAll(document, '.checkout-aside-summary-list');
 
         this.minorUnitsQuotient = adyenCheckoutOptions.amount / adyenCheckoutOptions.totalPrice;
