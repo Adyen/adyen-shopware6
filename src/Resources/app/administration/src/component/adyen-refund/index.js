@@ -60,6 +60,26 @@ Component.register('adyen-refund', {
         };
     },
 
+    watch: {
+        'order.id': {
+            immediate: false,
+            handler(newOrderId) {
+                this.showWidget = false;
+                this.refunds = [];
+                this.allowRefund = true;
+                this.errorOccurred = false;
+                this.isLoadingTable = true;
+
+                this.adyenService.isAdyenOrder(this.order).then((isAdyen) => {
+                    this.showWidget = isAdyen;
+                    if (isAdyen) {
+                        this.fetchRefunds();
+                    }
+                });
+            }
+        }
+    },
+
     methods: {
         openModal() {
             this.showModal = true;
