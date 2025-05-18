@@ -41,6 +41,7 @@ use Adyen\Webhook\Processor\ProcessorFactory;
 use Adyen\Webhook\EventCodes;
 use Adyen\Webhook\Processor\ProcessorInterface;
 use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -137,6 +138,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
+        LoggerInterface $logger,
         NotificationService $notificationService,
         OrderRepository $orderRepository,
         EntityRepository $paymentMethodRepository,
@@ -146,7 +148,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         WebhookHandlerFactory $webhookHandlerFactory,
         PaymentResponseService $paymentResponseService
     ) {
-        parent::__construct($scheduledTaskRepository);
+        parent::__construct($scheduledTaskRepository, $logger);
         $this->notificationService = $notificationService;
         $this->orderRepository = $orderRepository;
         $this->paymentMethodRepository = $paymentMethodRepository;
@@ -295,9 +297,15 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 'success' => $notification->isSuccess()
             ]);
 
+            $isManual = (bool) $this->captureService->isManualCaptureActive();
+            $isOnShipment = (bool) $this->captureService->isCaptureOnShipmentEnabled();
+
+            $isAutoCapture = !($isManual || $isOnShipment);
+
             return ProcessorFactory::create(
                 $notificationItem,
-                $currentTransactionState
+                $currentTransactionState,
+                $isAutoCapture
             );
         } catch (InvalidDataException $exception) {
             $logContext['notification'] = $notification->getVars();
@@ -400,6 +408,14 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         } else {
             // otherwise get the merchant reference from the notification
             $merchantReference = $notification->getMerchantReference();
+        }
+
+        if($merchantReference === null) {
+            $errorMessage = "Skipped: Order with order_number {$notification->getMerchantReference()} not found.";
+            $this->logger->error($errorMessage, $logContext);
+            $this->logNotificationFailure($notification, $errorMessage);
+            $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+            return null;
         }
 
         $order = $this->orderRepository->getOrderByOrderNumber(

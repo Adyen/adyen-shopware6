@@ -51,9 +51,13 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Cart\Order\OrderConverter;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AsynchronousPaymentHandlerInterface;
+use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
+use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\ProductCollection;
@@ -61,8 +65,12 @@ use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -72,7 +80,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
-abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandlerInterface
+abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 {
     const SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
     const SHOPPER_INTERACTION_ECOMMERCE = 'Ecommerce';
@@ -185,6 +193,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     private $orderRequestData = [];
 
     private $remainingAmount = null;
+    private AbstractSalesChannelContextFactory $salesChannelContextFactory;
+    private EntityRepository $orderRepository;
+    private EntityRepository $orderTransactionRepository;
 
     /**
      * AbstractPaymentMethodHandler constructor.
@@ -224,7 +235,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         EntityRepository $currencyRepository,
         EntityRepository $productRepository,
         AbstractContextSwitchRoute $contextSwitchRoute,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        AbstractSalesChannelContextFactory $salesChannelContextFactory,
+        EntityRepository $orderTransactionRepository,
+        EntityRepository $orderRepository
     ) {
         $this->ordersService = $ordersService;
         $this->clientService = $clientService;
@@ -243,8 +257,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->currencyRepository = $currencyRepository;
         $this->productRepository = $productRepository;
         $this->contextSwitchRoute = $contextSwitchRoute;
+        $this->salesChannelContextFactory = $salesChannelContextFactory;
+        $this->orderRepository = $orderRepository;
+        $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
+
+    public function supports(PaymentHandlerType $type, string $paymentMethodId, Context $context): bool
+    {
+        return false;
+    }
     abstract public static function getPaymentMethodCode();
 
     public static function getBrand(): ?string
@@ -253,24 +275,84 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param RequestDataBag $dataBag
-     * @param SalesChannelContext $salesChannelContext
+     * @param Request $request
+     * @param PaymentTransactionStruct $transaction
+     * @param Context $context
+     * @param Struct|null $validateStruct
+     *
      * @return RedirectResponse
+     *
      * @throws AdyenException
      */
     public function pay(
-        AsyncPaymentTransactionStruct $transaction,
-        RequestDataBag $dataBag,
-        SalesChannelContext $salesChannelContext
+        Request $request,
+        PaymentTransactionStruct $transaction,
+        Context $context,
+        ?Struct $validateStruct
     ): RedirectResponse {
+        $orderTransactionId = $transaction->getOrderTransactionId();
+
+        // 1. Load OrderTransaction to get Order ID
+        $orderTransaction = $this->orderTransactionRepository
+            ->search(new Criteria([$orderTransactionId]), $context)
+            ->get($orderTransactionId);
+
+        if (!$orderTransaction) {
+            throw new \RuntimeException("OrderTransaction not found.");
+        }
+
+        $orderId = $orderTransaction->getOrderId();
+
+        // 2. Load the Order
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('currency');
+        $criteria->addAssociation('language');
+        $criteria->addAssociation('salesChannel');
+        $criteria->addAssociation('customer');
+        $criteria->addAssociation('lineItems');
+
+        $order = $this->orderRepository->search($criteria, $context)->first();
+
+        if (!$order) {
+            throw new \RuntimeException("Order not found.");
+        }
+
+        $billingAddress = $order->getBillingAddress();
+        $countryStateId = null;
+        if ($billingAddress) {
+            $countryStateId = $billingAddress->getCountryStateId();
+        }
+
+        $customer = $order->getOrderCustomer()->getCustomer();
+        $customerGroupId = null;
+        if ($customer) {
+            $customerGroupId = $customer->getGroupId();
+        }
+
+        $request = $this->requestStack->getCurrentRequest();
+        $contextToken = $request->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
+
+        // 3. Build SalesChannelContext
+        $salesChannelContext = $this->salesChannelContextFactory->create(
+            $contextToken,
+            $order->getSalesChannelId(),
+                [
+                    SalesChannelContextService::CURRENCY_ID => $order->getCurrencyId(),
+                    SalesChannelContextService::LANGUAGE_ID => $order->getLanguageId(),
+                    SalesChannelContextService::CUSTOMER_ID => $order->getOrderCustomer()->getCustomerId(),
+                    SalesChannelContextService::COUNTRY_STATE_ID => $countryStateId,
+                    SalesChannelContextService::CUSTOMER_GROUP_ID => $customerGroupId,
+                    SalesChannelContextService::PERMISSIONS => OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS,
+                    SalesChannelContextService::VERSION_ID => $context->getVersionId(),
+                ]
+        );
 
         $this->paymentsApiService = new PaymentsApi(
-            $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
+            $this->clientService->getClient($salesChannelContext->getSalesChannelId())
         );
 
         $countStateData= 0;
-        $requestStateData = $dataBag->get('stateData');
+        $requestStateData = $request->get('stateData');
         if ($requestStateData) {
             $requestStateData = json_decode($requestStateData, true);
             $countStateData++;
@@ -278,12 +360,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $countStoredStateData = $this->paymentStateDataService->countStoredStateData($salesChannelContext);
         $countStateData += $countStoredStateData;
         //If condition to check more than 1 PM
-        if ($countStateData > 1 || ($countStateData === 1 && static::getPaymentMethodCode() !== 'giftcard')) {
-            $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction);
-            $this->handleAdyenOrderPayment($transaction, $adyenOrderResponse, $salesChannelContext);
+        if ($countStateData > 1) {
+            $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction, $order);
+            $this->handleAdyenOrderPayment($transaction, $adyenOrderResponse, $salesChannelContext, $order, $orderTransaction);
         }
 
-        $transactionId = $transaction->getOrderTransaction()->getId();
+        $transactionId = $transaction->getOrderTransactionId();
         $storedStateData = $this->paymentStateDataService->getStoredStateData($salesChannelContext, $transactionId);
 
         /*
@@ -293,8 +375,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
         $billieData = [];
-        $companyName = $dataBag->get('companyName');
-        $registrationNumber = $dataBag->get('registrationNumber');
+        $companyName = $request->get('companyName');
+        $registrationNumber = $request->get('registrationNumber');
 
         if ($companyName && $registrationNumber) {
             $billieData = [
@@ -310,16 +392,18 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
          * remainingAmount is only set if there are multiple payments.
          */
         if (is_null($this->remainingAmount) || $this->remainingAmount > 0) {
-            $request = $this->getPaymentRequest(
+            $adyenRequest = $this->getPaymentRequest(
                 $salesChannelContext,
+                $orderTransaction,
                 $transaction,
+                $order,
                 $stateData,
                 $this->remainingAmount,
                 $this->orderRequestData,
                 $billieData
             );
             //make /payments call
-            $this->paymentsCall($salesChannelContext, $request, $transaction);
+            $this->paymentsCall($salesChannelContext, $adyenRequest, $orderTransaction);
             //Remove all state data if stored or from giftcard
             if ($storedStateData) {
                 $this->paymentStateDataService->deletePaymentStateDataFromId($storedStateData['id']);
@@ -334,7 +418,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             }
         }
 
-        $orderNumber = $transaction->getOrder()->getOrderNumber();
+        $orderNumber = $order->getOrderNumber();
 
         if (empty($orderNumber)) {
             $message = 'Order number is missing';
@@ -343,7 +427,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         try {
             $this->paymentResponseHandler
-                ->handleShopwareApis($transaction, $salesChannelContext, $this->paymentResults);
+                ->handleShopwareApis($orderTransaction, $salesChannelContext, $this->paymentResults);
         } catch (PaymentCancelledException $exception) {
             throw PaymentException::customerCanceled($transactionId, $exception->getMessage());
         } catch (PaymentFailedException $exception) {
@@ -368,13 +452,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         // If Bancontact mobile payment is used, redirect to proxy finalize transaction endpoint
         if (array_key_exists('paymentMethod', $stateData) &&
             in_array($stateData['paymentMethod']['type'], ['bcmc_mobile', 'twint'])) {
-            return new RedirectResponse($this->getReturnUrl($transaction));
+            return new RedirectResponse($this->getReturnUrl($transaction, $order));
         }
 
         return new RedirectResponse($transaction->getReturnUrl());
     }
 
-    private function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    private function getReturnUrl(PaymentTransactionStruct $transaction, OrderEntity $orderEntity): string
     {
         $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
         parse_str($query, $params);
@@ -384,8 +468,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             'payment.adyen.proxy-finalize-transaction',
             [
                 '_sw_payment_token' => $token,
-                'orderId' => $transaction->getOrder()->getId(),
-                'transactionId' => $transaction->getOrderTransaction()->getId()
+                'orderId' => $orderEntity->getId(),
+                'transactionId' => $transaction->getOrderTransactionId()
             ],
             UrlGeneratorInterface::ABSOLUTE_URL
         );
@@ -396,41 +480,93 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param $transaction
      * @return array
      */
-    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction): array
+    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction, OrderEntity $order): array
     {
         $uuid = Uuid::randomHex();
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $order->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
         return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
-     * @param SalesChannelContext $salesChannelContext
+     * @param PaymentTransactionStruct $transaction
+     * @param Context $context
      * @return void
      */
     public function finalize(
-        AsyncPaymentTransactionStruct $transaction,
         Request $request,
-        SalesChannelContext $salesChannelContext
+        PaymentTransactionStruct $transaction,
+        Context $context
     ): void {
-        $transactionId = $transaction->getOrderTransaction()->getId();
+        $orderTransactionId = $transaction->getOrderTransactionId();
+
+        // 1. Load OrderTransaction to get Order ID
+        $orderTransaction = $this->orderTransactionRepository
+            ->search(new Criteria([$orderTransactionId]), $context)
+            ->get($orderTransactionId);
+
+        if (!$orderTransaction) {
+            throw new \RuntimeException("OrderTransaction not found.");
+        }
+
+        $orderId = $orderTransaction->getOrderId();
+
+        // 2. Load the Order
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('currency');
+        $criteria->addAssociation('language');
+        $criteria->addAssociation('salesChannel');
+        $criteria->addAssociation('customer');
+
+        $order = $this->orderRepository->search($criteria, $context)->first();
+
+        if (!$order) {
+            throw new \RuntimeException("Order not found.");
+        }
+
+        $billingAddress = $order->getBillingAddress();
+        $countryStateId = null;
+        if ($billingAddress) {
+            $countryStateId = $billingAddress->getCountryStateId();
+        }
+
+        $customer = $order->getOrderCustomer()->getCustomer();
+        $customerGroupId = null;
+        if ($customer) {
+            $customerGroupId = $customer->getGroupId();
+        }
+
+        // 3. Build SalesChannelContext
+        $salesChannelContext = $this->salesChannelContextFactory->create(
+            $order->getDeepLinkCode() ?? $orderId,
+            $order->getSalesChannelId(),
+            [
+                SalesChannelContextService::CURRENCY_ID => $order->getCurrencyId(),
+                SalesChannelContextService::LANGUAGE_ID => $order->getLanguageId(),
+                SalesChannelContextService::CUSTOMER_ID => $order->getOrderCustomer()->getCustomerId(),
+                SalesChannelContextService::COUNTRY_STATE_ID => $countryStateId,
+                SalesChannelContextService::CUSTOMER_GROUP_ID => $customerGroupId,
+                SalesChannelContextService::PERMISSIONS => OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS,
+                SalesChannelContextService::VERSION_ID => $context->getVersionId(),
+            ]
+        );
+
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentCancelledException $exception) {
-            throw PaymentException::customerCanceled($transactionId, $exception->getMessage());
+            throw PaymentException::customerCanceled($orderTransactionId, $exception->getMessage());
         } catch (PaymentFailedException $exception) {
-            throw PaymentException::asyncFinalizeInterrupted($transactionId, $exception->getMessage());
+            throw PaymentException::asyncFinalizeInterrupted($orderTransactionId, $exception->getMessage());
         }
     }
 
     /**
      * @param SalesChannelContext $salesChannelContext
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param array $request
      * @param int|null $partialAmount
      * @param array|null $adyenOrderData
@@ -438,7 +574,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      */
     protected function preparePaymentsRequest(
         SalesChannelContext $salesChannelContext,
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
+        OrderEntity $orderEntity,
         array $request = [],
         ?int $partialAmount = null,
         ?array $adyenOrderData = []
@@ -455,7 +592,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         //set payment method
         if (!empty($request)) {
-            $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod']);
+            $paymentMethod = new CheckoutPaymentMethod($request['paymentMethod'] ?? null);
         } else {
             $paymentMethod = new CheckoutPaymentMethod();
         }
@@ -475,7 +612,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             && $salesChannelContext->getCustomer()
             && $salesChannelContext->getCustomer()->getGuest()
         ) {
-            return $this->getPayPalPaymentRequest($salesChannelContext, $transaction, $paymentMethod);
+            return $this->getPayPalPaymentRequest($salesChannelContext, $transaction, $paymentMethod, $orderEntity);
         }
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
@@ -518,57 +655,57 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         //Setting delivery address info if not present in statedata
         if (empty($request['deliveryAddress'])) {
-            if ($salesChannelContext->getShippingLocation()->getAddress()->getCountryState()) {
+            if ($salesChannelContext->getShippingLocation()->getAddress()?->getCountryState()) {
                 $shippingState = $salesChannelContext->getShippingLocation()
-                    ->getAddress()->getCountryState()->getShortCode();
+                    ->getAddress()?->getCountryState()?->getShortCode();
             } else {
                 $shippingState = 'n/a';
             }
 
             $shippingStreetAddress = $this->getSplitStreetAddressHouseNumber(
-                $salesChannelContext->getShippingLocation()->getAddress()->getStreet()
+                $salesChannelContext->getShippingLocation()->getAddress()?->getStreet() ?: ''
             );
 
             $addressInfo = new Address();
             $addressInfo->setStreet($shippingStreetAddress['street']);
             $addressInfo->setHouseNumberOrName($shippingStreetAddress['houseNumber']);
-            $addressInfo->setPostalCode($salesChannelContext->getShippingLocation()->getAddress()->getZipcode());
-            $addressInfo->setCity($salesChannelContext->getShippingLocation()->getAddress()->getCity());
+            $addressInfo->setPostalCode($salesChannelContext->getShippingLocation()->getAddress()?->getZipcode());
+            $addressInfo->setCity($salesChannelContext->getShippingLocation()->getAddress()?->getCity());
             $addressInfo->setStateOrProvince($shippingState);
-            $addressInfo->setCountry($salesChannelContext->getShippingLocation()->getAddress()->getCountry()->getIso());
+            $addressInfo->setCountry($salesChannelContext->getShippingLocation()->getAddress()?->getCountry()?->getIso());
 
             $paymentRequest->setDeliveryAddress($addressInfo);
         }
 
         //Setting billing address info if not present in statedata
         if (empty($request['billingAddress'])) {
-            if ($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountryState()) {
+            if ($salesChannelContext->getCustomer()?->getActiveBillingAddress()?->getCountryState()) {
                 $billingState = $salesChannelContext->getCustomer()
-                    ->getActiveBillingAddress()->getCountryState()->getShortCode();
+                    ?->getActiveBillingAddress()?->getCountryState()?->getShortCode();
             } else {
                 $billingState = 'n/a';
             }
 
             $billingStreetAddress = $this->getSplitStreetAddressHouseNumber(
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getStreet()
+                $salesChannelContext->getCustomer()?->getActiveBillingAddress()?->getStreet() ?: ''
             );
 
             $addressInfo = new Address();
             $addressInfo->setStreet($billingStreetAddress['street']);
             $addressInfo->setHouseNumberOrName($billingStreetAddress['houseNumber']);
-            $addressInfo->setPostalCode($salesChannelContext->getCustomer()->getActiveBillingAddress()->getZipcode());
-            $addressInfo->setCity($salesChannelContext->getCustomer()->getActiveBillingAddress()->getCity());
+            $addressInfo->setPostalCode($salesChannelContext->getCustomer()?->getActiveBillingAddress()?->getZipcode());
+            $addressInfo->setCity($salesChannelContext->getCustomer()?->getActiveBillingAddress()?->getCity());
             $addressInfo->setStateOrProvince($billingState);
             $addressInfo->setCountry(
-                $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso()
+                $salesChannelContext->getCustomer()?->getActiveBillingAddress()?->getCountry()?->getIso()
             );
             $paymentRequest->setBillingAddress($addressInfo);
         }
 
         //Setting customer data if not present in statedata
         if (empty($request['shopperName'])) {
-            $shopperFirstName = $salesChannelContext->getCustomer()->getFirstName();
-            $shopperLastName = $salesChannelContext->getCustomer()->getLastName();
+            $shopperFirstName = $salesChannelContext->getCustomer()?->getFirstName();
+            $shopperLastName = $salesChannelContext->getCustomer()?->getLastName();
         } else {
             $shopperFirstName = $request['shopperName']['firstName'];
             $shopperLastName = $request['shopperName']['lastName'];
@@ -581,7 +718,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         if (empty($request['telephoneNumber'])) {
-            $shopperPhone = $salesChannelContext->getShippingLocation()->getAddress()->getPhoneNumber();
+            $shopperPhone = $salesChannelContext->getShippingLocation()->getAddress()?->getPhoneNumber();
         } else {
             $shopperPhone = $request['telephoneNumber'];
         }
@@ -616,7 +753,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         if (empty($request['countryCode'])) {
-            $countryCode = $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCountry()->getIso();
+            $countryCode = $salesChannelContext->getCustomer()?->getActiveBillingAddress()?->getCountry()?->getIso();
         } else {
             $countryCode = $request['countryCode'];
         }
@@ -651,7 +788,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         //Building payment data
         $amount = $partialAmount ?: $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $orderEntity->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
 
@@ -660,12 +797,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $amountInfo->setValue($amount);
 
         $paymentRequest->setAmount($amountInfo);
-        $paymentRequest->setReference($transaction->getOrder()->getOrderNumber());
+        $paymentRequest->setReference($orderEntity->getOrderNumber());
         $paymentRequest->setMerchantAccount(
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
         if (in_array($paymentMethodType, ['bcmc_mobile', 'twint'])) {
-            $paymentRequest->setReturnUrl($this->getReturnUrl($transaction));
+            $paymentRequest->setReturnUrl($this->getReturnUrl($transaction, $orderEntity));
         } else {
             $paymentRequest->setReturnUrl($transaction->getReturnUrl());
         }
@@ -677,7 +814,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         if (static::$isOpenInvoice) {
-            $orderLines = $transaction->getOrder()->getLineItems();
+            $orderLines = $orderEntity->getLineItems();
             $lineItems = [];
 
             foreach ($orderLines->getElements() as $orderLine) {
@@ -735,7 +872,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $lineItem->setDescription($productName);
                 $lineItem->setAmountExcludingTax($this->currency->sanitize(
                     $price->getUnitPrice() -
-                    ($transaction->getOrder()->getTaxStatus() == 'gross' ? $lineTax : 0),
+                    ($orderEntity->getTaxStatus() === 'gross' ? $lineTax : 0),
                     $currency->getIsoCode()
                 ));
                 $lineItem->setTaxAmount($this->currency->sanitize(
@@ -779,18 +916,19 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     /**
      * @param SalesChannelContext $salesChannelContext
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param CheckoutPaymentMethod $paymentMethod
      * @return IntegrationPaymentRequest
      */
     private function getPayPalPaymentRequest(
         SalesChannelContext $salesChannelContext,
-        AsyncPaymentTransactionStruct $transaction,
-        CheckoutPaymentMethod $paymentMethod
+        PaymentTransactionStruct $transaction,
+        CheckoutPaymentMethod $paymentMethod,
+        OrderEntity $orderEntity
     ): IntegrationPaymentRequest {
         $payPalPaymentRequest = new IntegrationPaymentRequest([]);
 
-        $price = $transaction->getOrder()->getPrice()->getPositionPrice();
+        $price = $orderEntity->getPrice()->getPositionPrice();
         $amount = $this->currency->sanitize(
             $price,
             $salesChannelContext->getCurrency()->getIsoCode()
@@ -801,7 +939,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $payPalPaymentRequest->setAmount($amountInfo);
 
         $payPalPaymentRequest->setPaymentMethod($paymentMethod);
-        $payPalPaymentRequest->setReference($transaction->getOrder()->getOrderNumber());
+        $payPalPaymentRequest->setReference($orderEntity->getOrderNumber());
         $payPalPaymentRequest->setMerchantAccount(
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
@@ -812,13 +950,15 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     private function getPaymentRequest(
         $salesChannelContext,
+        OrderTransactionEntity $orderTransactionEntity,
         $transaction,
+        OrderEntity $order,
         $stateData,
         $partialAmount,
         $orderRequestData,
         $billieData = []
     ) {
-        $transactionId = $transaction->getOrderTransaction()->getId();
+        $transactionId = $orderTransactionEntity->getId();
         if (!empty($billieData)) {
             $stateData['billieData'] = $billieData;
         }
@@ -827,6 +967,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $request = $this->preparePaymentsRequest(
                 $salesChannelContext,
                 $transaction,
+                $order,
                 $stateData,
                 $partialAmount,
                 $orderRequestData
@@ -838,7 +979,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         } catch (\Exception $exception) {
             $message = sprintf(
                 "There was an error with the payment method. Order number: %s Missing data: %s",
-                $transaction->getOrder()->getOrderNumber(),
+                $order->getOrderNumber(),
                 $exception->getMessage()
             );
             $this->logger->error($message);
@@ -849,15 +990,15 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param IntegrationPaymentRequest $request
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param OrderTransactionEntity $transaction
      * @return void
      */
     private function paymentsCall(
         SalesChannelContext $salesChannelContext,
         IntegrationPaymentRequest $request,
-        AsyncPaymentTransactionStruct $transaction
+        OrderTransactionEntity $transaction
     ): void {
-        $transactionId = $transaction->getOrderTransaction()->getId();
+        $transactionId = $transaction->getId();
         try {
             $this->clientService->logRequest(
                 $request->toArray(),
@@ -876,7 +1017,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         } catch (AdyenException $exception) {
             $message = sprintf(
                 "There was an error with the /payments request. Order number %s: %s",
-                $transaction->getOrder()->getOrderNumber(),
+                $transaction->getOrder()?->getOrderNumber(),
                 $exception->getMessage()
             );
             $this->displaySafeErrorMessages($exception);
@@ -884,7 +1025,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             throw PaymentException::asyncProcessInterrupted($transactionId, $message);
         }
         $this->paymentResults[] = $this->paymentResponseHandler
-            ->handlePaymentResponse($response, $transaction->getOrderTransaction(), false);
+            ->handlePaymentResponse($response, $transaction, false);
     }
 
     /**
@@ -898,6 +1039,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         $criteria->addAssociation('cover');
         $criteria->addAssociation('categories');
+        $criteria->addAssociation('cover.media');
 
         /** @var ProductCollection $productCollection */
         $productCollection = $this->productRepository->search($criteria, $context);
@@ -953,24 +1095,28 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param PaymentTransactionStruct $transaction
      * @param $adyenOrderResponse
      * @param SalesChannelContext $salesChannelContext
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
      * @return void
      */
     public function handleAdyenOrderPayment(
-        AsyncPaymentTransactionStruct $transaction,
+        PaymentTransactionStruct $transaction,
         $adyenOrderResponse,
-        SalesChannelContext $salesChannelContext
+        SalesChannelContext $salesChannelContext,
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction
     ): void {
         if (empty($adyenOrderResponse)) {
             return;
         }
-        $transactionId = $transaction->getOrderTransaction()->getId();
+        $transactionId = $transaction->getOrderTransactionId();
 
         //New Multi-Gift-card implementation
         $remainingOrderAmount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $order->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
 
@@ -993,14 +1139,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
             $giftcardPaymentRequest = $this->getPaymentRequest(
                 $salesChannelContext,
+                $orderTransaction,
                 $transaction,
+                $order,
                 $storedStateData,
                 $partialAmount,
                 $this->orderRequestData
             );
 
             //make /payments call
-            $this->paymentsCall($salesChannelContext, $giftcardPaymentRequest, $transaction);
+            $this->paymentsCall($salesChannelContext, $giftcardPaymentRequest, $orderTransaction);
 
             $remainingOrderAmount -= $partialAmount;
 

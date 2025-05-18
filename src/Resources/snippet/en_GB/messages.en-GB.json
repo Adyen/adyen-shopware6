@@ -13,7 +13,8 @@
             "remainingBalance": "Remaining giftcard balance",
             "deductedAmount": "Deducted Amount",
             "remainingAmount": "Remaining amount",
-            "discount": "Giftcard discount"
+            "discount": "Giftcard discount",
+            "chooseGiftcard": "Please select a giftcard..."
         },
         "billie": {
             "companyName": "Company Name*",

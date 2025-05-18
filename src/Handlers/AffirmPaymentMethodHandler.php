@@ -25,6 +25,9 @@
 
 namespace Adyen\Shopware\Handlers;
 
+use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
+use Shopware\Core\Framework\Context;
+
 class AffirmPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static bool $isOpenInvoice = true;

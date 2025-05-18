@@ -26,7 +26,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntity;
-use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
+use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -204,7 +204,7 @@ class PaymentStateDataService
         }
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new AsyncPaymentProcessException(
+            throw PaymentException::asyncProcessInterrupted(
                 $transactionId,
                 'Invalid payment state data.'
             );

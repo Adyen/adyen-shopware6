@@ -48,7 +48,7 @@ export class PaymentDetailsPage extends SPRBasePage {
         this.submitOrderButton = page.locator("#confirmFormSubmit");
 
         // Error message
-        this.errorMessageContainer = page.locator(".alert-content");
+        this.errorMessageContainer = page.locator(".alert-content-container");
 
     }
 

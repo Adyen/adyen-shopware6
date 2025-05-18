@@ -266,7 +266,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         if ($paymentMethod && $paymentMethod->getActive() &&
             in_array(
                 $paymentMethodId,
-                $event->getSalesChannelContext()->getSalesChannel()->getPaymentMethodIds(),
+                $event->getSalesChannelContext()->getSalesChannel()->getPaymentMethodIds() ?? [],
                 true
             )
         ) {
