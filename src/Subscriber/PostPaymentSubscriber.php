@@ -31,6 +31,7 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Service\TermsAndConditionsService;
 use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Struct\ArrayEntity;
@@ -158,7 +159,12 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         SalesChannelContext $salesChannelContext
     ): array {
         $orderTransaction = $order->getTransactions()
-            ->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
+            ->filter(function (OrderTransactionEntity $transaction) {
+                $state = $transaction->getStateMachineState()->getTechnicalName();
+                return $state === OrderTransactionStates::STATE_AUTHORIZED
+                    || $state === OrderTransactionStates::STATE_IN_PROGRESS;
+            })
+            ->first();
 
         if (is_null($orderTransaction)) {
             return $frontendData;

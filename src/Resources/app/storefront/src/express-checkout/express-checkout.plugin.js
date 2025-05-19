@@ -41,6 +41,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.blockPayPalShippingOptionChange = false;
         this.stateData = {};
 
+        this.googlePayComponent = null;
+
         let onPaymentDataChanged = (intermediatePaymentData) => {
             return new Promise(async resolve => { //NOSONAR
                 try {
@@ -290,7 +292,16 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
         }
 
+        if((paymentType === "paywithgoogle" || paymentType === "googlepay") && this.googlePayComponent) {
+            this.googlePayComponent.unmount();
+        }
+
         const paymentMethodInstance = AdyenWeb.createComponent(paymentType, checkoutInstance, paymentMethodConfig);
+
+        if(paymentType === "paywithgoogle" || paymentType === "googlepay") {
+            this.googlePayComponent = paymentMethodInstance;
+        }
+
         paymentMethodInstance.mount(mountElement);
     }
 

@@ -123,7 +123,7 @@ class DonateController
         $value = $payload['amount']['value'];
 
         $transaction = $this->adyenOrderTransactionRepository
-            ->getFirstAdyenOrderTransactionByStates($orderId, [OrderTransactionStates::STATE_AUTHORIZED]);
+            ->getFirstAdyenOrderTransactionByStates($orderId, [OrderTransactionStates::STATE_AUTHORIZED, OrderTransactionStates::STATE_IN_PROGRESS]);
 
         $orderCurrency = $transaction->getOrder()->getCurrency()->getIsoCode();
         $donationAmounts = $this->configurationService
