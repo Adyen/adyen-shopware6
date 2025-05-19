@@ -4,6 +4,9 @@
 
 {% block page_checkout_confirm_payment_inner %}
     {{ parent() }}
+
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
+
     {% block page_checkout_confirm_payment_inner_adyen %}
         {% set billingAddress = context.customer.activeBillingAddress %}
         {% set shippingAddress = context.customer.activeShippingAddress %}

@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/adyenpaymentshopware6/administration/",
+  "entryPoints": {
+    "adyen-payment-shopware6": {
+      "css": [
+        "/bundles/adyenpaymentshopware6/administration/assets/adyen-payment-shopware6-CTP4hGMW.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/adyenpaymentshopware6/administration/assets/adyen-payment-shopware6-BIKNtqAG.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

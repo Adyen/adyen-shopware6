@@ -739,7 +739,9 @@ class ExpressCheckoutService
             $shippingLocation,
             $customer,
             $salesChannelContext->getItemRounding(),
-            $salesChannelContext->getTotalRounding()
+            $salesChannelContext->getTotalRounding(),
+            $salesChannelContext->getLanguageInfo(),
+            $salesChannelContext->getAreaRuleIds()
         );
     }
 

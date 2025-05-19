@@ -427,4 +427,22 @@ class CaptureService
 
         return $totalCapturedAmount;
     }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function isManualCaptureActive(string $salesChannelId = null)
+    {
+        return $this->configurationService->isManualCaptureActive($salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return array|bool|float|int|string|null
+     */
+    public function isCaptureOnShipmentEnabled(string $salesChannelId = null)
+    {
+        return $this->configurationService->isCaptureOnShipmentEnabled($salesChannelId);
+    }
 }

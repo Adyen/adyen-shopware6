@@ -2,9 +2,9 @@
     {% if adyenFrontendData and adyenFrontendData.giftcards %}
         <div id="adyen-giftcards-container">
             <hr>
-            <a id="showGiftcardButton" class="btn btn-outline-info float-right mb-3">
+            <button id="showGiftcardButton" class="btn btn-outline-info float-right mb-3">
                 &plus; {{ "adyen.giftcard.addGiftcards" | trans }}
-            </a>
+            </button>
             <div id="adyen-giftcards-configuration"
                  data-total-price="{{ adyenFrontendData.totalPrice }}"
                  data-total-in-minor-units="{{ adyenFrontendData.totalInMinorUnits }}"
@@ -25,8 +25,8 @@
             ></div>
             <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
             {# loop through giftcards and display logo #}
-            <select id="giftcardDropdown" style="display: none">
-                <option value="" disabled selected>{{ "Please select a giftcard..." | trans }}</option>
+            <select id="giftcardDropdown" style="display: none" aria-label="{{ 'adyen.giftcard.chooseGiftcard' | trans }}">
+                <option value="" disabled selected>{{ "adyen.giftcard.chooseGiftcard" | trans }}</option>
                 {% for giftcard in adyenFrontendData.giftcards %}
                     <option class="adyen-giftcard"
                             value="{{ giftcard.name }}"

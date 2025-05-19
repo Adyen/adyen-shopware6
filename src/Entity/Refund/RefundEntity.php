@@ -66,7 +66,7 @@ class RefundEntity extends Entity
     /**
      * @var \DateTimeInterface|null
      */
-    protected $createdAt;
+    protected ?\DateTimeInterface $createdAt;
 
     /**
      * @var int
