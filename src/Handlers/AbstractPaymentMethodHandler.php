@@ -335,7 +335,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         Context $context,
         ?Struct $validateStruct
     ): RedirectResponse {
-        [$orderTransaction, $order, $countryStateId, $customerGroupId] = $this->loadOrderTransactionAndOrder($transaction, $context);
+        [$orderTransaction, $order, $countryStateId, $customerGroupId] =
+            $this->loadOrderTransactionAndOrder($transaction, $context);
 
         $currentRequest = $this->requestStack->getCurrentRequest();
         $contextToken = $currentRequest->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
@@ -516,7 +517,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         PaymentTransactionStruct $transaction,
         Context $context
     ): void {
-        [$orderTransaction, $order, $countryStateId, $customerGroupId] = $this->loadOrderTransactionAndOrder($transaction, $context);
+        [$orderTransaction, $order, $countryStateId, $customerGroupId] =
+            $this->loadOrderTransactionAndOrder($transaction, $context);
 
         // 3. Build SalesChannelContext
         $salesChannelContext = $this->salesChannelContextFactory->create(
@@ -538,7 +540,10 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         } catch (PaymentCancelledException $exception) {
             throw PaymentException::customerCanceled($transaction->getOrderTransactionId(), $exception->getMessage());
         } catch (PaymentFailedException $exception) {
-            throw PaymentException::asyncFinalizeInterrupted($transaction->getOrderTransactionId(), $exception->getMessage());
+            throw PaymentException::asyncFinalizeInterrupted(
+                $transaction->getOrderTransactionId(),
+                $exception->getMessage()
+            );
         }
     }
 
