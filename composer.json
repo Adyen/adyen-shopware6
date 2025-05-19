@@ -48,5 +48,7 @@
         "allow-plugins": {
             "symfony/*": true
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
