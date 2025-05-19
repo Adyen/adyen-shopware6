@@ -145,6 +145,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '4.2.0', '<')) {
             $this->updateTo420($updateContext);
         }
+
+        if (\version_compare($currentVersion, '4.3.0', '<')) {
+            $this->updateTo430($updateContext);
+        }
     }
 
     public function postUpdate(UpdateContext $updateContext): void
@@ -588,6 +592,29 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
+    }
+
+    private function updateTo430(UpdateContext $updateContext): void
+    {
+        $paymentRepository = $this->container->get('payment_method.repository');
+        $pluginIdProvider = $this->container->get(PluginIdProvider::class);
+        $pluginId = $pluginIdProvider->getPluginIdByBaseClass(get_class($this), $updateContext->getContext());
+
+        foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
+            $paymentMethod = new $paymentMethod();
+            $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
+
+            if ($paymentMethodId === null) {
+                continue;
+            }
+
+            $paymentData = [
+                'id' => $paymentMethodId,
+                'pluginId' => $pluginId,
+                'technicalName' => 'adyen_payment-' . $paymentMethod->getGatewayCode(),
+            ];
+            $paymentRepository->update([$paymentData], $updateContext->getContext());
+        }
     }
 
     /**
