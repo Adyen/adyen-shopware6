@@ -92,12 +92,14 @@ export default class CartPlugin extends Plugin {
     }
 
     async initializeCheckoutComponent() {
+        const { AdyenCheckout } = window.AdyenWeb;
         const { locale, clientKey, environment } = adyenCheckoutConfiguration;
 
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
             clientKey,
             environment,
+            countryCode: adyenCheckoutConfiguration.countryCode,
             amount: {
                 currency: adyenGiftcardsConfiguration.currency,
                 value: adyenGiftcardsConfiguration.totalInMinorUnits,
@@ -131,6 +133,7 @@ export default class CartPlugin extends Plugin {
         //Add Giftcard image and name
         var imgElement = document.createElement('img');
         imgElement.src = 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/'+giftcard.brand+'.svg';
+        imgElement.alt = giftcard.brand + ' logo';
         imgElement.classList.add('adyen-giftcard-logo');
 
         this.giftcardItem.insertBefore(imgElement, this.giftcardItem.firstChild);
@@ -143,7 +146,7 @@ export default class CartPlugin extends Plugin {
         });
 
         try {
-            this.paymentMethodInstance = this.adyenCheckout.create('giftcard', giftcardConfiguration);
+            this.paymentMethodInstance = new AdyenWeb.Giftcard(this.adyenCheckout, giftcardConfiguration)
             this.paymentMethodInstance.mount('#adyen-giftcard-component');
         } catch (e) {
             console.log('giftcard not available', e);
@@ -208,6 +211,7 @@ export default class CartPlugin extends Plugin {
                 //Create a new HTML element for each gift card
                 let giftcardElement = document.createElement('div');
                 var imgElement = document.createElement('img');
+                imgElement.alt = giftcard.brand + ' logo';
                 imgElement.src = 'https://checkoutshopper-live.adyen.com/checkoutshopper/images/logos/'+giftcard.brand+'.svg';
                 imgElement.classList.add('adyen-giftcard-logo');
 
