@@ -329,8 +329,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
             $customerGroupId = $customer->getGroupId();
         }
 
-        $request = $this->requestStack->getCurrentRequest();
-        $contextToken = $request->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
+        $currentRequest = $this->requestStack->getCurrentRequest();
+        $contextToken = $currentRequest->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
 
         // 3. Build SalesChannelContext
         $salesChannelContext = $this->salesChannelContextFactory->create(
@@ -352,7 +352,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         );
 
         $countStateData= 0;
-        $requestStateData = $request->get('stateData');
+        $requestStateData = $currentRequest->get('stateData');
         if ($requestStateData) {
             $requestStateData = json_decode($requestStateData, true);
             $countStateData++;
@@ -381,8 +381,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $stateData = $requestStateData ?? $storedStateData ?? [];
 
         $billieData = [];
-        $companyName = $request->get('companyName');
-        $registrationNumber = $request->get('registrationNumber');
+        $companyName = $currentRequest->get('companyName');
+        $registrationNumber = $currentRequest->get('registrationNumber');
 
         if ($companyName && $registrationNumber) {
             $billieData = [
