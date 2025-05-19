@@ -90,12 +90,12 @@ class AdyenPaymentEntity extends Entity
     /**
      * @var \DateTimeInterface|null
      */
-    protected $createdAt;
+    protected ?\DateTimeInterface $createdAt;
 
     /**
      * @var \DateTimeInterface|null
      */
-    protected $updatedAt;
+    protected ?\DateTimeInterface $updatedAt;
 
     /**
      * @var OrderTransactionEntity
