@@ -275,6 +275,51 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     }
 
     /**
+     * Load OrderTransaction and Order with related data.
+     *
+     * @param PaymentTransactionStruct $transaction
+     * @param Context $context
+     *
+     * @return array{OrderTransactionEntity, OrderEntity, string|null, string|null}
+     */
+    private function loadOrderTransactionAndOrder(PaymentTransactionStruct $transaction, Context $context): array
+    {
+        $orderTransactionId = $transaction->getOrderTransactionId();
+
+        $orderTransaction = $this->orderTransactionRepository
+            ->search(new Criteria([$orderTransactionId]), $context)
+            ->get($orderTransactionId);
+
+        if (!$orderTransaction) {
+            throw new \RuntimeException("OrderTransaction not found.");
+        }
+
+        $orderId = $orderTransaction->getOrderId();
+
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('currency');
+        $criteria->addAssociation('language');
+        $criteria->addAssociation('salesChannel');
+        $criteria->addAssociation('customer');
+        $criteria->addAssociation('lineItems');
+
+        $order = $this->orderRepository->search($criteria, $context)->first();
+
+        if (!$order) {
+            throw new \RuntimeException("Order not found.");
+        }
+
+        $billingAddress = $order->getBillingAddress();
+        $countryStateId = $billingAddress?->getCountryStateId();
+
+        $customer = $order->getOrderCustomer()?->getCustomer();
+        $customerGroupId = $customer?->getGroupId();
+
+        return [$orderTransaction, $order, $countryStateId, $customerGroupId];
+    }
+
+
+    /**
      * @param Request $request
      * @param PaymentTransactionStruct $transaction
      * @param Context $context
@@ -290,44 +335,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         Context $context,
         ?Struct $validateStruct
     ): RedirectResponse {
-        $orderTransactionId = $transaction->getOrderTransactionId();
-
-        // 1. Load OrderTransaction to get Order ID
-        $orderTransaction = $this->orderTransactionRepository
-            ->search(new Criteria([$orderTransactionId]), $context)
-            ->get($orderTransactionId);
-
-        if (!$orderTransaction) {
-            throw new \RuntimeException("OrderTransaction not found.");
-        }
-
-        $orderId = $orderTransaction->getOrderId();
-
-        // 2. Load the Order
-        $criteria = new Criteria([$orderId]);
-        $criteria->addAssociation('currency');
-        $criteria->addAssociation('language');
-        $criteria->addAssociation('salesChannel');
-        $criteria->addAssociation('customer');
-        $criteria->addAssociation('lineItems');
-
-        $order = $this->orderRepository->search($criteria, $context)->first();
-
-        if (!$order) {
-            throw new \RuntimeException("Order not found.");
-        }
-
-        $billingAddress = $order->getBillingAddress();
-        $countryStateId = null;
-        if ($billingAddress) {
-            $countryStateId = $billingAddress->getCountryStateId();
-        }
-
-        $customer = $order->getOrderCustomer()->getCustomer();
-        $customerGroupId = null;
-        if ($customer) {
-            $customerGroupId = $customer->getGroupId();
-        }
+        [$orderTransaction, $order, $countryStateId, $customerGroupId] = $this->loadOrderTransactionAndOrder($transaction, $context);
 
         $currentRequest = $this->requestStack->getCurrentRequest();
         $contextToken = $currentRequest->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
@@ -508,47 +516,11 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         PaymentTransactionStruct $transaction,
         Context $context
     ): void {
-        $orderTransactionId = $transaction->getOrderTransactionId();
-
-        // 1. Load OrderTransaction to get Order ID
-        $orderTransaction = $this->orderTransactionRepository
-            ->search(new Criteria([$orderTransactionId]), $context)
-            ->get($orderTransactionId);
-
-        if (!$orderTransaction) {
-            throw new \RuntimeException("OrderTransaction not found.");
-        }
-
-        $orderId = $orderTransaction->getOrderId();
-
-        // 2. Load the Order
-        $criteria = new Criteria([$orderId]);
-        $criteria->addAssociation('currency');
-        $criteria->addAssociation('language');
-        $criteria->addAssociation('salesChannel');
-        $criteria->addAssociation('customer');
-
-        $order = $this->orderRepository->search($criteria, $context)->first();
-
-        if (!$order) {
-            throw new \RuntimeException("Order not found.");
-        }
-
-        $billingAddress = $order->getBillingAddress();
-        $countryStateId = null;
-        if ($billingAddress) {
-            $countryStateId = $billingAddress->getCountryStateId();
-        }
-
-        $customer = $order->getOrderCustomer()->getCustomer();
-        $customerGroupId = null;
-        if ($customer) {
-            $customerGroupId = $customer->getGroupId();
-        }
+        [$orderTransaction, $order, $countryStateId, $customerGroupId] = $this->loadOrderTransactionAndOrder($transaction, $context);
 
         // 3. Build SalesChannelContext
         $salesChannelContext = $this->salesChannelContextFactory->create(
-            $order->getDeepLinkCode() ?? $orderId,
+            $order->getDeepLinkCode() ?? $orderTransaction->getOrderId(),
             $order->getSalesChannelId(),
             [
                 SalesChannelContextService::CURRENCY_ID => $order->getCurrencyId(),
@@ -564,9 +536,9 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         try {
             $this->resultHandler->processResult($transaction, $request, $salesChannelContext);
         } catch (PaymentCancelledException $exception) {
-            throw PaymentException::customerCanceled($orderTransactionId, $exception->getMessage());
+            throw PaymentException::customerCanceled($transaction->getOrderTransactionId(), $exception->getMessage());
         } catch (PaymentFailedException $exception) {
-            throw PaymentException::asyncFinalizeInterrupted($orderTransactionId, $exception->getMessage());
+            throw PaymentException::asyncFinalizeInterrupted($transaction->getOrderTransactionId(), $exception->getMessage());
         }
     }
 
