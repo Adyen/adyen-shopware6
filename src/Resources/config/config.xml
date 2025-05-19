@@ -261,6 +261,13 @@
             </helpText>
         </input-field>
         <input-field type="text">
+            <name>adyenGivingTermsAndConditions</name>
+            <label>Terms and Conditions</label>
+            <helpText>
+                Link to the charity organization's terms and conditions page.
+            </helpText>
+        </input-field>
+        <input-field type="text">
             <name>adyenGivingDonationAmounts</name>
             <label>Donation Amounts</label>
             <helpText>

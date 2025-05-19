@@ -12,7 +12,8 @@
             "closeGiftcardSection": "Geschenkkartenbereich schließen",
             "remainingBalance": "Verbleibendes guthaben der geschenkkarte",
             "remainingAmount": "Restbetrag",
-            "discount": "Geschenkkarten-Rabatt"
+            "discount": "Geschenkkarten-Rabatt",
+            "chooseGiftcard": "Bitte wählen Sie eine Geschenkkarte aus..."
         },
         "billie": {
             "companyName": "Firmenname*",
