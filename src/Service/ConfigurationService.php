@@ -28,6 +28,7 @@ use Adyen\Environment;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ConfigurationService
@@ -233,7 +234,7 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|bool|float|int|string|null
      */
-    public function isCaptureOnShipmentEnabled(string $salesChannelId)
+    public function isCaptureOnShipmentEnabled(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.captureOnShipmentEnabled',
@@ -463,6 +464,30 @@ class ConfigurationService
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.refundStrategyGiftcard',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string|null
+     */
+    public function getAdyenGivingTermsAndConditionsUrl(string $salesChannelId = null): ?string
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.adyenGivingTermsAndConditions',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string|null
+     */
+    public function getTosPageId(string $salesChannelId = null): ?string
+    {
+        return $this->systemConfigService->get(
+            'core.basicInformation.tosPage',
             $salesChannelId
         );
     }

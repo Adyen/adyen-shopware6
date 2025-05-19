@@ -27,17 +27,19 @@ import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-l
 export default class AdyenSuccessActionPlugin extends Plugin {
     init() {
         this.adyenCheckout = Promise;
-        this.initializeCheckoutComponent().bind(this);
+        this.initializeCheckoutComponent.bind(this)();
     }
 
     async initializeCheckoutComponent () {
+        const { AdyenCheckout } = window.AdyenWeb;
         const { locale, clientKey, environment } = adyenCheckoutConfiguration;
         const { action } = adyenSuccessActionConfiguration;
 
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
             clientKey,
-            environment
+            environment,
+            countryCode: adyenCheckoutConfiguration.countryCode
         };
 
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);

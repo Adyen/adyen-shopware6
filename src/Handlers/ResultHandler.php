@@ -121,7 +121,7 @@ class ResultHandler
             (
                 $salesChannelContext->getPaymentMethod()->getFormattedHandlerIdentifier() ===
                 'handler_adyen_bancontactmobilepaymentmethodhandler' &&
-                $requestResponse['redirectResult']
+                !empty($requestResponse['redirectResult'] ?? null)
             )
         ) {
             $details = DataArrayValidator::getArrayOnlyWithApprovedKeys($requestResponse, [

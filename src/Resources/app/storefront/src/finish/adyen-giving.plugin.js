@@ -29,39 +29,41 @@ export default class AdyenGivingPlugin extends Plugin {
     init() {
         this._client = new HttpClient();
         this.adyenCheckout = Promise;
-        this.initializeCheckoutComponent().bind(this);
+        this.initializeCheckoutComponent.bind(this)();
     }
 
     async initializeCheckoutComponent () {
+        const { AdyenCheckout } = window.AdyenWeb;
         const { locale, clientKey, environment } = adyenCheckoutConfiguration;
         const { currency, values, backgroundUrl,
-            logoUrl, name, description, url } = adyenGivingConfiguration;
+            logoUrl, name, description, url, termsAndConditionsUrl } = adyenGivingConfiguration;
 
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
             clientKey,
-            environment
+            environment,
+            countryCode: adyenCheckoutConfiguration.countryCode
         };
 
         const ADYEN_GIVING_CONFIG = {
-            amounts: {
+            donation: {
                 currency: currency,
-                values: values.split(",").map(element => {
-                    return Number(element);
-                })
+                donationType: "fixedAmounts",
+                values: values.split(",").map(Number)
             },
-            backgroundUrl: backgroundUrl,
+            bannerUrl: backgroundUrl,
             logoUrl: logoUrl,
-            description: description,
-            name: name,
-            url: url,
+            nonprofitDescription: description,
+            nonprofitName: name,
+            nonprofitUrl: url,
+            termsAndConditionsUrl: termsAndConditionsUrl,
             showCancelButton: true,
             onDonate: this.handleOnDonate.bind(this),
             onCancel: this.handleOnCancel.bind(this)
-        }
+        };
 
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
-        this.adyenCheckout.create('donation', ADYEN_GIVING_CONFIG).mount('#donation-container');
+        new AdyenWeb.Donation(this.adyenCheckout, ADYEN_GIVING_CONFIG).mount('#donation-container');
     }
 
     handleOnDonate(state, component) {
