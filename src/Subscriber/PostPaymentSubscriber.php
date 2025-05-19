@@ -25,9 +25,13 @@
 namespace Adyen\Shopware\Subscriber;
 
 use Adyen\Shopware\Service\ConfigurationService;
+use Adyen\Shopware\Service\ExpressCheckoutService;
+use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
+use Adyen\Shopware\Service\TermsAndConditionsService;
 use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Struct\ArrayEntity;
@@ -66,10 +70,22 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     private $logger;
 
     /**
+     * @var ExpressCheckoutService
+     */
+    private $expressCheckoutService;
+
+    /**
+     * @var TermsAndConditionsService
+     */
+    private $termsAndConditionsService;
+
+    /**
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param RouterInterface $router
+     * @param ExpressCheckoutService $expressCheckoutService
+     * @param TermsAndConditionsService $expressCheckoutService
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -77,12 +93,16 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         ConfigurationService $configurationService,
         Currency $currency,
         RouterInterface $router,
+        ExpressCheckoutService $expressCheckoutService,
+        TermsAndConditionsService $termsAndConditionsService,
         LoggerInterface $logger
     ) {
         $this->configurationService = $configurationService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->currency = $currency;
         $this->router = $router;
+        $this->expressCheckoutService = $expressCheckoutService;
+        $this->termsAndConditionsService = $termsAndConditionsService;
         $this->logger = $logger;
     }
 
@@ -114,6 +134,10 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
                 ->getLanguage()->getLocale()->getCode(),
             'environment' => $this->configurationService->getEnvironment($salesChannelId),
             'orderId' => $order->getId(),
+            'countryCode' => $this->expressCheckoutService->getCountryCode(
+                $salesChannelContext->getCustomer(),
+                $salesChannelContext
+            ),
         ];
 
         if ($this->configurationService->isAdyenGivingEnabled($salesChannelId)) {
@@ -135,7 +159,12 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         SalesChannelContext $salesChannelContext
     ): array {
         $orderTransaction = $order->getTransactions()
-            ->filterByState(OrderTransactionStates::STATE_AUTHORIZED)->first();
+            ->filter(function (OrderTransactionEntity $transaction) {
+                $state = $transaction->getStateMachineState()->getTechnicalName();
+                return $state === OrderTransactionStates::STATE_AUTHORIZED
+                    || $state === OrderTransactionStates::STATE_IN_PROGRESS;
+            })
+            ->first();
 
         if (is_null($orderTransaction)) {
             return $frontendData;
@@ -159,6 +188,8 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         );
         $currency = $salesChannelContext->getCurrency()->getIsoCode();
         $amounts = $this->configurationService->getAdyenGivingDonationAmounts($salesChannelId);
+
+        $termsAndConditionsUrl = $this->termsAndConditionsService->getTermsAndConditionsUrl($salesChannelContext);
 
         $donationAmounts = [];
         try {
@@ -185,7 +216,8 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
             ),
             'continueActionUrl' => $this->router->generate(
                 'frontend.home.page'
-            )
+            ),
+            'termsAndConditionsUrl' => $termsAndConditionsUrl
         ];
 
         return array_merge($frontendData, $adyenGivingData);

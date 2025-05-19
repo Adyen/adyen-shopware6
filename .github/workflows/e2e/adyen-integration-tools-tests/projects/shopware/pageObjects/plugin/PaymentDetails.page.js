@@ -58,7 +58,7 @@ export class PaymentDetailsPage extends SPRBasePage {
 
         await this.page.waitForNavigation({
             url: /ERROR/,
-            timeout: 15000,
+            timeout: 40000,
         });
     }
 

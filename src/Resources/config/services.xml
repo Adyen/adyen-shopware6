@@ -77,6 +77,8 @@
             <argument type="service" id="Shopware\Core\Framework\Api\Controller\ApiController"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Order\OrderConverter"/>
         </service>
+        <service id="Adyen\Shopware\Service\TermsAndConditionsService" autowire="true">
+        </service>
         <service id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory">
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
             <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
