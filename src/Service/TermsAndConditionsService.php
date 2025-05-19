@@ -54,8 +54,7 @@ class TermsAndConditionsService
         TermsAndConditionsRepository $termsAndConditionsRepository,
         ConfigurationService $configurationService,
         SalesChannelRepository $salesChannelRepository
-    )
-    {
+    ) {
         $this->termsAndConditionsRepository = $termsAndConditionsRepository;
         $this->configurationService = $configurationService;
         $this->salesChannelRepository = $salesChannelRepository;
@@ -99,8 +98,13 @@ class TermsAndConditionsService
      * @param SalesChannelContext $context The sales channel context.
      * @return string|null The relative SEO URL or null if not found.
      */
-    private function getShopTermsAndConditionsPath(?string $tosPageId, SalesChannelContext $salesChannelContext): ?string
-    {
-        return $this->termsAndConditionsRepository->getTermsAndConditionsPath($tosPageId, $salesChannelContext->getContext());
+    private function getShopTermsAndConditionsPath(
+        ?string $tosPageId,
+        SalesChannelContext $salesChannelContext
+    ): ?string {
+        return $this->termsAndConditionsRepository->getTermsAndConditionsPath(
+            $tosPageId,
+            $salesChannelContext->getContext()
+        );
     }
 }

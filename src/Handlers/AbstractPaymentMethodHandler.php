@@ -336,7 +336,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $salesChannelContext = $this->salesChannelContextFactory->create(
             $contextToken,
             $order->getSalesChannelId(),
-                [
+            [
                     SalesChannelContextService::CURRENCY_ID => $order->getCurrencyId(),
                     SalesChannelContextService::LANGUAGE_ID => $order->getLanguageId(),
                     SalesChannelContextService::CUSTOMER_ID => $order->getOrderCustomer()->getCustomerId(),
@@ -362,7 +362,13 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         //If condition to check more than 1 PM
         if ($countStateData > 1) {
             $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction, $order);
-            $this->handleAdyenOrderPayment($transaction, $adyenOrderResponse, $salesChannelContext, $order, $orderTransaction);
+            $this->handleAdyenOrderPayment(
+                $transaction,
+                $adyenOrderResponse,
+                $salesChannelContext,
+                $order,
+                $orderTransaction
+            );
         }
 
         $transactionId = $transaction->getOrderTransactionId();
@@ -672,7 +678,9 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
             $addressInfo->setPostalCode($salesChannelContext->getShippingLocation()->getAddress()?->getZipcode());
             $addressInfo->setCity($salesChannelContext->getShippingLocation()->getAddress()?->getCity());
             $addressInfo->setStateOrProvince($shippingState);
-            $addressInfo->setCountry($salesChannelContext->getShippingLocation()->getAddress()?->getCountry()?->getIso());
+            $addressInfo->setCountry(
+                $salesChannelContext->getShippingLocation()->getAddress()?->getCountry()?->getIso()
+            );
 
             $paymentRequest->setDeliveryAddress($addressInfo);
         }
