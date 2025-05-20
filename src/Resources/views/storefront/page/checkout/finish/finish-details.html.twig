@@ -7,7 +7,9 @@
 
     {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
     {% if adyenFrontendData %}
-        <script>window.localStorage.removeItem('confirmOrderForm.tos');</script>
+        {% block adyen_finish_details_inline_script %}
+            <script>window.localStorage.removeItem('confirmOrderForm.tos');</script>
+        {% endblock %}
         {% if adyenFrontendData.notification %}
             <h2 style="text-align: center; margin-bottom: 40px">{{ "adyen.notification.message"|trans }}</h2>
         {% endif %}

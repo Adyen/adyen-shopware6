@@ -29,7 +29,9 @@
                    value="{{ adyenPaymentMethodType|escape }}">
         </div>
     {% endfor %}
-    <script>
-        var adyenExpressCheckoutOptions = document.querySelector('#adyen-express-checkout-options').dataset;
-    </script>
+    {% block adyen_express_checkout_inline_script %}
+        <script>
+            var adyenExpressCheckoutOptions = document.querySelector('#adyen-express-checkout-options').dataset;
+        </script>
+    {% endblock %}
 </div>

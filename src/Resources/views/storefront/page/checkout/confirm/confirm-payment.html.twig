@@ -32,11 +32,13 @@
                 data-country="{{ shippingAddress.country.iso }}"
                 data-phone-number="{{ shippingAddress.phoneNumber }}"
             ></div>
-            <script>
-                var shopperDetails = document.querySelector('#shopper-details').dataset;
-                var activeBillingAddress = document.querySelector('#active-billing-address').dataset;
-                var activeShippingAddress = document.querySelector('#active-shipping-address').dataset;
-            </script>
+            {% block adyen_confirm_payment_addresses_inline_script %}
+                <script>
+                    var shopperDetails = document.querySelector('#shopper-details').dataset;
+                    var activeBillingAddress = document.querySelector('#active-billing-address').dataset;
+                    var activeShippingAddress = document.querySelector('#active-shipping-address').dataset;
+                </script>
+            {% endblock %}
         {% endif %}
         {% if adyenFrontendData and adyenFrontendData.paymentStatusUrl and adyenFrontendData.paymentMethodsResponse %}
             <div id="adyen-checkout-options"
@@ -70,9 +72,11 @@
                  data-gateway-merchant-id="{{ adyenFrontendData.gatewayMerchantId }}"
             >
             </div>
-            <script>
-                var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
-            </script>
+            {% block adyen_confirm_payment_checkout_options_inline_script %}
+                <script>
+                    var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
+                </script>
+            {% endblock %}
         {% endif %}
     {% endblock %}
 {% endblock %}

@@ -6,8 +6,10 @@
 
         <div id='success-action-container'></div>
 
-        <script>
-            var adyenSuccessActionConfiguration = document.querySelector('#adyen-success-action-configuration').dataset;
-        </script>
+        {% block adyen_payment_success_action_inline_script %}
+            <script>
+                var adyenSuccessActionConfiguration = document.querySelector('#adyen-success-action-configuration').dataset;
+            </script>
+        {% endblock %}
     </div>
 {% endif %}

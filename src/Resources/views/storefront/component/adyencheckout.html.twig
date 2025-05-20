@@ -10,6 +10,8 @@
         {# Load checkout web component (Corresponding version number can be found on release notes.) #}
         <link rel="stylesheet" href="{{ asset('bundles/adyenpaymentshopware6/css/adyen.css', 'asset') }}">
         <script type="text/javascript" src="{{ asset('bundles/adyenpaymentshopware6/js/adyen.js', 'asset') }}"></script>
-        <script>var adyenCheckoutConfiguration = document.querySelector('#adyen-checkout-configuration').dataset;</script>
+        {% block adyen_checkout_inline_script %}
+            <script>var adyenCheckoutConfiguration = document.querySelector('#adyen-checkout-configuration').dataset;</script>
+        {% endblock %}
     {% endif %}
 {% endblock %}

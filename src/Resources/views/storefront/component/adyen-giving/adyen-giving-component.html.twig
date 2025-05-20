@@ -15,9 +15,10 @@
         ></div>
 
         <div id='donation-container'></div>
-
-        <script>
-            var adyenGivingConfiguration = document.querySelector('#adyen-giving-configuration').dataset;
-        </script>
+        {% block adyen_giving_inline_script %}
+            <script>
+                var adyenGivingConfiguration = document.querySelector('#adyen-giving-configuration').dataset;
+            </script>
+        {% endblock %}
     </div>
 {% endif %}
