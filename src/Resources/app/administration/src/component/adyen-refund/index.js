@@ -70,6 +70,10 @@ Component.register('adyen-refund', {
         },
 
         onRefund() {
+            if(this.isLoadingRefund === true) {
+                return;
+            }
+
             this.isLoadingRefund = true;
             this.adyenService.postRefund(this.order.id, this.refundAmount).then((res) => {
                 if (res.success) {
