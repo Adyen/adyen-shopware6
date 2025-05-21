@@ -70,6 +70,10 @@ Component.register('adyen-payment-capture', {
         },
 
         onSubmitCapture() {
+            if(this.isLoading === true) {
+                return;
+            }
+
             this.isLoading = true;
             this.adyenService.capture(this.order.id).then(res => {
                 if (res.success) {
