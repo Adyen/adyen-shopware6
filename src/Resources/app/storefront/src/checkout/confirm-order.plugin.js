@@ -117,7 +117,13 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     onConfirmOrderSubmit(event) {
-        const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
+        let confirmFormSubmit;
+        try {
+            confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
+        } catch (error) {
+            return;
+        }
+
         if (event.target !== confirmFormSubmit) {
             return;
         }
