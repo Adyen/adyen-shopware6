@@ -58,7 +58,7 @@ jobs:
                 {shopware_version: $shopware_v2}
               ]
             }')
-          echo "::set-output name=matrix::$matrix_json"
+          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
           echo "Generated matrix: $matrix_json"
         env:
           NEWEST_DOCKWARE_TAG: ${{ env.NEWEST_DOCKWARE_TAG }}
