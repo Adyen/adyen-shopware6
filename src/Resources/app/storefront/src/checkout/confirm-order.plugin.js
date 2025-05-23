@@ -640,10 +640,11 @@ export default class ConfirmOrderPlugin extends Plugin {
             paymentMethodInstance.mount(componentSelector);
 
             this.checkoutMainContent.addEventListener('click', function (event) {
-                const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
-                if (event.target !== confirmFormSubmit) {
+                const submitButton = event.target.closest('button[type="submit"]');
+                if (!submitButton) {
                     return;
                 }
+                event.preventDefault();
 
                 const form = DomAccess.querySelector(document, '#confirmOrderForm');
                 if (!form.checkValidity()) {
