@@ -1,0 +1,27 @@
+{
+    "adyen": {
+        "updateDetails": "Zaktualizuj dane płatności",
+        "loading": "Ładowanie...",
+        "notification": {
+            "message": "Twoje zamówienie jest przetwarzane!"
+        },
+        "paymentMethodSelectionError": "Niestety wystąpił błąd podczas zapisywania wybranej metody płatności. Proszę wybrać inną metodę płatności.",
+        "giftcard": {
+            "addGiftcards": "Dodaj karty podarunkowe",
+            "removeGiftcard": "Usuń kartę podarunkową",
+            "closeGiftcardSection": "Zamknij sekcję kart podarunkowych",
+            "remainingBalance": "Pozostałe saldo karty podarunkowej",
+            "deductedAmount": "Pobrana kwota",
+            "remainingAmount": "Pozostała kwota",
+            "discount": "Zniżka z karty podarunkowej"
+        },
+        "billie": {
+            "companyName": "Nazwa firmy*",
+            "companyNamePlaceholder": "Wpisz nazwę swojej firmy",
+            "companyNumber": "Numer rejestracyjny firmy",
+            "companyNumberPlaceholder": "Wpisz numer rejestracyjny",
+            "requiredFields": "Pola oznaczone gwiazdką (*) są wymagane.",
+            "companyNameRequired": "Nazwa firmy jest wymagana."
+        }
+    }
+}
