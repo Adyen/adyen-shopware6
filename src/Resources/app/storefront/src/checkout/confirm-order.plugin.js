@@ -117,18 +117,12 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     onConfirmOrderSubmit(event) {
-        let confirmFormSubmit;
-        try {
-            confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
-        } catch (error) {
-            return;
-        }
-
+        const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]', false);
         if (event.target !== confirmFormSubmit) {
             return;
         }
 
-        const form = DomAccess.querySelector(document, '#confirmOrderForm');
+        const form = DomAccess.querySelector(document, '#confirmOrderForm', false);
         if (!form.checkValidity()) {
             return;
         }
@@ -645,12 +639,12 @@ export default class ConfirmOrderPlugin extends Plugin {
             const paymentMethodInstance = AdyenWeb.createComponent(paymentMethod.type, this.adyenCheckout, configuration);
             paymentMethodInstance.mount(componentSelector);
             this.checkoutMainContent.addEventListener('click', function (event) {
-                const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
+                const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]', false);
                 if (event.target !== confirmFormSubmit) {
                     return;
                 }
 
-                const form = DomAccess.querySelector(document, '#confirmOrderForm');
+                const form = DomAccess.querySelector(document, '#confirmOrderForm', false);
                 if (!form.checkValidity()) {
                     return;
                 }
