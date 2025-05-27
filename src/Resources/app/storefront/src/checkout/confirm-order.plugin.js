@@ -117,12 +117,12 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     onConfirmOrderSubmit(event) {
-        const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
-        if (event.target !== confirmFormSubmit) {
+        const submitButton = event.target.closest('#confirmOrderForm button[type="submit"]');
+        if (!submitButton) {
             return;
         }
 
-        const form = DomAccess.querySelector(document, '#confirmOrderForm');
+        const form = DomAccess.querySelector(document, '#confirmOrderForm', false);
         if (!form.checkValidity()) {
             return;
         }
@@ -640,12 +640,13 @@ export default class ConfirmOrderPlugin extends Plugin {
             paymentMethodInstance.mount(componentSelector);
 
             this.checkoutMainContent.addEventListener('click', function (event) {
-                const confirmFormSubmit = DomAccess.querySelector(document, '#confirmOrderForm button[type="submit"]');
-                if (event.target !== confirmFormSubmit) {
+                const submitButton = event.target.closest('#confirmOrderForm button[type="submit"]');
+                if (!submitButton) {
                     return;
                 }
+                event.preventDefault();
 
-                const form = DomAccess.querySelector(document, '#confirmOrderForm');
+                const form = DomAccess.querySelector(document, '#confirmOrderForm', false);
                 if (!form.checkValidity()) {
                     return;
                 }
