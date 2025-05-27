@@ -21,7 +21,7 @@
          data-google-merchant-id="{{ adyenFrontendData.googleMerchantId }}"
          data-gateway-merchant-id="{{ adyenFrontendData.gatewayMerchantId }}"
     ></div>
-    {% set adyenExpressCheckoutPaymentTypes = ['applepay', 'paywithgoogle', 'paypal'] %}
+    {% set adyenExpressCheckoutPaymentTypes = ['applepay', 'googlepay', 'paywithgoogle', 'paypal'] %}
     {% for adyenPaymentMethodType in adyenExpressCheckoutPaymentTypes %}
         <div class="adyen-express-checkout-element"
              id="adyen-express-checkout-{{ adyenPaymentMethodType|escape }}">

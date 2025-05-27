@@ -408,6 +408,7 @@ class PaymentMethodsFilterService
             ->getPaymentMethods();
         $allowedMethods = [];
         $googlePayAvailable ? $allowedMethods['paywithgoogle'] = true : false;
+        $googlePayAvailable ? $allowedMethods['googlepay'] = true : false;
         $payPalAvailable ? $allowedMethods['paypal'] = true : false;
         $applePayAvailable ? $allowedMethods['applepay'] = true : false;
 
