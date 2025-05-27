@@ -143,33 +143,36 @@ export default class ExpressCheckoutPlugin extends Plugin {
             });
         };
 
+        const googlePayConfig = {
+            onClick: (resolve, reject) => {
+                this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
+                resolve();
+            },
+            isExpress: true,
+            callbackIntents: !this.userLoggedIn ? ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION', 'SHIPPING_OPTION'] : [],
+            shippingAddressRequired: !this.userLoggedIn,
+            emailRequired: !this.userLoggedIn,
+            shippingAddressParameters: {
+                allowedCountryCodes: [],
+                phoneNumberRequired: true
+            },
+            shippingOptionRequired: !this.userLoggedIn,
+            buttonSizeMode: "fill",
+            onAuthorized: (paymentData, actions) => {
+                actions.resolve({});
+            },
+            buttonColor: "white",
+            paymentDataCallbacks: !this.userLoggedIn ?
+                {
+                    onPaymentDataChanged: onPaymentDataChanged,
+                    onPaymentAuthorized: onPaymentAuthorized
+                } :
+                {}
+        };
+
         this.paymentMethodSpecificConfig = {
-            "paywithgoogle": {
-                onClick: (resolve, reject) => {
-                    this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
-                    resolve();
-                },
-                isExpress: true,
-                callbackIntents: !this.userLoggedIn ? ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION', 'SHIPPING_OPTION'] : [],
-                shippingAddressRequired: !this.userLoggedIn,
-                emailRequired: !this.userLoggedIn,
-                shippingAddressParameters: {
-                    allowedCountryCodes: [],
-                    phoneNumberRequired: true
-                },
-                shippingOptionRequired: !this.userLoggedIn,
-                buttonSizeMode: "fill",
-                onAuthorized: (paymentData, actions) => {
-                    actions.resolve({});
-                },
-                buttonColor: "white",
-                paymentDataCallbacks: !this.userLoggedIn ?
-                    {
-                        onPaymentDataChanged: onPaymentDataChanged,
-                        onPaymentAuthorized: onPaymentAuthorized
-                    } :
-                    {}
-            }
+            "paywithgoogle": googlePayConfig,
+            "googlepay": googlePayConfig
         };
 
         if (!this.userLoggedIn) {
