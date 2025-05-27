@@ -406,6 +406,7 @@ class PaymentMethodsFilterService
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, '', $amount)
             ->getPaymentMethods();
         $allowedMethods = [];
+        $allowedMethods['googlepay'] = (bool)$googlePayAvailable;
         $allowedMethods['paywithgoogle'] = (bool)$googlePayAvailable;
         $allowedMethods['paypal'] = (bool)$payPalAvailable;
         $allowedMethods['applepay'] = (bool)$applePayAvailable;
