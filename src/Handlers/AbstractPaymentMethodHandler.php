@@ -295,11 +295,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $companyName = $dataBag->get('companyName');
         $registrationNumber = $dataBag->get('registrationNumber');
 
-        if ($companyName && $registrationNumber) {
-            $billieData = [
-                'companyName' => $companyName,
-                'registrationNumber' => $registrationNumber,
-            ];
+        if ($companyName) {
+            $billieData['companyName'] = $companyName;
+        }
+
+        if ($registrationNumber) {
+            $billieData['registrationNumber'] = $registrationNumber;
         }
 
         /*
