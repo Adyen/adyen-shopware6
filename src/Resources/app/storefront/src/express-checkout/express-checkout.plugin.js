@@ -196,7 +196,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
 
         this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
-            document.querySelector('.product-detail-quantity-input');
+            document.querySelector('.product-detail-quantity-input') ||
+            document.querySelector('#productDetailPageBuyProductForm input.quantity-selector-group-input');
 
         this.listenOnQuantityChange();
 
