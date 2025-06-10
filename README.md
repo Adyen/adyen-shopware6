@@ -87,4 +87,4 @@ This module is using the Adyen APIs Library for PHP for all (API) connections to
 <a href="https://github.com/Adyen/adyen-php-api-library" target="_blank">This library can be found here</a>
 
 ## License
-MIT license. For more information, see the [LICENSE file](LICENSE).
+MIT license. For more information, see the [LICENSE file](LICENSE). 
