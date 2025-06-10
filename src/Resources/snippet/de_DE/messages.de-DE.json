@@ -21,7 +21,8 @@
             "companyNumber": "Registernummer",
             "companyNumberPlaceholder": "Registernummer eingeben",
             "requiredFields": "Die mit einem Stern (*) markierten Felder sind Pflichtfelder.",
-            "companyNameRequired": "Firmenname ist erforderlich."
+            "companyNameRequired": "Firmenname ist erforderlich.",
+            "companyNumberRequired": "Die Handelsregisternummer ist für Rechnungsadressen in den Niederlanden und Schweden erforderlich."
         }
     }
 }
