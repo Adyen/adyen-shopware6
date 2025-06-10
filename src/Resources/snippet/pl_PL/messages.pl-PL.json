@@ -21,7 +21,8 @@
             "companyNumber": "Numer rejestracyjny firmy",
             "companyNumberPlaceholder": "Wpisz numer rejestracyjny",
             "requiredFields": "Pola oznaczone gwiazdką (*) są wymagane.",
-            "companyNameRequired": "Nazwa firmy jest wymagana."
+            "companyNameRequired": "Nazwa firmy jest wymagana.",
+            "companyNumberRequired": "Numer rejestru firmy jest wymagany dla adresów rozliczeniowych w Holandii i Szwecji."
         }
     }
 }
