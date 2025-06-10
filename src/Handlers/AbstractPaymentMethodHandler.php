@@ -393,11 +393,12 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $companyName = $currentRequest->get('companyName');
         $registrationNumber = $currentRequest->get('registrationNumber');
 
-        if ($companyName && $registrationNumber) {
-            $billieData = [
-                'companyName' => $companyName,
-                'registrationNumber' => $registrationNumber,
-            ];
+        if ($companyName) {
+            $billieData['companyName'] = $companyName;
+        }
+
+        if ($registrationNumber) {
+            $billieData['registrationNumber'] = $registrationNumber;
         }
 
         /*

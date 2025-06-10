@@ -22,7 +22,8 @@
             "companyNumber": "Company Registration Number",
             "companyNumberPlaceholder": "Enter your registration number",
             "requiredFields": "Fields marked with asterisks (*) are required.",
-            "companyNameRequired": "Company name is required."
+            "companyNameRequired": "Company name is required.",
+            "companyNumberRequired": "Company number is required for billing addresses in Netherlands and Sweden."
         }
     }
 }
