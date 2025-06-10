@@ -130,15 +130,25 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         if (this.selectedAdyenPaymentMethod === "klarna_b2b") {
             const companyNameElement = DomAccess.querySelector(document, '#adyen-company-name');
-
             const companyName = companyNameElement ? companyNameElement.value.trim() : '';
             const companyNameError = DomAccess.querySelector(document, '#adyen-company-name-error');
+
+            const companyNumberElement = DomAccess.querySelector(document, '#adyen-registration-number');
+            const companyNumber = companyNumberElement ? companyNumberElement.value.trim() : '';
+            const companyNumberError = DomAccess.querySelector(document, '#adyen-company-number-error');
+
             companyNameError.style.display = 'none';
+            companyNumberError.style.display = 'none';
 
             let hasError = false;
 
             if (!companyName) {
                 companyNameError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (!companyNumber && (activeBillingAddress.country === 'NL' || activeBillingAddress.country === 'SE')) {
+                companyNumberError.style.display = 'block';
                 hasError = true;
             }
 
