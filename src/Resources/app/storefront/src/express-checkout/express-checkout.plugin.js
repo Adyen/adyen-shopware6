@@ -159,7 +159,14 @@ export default class ExpressCheckoutPlugin extends Plugin {
             shippingOptionRequired: !this.userLoggedIn,
             buttonSizeMode: "fill",
             onAuthorized: (paymentData, actions) => {
-                actions.resolve({});
+                this.paymentMethodSpecificConfig.paywithgoogle.paymentDataCallbacks
+                    .onPaymentAuthorized(paymentData.authorizedEvent)
+                    .then((result) => {
+                        actions.resolve(result);
+                    })
+                    .catch((err) => {
+                        actions.reject();
+                    });
             },
             buttonColor: "white",
             paymentDataCallbacks: !this.userLoggedIn ?
