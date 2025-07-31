@@ -31,46 +31,6 @@ contact our [support team](https://support.adyen.com/hc/en-us/requests/new?ticke
 ## Integration
 The plugin integrates card component (Secured Fields) using Adyen Checkout for all card payments.
 
-### Supported payment methods
- - Credit and debit cards (non 3D secure, 3D secure 1, 3D secure 2 native)
- - Stored card payment methods (One click payment methods)
- - Express checkout (with GooglePay, ApplePay, and PayPal methods)
- - Affirm
- - AfterPay invoice
- - Alipay , Alipay HK
- - Amazon Pay
- - Apple Pay
- - Bancontact
- - Blik
- - Billie
- - Clearpay
- - Electronic Payment Service (EPS)
- - Gift cards
- - GiroPay
- - Google Pay
- - iDeal
- - Klarna Pay Later
- - Klarna Pay Now
- - Klarna Pay Over Time
- - Klarna Debit Risk
- - MB Way
- - MobilePay
- - Multibanco
- - Oney (3x, 4x, 6x, 10x, 12x)
- - PayBright
- - PayPal
- - PaySafeCard
- - RatePay, RatePay Direct Debit
- - SEPA Direct Debit
- - Swish
- - Trustly
- - Twint
- - Vipps
- - WeChat Pay
- - Open Banking / Pay by Bank
- - Online Banking Finland
- - Online Banking Poland
-
 ### Webhook Setup
 For users with sales channels that have a storefront,
 webhooks should be configured following the standard process outlined 
