@@ -123,6 +123,11 @@ export default class ExpressCheckoutPlugin extends Plugin {
         };
 
         let onPaymentAuthorized = (intermediatePaymentData) => {
+            var name = (intermediatePaymentData && intermediatePaymentData.shippingAddress && intermediatePaymentData.shippingAddress.name || '').trim();
+            var parts = name.split(/\s+/).filter(Boolean);
+            var firstName = parts[0] || '';
+            var lastName  = parts.length > 1 ? parts.slice(1).join(' ') : '.';
+
             let transformedAddress = {
                 state: intermediatePaymentData.shippingAddress.administrativeArea,
                 zipcode: intermediatePaymentData.shippingAddress.postalCode,
@@ -131,8 +136,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 address3: intermediatePaymentData.shippingAddress.address3,
                 city: intermediatePaymentData.shippingAddress.locality,
                 countryCode: intermediatePaymentData.shippingAddress.countryCode,
-                firstName: '',
-                lastName: ''
+                firstName: firstName,
+                lastName: lastName
             };
 
             this.email = intermediatePaymentData.email;
@@ -159,7 +164,27 @@ export default class ExpressCheckoutPlugin extends Plugin {
             shippingOptionRequired: !this.userLoggedIn,
             buttonSizeMode: "fill",
             onAuthorized: (paymentData, actions) => {
-                actions.resolve({});
+                try {
+                    const cfg =
+                        this.paymentMethodSpecificConfig &&
+                        this.paymentMethodSpecificConfig.paywithgoogle &&
+                        this.paymentMethodSpecificConfig.paywithgoogle.paymentDataCallbacks;
+                    const cb = cfg && typeof cfg.onPaymentAuthorized === 'function'
+                        ? cfg.onPaymentAuthorized
+                        : null;
+
+                    if (cb) {
+                        Promise
+                            .resolve(cb(paymentData.authorizedEvent))
+                            .then(result => actions.resolve(result))
+                            .catch(() => actions.reject());
+                    } else {
+                        actions.resolve({ transactionState: 'SUCCESS' });
+                    }
+                } catch (e) {
+                    console.error('onAuthorized error:', e);
+                    actions.reject();
+                }
             },
             buttonColor: "white",
             paymentDataCallbacks: !this.userLoggedIn ?
