@@ -26,6 +26,8 @@ use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Framework\Api\Controller\ApiController;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
@@ -68,8 +70,10 @@ class ExpressCheckoutService
      */
     private SalesChannelContextPersister $contextPersister;
 
-    /** @var ApiController */
-    private ApiController $apiController;
+    /**
+     * @var EntityRepository
+     */
+    private EntityRepository $orderRepository;
 
     /** @var OrderConverter */
     private OrderConverter $orderConverter;
@@ -82,7 +86,7 @@ class ExpressCheckoutService
         Currency                     $currencyUtil,
         string                       $shopwareVersion,
         SalesChannelContextPersister $contextPersister,
-        ApiController                $apiController,
+        EntityRepository $orderRepository,
         OrderConverter               $orderConverter
     ) {
         $this->cartService = $cartService;
@@ -92,7 +96,7 @@ class ExpressCheckoutService
         $this->currencyUtil = $currencyUtil;
         $this->shopwareVersion = $shopwareVersion;
         $this->contextPersister = $contextPersister;
-        $this->apiController = $apiController;
+        $this->orderRepository = $orderRepository;
         $this->orderConverter = $orderConverter;
     }
 
@@ -421,15 +425,15 @@ class ExpressCheckoutService
         );
         /** @var SalesChannelContext $updatedSalesChannelContext */
         $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
+        $liveContext = $updatedSalesChannelContext->getContext();
 
-        $versionId = json_decode($this->apiController->createVersion(
-            $request,
-            $updatedSalesChannelContext->getContext(),
-            'order',
-            $orderId
-        )->getContent(), true)['versionId'];
+        $versionId = null;
+        $liveContext->scope(Context::CRUD_API_SCOPE, function (Context $scopedCtx) use ($orderId, &$versionId): void {
+            $versionId = $this->orderRepository->createVersion($orderId, $scopedCtx);
+        });
 
-        $contextWithNewVersion = $updatedSalesChannelContext->getContext()->createWithVersionId($versionId);
+        $contextWithNewVersion = $liveContext->createWithVersionId($versionId);
+
         /** @var OrderEntity $orderWithNewVersion */
         $orderWithNewVersion = $this->expressCheckoutRepository->getOrderById(
             $orderId,
@@ -463,7 +467,10 @@ class ExpressCheckoutService
         }
 
         $this->expressCheckoutRepository->upsertOrder($newOrderData, $contextWithNewVersion);
-        $this->apiController->mergeVersion($contextWithNewVersion, 'order', $versionId);
+
+        $liveContext->scope(Context::SYSTEM_SCOPE, function (Context $scopedCtx) use ($versionId): void {
+            $this->orderRepository->merge($versionId, $scopedCtx);
+        });
 
         $this->cartService->deleteCart($updatedSalesChannelContext);
     }
