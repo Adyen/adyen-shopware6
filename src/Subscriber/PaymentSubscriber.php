@@ -310,6 +310,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             }
         }
 
+        $addGiftCardOption = $this->configurationService->getAddGiftCardOption() ?? 'showFields';
+        $voucherBlockPosition = $this->configurationService->getVoucherBlockPosition() ?? 'belowOrderTotals';
+        $showVouchersSeparately = $this->configurationService->getShowVouchersSeparately();
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -373,7 +377,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
-                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'addGiftCardOption'    => $addGiftCardOption,
+                        'voucherBlockPosition' => $voucherBlockPosition,
+                        'showVouchersSeparately' => json_encode($showVouchersSeparately),
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -540,6 +547,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $page->setPaymentMethods($filteredPaymentMethods);
         $paymentMethodsArray = $this->paymentMethodsService->getPaymentMethodsArray($paymentMethodsResponse);
 
+        $voucherBlockPosition = $this->configurationService->getVoucherBlockPosition() ?? 'belowOrderTotals';
+        $showVouchersCheckout = $this->configurationService->getShowVouchersCheckout();
+        $showVouchersSeparately = $this->configurationService->getShowVouchersSeparately();
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -592,7 +603,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'googleMerchantId' => $this->configurationService
                             ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                         'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId())
+                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                        'voucherBlockPosition'   => $voucherBlockPosition,
+                        'showVouchersCheckout'   => json_encode($showVouchersCheckout),
+                        'showVouchersSeparately' => json_encode($showVouchersSeparately),
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
