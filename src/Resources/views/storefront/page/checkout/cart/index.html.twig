@@ -15,3 +15,15 @@
         {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
     {% endif %}
 {% endblock %}
+
+{% block page_checkout_aside %}
+    <div class="checkout-aside">
+        {% if adyenFrontendData.voucherBlockPosition === "aboveOrderTotals" %}
+            {{ block('page_checkout_aside_actions') }}
+            {{ block('page_checkout_aside_summary') }}
+        {% else %}
+            {{ block('page_checkout_aside_summary') }}
+            {{ block('page_checkout_aside_actions') }}
+        {% endif %}
+    </div>
+{% endblock %}
