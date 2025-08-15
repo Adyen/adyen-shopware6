@@ -197,6 +197,7 @@ export default class CartPlugin extends Plugin {
             let totalBalance =0;
             let giftcardsContainer = document.getElementById('giftcardsContainer');
             let addButton = document.querySelector('.btn-outline-info');
+            let dropdownList = document.getElementById('giftcardDropdown')
 
             // Clear the container before adding new content
             giftcardsContainer.innerHTML = '';
@@ -246,13 +247,21 @@ export default class CartPlugin extends Plugin {
             //Compare the new total gift card balance with the order amount
             if (this.remainingAmount > 0.00) {
                 //allow adding new giftcards
-                addButton.style.display = "block";
+                if(this.giftcardsAddOption === 'showFields') {
+                    addButton.style.display = "none";
+                    dropdownList.style.display = 'block'
+                }
+                else {
+                    addButton.style.display = "block";
+                    dropdownList.style.display = 'none'
+                }
             } else {
                 // Hide giftcards dropdown and Add giftcards option
                 if (this.adyenGiftcardDropDown.length > 0) {
                     this.adyenGiftcardDropDown[0].style.display = 'none';
                 }
                 addButton.style.display = "none";
+                dropdownList.style.display = 'none'
             }
             let giftcardContainerElement = document.getElementById('giftcardsContainer'); // Replace with your actual container ID
 
