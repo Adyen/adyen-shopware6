@@ -490,4 +490,53 @@ class ConfigurationService
             $salesChannelId
         );
     }
+
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string|null
+     */
+    public function getAddGiftCardOption(?string $salesChannelId = null): ?string
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.addGiftCardOption',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string|null
+     */
+    public function getVoucherBlockPosition(?string $salesChannelId = null): ?string
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.voucherBlockPosition',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return bool
+     */
+    public function getShowVouchersCheckout(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.showVouchersCheckout',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return bool
+     */
+    public function getShowVouchersSeparately(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.showVouchersSeparately',
+            $salesChannelId
+        );
+    }
 }
