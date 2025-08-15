@@ -2,9 +2,12 @@
     {% if adyenFrontendData and adyenFrontendData.giftcards %}
         <div id="adyen-giftcards-container">
             <hr>
-            <a id="showGiftcardButton" class="btn btn-outline-info float-right mb-3">
-                &plus; {{ "adyen.giftcard.addGiftcards" | trans }}
-            </a>
+            <div class="adyen-add-giftcard-row">
+                <a id="showGiftcardButton"  href="#" class="adyen-link-add-giftcard">
+                    {{ "adyen.giftcard.addGiftcards" | trans }}
+                    <span class="adyen-icon-plus" aria-hidden="true">+</span>
+                </a>
+            </div>
             <div id="adyen-giftcards-configuration"
                  data-total-price="{{ adyenFrontendData.totalPrice }}"
                  data-total-in-minor-units="{{ adyenFrontendData.totalInMinorUnits }}"

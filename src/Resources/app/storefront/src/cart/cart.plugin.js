@@ -65,12 +65,13 @@ export default class CartPlugin extends Plugin {
 
         this.redeemedGiftcards = [];
 
-        document.getElementById("showGiftcardButton").addEventListener("click", function() {
-            // Hide the anchor tag
-            this.style.display = "none";
+        const btn = document.getElementById('showGiftcardButton');
+        const dropdown = document.getElementById('giftcardDropdown');
 
-            // Show the select dropdown
-            document.getElementById("giftcardDropdown").style.display = "block";
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            btn.style.display = 'none';
+            dropdown.style.display = 'block';
         });
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -112,7 +113,7 @@ export default class CartPlugin extends Plugin {
     observeGiftcardSelection() {
         let self = this;
         let giftcardDropdown = document.getElementById('giftcardDropdown');
-        let addButton = document.querySelector('.btn-outline-info');
+        let addButton = document.getElementById('showGiftcardButton');
         giftcardDropdown.addEventListener('change', function () {
             if (giftcardDropdown.value) {
                 self.selectedGiftcard = JSON.parse(event.currentTarget.options[event.currentTarget.selectedIndex].dataset.giftcard);
@@ -196,7 +197,7 @@ export default class CartPlugin extends Plugin {
             this.redeemedGiftcards = (response.redeemedGiftcards && response.redeemedGiftcards.giftcards) || [];
             let totalBalance =0;
             let giftcardsContainer = document.getElementById('giftcardsContainer');
-            let addButton = document.querySelector('.btn-outline-info');
+            let addButton = document.getElementById('showGiftcardButton');
             let dropdownList = document.getElementById('giftcardDropdown')
 
             // Clear the container before adding new content
