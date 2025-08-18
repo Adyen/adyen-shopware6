@@ -4,7 +4,15 @@
 {% block page_checkout_address_products %}
 
     {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
-
     {{ parent() }}
+{% endblock %}
+
+{% block page_checkout_aside_summary %}
+    {% if adyenFrontendData.voucherBlockPosition !== 'aboveOrderTotals' %}
+        {{ parent() }}
+    {% endif %}
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
+    {% if adyenFrontendData.voucherBlockPosition === 'aboveOrderTotals' %}
+        {{ parent() }}
+    {% endif %}
 {% endblock %}
