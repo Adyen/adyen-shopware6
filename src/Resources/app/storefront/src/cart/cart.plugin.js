@@ -219,7 +219,7 @@ export default class CartPlugin extends Plugin {
 
                 let removeElement = document.createElement('a');
                 removeElement.href = '#';
-                removeElement.textContent = adyenGiftcardsConfiguration.translationAdyenGiftcardRemove;
+                removeElement.textContent = '\u00D7';
                 removeElement.setAttribute('dataid', giftcard.stateDataId);
                 removeElement.classList.add('adyen-remove-giftcard');
                 removeElement.style.display = 'block';
