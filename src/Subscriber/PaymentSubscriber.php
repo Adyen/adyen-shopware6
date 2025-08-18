@@ -313,6 +313,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $addGiftCardOption = $this->configurationService->getAddGiftCardOption() ?? 'showFields';
         $voucherBlockPosition = $this->configurationService->getVoucherBlockPosition() ?? 'belowOrderTotals';
         $showVouchersSeparately = $this->configurationService->getShowVouchersSeparately();
+        $showVouchersCheckout = true;
+
+        // check if register page is loaded
+        if ($event instanceof CheckoutRegisterPageLoadedEvent) {
+            $showVouchersCheckout = $this->configurationService->getShowVouchersCheckout();
+        }
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -381,6 +387,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'addGiftCardOption'    => $addGiftCardOption,
                         'voucherBlockPosition' => $voucherBlockPosition,
                         'showVouchersSeparately' => json_encode($showVouchersSeparately),
+                        'showVouchersCheckout'   => json_encode($showVouchersCheckout),
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -550,6 +557,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $voucherBlockPosition = $this->configurationService->getVoucherBlockPosition() ?? 'belowOrderTotals';
         $showVouchersCheckout = $this->configurationService->getShowVouchersCheckout();
         $showVouchersSeparately = $this->configurationService->getShowVouchersSeparately();
+        $addGiftCardOption = $this->configurationService->getAddGiftCardOption() ?? 'showFields';
+
+        $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+
+        $giftcards = $this->paymentMethodsFilterService->filterAdyenPaymentMethodsByType(
+            $paymentMethods->getPaymentMethods() ?? [],
+            'giftcard'
+        );
 
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
@@ -607,6 +622,22 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'voucherBlockPosition'   => $voucherBlockPosition,
                         'showVouchersCheckout'   => json_encode($showVouchersCheckout),
                         'showVouchersSeparately' => json_encode($showVouchersSeparately),
+                        // checkout giftcards configuration
+                        'totalInMinorUnits' => $amount,
+                        'giftcardBalance' => $giftcardDetails['giftcardBalance'],
+                        'checkBalanceUrl' => $this->router
+                            ->generate('payment.adyen.proxy-check-balance'),
+                        'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
+                        'removeGiftcardUrl' => $this->router
+                            ->generate('payment.adyen.proxy-remove-giftcard-state-data'),
+                        'fetchRedeemedGiftcardsUrl' => $this->router
+                            ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
+                        'addGiftCardOption' => $addGiftCardOption,
+                        'giftcards'              => $giftcards,
+                        'countryCode' => $this->expressCheckoutService->getCountryCode(
+                            $salesChannelContext->getCustomer(),
+                            $salesChannelContext
+                        ),
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
