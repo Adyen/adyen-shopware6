@@ -477,6 +477,34 @@ class ExpressCheckoutRepository
     /**
      * @param array $newAddress
      * @param CustomerEntity $customer
+     * @param SalesChannelContext $salesChannelContext
+     */
+    public function updateGuestName(
+        array $newAddress,
+        CustomerEntity $customer,
+        SalesChannelContext $salesChannelContext
+    ): void {
+        $firstName = !empty($newAddress['firstName']) ? $newAddress['firstName'] : $customer->getFirstName();
+        $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : $customer->getLastName();
+
+        $customerData = [
+            [
+                'id' => $customer->getId(),
+                'firstName' => $firstName,
+                'lastName' => $lastName,
+            ],
+        ];
+
+        $customer->setFirstName($firstName);
+        $customer->setLastName($lastName);
+
+        // Update customer data
+        $this->customerRepository->update($customerData, $salesChannelContext->getContext());
+    }
+
+    /**
+     * @param array $newAddress
+     * @param CustomerEntity $customer
      * @param string $orderAddressId
      * @param string $customerOrderId
      * @param SalesChannelContext $salesChannelContext
