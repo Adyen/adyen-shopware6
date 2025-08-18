@@ -3,7 +3,7 @@ export class PayPalComponents {
     this.page = page;
 
     this.payPalButton = page
-      .frameLocator("iframe[title='PayPal']").last()
+      .frameLocator("iframe[title='PayPal-paypal']").last()
       .locator(".paypal-button").first();
   }
 
