@@ -51,6 +51,17 @@
     display: none;
     float: right;
     margin-left: auto;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    color: #6b7280;
+    transition: .15s ease;
+    &:hover { color: #111827; }
 }
 
 .adyen-deducted-balance {
