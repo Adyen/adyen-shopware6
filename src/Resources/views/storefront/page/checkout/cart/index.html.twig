@@ -3,9 +3,7 @@
 
 {% block page_checkout_cart_add_promotion %}
     {{ parent() }}
-
     {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
-    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
 {% endblock %}
 
 {% block page_checkout_cart_action_proceed %}
@@ -16,14 +14,12 @@
     {% endif %}
 {% endblock %}
 
-{% block page_checkout_aside %}
-    <div class="checkout-aside">
-        {% if adyenFrontendData.voucherBlockPosition === "aboveOrderTotals" %}
-            {{ block('page_checkout_aside_actions') }}
-            {{ block('page_checkout_aside_summary') }}
-        {% else %}
-            {{ block('page_checkout_aside_summary') }}
-            {{ block('page_checkout_aside_actions') }}
-        {% endif %}
-    </div>
+{% block page_checkout_aside_summary %}
+    {% if adyenFrontendData.voucherBlockPosition !== 'aboveOrderTotals' %}
+        {{ parent() }}
+    {% endif %}
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
+    {% if adyenFrontendData.voucherBlockPosition === 'aboveOrderTotals' %}
+        {{ parent() }}
+    {% endif %}
 {% endblock %}

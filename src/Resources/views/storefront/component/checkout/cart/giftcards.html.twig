@@ -1,5 +1,5 @@
 {% block adyen_giftcards %}
-    {% if adyenFrontendData and adyenFrontendData.giftcards %}
+    {% if adyenFrontendData and adyenFrontendData.giftcards and adyenFrontendData.showVouchersCheckout === "true" %}
         <div id="adyen-giftcards-container">
             <hr>
             <div class="adyen-add-giftcard-row">
@@ -23,6 +23,7 @@
                  data-add-giftcard-option="{{ adyenFrontendData.addGiftCardOption }}"
                  data-giftcard-block-position="{{ adyenFrontendData.voucherBlockPosition }}"
                  data-giftcard-show-separately="{{ adyenFrontendData.showVouchersSeparately }}"
+                 data-giftcard-show-checkout="{{ adyenFrontendData.showVouchersCheckout }}"
                  data-translation-adyen-giftcard-remaining-balance="{{ "adyen.giftcard.remainingBalance" | trans }}"
                  data-translation-adyen-giftcard-deducted-balance="{{ "adyen.giftcard.deductedAmount" | trans }}"
                  data-translation-adyen-giftcard-discount="{{ "adyen.giftcard.discount" | trans }}"
