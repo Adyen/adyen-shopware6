@@ -147,3 +147,34 @@
 
     .adyen-giftcard-value-strong { font-weight: 600; }
 }
+
+.adyen-add-giftcard-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.adyen-link-add-giftcard {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #111827;
+    text-decoration: none;
+}
+
+.adyen-link-add-giftcard:hover {
+    text-decoration: underline;
+}
+
+.adyen-icon-plus {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 18px;
+    height: 18px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    line-height: 1;
+    font-size: 14px;
+}
