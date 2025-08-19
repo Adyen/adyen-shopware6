@@ -13,3 +13,13 @@
         {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
     {% endif %}
 {% endblock %}
+
+{% block page_checkout_aside_summary %}
+    {% if adyenFrontendData.voucherBlockPosition !== 'aboveOrderTotals' %}
+        {{ parent() }}
+    {% endif %}
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
+    {% if adyenFrontendData.voucherBlockPosition === 'aboveOrderTotals' %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
