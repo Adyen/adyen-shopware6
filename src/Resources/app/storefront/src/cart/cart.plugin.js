@@ -74,6 +74,15 @@ export default class CartPlugin extends Plugin {
             dropdown.style.display = 'block';
         });
 
+        if(this.giftcardsAddOption === 'showFields') {
+            btn.style.display = "none";
+            dropdown.style.display = 'block'
+        }
+        else {
+            dropdown.style.display = "block";
+            dropdown.style.display = 'none'
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             const giftcardsList = document.getElementById('giftcardsContainer');
             giftcardsList.addEventListener('click', (event) => {
