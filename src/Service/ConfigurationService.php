@@ -494,26 +494,26 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
-     * @return string|null
+     * @return string
      */
-    public function getAddGiftCardOption(?string $salesChannelId = null): ?string
+    public function getAddGiftCardOption(?string $salesChannelId = null): string
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.addGiftCardOption',
             $salesChannelId
-        );
+        ) ?? 'showFields';
     }
 
     /**
      * @param string|null $salesChannelId
-     * @return string|null
+     * @return string
      */
-    public function getVoucherBlockPosition(?string $salesChannelId = null): ?string
+    public function getVoucherBlockPosition(?string $salesChannelId = null): string
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.voucherBlockPosition',
             $salesChannelId
-        );
+        ) ?? 'belowOrderTotals';
     }
 
     /**
