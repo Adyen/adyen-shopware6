@@ -381,7 +381,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'addGiftCardOption'    => $this->configurationService->getAddGiftCardOption(),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
-                        'showVouchersSeparately' => json_encode($this->configurationService->getShowVouchersSeparately()),
+                        'showVouchersSeparately' => json_encode($this->configurationService
+                            ->getShowVouchersSeparately()),
                         'showVouchersCheckout'   => json_encode(true),
                     ],
                     $expressCheckoutConfiguration
