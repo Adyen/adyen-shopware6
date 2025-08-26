@@ -213,7 +213,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this.paymentMethodSpecificConfig.applepay = {
                 isExpress: true,
                 requiredBillingContactFields: ['postalAddress'],
-                requiredShippingContactFields: ['postalAddress', 'name', 'phoneticName', 'phone', 'email'],
+                requiredShippingContactFields: ['postalAddress', 'name', 'phone', 'email'],
                 onAuthorized: this.handleApplePayAuthorization.bind(this),
                 onShippingContactSelected: this.onShippingContactSelected.bind(this),
                 onShippingMethodSelected: this.onShippingMethodSelected.bind(this),
