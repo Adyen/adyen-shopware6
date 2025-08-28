@@ -164,7 +164,7 @@ export default class CartPlugin extends Plugin {
 
         try {
             this.paymentMethodInstance = new AdyenWeb.Giftcard(this.adyenCheckout, giftcardConfiguration)
-            this.paymentMethodInstance.mount('#adyen-giftcard-component');
+            this.paymentMethodInstance.mount('#adyen-giftcard-component-mount');
         } catch (e) {
             console.log('giftcard not available');
         }
