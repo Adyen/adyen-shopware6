@@ -309,6 +309,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             }
         }
 
+        // check if register page is loaded
+        if ($event instanceof CheckoutRegisterPageLoadedEvent) {
+            $showVouchersCheckout = $this->configurationService->getShowVouchersCheckout();
+        }
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -369,9 +374,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         $salesChannelContext
                     ),
                     'userLoggedIn' => json_encode($userLoggedIn),
-                     'affiliateCode' => $affiliateCode,
-                     'campaignCode' => $campaignCode,
-                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
+                    'affiliateCode' => $affiliateCode,
+                    'campaignCode' => $campaignCode,
+                    'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                    'addGiftCardOption'    => $this->configurationService->getAddGiftCardOption(),
+                    'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
+                    'showVouchersSeparately' => json_encode($this->configurationService->getShowVouchersSeparately()),
+                    'showVouchersCheckout'   => json_encode(true),
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -538,6 +547,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $page->setPaymentMethods($filteredPaymentMethods);
         $paymentMethodsArray = $this->paymentMethodsService->getPaymentMethodsArray($paymentMethodsResponse);
 
+        $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
+
+        $giftcards = $this->paymentMethodsFilterService->filterAdyenPaymentMethodsByType(
+            $paymentMethods->getPaymentMethods() ?? [],
+            'giftcard'
+        );
+
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -590,7 +606,28 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'googleMerchantId' => $this->configurationService
                             ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                         'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId())
+                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                         'voucherBlockPosition'   => $this->configurationService->getVoucherBlockPosition(),
+                         'showVouchersCheckout'   => json_encode($this->configurationService
+                             ->getShowVouchersCheckout()),
+                         'showVouchersSeparately' => json_encode($this->configurationService
+                             ->getShowVouchersSeparately()),
+                        // checkout giftcards configuration
+                        'totalInMinorUnits' => $amount,
+                        'giftcardBalance' => $giftcardDetails['giftcardBalance'],
+                        'checkBalanceUrl' => $this->router
+                            ->generate('payment.adyen.proxy-check-balance'),
+                        'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
+                        'removeGiftcardUrl' => $this->router
+                            ->generate('payment.adyen.proxy-remove-giftcard-state-data'),
+                        'fetchRedeemedGiftcardsUrl' => $this->router
+                            ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
+                        'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
+                        'giftcards'              => $giftcards,
+                        'countryCode' => $this->expressCheckoutService->getCountryCode(
+                            $salesChannelContext->getCustomer(),
+                            $salesChannelContext
+                        ),
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
