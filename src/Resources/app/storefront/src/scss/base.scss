@@ -51,6 +51,17 @@
     display: none;
     float: right;
     margin-left: auto;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    color: #6b7280;
+    transition: .15s ease;
+    &:hover { color: #111827; }
 }
 
 .adyen-deducted-balance {
@@ -115,4 +126,55 @@
 #adyen-express-checkout-paywithgoogle button,
 #adyen-express-checkout-applepay button {
     width: 100%;
+}
+
+.checkout-aside-summary-list {
+    .adyen-giftcard-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .adyen-giftcard-logo {
+        object-fit: contain;
+        display: block;
+    }
+
+    .adyen-giftcard-title {
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    .adyen-giftcard-value-strong { font-weight: 600; }
+}
+
+.adyen-add-giftcard-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.adyen-link-add-giftcard {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #111827;
+    text-decoration: none;
+}
+
+.adyen-link-add-giftcard:hover {
+    text-decoration: underline;
+}
+
+.adyen-icon-plus {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 18px;
+    height: 18px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    line-height: 1;
+    font-size: 14px;
 }
