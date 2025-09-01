@@ -1,4 +1,15 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/index.html.twig' %}
+{% set adyenFrontendData = page.extensions[constant('Adyen\\Shopware\\Subscriber\\StorefrontSubscriber::ADYEN_DATA_EXTENSION_ID')] %}
+
+{% block page_checkout_aside_summary %}
+    {% if adyenFrontendData.voucherBlockPosition !== 'aboveOrderTotals' %}
+        {{ parent() }}
+    {% endif %}
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/cart/giftcards.html.twig' %}
+    {% if adyenFrontendData.voucherBlockPosition === 'aboveOrderTotals' %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
 
 {% block base_footer %}
     {{ parent() }}
