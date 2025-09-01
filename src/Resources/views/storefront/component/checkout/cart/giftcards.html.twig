@@ -3,7 +3,8 @@
         <div id="adyen-giftcards-container">
             <hr>
             <div class="adyen-add-giftcard-row">
-                <a id="showGiftcardButton"  href="#" class="adyen-link-add-giftcard">
+                <a id="showGiftcardButton"  href="#" class="adyen-link-add-giftcard"
+                   {% if adyenFrontendData.addGiftCardOption === 'showFields' %} style="display:none;" {% endif %} >
                     {{ "adyen.giftcard.addGiftcards" | trans }}
                     <span class="adyen-icon-plus" aria-hidden="true">+</span>
                 </a>
