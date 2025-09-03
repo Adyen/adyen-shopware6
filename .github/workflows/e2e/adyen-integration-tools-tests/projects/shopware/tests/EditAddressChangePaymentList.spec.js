@@ -26,7 +26,7 @@ test.describe("Payment methods", () => {
         await expect(await paymentDetailPage.idealSelector).toBeVisible();
         await shippingDetailPage.changeBillingAddress(britishUser);
 
-        await expect(await shippingDetailPage.alertMessage).toContainText("address has been changed");
+        await expect(await shippingDetailPage.alertMessage).toContainText("Address has been saved");
         await doPrePaymentChecks(page);
         await expect(await paymentDetailPage.idealSelector).not.toBeVisible();
     });

@@ -30,7 +30,6 @@ use Adyen\Shopware\Service\Repository\AdyenPaymentRepository;
 use Adyen\Shopware\Util\Currency;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Payment\Cart\AbstractPaymentTransactionStructFactory;
-use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -183,7 +182,7 @@ class AdyenPaymentService
     public function getPaymentTransactionStruct(
         string $orderTransactionId,
         SalesChannelContext $context
-    ): AsyncPaymentTransactionStruct {
+    ): OrderTransactionEntity {
         $criteria = new Criteria([$orderTransactionId]);
         $criteria->setTitle('payment-service::load-transaction');
         $criteria->addAssociation('order');
@@ -197,6 +196,6 @@ class AdyenPaymentService
             throw PaymentException::invalidTransaction($orderTransactionId);
         }
 
-        return $this->paymentTransactionStructFactory->async($orderTransaction, $orderTransaction->getOrder(), '');
+        return $orderTransaction;
     }
 }

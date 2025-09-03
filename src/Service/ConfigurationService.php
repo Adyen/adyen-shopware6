@@ -233,7 +233,7 @@ class ConfigurationService
      * @param string|null $salesChannelId
      * @return array|bool|float|int|string|null
      */
-    public function isCaptureOnShipmentEnabled(string $salesChannelId)
+    public function isCaptureOnShipmentEnabled(string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.captureOnShipmentEnabled',
@@ -463,6 +463,78 @@ class ConfigurationService
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.refundStrategyGiftcard',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string|null
+     */
+    public function getAdyenGivingTermsAndConditionsUrl(string $salesChannelId = null): ?string
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.adyenGivingTermsAndConditions',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string|null
+     */
+    public function getTosPageId(string $salesChannelId = null): ?string
+    {
+        return $this->systemConfigService->get(
+            'core.basicInformation.tosPage',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string
+     */
+    public function getAddGiftCardOption(?string $salesChannelId = null): string
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.addGiftCardOption',
+            $salesChannelId
+        ) ?? 'showFields';
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return string
+     */
+    public function getVoucherBlockPosition(?string $salesChannelId = null): string
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.voucherBlockPosition',
+            $salesChannelId
+        ) ?? 'belowOrderTotals';
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return bool
+     */
+    public function getShowVouchersCheckout(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.showVouchersCheckout',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     * @return bool
+     */
+    public function getShowVouchersSeparately(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.showVouchersSeparately',
             $salesChannelId
         );
     }

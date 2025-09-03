@@ -285,7 +285,7 @@ class FrontendProxyController extends StorefrontController
         $transactionId = $request->get('transactionId');
         $orderId = $request->get('orderId') ?? '';
         $transaction = $this->adyenPaymentService->getPaymentTransactionStruct($transactionId, $salesChannelContext);
-        $transactionState = $transaction->getOrderTransaction()->getStateMachineState();
+        $transactionState = $transaction->getStateMachineState();
         $transactionStateTechnicalName = $transactionState ?
             $transactionState->getTechnicalName() : OrderTransactionStates::STATE_FAILED;
 

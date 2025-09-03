@@ -1,10 +1,14 @@
 {% block adyen_giftcards %}
-    {% if adyenFrontendData and adyenFrontendData.giftcards %}
+    {% if adyenFrontendData and adyenFrontendData.giftcards and adyenFrontendData.showVouchersCheckout === "true" %}
         <div id="adyen-giftcards-container">
             <hr>
-            <a id="showGiftcardButton" class="btn btn-outline-info float-right mb-3">
-                &plus; {{ "adyen.giftcard.addGiftcards" | trans }}
-            </a>
+            <div class="adyen-add-giftcard-row">
+                <a id="showGiftcardButton"  href="#" class="adyen-link-add-giftcard"
+                   {% if adyenFrontendData.addGiftCardOption === 'showFields' %} style="display:none;" {% endif %} >
+                    {{ "adyen.giftcard.addGiftcards" | trans }}
+                    <span class="adyen-icon-plus" aria-hidden="true">+</span>
+                </a>
+            </div>
             <div id="adyen-giftcards-configuration"
                  data-total-price="{{ adyenFrontendData.totalPrice }}"
                  data-total-in-minor-units="{{ adyenFrontendData.totalInMinorUnits }}"
@@ -17,6 +21,10 @@
                  data-remove-giftcard-url="{{ adyenFrontendData.removeGiftcardUrl }}"
                  data-fetch-redeemed-giftcards-url="{{ adyenFrontendData.fetchRedeemedGiftcardsUrl }}"
                  data-switch-context-url="{{ adyenFrontendData.switchContextUrl }}"
+                 data-add-giftcard-option="{{ adyenFrontendData.addGiftCardOption }}"
+                 data-giftcard-block-position="{{ adyenFrontendData.voucherBlockPosition }}"
+                 data-giftcard-show-separately="{{ adyenFrontendData.showVouchersSeparately }}"
+                 data-giftcard-show-checkout="{{ adyenFrontendData.showVouchersCheckout }}"
                  data-translation-adyen-giftcard-remaining-balance="{{ "adyen.giftcard.remainingBalance" | trans }}"
                  data-translation-adyen-giftcard-deducted-balance="{{ "adyen.giftcard.deductedAmount" | trans }}"
                  data-translation-adyen-giftcard-discount="{{ "adyen.giftcard.discount" | trans }}"
@@ -25,8 +33,8 @@
             ></div>
             <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
             {# loop through giftcards and display logo #}
-            <select id="giftcardDropdown" style="display: none">
-                <option value="" disabled selected>{{ "Please select a giftcard..." | trans }}</option>
+            <select id="giftcardDropdown" style="display: none" aria-label="{{ 'adyen.giftcard.chooseGiftcard' | trans }}">
+                <option value="" disabled selected>{{ "adyen.giftcard.chooseGiftcard" | trans }}</option>
                 {% for giftcard in adyenFrontendData.giftcards %}
                     <option class="adyen-giftcard"
                             value="{{ giftcard.name }}"
@@ -41,6 +49,7 @@
                 <span class="adyen-close-giftcard-component" title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
                 <span class="adyen-giftcard-item"></span>
                 <h6 class="adyen-giftcard-header"></h6>
+                <div id="adyen-giftcard-component-mount"></div>
             </div>
             <div id="giftcardsContainer"></div>
         </div>

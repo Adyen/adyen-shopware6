@@ -15,7 +15,7 @@ export class BasePage {
         this.sideBarContainer = page.locator(".cart-offcanvas");
 
         this.continueShoppingButton = this.sideBarContainer.locator(".offcanvas-close");
-        this.alertMessage = this.sideBarContainer.locator(".alert-content").first();
+        this.alertMessage = this.sideBarContainer.locator(".alert-content-container").first();
         this.proceedToCheckoutButton = this.sideBarContainer.getByRole('link', { name: 'Go to checkout' });
 
         this.firstProductContainer = this.sideBarContainer.locator(".cart-item-product").first();

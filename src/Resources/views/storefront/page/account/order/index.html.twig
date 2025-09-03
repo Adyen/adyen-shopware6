@@ -1,6 +1,6 @@
 {% sw_extends '@Storefront/storefront/page/account/order/index.html.twig' %}
 
-{% block base_footer %}
+{% block page_checkout_aside_actions %}
     {{ parent() }}
     {% block base_footer_adyen %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-action-modal.html.twig' %}

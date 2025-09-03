@@ -261,6 +261,13 @@
             </helpText>
         </input-field>
         <input-field type="text">
+            <name>adyenGivingTermsAndConditions</name>
+            <label>Terms and Conditions</label>
+            <helpText>
+                Link to the charity organization's terms and conditions page.
+            </helpText>
+        </input-field>
+        <input-field type="text">
             <name>adyenGivingDonationAmounts</name>
             <label>Donation Amounts</label>
             <helpText>
@@ -281,6 +288,61 @@
                 Background image of the Adyen Giving form.
             </helpText>
         </component>
+    </card>
+    <card>
+        <title>Gift cards</title>
+        <input-field type="single-select">
+            <name>addGiftCardOption</name>
+            <label>Adding new gift cards on the cart page</label>
+            <helpText>
+                Choose how shoppers can add new gift cards on the cart page.
+            </helpText>
+            <options>
+                <option>
+                    <id>showFields</id>
+                    <name>Show fields for adding a new gift card</name>
+                </option>
+                <option>
+                    <id>showButton</id>
+                    <name>Show a button for adding a new gift card</name>
+                </option>
+            </options>
+            <defaultValue>showFields</defaultValue>
+        </input-field>
+        <input-field type="single-select">
+            <name>voucherBlockPosition</name>
+            <label>Position of the vouchers block</label>
+            <helpText>
+                Select where the vouchers block should be displayed in the cart totals.
+            </helpText>
+            <options>
+                <option>
+                    <id>aboveOrderTotals</id>
+                    <name>Above order totals</name>
+                </option>
+                <option>
+                    <id>belowOrderTotals</id>
+                    <name>Below order totals</name>
+                </option>
+            </options>
+            <defaultValue>belowOrderTotals</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>showVouchersCheckout</name>
+            <label>Show vouchers on the checkout page</label>
+            <helpText>
+                Enable this option to display applied vouchers on the checkout page.
+            </helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>showVouchersSeparately</name>
+            <label>Show each voucher as a separate item in the order totals</label>
+            <helpText>
+                Enable this option to list each applied voucher as a separate line in the order totals.
+            </helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
     </card>
     <card>
         <title>Domain URL</title>

@@ -22,22 +22,18 @@ export class CreditCardComponents {
   }
 
   async fillHolderName(holderName) {
-    await this.holderNameInput.scrollIntoViewIfNeeded();
     await this.holderNameInput.click();
     await this.holderNameInput.type(holderName);
   }
   async fillCardNumber(cardNumber) {
-    await this.cardNumberInput.scrollIntoViewIfNeeded();
     await this.cardNumberInput.click();
     await this.cardNumberInput.type(cardNumber, { delay: this.typeDelay });
   }
   async fillExpDate(expDate) {
-    await this.expDateInput.scrollIntoViewIfNeeded();
     await this.expDateInput.click();
     await this.expDateInput.type(expDate, { delay: this.typeDelay });
   }
   async fillCVC(CVC) {
-    await this.cvcInput.scrollIntoViewIfNeeded();
     await this.cvcInput.click();
     await this.cvcInput.type(CVC, { delay: this.typeDelay });
   }

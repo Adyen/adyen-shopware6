@@ -28,6 +28,7 @@ use Adyen\Shopware\PaymentMethods\PaymentMethodInterface;
 use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Exception;
 use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Content\Media\File\MediaFile;
 use Shopware\Core\Content\Media\MediaException;
@@ -65,12 +66,13 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
 
     public function __construct(
         EntityRepository $scheduledTaskRepository,
+        LoggerInterface $logger,
         MediaService $mediaService,
         EntityRepository $paymentMethodRepository,
         $mediaRepository,
         bool $enableUrlUploadFeature = true
     ) {
-        parent::__construct($scheduledTaskRepository);
+        parent::__construct($scheduledTaskRepository, $logger);
         $this->mediaService = $mediaService;
         $this->paymentMethodRepository = $paymentMethodRepository;
         $this->mediaRepository = $mediaRepository;

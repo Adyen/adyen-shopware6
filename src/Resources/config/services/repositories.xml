@@ -36,5 +36,9 @@
             <argument type="service" id="customer_address.repository"/>
             <argument type="service" id="order_customer.repository"/>
         </service>
+        <service id="Adyen\Shopware\Service\Repository\TermsAndConditionsRepository" autowire="true">
+            <argument key="$categoryRepository" type="service" id="category.repository"/>
+            <argument key="$seoUrlRepository" type="service" id="seo_url.repository"/>
+        </service>
     </services>
 </container>

@@ -231,32 +231,32 @@ class PaymentResponseHandler
     }
 
     /**
-     * @param AsyncPaymentTransactionStruct $transaction
+     * @param OrderTransactionEntity $transaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResults
      * @throws PaymentCancelledException
      * @throws PaymentFailedException
      */
     public function handleShopwareApis(
-        AsyncPaymentTransactionStruct $transaction,
+        OrderTransactionEntity $transaction,
         SalesChannelContext $salesChannelContext,
         array $paymentResponseHandlerResults
     ): void {
-        $orderTransactionId = $transaction->getOrderTransaction()->getId();
+        $orderTransactionId = $transaction->getId();
         $context = $salesChannelContext->getContext();
 
-        $stateMachineState = $transaction->getOrderTransaction()->getStateMachineState();
+        $stateMachineState = $transaction->getStateMachineState();
         if (is_null($stateMachineState)) {
-            $orderTransaction = $this->adyenOrderTransactionRepository->getWithId($orderTransactionId);
-            $stateMachineState = $orderTransaction->getStateMachineState();
+            $transaction = $this->adyenOrderTransactionRepository->getWithId($orderTransactionId);
+            $stateMachineState = $transaction?->getStateMachineState();
         }
 
         $stateTechnicalName = $stateMachineState->getTechnicalName();
         $requiresManualCapture = $this->captureService
-            ->isManualCapture($transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier());
+            ->isManualCapture($transaction->getPaymentMethod()?->getHandlerIdentifier());
 
         // Get already stored transaction custom fields
-        $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];
+        $storedTransactionCustomFields = $transaction->getCustomFields() ?: [];
 
         // Store action, additionalData and originalPspReference in the transaction
         $transactionCustomFields = [];
@@ -309,7 +309,7 @@ class PaymentResponseHandler
             $transactionCustomFields
         );
 
-        $transaction->getOrderTransaction()->setCustomFields($customFields);
+        $transaction->setCustomFields($customFields);
         $context->scope(
             Context::SYSTEM_SCOPE,
             function (Context $context) use ($orderTransactionId, $customFields) {
@@ -335,13 +335,13 @@ class PaymentResponseHandler
             case self::REFUSED:
                 // Fail the order
                 $message = 'The payment was refused';
-                $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
+                $this->logger->info($message, ['orderId' => $transaction->getOrder()?->getId()]);
                 throw new PaymentFailedException($message);
                 break;
             case self::CANCELLED:
                 // Cancel the order
                 $message = 'The payment was cancelled';
-                $this->logger->info($message, ['orderId' => $transaction->getOrder()->getId()]);
+                $this->logger->info($message, ['orderId' => $transaction->getOrder()?->getId()]);
                 throw new PaymentCancelledException($message);
                 break;
             case self::REDIRECT_SHOPPER:
@@ -361,7 +361,7 @@ class PaymentResponseHandler
                 // Cancel the order
                 $message = 'The payment had an error or an unhandled result code';
                 $this->logger->error($message, [
-                    'orderId' => $transaction->getOrder()->getId(),
+                    'orderId' => $transaction->getOrder()?->getId(),
                     'resultCode' => $resultCode,
                 ]);
                 throw new PaymentFailedException($message);
