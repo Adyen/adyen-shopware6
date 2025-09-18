@@ -341,9 +341,15 @@ class PaymentMethodsFilterService
         Cart                $cart,
         SalesChannelContext $salesChannelContext
     ): PaymentMethodsResponse {
-        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
-        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
-        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled(
+            $salesChannelContext->getSalesChannelId()
+        );
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled(
+            $salesChannelContext->getSalesChannelId()
+        );
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled(
+            $salesChannelContext->getSalesChannelId()
+        );
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
