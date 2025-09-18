@@ -215,7 +215,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     continue;
                 }
 
-                $processor = $this->createProcessor($notification, $currentTransactionState);
+                $processor = $this->createProcessor($notification, $currentTransactionState, $order);
                 if (is_null($processor)) {
                     continue;
                 }
@@ -289,7 +289,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private function createProcessor(
         NotificationEntity $notification,
-        string $currentTransactionState
+        string $currentTransactionState,
+        OrderEntity $order
     ): ?ProcessorInterface {
         try {
             $notificationItem = Notification::createItem([
@@ -297,8 +298,13 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 'success' => $notification->isSuccess()
             ]);
 
-            $isManual = (bool) $this->captureService->isManualCaptureActive();
-            $isOnShipment = (bool) $this->captureService->isCaptureOnShipmentEnabled();
+            $isManual = (bool) $this->captureService->isManualCaptureActive(
+                $order->getSalesChannelId(),
+            );
+
+            $isOnShipment = (bool) $this->captureService->isCaptureOnShipmentEnabled(
+                $order->getSalesChannelId(),
+            );
 
             $isAutoCapture = !($isManual || $isOnShipment);
 

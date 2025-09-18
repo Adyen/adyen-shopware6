@@ -126,7 +126,10 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
             $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
         }
 
-        $isManualCapture = $this->captureService->isManualCapture($paymentMethodHandler);
+        $isManualCapture = $this->captureService->isManualCapture(
+            $paymentMethodHandler,
+            $orderTransaction->getOrder()->getSalesChannelId()
+        );
         $currencyUtil = new Currency();
         $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
         $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
