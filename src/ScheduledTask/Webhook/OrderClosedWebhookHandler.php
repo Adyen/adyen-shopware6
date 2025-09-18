@@ -103,7 +103,10 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
         Context $context
     ): void {
         $paymentMethodHandler = $orderTransactionEntity->getPaymentMethod()->getHandlerIdentifier();
-        if ($this->captureService->isManualCapture($paymentMethodHandler)) {
+        if ($this->captureService->isManualCapture(
+            $paymentMethodHandler,
+            $orderTransactionEntity->getOrder()->getSalesChannelId())
+        ) {
             $this->logger->info(
                 'Manual capture required. Setting payment to `authorised` state.',
                 ['notification' => $notificationEntity->getVars()]
