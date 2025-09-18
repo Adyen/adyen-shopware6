@@ -311,7 +311,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         // check if register page is loaded
         if ($event instanceof CheckoutRegisterPageLoadedEvent) {
-            $showVouchersCheckout = $this->configurationService->getShowVouchersCheckout();
+            $showVouchersCheckout = $this->configurationService->getShowVouchersCheckout(
+                $salesChannelContext->getSalesChannelId()
+            );
         }
 
         $page->addExtension(
@@ -377,9 +379,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                     'affiliateCode' => $affiliateCode,
                     'campaignCode' => $campaignCode,
                     'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
-                    'addGiftCardOption'    => $this->configurationService->getAddGiftCardOption(),
-                    'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
-                    'showVouchersSeparately' => json_encode($this->configurationService->getShowVouchersSeparately()),
+                    'addGiftCardOption'    => $this->configurationService->getAddGiftCardOption(
+                        $salesChannelContext->getSalesChannelId()
+                    ),
+                    'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(
+                        $salesChannelContext->getSalesChannelId()
+                    ),
+                    'showVouchersSeparately' => json_encode($this->configurationService
+                        ->getShowVouchersSeparately($salesChannelContext->getSalesChannelId())),
                     'showVouchersCheckout'   => json_encode(true),
                     ],
                     $expressCheckoutConfiguration
@@ -607,11 +614,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
-                         'voucherBlockPosition'   => $this->configurationService->getVoucherBlockPosition(),
+                         'voucherBlockPosition'   => $this->configurationService->getVoucherBlockPosition(
+                             $salesChannelContext->getSalesChannelId()
+                         ),
                          'showVouchersCheckout'   => json_encode($this->configurationService
-                             ->getShowVouchersCheckout()),
+                             ->getShowVouchersCheckout($salesChannelContext->getSalesChannelId())),
                          'showVouchersSeparately' => json_encode($this->configurationService
-                             ->getShowVouchersSeparately()),
+                             ->getShowVouchersSeparately($salesChannelContext->getSalesChannelId())),
                         // checkout giftcards configuration
                         'totalInMinorUnits' => $amount,
                         'giftcardBalance' => $giftcardDetails['giftcardBalance'],
@@ -622,7 +631,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->generate('payment.adyen.proxy-remove-giftcard-state-data'),
                         'fetchRedeemedGiftcardsUrl' => $this->router
                             ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
-                        'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
+                        'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(
+                            $salesChannelContext->getSalesChannelId()
+                        ),
                         'giftcards'              => $giftcards,
                         'countryCode' => $this->expressCheckoutService->getCountryCode(
                             $salesChannelContext->getCustomer(),
