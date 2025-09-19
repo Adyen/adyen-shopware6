@@ -344,7 +344,10 @@ class PaymentController
                     foreach ($order->getTransactions() as $transaction) {
                         $stateMachineState = $transaction->getStateMachineState();
                         if (isset($stateMachineState) && $transaction->getStateMachineState()->getTechnicalName()
-                            !== OrderTransactionStates::STATE_CANCELLED) {
+                            !== OrderTransactionStates::STATE_CANCELLED
+                            && $transaction->getStateMachineState()->getTechnicalName()
+                            !== OrderTransactionStates::STATE_FAILED
+                        ) {
                             $this->orderTransactionStateHandler->cancel(
                                 $transaction->getId(),
                                 $context
