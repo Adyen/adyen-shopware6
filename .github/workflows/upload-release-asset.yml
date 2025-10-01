@@ -4,6 +4,9 @@ on:
 
 name: Upload Shopware 6 Marketplace asset
 
+permissions:
+  contents: write
+
 jobs:
   run:
     name: Upload Release Asset
