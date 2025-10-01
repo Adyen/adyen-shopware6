@@ -1,6 +1,9 @@
 on: ["push", "pull_request"]
 name: Main Workflow
 
+permissions:
+  contents: read
+
 jobs:
   run:
     name: Run
