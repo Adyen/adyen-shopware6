@@ -111,10 +111,7 @@ class CaptureService
 
         $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
 
-        if ($this->isManualCapture(
-            $paymentMethodHandler,
-            $orderTransaction->getOrder()->getSalesChannelId()
-        )) {
+        if ($this->isManualCapture($paymentMethodHandler)) {
             $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
 
             $customFields = $orderTransaction->getCustomFields();
@@ -197,7 +194,7 @@ class CaptureService
      * @param $handlerIdentifier
      * @return bool
      */
-    public function isManualCapture($handlerIdentifier, $salesChannelId = null): bool
+    public function isManualCapture($handlerIdentifier): bool
     {
         if ($handlerIdentifier::$isOpenInvoice) {
             if ($this->configurationService->isAutoCaptureActiveForOpenInvoices()) {
@@ -208,8 +205,7 @@ class CaptureService
                 return true;
             }
         } else {
-            return $this->configurationService->isManualCaptureActive($salesChannelId)
-                && $handlerIdentifier::$supportsManualCapture;
+            return $this->configurationService->isManualCaptureActive() && $handlerIdentifier::$supportsManualCapture;
         }
     }
 

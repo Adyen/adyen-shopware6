@@ -253,10 +253,7 @@ class PaymentResponseHandler
 
         $stateTechnicalName = $stateMachineState->getTechnicalName();
         $requiresManualCapture = $this->captureService
-            ->isManualCapture(
-                $transaction->getPaymentMethod()?->getHandlerIdentifier(),
-                $salesChannelContext->getSalesChannelId()
-            );
+            ->isManualCapture($transaction->getPaymentMethod()?->getHandlerIdentifier());
 
         // Get already stored transaction custom fields
         $storedTransactionCustomFields = $transaction->getCustomFields() ?: [];
