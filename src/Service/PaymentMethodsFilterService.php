@@ -143,9 +143,7 @@ class PaymentMethodsFilterService
                         $pmCode === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
                         $pmCode === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
                     ) &&
-                    !$this->configurationService->getDeviceFingerprintSnippetId(
-                        $salesChannelContext->getSalesChannelId()
-                    )) {
+                    !$this->configurationService->getDeviceFingerprintSnippetId()) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
 
