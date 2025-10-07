@@ -144,7 +144,9 @@ class PaymentMethodsFilterService
                         $pmCode === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
                         $pmCode === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
                     ) &&
-                    !$this->configurationService->getDeviceFingerprintSnippetId()) {
+                    !$this->configurationService->getDeviceFingerprintSnippetId(
+                        $salesChannelContext->getSalesChannelId()
+                    )) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 }
 
@@ -342,9 +344,15 @@ class PaymentMethodsFilterService
         Cart                $cart,
         SalesChannelContext $salesChannelContext
     ): PaymentMethodsResponse {
-        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
-        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
-        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled(
+            $salesChannelContext->getSalesChannelId()
+        );
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled(
+            $salesChannelContext->getSalesChannelId()
+        );
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled(
+            $salesChannelContext->getSalesChannelId()
+        );
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
