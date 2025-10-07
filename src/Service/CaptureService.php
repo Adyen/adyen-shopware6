@@ -108,7 +108,10 @@ class CaptureService
 
         $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
 
-        if ($this->isManualCapture($paymentMethodHandler)) {
+        if ($this->isManualCapture(
+            $paymentMethodHandler,
+            $orderTransaction->getOrder()->getSalesChannelId()
+        )) {
             $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
 
             $customFields = $orderTransaction->getCustomFields();
@@ -129,7 +132,9 @@ class CaptureService
             $results = [];
             foreach ($deliveries as $delivery) {
                 if ($this->requiresCaptureOnShipment($paymentMethodHandler, $order->getSalesChannelId()) &&
-                    $delivery->getStateMachineState()->getId() !== $this->configurationService->getOrderState()) {
+                    $delivery->getStateMachineState()->getId() !== $this->configurationService->getOrderState(
+                        $order->getSalesChannelId()
+                    )) {
                     $exception = new CaptureException('Order delivery status does not match configuration');
                     $exception->reason = self::REASON_DELIVERY_STATE_MISMATCH;
 
@@ -173,11 +178,13 @@ class CaptureService
         }
     }
 
-    public function getRescheduleNotificationTime(): \DateTime
+    public function getRescheduleNotificationTime(?OrderEntity $order): \DateTime
     {
         $dateTime = new \DateTime();
         try {
-            $rescheduleTime = $this->configurationService->getRescheduleTime();
+            $rescheduleTime = $this->configurationService->getRescheduleTime(
+                $order ? $order->getSalesChannelId() : null
+            );
             if (is_int($rescheduleTime)) {
                 $dateTime->add(new \DateInterval('PT' . $rescheduleTime . 'S'));
             }
@@ -191,10 +198,10 @@ class CaptureService
      * @param $handlerIdentifier
      * @return bool
      */
-    public function isManualCapture($handlerIdentifier): bool
+    public function isManualCapture($handlerIdentifier, $salesChannelId = null): bool
     {
         if ($handlerIdentifier::$isOpenInvoice) {
-            if ($this->configurationService->isAutoCaptureActiveForOpenInvoices()) {
+            if ($this->configurationService->isAutoCaptureActiveForOpenInvoices($salesChannelId)) {
                 // Open invoice payment methods can be auto capture if the merchant account is authorised.
                 return false;
             } else {
@@ -202,7 +209,8 @@ class CaptureService
                 return true;
             }
         } else {
-            return $this->configurationService->isManualCaptureActive() && $handlerIdentifier::$supportsManualCapture;
+            return $this->configurationService->isManualCaptureActive($salesChannelId)
+                && $handlerIdentifier::$supportsManualCapture;
         }
     }
 

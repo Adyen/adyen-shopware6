@@ -163,6 +163,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $notifications = $this->notificationService->getScheduledUnprocessedNotifications();
 
         foreach ($notifications->getElements() as $notification) {
+            $order = null;
             try {
                 /** @var NotificationEntity $notification */
                 $logContext = ['eventCode' => $notification->getEventCode()];
@@ -208,7 +209,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     continue;
                 }
 
-                $processor = $this->createProcessor($notification, $currentTransactionState);
+                $processor = $this->createProcessor($notification, $currentTransactionState, $order);
                 if (is_null($processor)) {
                     continue;
                 }
@@ -230,7 +231,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 );
             } catch (CaptureException $exception) {
                 $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
-                $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
+                $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime($order);
                 if (CaptureService::REASON_DELIVERY_STATE_MISMATCH === $exception->reason ||
                     CaptureService::REASON_WAITING_AUTH_WEBHOOK === $exception->reason) {
                     $this->rescheduleNotification(
@@ -282,7 +283,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      */
     private function createProcessor(
         NotificationEntity $notification,
-        string $currentTransactionState
+        string $currentTransactionState,
+        OrderEntity $order
     ): ?ProcessorInterface {
         try {
             $notificationItem = Notification::createItem([
@@ -290,8 +292,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 'success' => $notification->isSuccess()
             ]);
 
-            $isManual = (bool) $this->captureService->isManualCaptureActive();
-            $isOnShipment = (bool) $this->captureService->isCaptureOnShipmentEnabled();
+            $isManual = (bool) $this->captureService->isManualCaptureActive(
+                $order->getSalesChannelId(),
+            );
+            $isOnShipment = (bool) $this->captureService->isCaptureOnShipmentEnabled(
+                $order->getSalesChannelId(),
+            );
 
             $isAutoCapture = !($isManual || $isOnShipment);
 
