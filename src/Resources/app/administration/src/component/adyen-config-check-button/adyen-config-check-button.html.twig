@@ -1,5 +1,6 @@
 <template>
     <sw-button-process
+            v-bind="filteredAttrs"
             :disabled="isLoading"
             :isLoading="isLoading"
             :processSuccess="isSaveSuccessful"
