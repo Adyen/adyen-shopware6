@@ -25,6 +25,7 @@ import template from './adyen-config-check-button.html.twig';
 
 Component.register('adyen-config-check-button', {
     template,
+    inheritAttrs: false,
 
     inject: ['adyenService'],
 
@@ -40,6 +41,11 @@ Component.register('adyen-config-check-button', {
     },
 
     computed: {
+        filteredAttrs() {
+            const { disabled, ...rest } = this.$attrs;
+            return rest;
+        },
+
         pluginConfig() {
             // Plugin config moved up by one level in Shopware >= v6.3.4.1
             // i.e. from this.$parent.$parent.$parent to this.$parent.$parent.$parent.$parent
