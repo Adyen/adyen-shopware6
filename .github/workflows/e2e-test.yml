@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   e2e:
     name: Shopware 6 E2E
@@ -38,16 +41,21 @@ jobs:
           docker network connect --alias local.shopware.shop localnetwork shopware6
 
       - name: Install/Configure Plugin
+        env:
+          ADYEN_API_KEY: ${{ secrets.ADYEN_API_KEY }}
+          ADYEN_MERCHANT: ${{ secrets.ADYEN_MERCHANT }}
+          ADYEN_CLIENT_KEY: ${{ secrets.ADYEN_CLIENT_KEY }}
+          DONATION_ACCOUNT: ${{ secrets.DONATION_ACCOUNT }}
         run: |
           docker exec shopware6 bash -c "composer config --json repositories.local '{\"type\": \"path\", \"url\": \"/data/extensions/workdir\", \"options\": { \"symlink\": false } }'"
           docker exec shopware6 bash -c 'composer require adyen/adyen-shopware6:*@RC'
           docker exec shopware6 bash -c 'php bin/console plugin:refresh'
           docker exec shopware6 bash -c 'php bin/console plugin:install AdyenPaymentShopware6 --activate'
           docker exec shopware6 bash -c 'php bin/console cache:clear'
-          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.apiKeyTest "${{secrets.ADYEN_API_KEY}}"'
-          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.merchantAccount "${{secrets.ADYEN_MERCHANT}}"'
-          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.clientKeyTest "${{secrets.ADYEN_CLIENT_KEY}}"'
-          docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.adyenGivingCharityMerchantAccount "${{secrets.DONATION_ACCOUNT}}"'
+          docker exec shopware6 bash -c "php bin/console system:config:set AdyenPaymentShopware6.config.apiKeyTest \"$ADYEN_API_KEY\""
+          docker exec shopware6 bash -c "php bin/console system:config:set AdyenPaymentShopware6.config.merchantAccount \"$ADYEN_MERCHANT\""
+          docker exec shopware6 bash -c "php bin/console system:config:set AdyenPaymentShopware6.config.clientKeyTest \"$ADYEN_CLIENT_KEY\""
+          docker exec shopware6 bash -c "php bin/console system:config:set AdyenPaymentShopware6.config.adyenGivingCharityMerchantAccount \"$DONATION_ACCOUNT\""
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.adyenGivingEnabled true'
           docker exec shopware6 bash -c 'php bin/console system:config:set AdyenPaymentShopware6.config.adyenGivingDonationAmounts "1,5,10"'
           docker exec shopware6 bash -c 'php bin/console adyen:payment-method:enable --all'
