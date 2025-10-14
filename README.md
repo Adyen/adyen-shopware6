@@ -46,7 +46,6 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Clearpay
  - Electronic Payment Service (EPS)
  - Gift cards
- - GiroPay
  - Google Pay
  - iDeal
  - Klarna Pay Later
