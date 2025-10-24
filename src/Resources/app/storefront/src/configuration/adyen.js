@@ -66,6 +66,12 @@ export default {
         'paypal': {
             extra: {},
             onClick: function (source, event, self) {
+                const tosCheckbox = document.querySelector('#tos');
+                if (tosCheckbox && !tosCheckbox.checked) {
+                    tosCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    tosCheckbox.focus();
+                }
+
                 return self.confirmOrderForm.checkValidity();
             },
             onError: function(error, component, self) {
