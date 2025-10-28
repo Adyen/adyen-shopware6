@@ -19,6 +19,16 @@
  * See the LICENSE file for more info.
  *
  */
+function validateTOS(self) {
+    const tosCheckbox = document.querySelector('#tos');
+    if(adyenCheckoutOptions?.accessibilityTweaks === '1' && tosCheckbox && !tosCheckbox.checked) {
+        tosCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        tosCheckbox.focus();
+        return false;
+    }
+
+    return self.confirmOrderForm.checkValidity();
+}
 
 export default {
     updatablePaymentMethods: [
@@ -31,6 +41,10 @@ export default {
         'applepay': {
             extra: {},
             onClick(resolve, reject, self) {
+                if(!validateTOS(self)) {
+                    reject();
+                    return false;
+                }
                 if (!self.confirmOrderForm.checkValidity()) {
                     reject();
                     return false;
@@ -45,6 +59,10 @@ export default {
                 buttonSizeMode: 'fill',
             },
             onClick: function (resolve, reject, self) {
+                if(!validateTOS(self)) {
+                    reject();
+                    return false;
+                }
                 if (!self.confirmOrderForm.checkValidity()) {
                     reject();
                     return false;
@@ -66,13 +84,7 @@ export default {
         'paypal': {
             extra: {},
             onClick: function (source, event, self) {
-                const tosCheckbox = document.querySelector('#tos');
-                if (tosCheckbox && !tosCheckbox.checked) {
-                    tosCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    tosCheckbox.focus();
-                }
-
-                return self.confirmOrderForm.checkValidity();
+                return validateTOS(self);
             },
             onError: function(error, component, self) {
                 component.setStatus('ready');
@@ -122,6 +134,10 @@ export default {
             prePayRedirect: true,
             sessionKey: 'amazonCheckoutSessionId',
             onClick: function (resolve, reject, self) {
+                if(!validateTOS(self)) {
+                    reject();
+                    return false;
+                }
                 if (!self.confirmOrderForm.checkValidity()) {
                     reject();
                     return false;
