@@ -43,6 +43,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.remainingAmount = adyenCheckoutOptions.totalPrice - this.giftcardDiscount;
         this.responseHandler = this.handlePaymentAction;
         this.adyenCheckout = Promise;
+
+        this.setupPaymentMethodSwitchHandler();
+
         this.initializeCheckoutComponent().then(function () {
             // Non adyen payment method selected
             // this can not happen, because this js plugin is registered only if adyen methods selected
@@ -84,6 +87,45 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
+    setupPaymentMethodSwitchHandler() {
+        document.addEventListener('change', (event) => {
+            if (event.target.name === 'paymentMethodId') {
+
+                this.temporarilyDisableAdyenValidation();
+
+                setTimeout(() => {
+                    this.restoreAdyenValidation();
+                }, 100);
+            }
+        }, true);
+    }
+
+    temporarilyDisableAdyenValidation() {
+        const adyenPaymentSection = document.querySelector('#adyen-payment-checkout-mask');
+        if (!adyenPaymentSection) return;
+
+        const adyenFields = adyenPaymentSection.querySelectorAll('input, select, textarea');
+        adyenFields.forEach(field => {
+            field.setAttribute('data-original-required', field.hasAttribute('required') ? 'true' : 'false');
+            field.removeAttribute('required');
+            field.setAttribute('novalidate', 'true');
+            field.setAttribute('data-validation-skipped', 'true');
+        });
+    }
+
+    restoreAdyenValidation() {
+        const adyenFields = document.querySelectorAll('[data-validation-skipped]');
+
+        adyenFields.forEach(field => {
+            if (field.getAttribute('data-original-required') === 'true') {
+                field.setAttribute('required', 'true');
+            }
+            field.removeAttribute('novalidate');
+            field.removeAttribute('data-validation-skipped');
+            field.removeAttribute('data-original-required');
+        });
+    }
+
     async initializeCheckoutComponent () {
         const { AdyenCheckout } = window.AdyenWeb;
         const { locale, clientKey, environment, merchantAccount } = adyenCheckoutConfiguration;
@@ -121,6 +163,8 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (!submitButton) {
             return;
         }
+
+        this.restoreAdyenValidation();
 
         const form = DomAccess.querySelector(document, '#confirmOrderForm', false);
         if (!form.checkValidity()) {
