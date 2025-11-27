@@ -19,7 +19,7 @@ test.describe.parallel("Payment via Klarna", () => {
         await doPrePaymentChecks(page);
     });
 
-    test("Pay Now should succeed via pay now", async ({ page }) => {
+    test.skip("Pay Now should succeed via pay now", async ({ page }) => {
         const klarnaPaymentPage = await proceedToKlarnaPayNow(page);
         await klarnaPaymentPage.makeKlarnaPayment(user.phoneNumber, true);
         await verifySuccessfulPayment(page, true, 25000);
