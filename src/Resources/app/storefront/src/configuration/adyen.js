@@ -19,12 +19,18 @@
  * See the LICENSE file for more info.
  *
  */
-function validateTOS(self) {
-    const tosCheckbox = document.querySelector('#tos');
-    if(adyenCheckoutOptions?.accessibilityTweaks === '1' && tosCheckbox && !tosCheckbox.checked) {
-        tosCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        tosCheckbox.focus();
-        return false;
+
+function validateRequired() {
+    const requiredFields = document.querySelectorAll("input[required]");
+    if (adyenCheckoutOptions?.accessibilityTweaks === '1') {
+        for (const field of requiredFields) {
+            if (!field.checkValidity()) {
+                field.scrollIntoView({behavior: 'smooth', block: 'center'});
+                field.focus();
+
+                return false;
+            }
+        }
     }
 
     return self.confirmOrderForm.checkValidity();
@@ -41,7 +47,7 @@ export default {
         'applepay': {
             extra: {},
             onClick(resolve, reject, self) {
-                if(!validateTOS(self)) {
+                if (!validateRequired(self)) {
                     reject();
                     return false;
                 }
@@ -59,7 +65,7 @@ export default {
                 buttonSizeMode: 'fill',
             },
             onClick: function (resolve, reject, self) {
-                if(!validateTOS(self)) {
+                if (!validateRequired(self)) {
                     reject();
                     return false;
                 }
@@ -71,7 +77,7 @@ export default {
                     return true;
                 }
             },
-            onError: function(error, component, self) {
+            onError: function (error, component, self) {
                 if (error.statusCode !== 'CANCELED') {
                     if ('statusMessage' in error) {
                         console.log(error.statusMessage);
@@ -84,9 +90,9 @@ export default {
         'paypal': {
             extra: {},
             onClick: function (source, event, self) {
-                return validateTOS(self);
+                return validateRequired(self);
             },
-            onError: function(error, component, self) {
+            onError: function (error, component, self) {
                 component.setStatus('ready');
                 window.location.href = self.errorUrl.toString();
             },
@@ -134,7 +140,7 @@ export default {
             prePayRedirect: true,
             sessionKey: 'amazonCheckoutSessionId',
             onClick: function (resolve, reject, self) {
-                if(!validateTOS(self)) {
+                if (!validateRequired(self)) {
                     reject();
                     return false;
                 }
