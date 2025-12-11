@@ -653,12 +653,12 @@ export default class ConfirmOrderPlugin extends Plugin {
                 if (!submitButton) {
                     return;
                 }
-                event.preventDefault();
 
                 const form = DomAccess.querySelector(document, '#confirmOrderForm', false);
                 if (!form.checkValidity()) {
                     return;
                 }
+
                 event.preventDefault();
                 this.el.parentNode.scrollIntoView({
                     behavior: "smooth",
