@@ -20,7 +20,7 @@
  *
  */
 
-function validateRequired() {
+function validateRequired(self) {
     const requiredFields = document.querySelectorAll("input[required]");
     if (adyenCheckoutOptions?.accessibilityTweaks === '1') {
         for (const field of requiredFields) {
