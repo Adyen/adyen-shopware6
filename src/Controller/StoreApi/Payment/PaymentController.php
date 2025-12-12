@@ -55,6 +55,7 @@ use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(defaults: ['_routeScope' => ['store-api']])]
@@ -200,7 +201,7 @@ class PaymentController
         SalesChannelContext $context
     ): JsonResponse {
         $orderId = $request->request->get('orderId');
-        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
+        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getContext());
         if (!$paymentResponse) {
             $message = 'Could not find a transaction';
             $this->logger->error($message, ['orderId' => $orderId]);
@@ -298,7 +299,7 @@ class PaymentController
 
         try {
             return new JsonResponse(
-                $this->paymentStatusService->getWithOrderId($orderId)
+                $this->paymentStatusService->getWithOrderId($orderId, $context)
             );
         } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
@@ -336,6 +337,10 @@ class PaymentController
             $context,
             ['transactions', 'transactions.stateMachineState']
         );
+
+        if (!$order) {
+            throw new UnauthorizedHttpException('Order not found.');
+        }
 
         $context->scope(
             Context::SYSTEM_SCOPE,
@@ -399,6 +404,10 @@ class PaymentController
             $context,
             ['transactions', 'transactions.stateMachineState']
         );
+
+        if (!$order) {
+            throw new UnauthorizedHttpException('Order not found.');
+        }
 
         $transaction = $order->getTransactions()
             ->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)
