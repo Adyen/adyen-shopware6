@@ -291,7 +291,7 @@ class FrontendProxyController extends StorefrontController
             $customerId = $request->getSession()->get('adyenCustomerId');
 
             if ($customerId === null) {
-                throw new UnauthorizedHttpException('Customer not found.');
+                throw new UnauthorizedHttpException('Unauthorized.');
             }
 
             $salesChannelContext = $this->expressCheckoutController->changeContext($customerId, $salesChannelContext);
