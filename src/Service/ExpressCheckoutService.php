@@ -333,7 +333,7 @@ class ExpressCheckoutService
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
 
         if (!$order) {
-            throw new UnauthorizedHttpException('Order not found.');
+            throw new UnauthorizedHttpException('Unauthorized.');
         }
 
         $cartData = $this->createCart(

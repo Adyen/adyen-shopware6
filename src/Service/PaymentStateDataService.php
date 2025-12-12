@@ -142,7 +142,7 @@ class PaymentStateDataService
         }
 
         if ($context->getToken() !== $stateData->getToken()) {
-            throw new UnauthorizedHttpException('Invalid context token.');
+            throw new UnauthorizedHttpException('Unauthorized.');
         }
 
         $this->deletePaymentStateData($stateData);

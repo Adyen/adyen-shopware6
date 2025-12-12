@@ -339,7 +339,7 @@ class PaymentController
         );
 
         if (!$order) {
-            throw new UnauthorizedHttpException('Order not found.');
+            throw new UnauthorizedHttpException('Unauthorized.');
         }
 
         $context->scope(
@@ -406,7 +406,7 @@ class PaymentController
         );
 
         if (!$order) {
-            throw new UnauthorizedHttpException('Order not found.');
+            throw new UnauthorizedHttpException('Unauthorized.');
         }
 
         $transaction = $order->getTransactions()
