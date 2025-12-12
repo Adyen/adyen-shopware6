@@ -50,6 +50,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -114,6 +116,11 @@ class FrontendProxyController extends StorefrontController
     private AdyenPaymentService $adyenPaymentService;
 
     /**
+     * @var RequestStack $requestStack
+     */
+    private RequestStack $requestStack;
+
+    /**
      * @param AbstractCartOrderRoute $cartOrderRoute
      * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
      * @param AbstractContextSwitchRoute $contextSwitchRoute
@@ -125,6 +132,7 @@ class FrontendProxyController extends StorefrontController
      * @param ExpressCheckoutController $expressCheckoutController
      * @param ShopwarePaymentTokenValidator $paymentTokenValidator
      * @param AdyenPaymentService $adyenPaymentService
+     * @param RequestStack $requestStack
      */
     public function __construct(//NOSONAR
         AbstractCartOrderRoute $cartOrderRoute,//NOSONAR
@@ -137,7 +145,8 @@ class FrontendProxyController extends StorefrontController
         DonateController $donateController,//NOSONAR
         ExpressCheckoutController        $expressCheckoutController,
         ShopwarePaymentTokenValidator    $paymentTokenValidator,//NOSONAR
-        AdyenPaymentService         $adyenPaymentService
+        AdyenPaymentService         $adyenPaymentService,//NOSONAR
+        RequestStack $requestStack//NOSONAR
     ) {//NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
@@ -150,6 +159,7 @@ class FrontendProxyController extends StorefrontController
         $this->expressCheckoutController = $expressCheckoutController;
         $this->paymentTokenValidator = $paymentTokenValidator;
         $this->adyenPaymentService = $adyenPaymentService;
+        $this->requestStack = $requestStack;
     }
 
     /**
@@ -161,8 +171,12 @@ class FrontendProxyController extends StorefrontController
      *     methods={"PATCH"}
      * )
      */
-    public function switchContext(RequestDataBag $data, SalesChannelContext $context): ContextTokenResponse
+    public function switchContext(Request $request, RequestDataBag $data, SalesChannelContext $context): JsonResponse|ContextTokenResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->contextSwitchRoute->switchContext($data, $context);
     }
 
@@ -174,8 +188,12 @@ class FrontendProxyController extends StorefrontController
      *     methods={"POST"}
      * )
      */
-    public function checkoutOrder(RequestDataBag $data, SalesChannelContext $salesChannelContext): JsonResponse
+    public function checkoutOrder(Request $request, RequestDataBag $data, SalesChannelContext $salesChannelContext): JsonResponse
     {
+        if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         $cart = $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext);
         try {
             $order = $this->cartOrderRoute->order($cart, $salesChannelContext, $data)->getOrder();
@@ -209,6 +227,10 @@ class FrontendProxyController extends StorefrontController
      */
     public function handlePayment(Request $request, SalesChannelContext $salesChannelContext): JsonResponse
     {
+        if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
         return new JsonResponse($routeResponse->getObject());
@@ -223,10 +245,15 @@ class FrontendProxyController extends StorefrontController
      * )
      */
     public function checkoutOrderExpressProduct(
+        Request $request,
         RequestDataBag $data,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         try {
+            if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+                return new JsonResponse(null, 401);
+            }
+
             $cartData = $this->expressCheckoutController->createCart(
                 $data,
                 $salesChannelContext
@@ -234,8 +261,9 @@ class FrontendProxyController extends StorefrontController
             $cart = $cartData['cart'];
             $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
             $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
+            $this->requestStack->getSession()->set('adyenCustomerId', $cartData['customerId']);
 
-            return new JsonResponse(['id' => $order->getId(), 'customerId' => $cartData['customerId']]);
+            return new JsonResponse(['id' => $order->getId()]);
         } catch (InvalidCartException|EmptyCartException|Error|Exception $exception) {
             $this->addCartErrors(
                 $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)
@@ -266,10 +294,19 @@ class FrontendProxyController extends StorefrontController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
+        if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         $customer = $salesChannelContext->getCustomer();
 
         if ($customer === null || $customer->getGuest()) {
-            $customerId = $request->request->get('customerId');
+            $customerId = $request->getSession()->get('adyenCustomerId');
+
+            if ($customerId === null) {
+                throw new UnauthorizedHttpException('Unauthorized.');
+            }
+
             $salesChannelContext = $this->expressCheckoutController->changeContext($customerId, $salesChannelContext);
         }
 
@@ -329,8 +366,12 @@ class FrontendProxyController extends StorefrontController
      *     methods={"GET"}
      * )
      */
-    public function paymentMethods(SalesChannelContext $context): JsonResponse
+    public function paymentMethods(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->paymentController->getPaymentMethods($context);
     }
 
@@ -344,6 +385,10 @@ class FrontendProxyController extends StorefrontController
      */
     public function paymentStatus(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->paymentController->getPaymentStatus($request, $context);
     }
 
@@ -357,6 +402,10 @@ class FrontendProxyController extends StorefrontController
      */
     public function paymentDetails(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->paymentController->postPaymentDetails($request, $context);
     }
 
@@ -368,8 +417,12 @@ class FrontendProxyController extends StorefrontController
      *    methods={"POST"}
      * )
      */
-    public function setPaymentMethod(Request $request, SalesChannelContext $context): SetPaymentOrderRouteResponse
+    public function setPaymentMethod(Request $request, SalesChannelContext $context)
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->paymentController->updatePaymentMethod($request, $context);
     }
 
@@ -383,6 +436,10 @@ class FrontendProxyController extends StorefrontController
      */
     public function cancelOrderTransaction(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->paymentController->cancelOrderTransaction($request, $context);
     }
 
@@ -396,6 +453,10 @@ class FrontendProxyController extends StorefrontController
      */
     public function checkBalance(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->orderApiController->getPaymentMethodsBalance($context, $request);
     }
 
@@ -412,6 +473,10 @@ class FrontendProxyController extends StorefrontController
      */
     public function storeGiftcardStateData(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->orderApiController->giftcardStateData($context, $request);
     }
 
@@ -425,6 +490,10 @@ class FrontendProxyController extends StorefrontController
      */
     public function removeGiftcardStateData(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->orderApiController->deleteGiftCardStateData($context, $request);
     }
 
@@ -437,8 +506,12 @@ class FrontendProxyController extends StorefrontController
      * )
      *
      */
-    public function fetchRedeemedGiftcards(SalesChannelContext $context): JsonResponse
+    public function fetchRedeemedGiftcards(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->orderApiController->fetchRedeemedGiftcards($context);
     }
 
@@ -452,6 +525,10 @@ class FrontendProxyController extends StorefrontController
      */
     public function donate(Request $request, SalesChannelContext $context): JsonResponse
     {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->donateController->donate($request, $context);
     }
 
@@ -467,6 +544,10 @@ class FrontendProxyController extends StorefrontController
         Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
+        if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->expressCheckoutController->getExpressCheckoutConfig($request, $salesChannelContext);
     }
 
@@ -482,6 +563,10 @@ class FrontendProxyController extends StorefrontController
         Request             $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
+        if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
         return $this->expressCheckoutController->updatePayPalOrder($request, $salesChannelContext);
     }
 }
