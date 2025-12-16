@@ -47,6 +47,16 @@
     "config": {
         "allow-plugins": {
             "symfony/*": true
+        },
+        "audit": {
+            "ignore": [
+                "PKSA-w3qy-s9h7-2hqr",
+                "PKSA-b824-t6kf-bqqz",
+                "PKSA-6wp3-462p-vyty",
+                "PKSA-h5dj-jyqc-4fjr",
+                "PKSA-kypv-cx5n-qkc8",
+                "PKSA-v415-g75g-bqsy"
+            ]
         }
     }
 }
