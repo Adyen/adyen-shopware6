@@ -166,8 +166,11 @@ class FrontendProxyController extends StorefrontController
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['PATCH']
     )]
-    public function switchContext(Request $request, RequestDataBag $data, SalesChannelContext $context): JsonResponse|ContextTokenResponse
-    {
+    public function switchContext(
+        Request $request,
+        RequestDataBag $data,
+        SalesChannelContext $context
+    ): JsonResponse|ContextTokenResponse {
         if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
             return new JsonResponse(null, 401);
         }
@@ -181,8 +184,11 @@ class FrontendProxyController extends StorefrontController
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
     )]
-    public function checkoutOrder(Request $request, RequestDataBag $data, SalesChannelContext $salesChannelContext): JsonResponse
-    {
+    public function checkoutOrder(
+        Request $request,
+        RequestDataBag $data,
+        SalesChannelContext $salesChannelContext
+    ): JsonResponse {
         if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
             return new JsonResponse(null, 401);
         }
