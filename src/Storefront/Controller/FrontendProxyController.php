@@ -175,8 +175,7 @@ class FrontendProxyController extends StorefrontController
         Request $request,
         RequestDataBag $data,
         SalesChannelContext $context
-    ): JsonResponse|ContextTokenResponse
-    {
+    ): JsonResponse|ContextTokenResponse {
         if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
             return new JsonResponse(null, 401);
         }
@@ -196,8 +195,7 @@ class FrontendProxyController extends StorefrontController
         Request $request,
         RequestDataBag $data,
         SalesChannelContext $salesChannelContext
-    ): JsonResponse
-    {
+    ): JsonResponse {
         if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
             return new JsonResponse(null, 401);
         }
