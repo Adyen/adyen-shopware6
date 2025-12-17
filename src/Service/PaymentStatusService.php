@@ -31,6 +31,7 @@ use Adyen\Model\Checkout\ResponsePaymentMethod;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use JsonException;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PaymentStatusService
 {
@@ -88,9 +89,9 @@ class PaymentStatusService
         return $this->paymentResponseHandler->handleAdyenApis($result);
     }
 
-    public function getWithOrderId(string $orderId): array
+    public function getWithOrderId(string $orderId, SalesChannelContext $context): array
     {
-        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
+        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getContext());
 
         if (empty($paymentResponse)) {
             throw new MissingDataException(
