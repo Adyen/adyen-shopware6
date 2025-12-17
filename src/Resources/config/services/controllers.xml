@@ -45,6 +45,7 @@
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
+            <argument key="$requestStack" type="service" id="request_stack"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Adyen\Shopware\Controller\AdminController" autowire="true">
