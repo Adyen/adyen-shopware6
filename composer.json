@@ -47,9 +47,6 @@
     "config": {
         "allow-plugins": {
             "symfony/*": true
-        },
-        "audit": {
-            "block-insecure": false
         }
     }
 }
