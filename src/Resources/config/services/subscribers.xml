@@ -16,6 +16,7 @@
         </service>
         <service id="Adyen\Shopware\Subscriber\PostPaymentSubscriber" autowire="true">
             <argument key="$router" type="service" id="Symfony\Component\Routing\RouterInterface"/>
+            <argument key="$requestStack" type="service" id="request_stack"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
         </service>
