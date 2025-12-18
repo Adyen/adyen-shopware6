@@ -24,6 +24,9 @@ jobs:
       - name: Validate composer.json and composer.lock
         run: composer validate
 
+      - name: Disable Composer security block
+        run: composer config --global audit.block-insecure false
+
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 

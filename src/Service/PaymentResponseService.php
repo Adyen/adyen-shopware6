@@ -64,7 +64,7 @@ class PaymentResponseService
             ->first();
     }
 
-    public function getWithOrderId(string $orderId): ?PaymentResponseEntity
+    public function getWithOrderId(string $orderId, Context $context): ?PaymentResponseEntity
     {
         $orderTransaction = $this->orderTransactionRepository
             ->search(
@@ -72,7 +72,7 @@ class PaymentResponseService
                     ->addFilter((new EqualsFilter('orderId', $orderId)))
                     ->addAssociation('order')
                 ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
-                Context::createDefaultContext()
+                $context
             )
             ->first();
         return $this->getWithOrderTransaction($orderTransaction);
