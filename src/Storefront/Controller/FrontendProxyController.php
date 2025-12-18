@@ -163,6 +163,8 @@ class FrontendProxyController extends StorefrontController
     }
 
     /**
+     * @return JsonResponse|ContextTokenResponse
+     *
      * @deprecated This method is deprecated and will be removed in future versions.
      * @Route(
      *     "/adyen/proxy-switch-context",
@@ -175,7 +177,7 @@ class FrontendProxyController extends StorefrontController
         Request $request,
         RequestDataBag $data,
         SalesChannelContext $context
-    ): JsonResponse|ContextTokenResponse {
+    ) {
         if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
             return new JsonResponse(null, 401);
         }
