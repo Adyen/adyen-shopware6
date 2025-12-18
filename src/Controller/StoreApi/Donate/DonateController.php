@@ -125,7 +125,8 @@ class DonateController
         $transaction = $this->adyenOrderTransactionRepository
             ->getFirstAdyenOrderTransactionByStates(
                 $orderId,
-                [OrderTransactionStates::STATE_AUTHORIZED, OrderTransactionStates::STATE_IN_PROGRESS]
+                [OrderTransactionStates::STATE_AUTHORIZED, OrderTransactionStates::STATE_IN_PROGRESS],
+                $salesChannelContext
             );
 
         $orderCurrency = $transaction->getOrder()->getCurrency()->getIsoCode();

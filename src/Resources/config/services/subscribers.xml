@@ -31,6 +31,7 @@
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="Adyen\Shopware\Service\ExpressCheckoutService"/>
             <argument type="service" id="Adyen\Shopware\Service\TermsAndConditionsService"/>
+            <argument key="$requestStack" type="service" id="request_stack"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
             <tag name="kernel.event_subscriber"/>
         </service>
