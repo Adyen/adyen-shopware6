@@ -4,8 +4,6 @@ run-name: Headless E2E tests for Adyen Shopware Plugin
 
 on:
   pull_request:
-    branches:
-      - develop-3
   workflow_dispatch:
 
 permissions:
