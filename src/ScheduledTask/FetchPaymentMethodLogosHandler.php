@@ -176,7 +176,7 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
             }
 
             $mediaId = $this->mediaRepository->search(
-                new Criteria()->addFilter(new EqualsFilter('fileName', $filename)),
+                (new Criteria())->addFilter(new EqualsFilter('fileName', $filename)),
                 $context
             )->getEntities()->first()?->getId();
 
