@@ -3,8 +3,8 @@
         <div id="adyen-giftcards-container">
             <hr>
             <div class="adyen-add-giftcard-row">
-                <a id="showGiftcardButton"  href="#" class="adyen-link-add-giftcard"
-                   {% if adyenFrontendData.addGiftCardOption === 'showFields' %} style="display:none;" {% endif %} >
+                <a id="showGiftcardButton" href="#" class="adyen-link-add-giftcard"
+                        {% if adyenFrontendData.addGiftCardOption === 'showFields' %} style="display:none;" {% endif %} >
                     {{ "adyen.giftcard.addGiftcards" | trans }}
                     <span class="adyen-icon-plus" aria-hidden="true">+</span>
                 </a>
@@ -31,9 +31,12 @@
                  data-translation-adyen-giftcard-remaining-amount="{{ "adyen.giftcard.remainingAmount" | trans }}"
                  data-translation-adyen-giftcard-remove="{{ "adyen.giftcard.removeGiftcard" | trans }}"
             ></div>
-            <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
+            <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
+                var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;
+            </script>
             {# loop through giftcards and display logo #}
-            <select id="giftcardDropdown" style="display: none" aria-label="{{ 'adyen.giftcard.chooseGiftcard' | trans }}">
+            <select id="giftcardDropdown" style="display: none"
+                    aria-label="{{ 'adyen.giftcard.chooseGiftcard' | trans }}">
                 <option value="" disabled selected>{{ "adyen.giftcard.chooseGiftcard" | trans }}</option>
                 {% for giftcard in adyenFrontendData.giftcards %}
                     <option class="adyen-giftcard"
@@ -46,7 +49,8 @@
             </select>
             <div class="clearfix"></div>
             <div id="adyen-giftcard-component">
-                <span class="adyen-close-giftcard-component" title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
+                <span class="adyen-close-giftcard-component"
+                      title="{{ "adyen.giftcard.closeGiftcardSection" | trans }}">&times;</span>
                 <span class="adyen-giftcard-item"></span>
                 <h6 class="adyen-giftcard-header"></h6>
                 <div id="adyen-giftcard-component-mount"></div>
