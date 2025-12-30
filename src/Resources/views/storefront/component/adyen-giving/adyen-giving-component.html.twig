@@ -16,7 +16,7 @@
 
         <div id='donation-container'></div>
 
-        <script>
+        <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
             var adyenGivingConfiguration = document.querySelector('#adyen-giving-configuration').dataset;
         </script>
     </div>

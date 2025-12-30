@@ -29,7 +29,7 @@
                    value="{{ adyenPaymentMethodType|escape }}">
         </div>
     {% endfor %}
-    <script>
+    <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
         var adyenExpressCheckoutOptions = document.querySelector('#adyen-express-checkout-options').dataset;
     </script>
 </div>
