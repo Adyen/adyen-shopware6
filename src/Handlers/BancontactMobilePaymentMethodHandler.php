@@ -27,7 +27,10 @@ namespace Adyen\Shopware\Handlers;
 
 class BancontactMobilePaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-    public static function getPaymentMethodCode()
+    /**
+     * @return string
+     */
+    public static function getPaymentMethodCode(): string
     {
         return 'bcmc_mobile';
     }

@@ -28,7 +28,10 @@ namespace Adyen\Shopware\Handlers;
 
 class PaysafecardPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-    public static function getPaymentMethodCode()
+    /**
+     * @return string
+     */
+    public static function getPaymentMethodCode(): string
     {
         return 'paysafecard';
     }

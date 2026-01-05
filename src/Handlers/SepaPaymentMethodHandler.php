@@ -29,7 +29,10 @@ class SepaPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static bool $supportsManualCapture = true;
 
-    public static function getPaymentMethodCode()
+    /**
+     * @return string
+     */
+    public static function getPaymentMethodCode(): string
     {
         return 'sepadirectdebit';
     }
