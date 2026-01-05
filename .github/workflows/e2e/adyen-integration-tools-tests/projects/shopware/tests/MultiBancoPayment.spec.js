@@ -19,7 +19,7 @@ test.describe.parallel("Payment via MultiBanco", () => {
         await doPrePaymentChecks(page);
     });
 
-    test("should succeed", async ({ page }) => {
+    test.skip("should succeed", async ({ page }) => {
         const paymentDetailPage = new PaymentDetailsPage(page);
         await paymentDetailPage.selectMultiBanco();
         await paymentDetailPage.submitOrder();

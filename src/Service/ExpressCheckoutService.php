@@ -33,6 +33,7 @@ use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 class ExpressCheckoutService
@@ -328,8 +329,13 @@ class ExpressCheckoutService
         array               $newAddress = [],
         array               $newShipping = []
     ): PaypalUpdateOrderResponse {
-        /** @var OrderEntity $order */
+        /** @var OrderEntity|null $order */
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
+
+        if (!$order) {
+            throw new UnauthorizedHttpException('Unauthorized.');
+        }
+
         $cartData = $this->createCart(
             '-1',
             -1,
