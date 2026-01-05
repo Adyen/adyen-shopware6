@@ -32,6 +32,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class OrderTransactionRepository
 {
@@ -53,11 +54,13 @@ class OrderTransactionRepository
     /**
      * @param string $orderId
      * @param array $states
+     * @param SalesChannelContext|null $context
      * @return OrderTransactionEntity|null
      */
     public function getFirstAdyenOrderTransactionByStates(
         string $orderId,
-        array $states
+        array $states,
+        ?SalesChannelContext $context = null
     ): ?OrderTransactionEntity {
         $criteria = new Criteria();
         $criteria->addAssociation('stateMachineState');
@@ -66,6 +69,12 @@ class OrderTransactionRepository
         $criteria->addAssociation('paymentMethod');
         $criteria->addAssociation('paymentMethod.plugin');
         $criteria->addFilter(new EqualsFilter('order.id', $orderId));
+
+        if ($context) {
+            $criteria->addFilter(new EqualsFilter('order.salesChannelId', $context->getSalesChannelId()));
+            $criteria->addFilter(new EqualsFilter('order.orderCustomer.customerId', $context->getCustomerId()));
+        }
+
         $criteria->addFilter(
             new EqualsAnyFilter('stateMachineState.technicalName', $states)
         );
@@ -76,7 +85,10 @@ class OrderTransactionRepository
         $criteria->setLimit(1);
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
-        return $this->orderTransactionRepository->search($criteria, Context::createDefaultContext())->first();
+        return $this->orderTransactionRepository->search(
+            $criteria,
+            $context ? $context->getContext(): Context::createDefaultContext()
+        )->first();
     }
 
     /**

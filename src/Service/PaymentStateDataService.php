@@ -33,6 +33,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class PaymentStateDataService
 {
@@ -131,12 +133,19 @@ class PaymentStateDataService
         );
     }
 
-    public function deletePaymentStateDataFromId(string $stateDataId): void
+    public function deletePaymentStateDataFromId(string $stateDataId, SalesChannelContext $context): void
     {
         $stateData = $this->getPaymentStateDataFromId($stateDataId);
-        if (!empty($stateData)) {
-            $this->deletePaymentStateData($stateData);
+
+        if (empty($stateData)) {
+            return;
         }
+
+        if ($context->getToken() !== $stateData->getToken()) {
+            throw new UnauthorizedHttpException('Unauthorized.');
+        }
+
+        $this->deletePaymentStateData($stateData);
     }
 
     public function fetchRedeemedGiftCardsFromContextToken(string $contextToken):

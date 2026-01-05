@@ -250,6 +250,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
         $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
 
+        $this->requestStack->getSession()->set('adyenSwContextToken', $salesChannelContext->getToken());
+
         //Filter Payment Methods
         $shopwarePaymentMethods = null;
         if ($page instanceof CheckoutCartPage) {
@@ -409,6 +411,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
         $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
 
+        $this->requestStack->getSession()->set('adyenSwContextToken', $salesChannelContext->getToken());
+
         $expressCheckoutConfigurationAvailable = true;
         $expressCheckoutConfiguration = [];
         $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
@@ -498,6 +502,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $orderId = '';
         $affiliateCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::AFFILIATE_CODE_KEY);
         $campaignCode = $this->requestStack->getSession()->get(AffiliateTrackingListener::CAMPAIGN_CODE_KEY);
+
+        $this->requestStack->getSession()->set('adyenSwContextToken', $salesChannelContext->getToken());
 
         if (method_exists($page, 'getOrder')) {
             $orderId = $page->getOrder()->getId();
