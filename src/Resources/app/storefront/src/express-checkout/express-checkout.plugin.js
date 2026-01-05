@@ -451,16 +451,10 @@ export default class ExpressCheckoutPlugin extends Plugin {
             location.origin + adyenExpressCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', this.orderId);
 
-        let customerId = '';
-        if (order.customerId) {
-            customerId = order.customerId;
-        }
-
         let params = {
             'orderId': this.orderId,
             'finishUrl': this.finishUrl.toString(),
-            'errorUrl': this.errorUrl.toString(),
-            'customerId': customerId
+            'errorUrl': this.errorUrl.toString()
         };
 
         // Append any extra parameters passed, e.g. stateData

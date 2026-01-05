@@ -55,6 +55,7 @@ use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Annotations as OA;
 
@@ -209,7 +210,7 @@ class PaymentController
         SalesChannelContext $context
     ): JsonResponse {
         $orderId = $request->request->get('orderId');
-        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId);
+        $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getContext());
         if (!$paymentResponse) {
             $message = 'Could not find a transaction';
             $this->logger->error($message, ['orderId' => $orderId]);
@@ -312,7 +313,7 @@ class PaymentController
 
         try {
             return new JsonResponse(
-                $this->paymentStatusService->getWithOrderId($orderId)
+                $this->paymentStatusService->getWithOrderId($orderId, $context)
             );
         } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
@@ -379,6 +380,10 @@ class PaymentController
         /** @var OrderEntity $order */
         $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
 
+        if (!$order) {
+            throw new UnauthorizedHttpException('Unauthorized.');
+        }
+
         $context->scope(
             Context::SYSTEM_SCOPE,
             function () use ($order, $initialStateId, $orderId, $paymentMethodId, $context): void {
@@ -434,6 +439,10 @@ class PaymentController
         $context = $salesChannelContext->getContext();
         $orderId = $request->request->get('orderId');
         $order = $this->orderRepository->getOrder($orderId, $context, ['transactions']);
+
+        if (!$order) {
+            throw new UnauthorizedHttpException('Unauthorized.');
+        }
 
         $transaction = $order->getTransactions()->filterByState(OrderTransactionStates::STATE_IN_PROGRESS)->first();
 

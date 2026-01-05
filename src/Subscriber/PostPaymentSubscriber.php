@@ -38,6 +38,7 @@ use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\RouterInterface;
 
 class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscriberInterface
@@ -78,6 +79,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
      * @var TermsAndConditionsService
      */
     private $termsAndConditionsService;
+    private RequestStack $requestStack;
 
     /**
      * @param SalesChannelRepository $salesChannelRepository
@@ -85,8 +87,9 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
      * @param Currency $currency
      * @param RouterInterface $router
      * @param ExpressCheckoutService $expressCheckoutService
-     * @param TermsAndConditionsService $expressCheckoutService
+     * @param TermsAndConditionsService $termsAndConditionsService
      * @param LoggerInterface $logger
+     * @param RequestStack $requestStack
      */
     public function __construct(
         SalesChannelRepository $salesChannelRepository,
@@ -95,7 +98,8 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         RouterInterface $router,
         ExpressCheckoutService $expressCheckoutService,
         TermsAndConditionsService $termsAndConditionsService,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        RequestStack $requestStack
     ) {
         $this->configurationService = $configurationService;
         $this->salesChannelRepository = $salesChannelRepository;
@@ -104,6 +108,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         $this->expressCheckoutService = $expressCheckoutService;
         $this->termsAndConditionsService = $termsAndConditionsService;
         $this->logger = $logger;
+        $this->requestStack = $requestStack;
     }
 
     /**
@@ -124,6 +129,8 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
         $page = $event->getPage();
         $salesChannelContext = $event->getSalesChannelContext();
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
+
+        $this->requestStack->getSession()->set('adyenSwContextToken', $salesChannelContext->getToken());
 
         $order = $page->getOrder();
 
