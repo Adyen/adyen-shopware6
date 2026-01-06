@@ -84,9 +84,9 @@ class NotificationService
         }
 
         return $this->notificationRepository->search(
-                (new Criteria())->addFilter(...$filters),
-                Context::createDefaultContext()
-            )->count() > 0;
+            (new Criteria())->addFilter(...$filters),
+            Context::createDefaultContext()
+        )->count() > 0;
     }
 
     /**

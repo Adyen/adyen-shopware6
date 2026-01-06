@@ -171,7 +171,8 @@ class PaymentStateDataService
      * @return \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult
      */
     public function fetchRedeemedGiftCardsFromContextToken(string $contextToken):
-    \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult {
+    \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult
+    {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('token', $contextToken));
         $criteria->addSorting(new FieldSorting('createdAt')); // Sorting by 'created_at' in ascending order
