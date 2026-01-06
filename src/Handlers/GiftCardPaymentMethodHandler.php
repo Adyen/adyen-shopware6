@@ -4,8 +4,10 @@ namespace Adyen\Shopware\Handlers;
 
 class GiftCardPaymentMethodHandler extends \Adyen\Shopware\Handlers\AbstractPaymentMethodHandler
 {
-
-    public static function getPaymentMethodCode()
+    /**
+     * @return string
+     */
+    public static function getPaymentMethodCode(): string
     {
         return 'giftcard';
     }

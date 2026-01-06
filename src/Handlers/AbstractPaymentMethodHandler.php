@@ -85,7 +85,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         'option-values',
         'customized-products-option'
     ];
-    const PROMOTION = 'promotion';
+
     /**
      * Error codes that are safe to display to the shopper.
      * @see https://docs.adyen.com/development-resources/error-codes
@@ -99,101 +99,117 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * @var ClientService
      */
-    protected $clientService;
+    protected ClientService $clientService;
 
     /**
      * @var Currency
      */
-    protected $currency;
+    protected Currency $currency;
 
     /**
      * @var ConfigurationService
      */
-    protected $configurationService;
+    protected ConfigurationService $configurationService;
 
     /**
      * @var CheckoutStateDataValidator
      */
-    protected $checkoutStateDataValidator;
+    protected CheckoutStateDataValidator $checkoutStateDataValidator;
 
     /**
      * @var RatePayDeviceFingerprintParamsProvider
      */
-    protected $ratePayFingerprintParamsProvider;
+    protected RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
 
     /**
      * @var PaymentStateDataService
      */
-    protected $paymentStateDataService;
+    protected PaymentStateDataService $paymentStateDataService;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @var SalesChannelRepository
      */
-    protected $salesChannelRepository;
+    protected SalesChannelRepository $salesChannelRepository;
 
     /**
      * @var PaymentResponseHandler
      */
-    protected $paymentResponseHandler;
+    protected PaymentResponseHandler $paymentResponseHandler;
 
     /**
      * @var ResultHandler
      */
-    protected $resultHandler;
+    protected ResultHandler $resultHandler;
 
     /**
      * @var OrderTransactionStateHandler
      */
-    protected $orderTransactionStateHandler;
+    protected OrderTransactionStateHandler $orderTransactionStateHandler;
 
     /**
      * @var RouterInterface
      */
-    protected $router;
+    protected RouterInterface $router;
 
     /**
      * @var EntityRepository
      */
-    protected $currencyRepository;
+    protected EntityRepository $currencyRepository;
 
     /**
      * @var EntityRepository
      */
-    protected $productRepository;
+    protected EntityRepository $productRepository;
 
     /**
      * @var RequestStack
      */
-    protected $requestStack;
+    protected RequestStack $requestStack;
 
     /**
      * @var AbstractContextSwitchRoute
      */
-    private $contextSwitchRoute;
+    private AbstractContextSwitchRoute $contextSwitchRoute;
 
-    private $paymentsApiService;
+    /**
+     * @var PaymentsApi $paymentsApiService
+     */
+    private PaymentsApi $paymentsApiService;
 
-    private $paymentResults = [];
+    /**
+     * @var array $paymentResults
+     */
+    private array $paymentResults = [];
 
-    private $orderRequestData = [];
+    /**
+     * @var array $orderRequestData
+     */
+    private array $orderRequestData = [];
 
-    private $remainingAmount = null;
+    /**
+     * @var ?int $remainingAmount
+     */
+    private ?int $remainingAmount = null;
 
+    /**
+     * @var OrdersService $ordersService
+     */
     private OrdersService $ordersService;
 
     /**
      * AbstractPaymentMethodHandler constructor.
      *
      * @param OrdersService $ordersService
-     * @param ClientService $clientService
      * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
+     * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -244,8 +260,14 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->contextSwitchRoute = $contextSwitchRoute;
     }
 
-    abstract public static function getPaymentMethodCode();
+    /**
+     * @return string
+     */
+    abstract public static function getPaymentMethodCode(): string;
 
+    /**
+     * @return string|null
+     */
     public static function getBrand(): ?string
     {
         return null;
@@ -374,34 +396,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         return new RedirectResponse($transaction->getReturnUrl());
     }
 
-    private function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
-    {
-        $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
-        parse_str($query, $params);
-        $token =  $params['_sw_payment_token'] ?? '';
-
-        return $this->router->generate(
-            'payment.adyen.proxy-finalize-transaction',
-            [
-                '_sw_payment_token' => $token,
-                'orderId' => $transaction->getOrder()->getId(),
-                'transactionId' => $transaction->getOrderTransaction()->getId()
-            ],
-            UrlGeneratorInterface::ABSOLUTE_URL
-        );
-    }
-
-    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction)
-    {
-        $uuid = Uuid::randomHex();
-        $currency = $salesChannelContext->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize(
-            $transaction->getOrder()->getPrice()->getTotalPrice(),
-            $salesChannelContext->getCurrency()->getIsoCode()
-        );
-        return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
-    }
-
     /**
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
@@ -422,6 +416,72 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         } catch (PaymentFailedException $exception) {
             throw new AsyncPaymentFinalizeException($transactionId, $exception->getMessage());
         }
+    }
+
+    /**
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param $adyenOrderResponse
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return void
+     */
+    public function handleAdyenOrderPayment(
+        AsyncPaymentTransactionStruct $transaction,
+        $adyenOrderResponse,
+        SalesChannelContext $salesChannelContext
+    ): void {
+        if (empty($adyenOrderResponse)) {
+            return;
+        }
+        $transactionId = $transaction->getOrderTransaction()->getId();
+
+        //New Multi-Gift-card implementation
+        $remainingOrderAmount = $this->currency->sanitize(
+            $transaction->getOrder()->getPrice()->getTotalPrice(),
+            $salesChannelContext->getCurrency()->getIsoCode()
+        );
+
+        $this->orderRequestData = [
+            'orderData' => $adyenOrderResponse['orderData'],
+            'pspReference' => $adyenOrderResponse['pspReference']
+        ];
+
+        $stateData = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken(
+            $salesChannelContext->getToken()
+        );
+
+        foreach ($stateData->getElements() as $statedataArray) {
+            $storedStateData = json_decode($statedataArray->getStateData(), true);
+            $giftcardValue = $this->currency->sanitize(
+                $storedStateData['giftcard']['value'],
+                $salesChannelContext->getCurrency()->getIsoCode()
+            );
+            $partialAmount = min($remainingOrderAmount, $giftcardValue); //convert to integer from float
+
+            $giftcardPaymentRequest = $this->getPaymentRequest(
+                $salesChannelContext,
+                $transaction,
+                $storedStateData,
+                $partialAmount,
+                $this->orderRequestData
+            );
+
+            //make /payments call
+            $this->paymentsCall($salesChannelContext, $giftcardPaymentRequest, $transaction);
+
+            $remainingOrderAmount -= $partialAmount;
+
+            // Remove the used state.data
+            $this->paymentStateDataService->deletePaymentStateDataFromId($statedataArray->getId());
+        }
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new AsyncPaymentProcessException(
+                $transactionId,
+                'Invalid payment state data.'
+            );
+        }
+
+        $this->remainingAmount = $remainingOrderAmount;
     }
 
     /**
@@ -462,7 +522,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         } else {
             $paymentMethodType = $request['paymentMethod']['type'];
         }
-      
+
         $paymentMethod->setType($paymentMethodType ?? 'zip');
         $paymentRequest->setPaymentMethod($paymentMethod);
 
@@ -730,7 +790,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $currency = $salesChannelContext->getCurrency();
 
                 //Building open invoice line
-              
+
                 $lineItem = new LineItem();
 
                 $lineItem->setDescription($productName);
@@ -778,55 +838,37 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         return $paymentRequest;
     }
 
-    private function getPayPalPaymentRequest(
-        SalesChannelContext $salesChannelContext,
-        AsyncPaymentTransactionStruct $transaction,
-        CheckoutPaymentMethod $paymentMethod
-    ): IntegrationPaymentRequest {
-        $payPalPaymentRequest = new IntegrationPaymentRequest([]);
-
-        $price = $transaction->getOrder()->getPrice()->getPositionPrice();
-        $amount = $this->currency->sanitize(
-            $price,
-            $salesChannelContext->getCurrency()->getIsoCode()
-        );
-        $amountInfo = new Amount();
-        $amountInfo->setCurrency($salesChannelContext->getCurrency()->getIsoCode());
-        $amountInfo->setValue($amount);
-        $payPalPaymentRequest->setAmount($amountInfo);
-
-        $payPalPaymentRequest->setPaymentMethod($paymentMethod);
-        $payPalPaymentRequest->setReference($transaction->getOrder()->getOrderNumber());
-        $payPalPaymentRequest->setMerchantAccount(
-            $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
-        );
-        $payPalPaymentRequest->setReturnUrl($transaction->getReturnUrl());
-
-        return $payPalPaymentRequest;
-    }
-
-    private function getPaymentRequest(
+    /**
+     * @param $salesChannelContext
+     * @param $transaction
+     * @param $stateData
+     * @param $partialAmount
+     * @param $orderRequestData
+     * @param array $billieData
+     *
+     * @return IntegrationPaymentRequest
+     */
+    protected function getPaymentRequest(
         $salesChannelContext,
         $transaction,
         $stateData,
         $partialAmount,
         $orderRequestData,
-        $billieData = []
-    ) {
+        array $billieData = []
+    ): IntegrationPaymentRequest {
         $transactionId = $transaction->getOrderTransaction()->getId();
         if (!empty($billieData)) {
             $stateData['billieData'] = $billieData;
         }
 
         try {
-            $request = $this->preparePaymentsRequest(
+            return $this->preparePaymentsRequest(
                 $salesChannelContext,
                 $transaction,
                 $stateData,
                 $partialAmount,
                 $orderRequestData
             );
-            return $request;
         } catch (AsyncPaymentProcessException $exception) {
             $this->logger->error($exception->getMessage());
             throw $exception;
@@ -841,6 +883,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
     }
 
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @param IntegrationPaymentRequest $request
+     * @param AsyncPaymentTransactionStruct $transaction
+     *
+     * @return void
+     */
     private function paymentsCall(
         SalesChannelContext $salesChannelContext,
         IntegrationPaymentRequest $request,
@@ -899,7 +948,12 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         return $product;
     }
 
-    private function displaySafeErrorMessages(AdyenException $exception)
+    /**
+     * @param AdyenException $exception
+     *
+     * @return void
+     */
+    private function displaySafeErrorMessages(AdyenException $exception): void
     {
         if ('validation' === $exception->getErrorType()
             && in_array($exception->getAdyenErrorCode(), self::SAFE_ERROR_CODES)) {
@@ -939,66 +993,75 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     /**
      * @param AsyncPaymentTransactionStruct $transaction
-     * @param RequestDataBag $dataBag
-     * @param SalesChannelContext $salesChannelContext
-     * @return void
+     *
+     * @return string
      */
-    public function handleAdyenOrderPayment(
-        AsyncPaymentTransactionStruct $transaction,
-        $adyenOrderResponse,
-        SalesChannelContext $salesChannelContext
-    ): void {
-        if (empty($adyenOrderResponse)) {
-            return;
-        }
-        $transactionId = $transaction->getOrderTransaction()->getId();
+    private function getReturnUrl(AsyncPaymentTransactionStruct $transaction): string
+    {
+        $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
+        parse_str($query, $params);
+        $token =  $params['_sw_payment_token'] ?? '';
 
-        //New Multi-Gift-card implementation
-        $remainingOrderAmount = $this->currency->sanitize(
+        return $this->router->generate(
+            'payment.adyen.proxy-finalize-transaction',
+            [
+                '_sw_payment_token' => $token,
+                'orderId' => $transaction->getOrder()->getId(),
+                'transactionId' => $transaction->getOrderTransaction()->getId()
+            ],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+    }
+
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @param $transaction
+     *
+     * @return array
+     */
+    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction): array
+    {
+        $uuid = Uuid::randomHex();
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $amount = $this->currency->sanitize(
             $transaction->getOrder()->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
 
-        $this->orderRequestData = [
-            'orderData' => $adyenOrderResponse['orderData'],
-            'pspReference' => $adyenOrderResponse['pspReference']
-        ];
+        return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
+    }
 
-        $stateData = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken(
-            $salesChannelContext->getToken()
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param CheckoutPaymentMethod $paymentMethod
+     *
+     * @return IntegrationPaymentRequest
+     */
+    private function getPayPalPaymentRequest(
+        SalesChannelContext $salesChannelContext,
+        AsyncPaymentTransactionStruct $transaction,
+        CheckoutPaymentMethod $paymentMethod
+    ): IntegrationPaymentRequest {
+        $payPalPaymentRequest = new IntegrationPaymentRequest([]);
+
+        $price = $transaction->getOrder()->getPrice()->getPositionPrice();
+        $amount = $this->currency->sanitize(
+            $price,
+            $salesChannelContext->getCurrency()->getIsoCode()
         );
+        $amountInfo = new Amount();
+        $amountInfo->setCurrency($salesChannelContext->getCurrency()->getIsoCode());
+        $amountInfo->setValue($amount);
+        $payPalPaymentRequest->setAmount($amountInfo);
 
-        foreach ($stateData->getElements() as $statedataArray) {
-            $storedStateData = json_decode($statedataArray->getStateData(), true);
-            $giftcardValue = $this->currency->sanitize(
-                $storedStateData['giftcard']['value'],
-                $salesChannelContext->getCurrency()->getIsoCode()
-            );
-            $partialAmount = min($remainingOrderAmount, $giftcardValue); //convert to integer from float
+        $payPalPaymentRequest->setPaymentMethod($paymentMethod);
+        $payPalPaymentRequest->setReference($transaction->getOrder()->getOrderNumber());
+        $payPalPaymentRequest->setMerchantAccount(
+            $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
+        );
+        $payPalPaymentRequest->setReturnUrl($transaction->getReturnUrl());
 
-            $giftcardPaymentRequest = $this->getPaymentRequest(
-                $salesChannelContext,
-                $transaction,
-                $storedStateData,
-                $partialAmount,
-                $this->orderRequestData
-            );
-
-            //make /payments call
-            $this->paymentsCall($salesChannelContext, $giftcardPaymentRequest, $transaction);
-
-            $remainingOrderAmount -= $partialAmount;
-
-            // Remove the used state.data
-            $this->paymentStateDataService->deletePaymentStateDataFromId($statedataArray->getId());
-        }
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new AsyncPaymentProcessException(
-                $transactionId,
-                'Invalid payment state data.'
-            );
-        }
-
-        $this->remainingAmount = $remainingOrderAmount;
+        return $payPalPaymentRequest;
     }
 }
