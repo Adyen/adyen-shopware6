@@ -92,6 +92,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
     /**
      * Error codes that are safe to display to the shopper.
+     *
      * @see https://docs.adyen.com/development-resources/error-codes
      */
     const SAFE_ERROR_CODES = ['124'];
@@ -340,21 +341,21 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
             $contextToken,
             $order->getSalesChannelId(),
             [
-                    SalesChannelContextService::CURRENCY_ID => $order->getCurrencyId(),
-                    SalesChannelContextService::LANGUAGE_ID => $order->getLanguageId(),
-                    SalesChannelContextService::CUSTOMER_ID => $order->getOrderCustomer()->getCustomerId(),
-                    SalesChannelContextService::COUNTRY_STATE_ID => $countryStateId,
-                    SalesChannelContextService::CUSTOMER_GROUP_ID => $customerGroupId,
-                    SalesChannelContextService::PERMISSIONS => OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS,
-                    SalesChannelContextService::VERSION_ID => $context->getVersionId(),
-                ]
+                SalesChannelContextService::CURRENCY_ID => $order->getCurrencyId(),
+                SalesChannelContextService::LANGUAGE_ID => $order->getLanguageId(),
+                SalesChannelContextService::CUSTOMER_ID => $order->getOrderCustomer()->getCustomerId(),
+                SalesChannelContextService::COUNTRY_STATE_ID => $countryStateId,
+                SalesChannelContextService::CUSTOMER_GROUP_ID => $customerGroupId,
+                SalesChannelContextService::PERMISSIONS => OrderConverter::ADMIN_EDIT_ORDER_PERMISSIONS,
+                SalesChannelContextService::VERSION_ID => $context->getVersionId(),
+            ]
         );
 
         $this->paymentsApiService = new PaymentsApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannelId())
         );
 
-        $countStateData= 0;
+        $countStateData = 0;
         $requestStateData = $currentRequest->get('stateData');
         if ($requestStateData) {
             $requestStateData = json_decode($requestStateData, true);
@@ -474,6 +475,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @param SalesChannelContext $salesChannelContext
      * @param OrderEntity $order
      * @param OrderTransactionEntity $orderTransaction
+     *
      * @return void
      */
     public function handleAdyenOrderPayment(
@@ -543,6 +545,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @param Request $request
      * @param PaymentTransactionStruct $transaction
      * @param Context $context
+     *
      * @return void
      */
     public function finalize(
@@ -1068,6 +1071,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @param SalesChannelContext $salesChannelContext
      * @param IntegrationPaymentRequest $request
      * @param OrderTransactionEntity $transaction
+     *
      * @return void
      */
     private function paymentsCall(
@@ -1108,6 +1112,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     /**
      * @param string $productId
      * @param Context $context
+     *
      * @return ProductEntity
      */
     private function getProduct(string $productId, Context $context): ProductEntity
@@ -1131,6 +1136,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
     /**
      * @param AdyenException $exception
+     *
      * @return void
      */
     private function displaySafeErrorMessages(AdyenException $exception): void
@@ -1143,6 +1149,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
     /**
      * @param string $address
+     *
      * @return array
      */
     private function getSplitStreetAddressHouseNumber(string $address): array
@@ -1181,7 +1188,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     {
         $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
         parse_str($query, $params);
-        $token =  $params['_sw_payment_token'] ?? '';
+        $token = $params['_sw_payment_token'] ?? '';
 
         return $this->router->generate(
             'payment.adyen.proxy-finalize-transaction',

@@ -139,10 +139,11 @@ class FrontendProxyController extends StorefrontController
         OrderApiController $orderApiController,//NOSONAR
         DonateController $donateController,//NOSONAR
         ExpressCheckoutController $expressCheckoutController,
-        ShopwarePaymentTokenValidator    $paymentTokenValidator,//NOSONAR
-        AdyenPaymentService         $adyenPaymentService,//NOSONAR
+        ShopwarePaymentTokenValidator $paymentTokenValidator,//NOSONAR
+        AdyenPaymentService $adyenPaymentService,//NOSONAR
         RequestStack $requestStack//NOSONAR
-    ) {//NOSONAR
+    )
+    {//NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
@@ -159,7 +160,7 @@ class FrontendProxyController extends StorefrontController
 
     /**
      * @deprecated This method is deprecated and will be removed in future versions.
-    */
+     */
     #[Route(
         '/adyen/proxy-switch-context',
         name: 'payment.adyen.proxy-switch-context',
@@ -350,7 +351,7 @@ class FrontendProxyController extends StorefrontController
 
     /**
      * @deprecated This method is deprecated and will be removed in future versions.
-    */
+     */
     #[Route(
         '/adyen/proxy-payment-methods',
         name: 'payment.adyen.proxy-payment-methods',
@@ -543,7 +544,7 @@ class FrontendProxyController extends StorefrontController
         methods: ['POST']
     )]
     public function payPalUpdateOrder(
-        Request             $request,
+        Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {

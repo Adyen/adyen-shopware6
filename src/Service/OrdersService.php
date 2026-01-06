@@ -31,18 +31,23 @@ class OrdersService
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var ClientService
      */
-    private $clientService;
+    private ClientService $clientService;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
+    /**
+     * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         ConfigurationService $configurationService,
         ClientService $clientService,
@@ -53,6 +58,14 @@ class OrdersService
         $this->logger = $logger;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @param $uuid
+     * @param $orderAmount
+     * @param $currency
+     *
+     * @return array
+     */
     public function createOrder(SalesChannelContext $context, $uuid, $orderAmount, $currency): array
     {
         $responseData = [];
@@ -70,7 +83,14 @@ class OrdersService
         return $responseData;
     }
 
-
+    /**
+     * @param SalesChannelContext $context
+     * @param $uuid
+     * @param $orderAmount
+     * @param $currency
+     *
+     * @return array
+     */
     private function buildOrdersRequestData(
         SalesChannelContext $context,
         $uuid,
@@ -85,15 +105,13 @@ class OrdersService
             return [];
         }
 
-        $requestData = array(
+        return [
             "reference" => $uuid,
             "amount" => [
                 "value" => $orderAmount,
                 "currency" => $currency
             ],
             "merchantAccount" => $merchantAccount
-        );
-
-        return $requestData;
+        ];
     }
 }

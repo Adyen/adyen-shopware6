@@ -181,6 +181,7 @@ class PaymentController
 
     /**
      * @param SalesChannelContext $context
+     *
      * @return JsonResponse
      */
     #[Route('/store-api/adyen/payment-methods', name: 'store-api.action.adyen.payment-methods', methods: ['GET'])]
@@ -193,6 +194,7 @@ class PaymentController
     /**
      * @param Request $request
      * @param SalesChannelContext $context
+     *
      * @return JsonResponse
      */
     #[Route('/store-api/adyen/payment-details', name: 'store-api.action.adyen.payment-details', methods: ['POST'])]
@@ -287,6 +289,7 @@ class PaymentController
     /**
      * @param Request $request
      * @param SalesChannelContext $context
+     *
      * @return JsonResponse
      */
     #[Route('/store-api/adyen/payment-status', name: 'store-api.action.adyen.payment-status', methods: ['POST'])]
@@ -310,6 +313,7 @@ class PaymentController
     /**
      * @param Request $request
      * @param SalesChannelContext $context
+     *
      * @return SetPaymentOrderRouteResponse
      */
     #[Route('/store-api/adyen/set-payment', name: 'store-api.action.adyen.set-payment', methods: ['POST'])]
@@ -323,6 +327,13 @@ class PaymentController
         return new SetPaymentOrderRouteResponse();
     }
 
+    /**
+     * @param string $paymentMethodId
+     * @param string $orderId
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return void
+     */
     private function setPaymentMethod(
         string $paymentMethodId,
         string $orderId,
@@ -384,6 +395,7 @@ class PaymentController
     /**
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return JsonResponse
      * @throws MissingDataException
      * @throws JsonException

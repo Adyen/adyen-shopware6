@@ -62,12 +62,6 @@ class PaymentResponseHandler
     const ACTION = 'action';
     const DONATION_TOKEN = 'donationToken';
 
-    // Merchant reference parameter in return GET parameters list
-    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
-
-    // Merchant reference key in API response
-    const MERCHANT_REFERENCE = 'merchantReference';
-
     /**
      * @var LoggerInterface
      */
@@ -134,6 +128,7 @@ class PaymentResponseHandler
      * @param PaymentResponse|PaymentDetailsResponse $response
      * @param OrderTransactionEntity $orderTransaction
      * @param bool $upsertResponse
+     *
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
@@ -234,6 +229,7 @@ class PaymentResponseHandler
      * @param OrderTransactionEntity $transaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResults
+     *
      * @throws PaymentCancelledException
      * @throws PaymentFailedException
      */
@@ -425,14 +421,16 @@ class PaymentResponseHandler
      * @param string $transactionStateTechnicalName
      * @param string $resultCode
      * @param bool $requiresManualCapture
+     *
      * @return bool
+     *
      * @throws PaymentCancelledException
      */
     private function isTransactionHandled(
-        $transactionStateTechnicalName,
-        $resultCode,
-        $requiresManualCapture = false
-    ) {
+        string $transactionStateTechnicalName,
+        string $resultCode,
+        bool $requiresManualCapture = false
+    ): bool {
         if ($transactionStateTechnicalName === OrderTransactionStates::STATE_OPEN) {
             return false;
         }

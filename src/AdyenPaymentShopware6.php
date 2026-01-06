@@ -54,6 +54,11 @@ class AdyenPaymentShopware6 extends Plugin
 {
     public const SOFORT = 'Adyen\Shopware\Handlers\SofortPaymentMethodHandler';
 
+    /**
+     * @param InstallContext $installContext
+     *
+     * @return void
+     */
     public function install(InstallContext $installContext): void
     {
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
@@ -61,6 +66,11 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param ActivateContext $activateContext
+     *
+     * @return void
+     */
     public function activate(ActivateContext $activateContext): void
     {
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
@@ -69,6 +79,11 @@ class AdyenPaymentShopware6 extends Plugin
         parent::activate($activateContext);
     }
 
+    /**
+     * @param DeactivateContext $deactivateContext
+     *
+     * @return void
+     */
     public function deactivate(DeactivateContext $deactivateContext): void
     {
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
@@ -77,6 +92,11 @@ class AdyenPaymentShopware6 extends Plugin
         parent::deactivate($deactivateContext);
     }
 
+    /**
+     * @param UninstallContext $uninstallContext
+     *
+     * @return void
+     */
     public function uninstall(UninstallContext $uninstallContext): void
     {
         parent::uninstall($uninstallContext);
@@ -94,6 +114,11 @@ class AdyenPaymentShopware6 extends Plugin
         $this->removePluginData();
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     public function update(UpdateContext $updateContext): void
     {
         $currentVersion = $updateContext->getCurrentPluginVersion();
@@ -151,6 +176,11 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     public function postUpdate(UpdateContext $updateContext): void
     {
         $currentVersion = $updateContext->getCurrentPluginVersion();
@@ -160,6 +190,12 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param PaymentMethods\PaymentMethodInterface $paymentMethod
+     * @param Context $context
+     *
+     * @return void
+     */
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
     {
         $paymentMethodId = $this->getPaymentMethodId($paymentMethod->getPaymentHandler());
@@ -212,6 +248,13 @@ class AdyenPaymentShopware6 extends Plugin
         $paymentRepository->create([$paymentData], $context);
     }
 
+    /**
+     * @param string $paymentMethodId
+     * @param string $pluginId
+     * @param Context $context
+     *
+     * @return void
+     */
     private function setPluginId(string $paymentMethodId, string $pluginId, Context $context): void
     {
         /** @var EntityRepository $paymentRepository */
@@ -224,6 +267,11 @@ class AdyenPaymentShopware6 extends Plugin
         $paymentRepository->update([$paymentMethodData], $context);
     }
 
+    /**
+     * @param string $paymentMethodHandler
+     *
+     * @return string|null
+     */
     private function getPaymentMethodId(string $paymentMethodHandler): ?string
     {
         /** @var EntityRepository $paymentRepository */
@@ -243,6 +291,13 @@ class AdyenPaymentShopware6 extends Plugin
         return $paymentIds->getIds()[0];
     }
 
+    /**
+     * @param bool $active
+     * @param Context $context
+     * @param PaymentMethods\PaymentMethodInterface $paymentMethod
+     *
+     * @return void
+     */
     private function setPaymentMethodIsActive(
         bool $active,
         Context $context,
@@ -266,6 +321,9 @@ class AdyenPaymentShopware6 extends Plugin
         $paymentRepository->update([$paymentMethodData], $context);
     }
 
+    /**
+     * @return void
+     */
     private function removePluginData(): void
     {
         //Search for config keys that contain the bundle's name
@@ -300,6 +358,11 @@ class AdyenPaymentShopware6 extends Plugin
         $this->removeMigrations();
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo120(UpdateContext $updateContext): void
     {
         //Version 1.2.0 introduces storedPaymentMethod
@@ -314,6 +377,11 @@ class AdyenPaymentShopware6 extends Plugin
         );
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo140(UpdateContext $updateContext): void
     {
         //Version 1.4.0 introduces giropay
@@ -328,6 +396,11 @@ class AdyenPaymentShopware6 extends Plugin
         );
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo160(UpdateContext $updateContext): void
     {
         //Version 1.6.0 introduces applepay, paywithgoogle, dotpay and bancontact
@@ -349,6 +422,11 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo200(UpdateContext $updateContext): void
     {
         //Version 2.0.0 introduces amazonpay, blik
@@ -368,6 +446,11 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo300(UpdateContext $updateContext): void
     {
         //Version 3.0.0 introduces the following payment methods
@@ -413,6 +496,11 @@ class AdyenPaymentShopware6 extends Plugin
         $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo350(UpdateContext $updateContext): void
     {
         //Version 3.5.0 introduces Bancontact mobile
@@ -431,6 +519,11 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo370(UpdateContext $updateContext): void
     {
         /*
@@ -459,6 +552,11 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo3100(UpdateContext $updateContext): void
     {
         /*
@@ -480,6 +578,11 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo3150(UpdateContext $updateContext): void
     {
         //Version 3.15.0 introduces MultiGiftcards
@@ -517,6 +620,11 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo410(UpdateContext $updateContext): void
     {
         /* Version 4.1.0 introduces following payment method.
@@ -533,6 +641,11 @@ class AdyenPaymentShopware6 extends Plugin
         );
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo420(UpdateContext $updateContext): void
     {
         // Version 4.2.0 introduces Online Banking Finland and Online Banking Poland
@@ -596,6 +709,11 @@ class AdyenPaymentShopware6 extends Plugin
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
     }
 
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
     private function updateTo500(UpdateContext $updateContext): void
     {
         $paymentRepository = $this->container->get('payment_method.repository');
@@ -623,12 +741,13 @@ class AdyenPaymentShopware6 extends Plugin
      * @param UpdateContext $updateContext
      * @param string $paymentMethodHandler
      * @param string|null $description
+     *
      * @return void
      */
     private function deactivateAndRemovePaymentMethod(
         UpdateContext $updateContext,
         string $paymentMethodHandler,
-        string $description = null
+        ?string $description = null
     ): void {
         /** @var EntityRepository $paymentRepository */
         $paymentRepository = $this->container->get('payment_method.repository');

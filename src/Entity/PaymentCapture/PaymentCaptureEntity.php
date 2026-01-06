@@ -76,7 +76,7 @@ class PaymentCaptureEntity extends Entity
     /**
      * @return string[]
      */
-    public static function getStatuses() : array
+    public static function getStatuses(): array
     {
         return [
             self::STATUS_SUCCESS,

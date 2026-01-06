@@ -77,27 +77,27 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private PaymentMethodsFilterService $paymentMethodsFilterService;
 
     /**
-     * @var RouterInterface
+     * @var RouterInterface $router
      */
     private RouterInterface $router;
 
     /**
-     * @var SalesChannelRepository
+     * @var SalesChannelRepository $salesChannelRepository
      */
     private SalesChannelRepository $salesChannelRepository;
 
     /**
-     * @var ConfigurationService
+     * @var ConfigurationService $configurationService
      */
     private ConfigurationService $configurationService;
 
     /**
-     * @var PaymentMethodsService
+     * @var PaymentMethodsService $paymentMethodsService
      */
     private PaymentMethodsService $paymentMethodsService;
 
     /**
-     * @var ExpressCheckoutService
+     * @var ExpressCheckoutService $expressCheckoutService
      */
     private ExpressCheckoutService $expressCheckoutService;
 
@@ -107,42 +107,42 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private RequestStack $requestStack;
 
     /**
-     * @var AbstractCartPersister
+     * @var AbstractCartPersister $cartPersister
      */
     private AbstractCartPersister $cartPersister;
 
     /**
-     * @var CartCalculator
+     * @var CartCalculator $cartCalculator
      */
     private CartCalculator $cartCalculator;
 
     /**
-     * @var Currency
+     * @var Currency $currency
      */
     private Currency $currency;
 
     /**
-     * @var AdyenPluginProvider
+     * @var AdyenPluginProvider $adyenPluginProvider
      */
-    private $adyenPluginProvider;
+    private AdyenPluginProvider $adyenPluginProvider;
 
     /**
-     * @var RatePayDeviceFingerprintParamsProvider
+     * @var RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
      */
     private RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
 
     /**
-     * @var AbstractContextSwitchRoute
+     * @var AbstractContextSwitchRoute $contextSwitchRoute
      */
     private AbstractContextSwitchRoute $contextSwitchRoute;
 
     /**
-     * @var AbstractSalesChannelContextFactory
+     * @var AbstractSalesChannelContextFactory $salesChannelContextFactory
      */
     private AbstractSalesChannelContextFactory $salesChannelContextFactory;
 
     /**
-     * @var EntityRepository
+     * @var EntityRepository $paymentMethodRepository
      */
     private EntityRepository $paymentMethodRepository;
 
@@ -218,6 +218,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         ];
     }
 
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return array
+     */
     private function getComponentData(SalesChannelContext $salesChannelContext): array
     {
         $salesChannelId = $salesChannelContext->getSalesChannelId();
@@ -233,7 +238,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     /**
      * @param PageLoadedEvent $event
      */
-    public function onShoppingCartLoaded(PageLoadedEvent $event)
+    public function onShoppingCartLoaded(PageLoadedEvent $event): void
     {
         /** @var CheckoutCartPage|OffcanvasCartPage $page */
         $page = $event->getPage();
@@ -381,11 +386,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
-                        'addGiftCardOption'    => $this->configurationService->getAddGiftCardOption(),
+                        'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
                         'showVouchersSeparately' => json_encode($this->configurationService
                             ->getShowVouchersSeparately()),
-                        'showVouchersCheckout'   => json_encode(true),
+                        'showVouchersCheckout' => json_encode(true),
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -492,7 +497,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      *
      * @param PageLoadedEvent $event
      */
-    public function onCheckoutConfirmLoaded(PageLoadedEvent $event)
+    public function onCheckoutConfirmLoaded(PageLoadedEvent $event): void
     {
         $salesChannelContext = $event->getSalesChannelContext();
         $selectedPaymentMethod = $salesChannelContext->getPaymentMethod();
@@ -599,7 +604,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'giftcardDiscount' => $giftcardDetails['giftcardDiscount'],
                         'currencySymbol' => $currencySymbol,
                         'payInFullWithGiftcard' => $payInFullWithGiftcard,
-                        'storedPaymentMethods' =>  $paymentMethodsArray['storedPaymentMethods'] ?? [],
+                        'storedPaymentMethods' => $paymentMethodsArray['storedPaymentMethods'] ?? [],
                         'selectedPaymentMethodHandler' => $selectedPaymentMethod->getFormattedHandlerIdentifier(),
                         'selectedPaymentMethodPluginId' => $selectedPaymentMethod->getPluginId(),
                         'displaySaveCreditCardOption' => $displaySaveCreditCardOption,
@@ -616,8 +621,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
-                        'voucherBlockPosition'   => $this->configurationService->getVoucherBlockPosition(),
-                        'showVouchersCheckout'   => json_encode($this->configurationService->getShowVouchersCheckout()),
+                        'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
+                        'showVouchersCheckout' => json_encode($this->configurationService->getShowVouchersCheckout()),
                         'showVouchersSeparately' => json_encode($this->configurationService
                             ->getShowVouchersSeparately()),
                         // checkout giftcards configuration
@@ -631,7 +636,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'fetchRedeemedGiftcardsUrl' => $this->router
                             ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
                         'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
-                        'giftcards'              => $giftcards,
+                        'giftcards' => $giftcards,
                         'countryCode' => $this->expressCheckoutService->getCountryCode(
                             $salesChannelContext->getCustomer(),
                             $salesChannelContext
@@ -643,7 +648,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         );
     }
 
-    public function onKernelRequest(RequestEvent $event)
+    /**
+     * @param RequestEvent $event
+     *
+     * @return void
+     */
+    public function onKernelRequest(RequestEvent $event): void
     {
         $request = $event->getRequest();
         if (($request->attributes->get('_route') === 'frontend.account.edit-order.change-payment-method')
@@ -676,6 +686,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      *
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentMethodEntity $paymentMethod
+     *
      * @return array
      */
     private function getFingerprintParametersForRatepayMethod(
@@ -686,8 +697,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             'handler_adyen_ratepaydirectdebitpaymentmethodhandler' ||
             $paymentMethod->getFormattedHandlerIdentifier() === 'handler_adyen_ratepaypaymentmethodhandler'
         ) {
-            return ['ratepay' => $this->ratePayFingerprintParamsProvider
-                ->getFingerprintParams($salesChannelContext->getSalesChannelId())];
+            return [
+                'ratepay' => $this->ratePayFingerprintParamsProvider
+                    ->getFingerprintParams($salesChannelContext->getSalesChannelId())
+            ];
         }
 
         return [];

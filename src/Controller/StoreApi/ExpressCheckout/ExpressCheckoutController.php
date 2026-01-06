@@ -33,10 +33,10 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * Class ExpressCheckoutController
+ *
  * @package Adyen\Shopware\Controller\StoreApi\ExpressCheckout
  * @Route(defaults={"_routeScope"={"store-api"}})
  */
@@ -52,9 +52,8 @@ class ExpressCheckoutController
      *
      * @param ExpressCheckoutService $expressCheckoutService
      */
-    public function __construct(
-        ExpressCheckoutService $expressCheckoutService
-    ) {
+    public function __construct(ExpressCheckoutService $expressCheckoutService)
+    {
         $this->expressCheckoutService = $expressCheckoutService;
     }
 
@@ -67,10 +66,11 @@ class ExpressCheckoutController
      *
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return JsonResponse
      */
     public function getExpressCheckoutConfig(
-        Request             $request,
+        Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         $productId = $request->request->get('productId');
@@ -124,7 +124,7 @@ class ExpressCheckoutController
                     'intent' => 'SHIPPING_OPTION',
                 ]
             ], 400);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Fallback for unexpected errors
             return new JsonResponse([
                 'error' => [
@@ -140,11 +140,12 @@ class ExpressCheckoutController
      *
      * @param RequestDataBag $data
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     *
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
      * @throws Exception
      */
     public function createCart(
-        RequestDataBag      $data,
+        RequestDataBag $data,
         SalesChannelContext $salesChannelContext
     ): array {
         $productId = $data->get('productId');
@@ -178,9 +179,9 @@ class ExpressCheckoutController
      * @param string $customerId The ID of the customer whose context should be updated.
      * @param SalesChannelContext $salesChannelContext The existing sales channel context to be updated.
      *
-     * @throws \Exception If the customer cannot be found.
-     *
      * @return SalesChannelContext The updated SalesChannelContext with the customer's details.
+     *
+     * @throws Exception If the customer cannot be found.
      */
     public function changeContext(string $customerId, SalesChannelContext $salesChannelContext): SalesChannelContext
     {
@@ -190,11 +191,12 @@ class ExpressCheckoutController
     /**
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return JsonResponse
      *
      */
     public function updatePayPalOrder(
-        Request             $request,
+        Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         $newAddress = $request->request->all()['newAddress'] ?? null;

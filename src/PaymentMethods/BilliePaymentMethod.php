@@ -28,7 +28,6 @@ use Adyen\Shopware\Handlers\BilliePaymentMethodHandler;
 
 class BilliePaymentMethod implements PaymentMethodInterface
 {
-
     /**
      * @inheritDoc
      */

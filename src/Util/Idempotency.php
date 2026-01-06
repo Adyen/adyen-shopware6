@@ -32,7 +32,7 @@ class Idempotency
      *
      * @return string
      */
-    public function createKeyFromRequest(array $request, array $extraData = null): string
+    public function createKeyFromRequest(array $request, ?array $extraData = null): string
     {
         if (isset($extraData)) {
             $request = array_merge($request, $extraData);

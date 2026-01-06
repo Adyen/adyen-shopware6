@@ -38,17 +38,17 @@ class PaymentDetailsService
     /**
      * @var ClientService
      */
-    private $clientService;
+    private ClientService $clientService;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @var PaymentResponseHandler
      */
-    private $paymentResponseHandler;
+    private PaymentResponseHandler $paymentResponseHandler;
 
     /**
      * PaymentDetailsService constructor.
@@ -70,7 +70,9 @@ class PaymentDetailsService
     /**
      * @param PaymentDetailsRequest $requestData
      * @param OrderTransactionEntity $orderTransaction
+     *
      * @return PaymentResponseHandlerResult
+     *
      * @throws PaymentFailedException
      */
     public function getPaymentDetails(

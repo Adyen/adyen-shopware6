@@ -28,21 +28,23 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class TermsAndConditionsRepository
 {
     /**
-     * @var EntityRepository
+     * @var EntityRepository $categoryRepository
      */
     private EntityRepository $categoryRepository;
 
     /**
-     * @var TermsAndConditionsRepository
+     * @var EntityRepository $seoUrlRepository
      */
     private EntityRepository $seoUrlRepository;
 
+    /**
+     * @param EntityRepository $categoryRepository
+     * @param EntityRepository $seoUrlRepository
+     */
     public function __construct(
         EntityRepository $categoryRepository,
         EntityRepository $seoUrlRepository
@@ -56,6 +58,7 @@ class TermsAndConditionsRepository
      *
      * @param string|null $tosPageId The CMS page ID of the Terms and Conditions.
      * @param Context $context The Shopware context.
+     *
      * @return string|null The relative SEO URL or null if not found.
      */
     public function getTermsAndConditionsPath(?string $tosPageId, Context $context): ?string

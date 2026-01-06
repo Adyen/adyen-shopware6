@@ -57,17 +57,12 @@ class PaymentResponseService
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
-    public function getWithOrderNumber(string $orderNumber): ?PaymentResponseEntity
-    {
-        return $this->adyenPaymentResponseRepository
-            ->search(
-                (new Criteria())
-                    ->addFilter(new EqualsFilter('orderNumber', $orderNumber)),
-                Context::createDefaultContext()
-            )
-            ->first();
-    }
-
+    /**
+     * @param string $orderId
+     * @param Context $context
+     *
+     * @return PaymentResponseEntity|null
+     */
     public function getWithOrderId(string $orderId, Context $context): ?PaymentResponseEntity
     {
         $orderTransaction = $this->orderTransactionRepository
@@ -75,13 +70,19 @@ class PaymentResponseService
                 (new Criteria())
                     ->addFilter((new EqualsFilter('orderId', $orderId)))
                     ->addAssociation('order')
-                ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
+                    ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING)),
                 $context
             )
             ->first();
+
         return $this->getWithOrderTransaction($orderTransaction);
     }
 
+    /**
+     * @param string $pspreference
+     *
+     * @return PaymentResponseEntity|null
+     */
     public function getWithPspreference(string $pspreference): ?PaymentResponseEntity
     {
         $criteria = new Criteria();
@@ -92,6 +93,11 @@ class PaymentResponseService
             ->first();
     }
 
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     *
+     * @return PaymentResponseEntity|null
+     */
     public function getWithOrderTransaction(OrderTransactionEntity $orderTransaction): ?PaymentResponseEntity
     {
         return $this->adyenPaymentResponseRepository
@@ -106,14 +112,14 @@ class PaymentResponseService
     }
 
     /**
-     * @param PaymentResponse|PaymentDetailsResponse $paymentResponse
+     * @param PaymentDetailsResponse|PaymentResponse $paymentResponse
      * @param OrderTransactionEntity $orderTransaction
      * @param bool $upsert
+     *
      * @return void
      */
-
     public function insertPaymentResponse(
-        $paymentResponse,
+        PaymentResponse|PaymentDetailsResponse $paymentResponse,
         OrderTransactionEntity $orderTransaction,
         bool $upsert = true
     ): void {

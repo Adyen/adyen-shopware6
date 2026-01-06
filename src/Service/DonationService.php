@@ -63,10 +63,8 @@ class DonationService
      * @param ClientService $clientService
      * @param ConfigurationService $configurationService
      */
-    public function __construct(
-        ClientService $clientService,
-        ConfigurationService $configurationService
-    ) {
+    public function __construct(ClientService $clientService, ConfigurationService $configurationService)
+    {
         $this->clientService = $clientService;
         $this->configurationService = $configurationService;
     }
@@ -79,7 +77,9 @@ class DonationService
      * @param string $returnUrl
      * @param string $pspReference
      * @param string $paymentMethodCode
+     *
      * @return DonationPaymentResponse
+     *
      * @throws AdyenException
      */
     public function donate(
@@ -88,7 +88,7 @@ class DonationService
         string $currency,
         int $value,
         string $returnUrl,
-        string$pspReference,
+        string $pspReference,
         string $paymentMethodCode
     ): DonationPaymentResponse {
 

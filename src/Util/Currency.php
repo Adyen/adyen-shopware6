@@ -6,11 +6,13 @@ class Currency
 {
     /**
      * Returns the sanitized currency to use in Adyen's API calls.
+     *
      * @param mixed $amount The transaction amount, regardless of currency
      * @param string $currency The transaction currency, as a 3 letter string
+     *
      * @return int
      */
-    public function sanitize($amount, ?string $currency): int
+    public function sanitize(mixed $amount, ?string $currency): int
     {
         switch ($currency) {
             case "CVE":
