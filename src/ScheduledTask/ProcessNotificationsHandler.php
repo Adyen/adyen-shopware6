@@ -336,7 +336,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         OrderTransactionEntity $orderTransaction,
         NotificationEntity $notification
     ): ?string {
-        $currentTransactionState = self::WEBHOOK_MODULE_STATE_MAPPING[$orderTransaction->getStateMachineState()->getTechnicalName()] ?? '';
+        $currentTransactionState =
+            self::WEBHOOK_MODULE_STATE_MAPPING[$orderTransaction->getStateMachineState()->getTechnicalName()] ?? '';
 
         if (empty($currentTransactionState)) {
             $logContext['paymentState'] = $orderTransaction->getStateMachineState()->getTechnicalName();
