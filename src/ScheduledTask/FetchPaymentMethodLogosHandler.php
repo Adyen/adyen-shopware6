@@ -119,16 +119,12 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
             // Delete old associated media.
             /** @var PaymentMethodEntity $paymentMethodEntity */
             $paymentMethodEntity = $result->getEntities()->first();
-            $mediaId = $paymentMethodEntity->getMediaId();
-            if ($mediaId) {
-                $this->mediaRepository->delete([['id' => $mediaId]], $context);
-            }
 
             $this->attachLogoToPaymentMethod(
                 $media,
                 $context,
                 strtolower($paymentMethod->getGatewayCode()),
-                $paymentMethodEntity->getId()
+                $paymentMethodEntity
             );
         }
     }
@@ -158,22 +154,33 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         MediaFile $media,
         Context $context,
         string $filename,
-        string $paymentMethodEntityId
+        PaymentMethodEntity $paymentMethodEntity
     ): void {
-        $mediaId = $this->mediaService->createMediaInFolder('adyen', $context, false);
+        $currentMediaId = $this->mediaRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('fileName', $filename)),
+            $context
+        )->getEntities()->first()?->getId();
+
+        if ($currentMediaId) {
+            $this->mediaRepository->delete([['id' => $currentMediaId]], $context);
+        }
+
+        $newMediaId = $this->mediaService->createMediaInFolder('adyen', $context, false);
         $this->mediaService->saveMediaFile(
             $media,
             $filename,
             $context,
             'adyen',
-            $mediaId
+            $newMediaId
         );
 
-        $this->paymentMethodRepository->update([
-            [
-                'id' => $paymentMethodEntityId,
-                'mediaId' => $mediaId
-            ]
-        ], $context);
+        if ($currentMediaId !== $paymentMethodEntity->getMediaId()) {
+            return;
+        }
+
+        $this->paymentMethodRepository->update([[
+            'id' => $paymentMethodEntity->getId(),
+            'mediaId' => $newMediaId
+        ]], $context);
     }
 }
