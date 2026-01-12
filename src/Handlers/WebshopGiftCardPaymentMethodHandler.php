@@ -33,11 +33,17 @@ class WebshopGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static $isGiftCard = true;
 
-    public static function getPaymentMethodCode()
+    /**
+     * @return string
+     */
+    public static function getPaymentMethodCode(): string
     {
         return 'giftcard';
     }
 
+    /**
+     * @return string
+     */
     public static function getBrand(): string
     {
         return 'webshopgiftcard';

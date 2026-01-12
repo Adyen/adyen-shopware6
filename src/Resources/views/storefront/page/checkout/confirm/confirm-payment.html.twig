@@ -32,7 +32,7 @@
                 data-country="{{ shippingAddress.country.iso }}"
                 data-phone-number="{{ shippingAddress.phoneNumber }}"
             ></div>
-            <script>
+            <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
                 var shopperDetails = document.querySelector('#shopper-details').dataset;
                 var activeBillingAddress = document.querySelector('#active-billing-address').dataset;
                 var activeShippingAddress = document.querySelector('#active-shipping-address').dataset;
@@ -70,7 +70,7 @@
                  data-gateway-merchant-id="{{ adyenFrontendData.gatewayMerchantId }}"
             >
             </div>
-            <script>
+            <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
                 var adyenCheckoutOptions = document.querySelector('#adyen-checkout-options').dataset;
             </script>
         {% endif %}

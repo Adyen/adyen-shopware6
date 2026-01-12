@@ -25,15 +25,15 @@
 
 namespace Adyen\Shopware\Handlers;
 
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
-use Shopware\Core\Framework\Context;
-
 class AffirmPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static bool $isOpenInvoice = true;
     public static bool $supportsManualCapture = true;
 
-    public static function getPaymentMethodCode()
+    /**
+     * @return string
+     */
+    public static function getPaymentMethodCode(): string
     {
         return 'affirm';
     }

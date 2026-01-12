@@ -70,7 +70,6 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
-use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -90,7 +89,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         'option-values',
         'customized-products-option'
     ];
-    const PROMOTION = 'promotion';
+
     /**
      * Error codes that are safe to display to the shopper.
      * @see https://docs.adyen.com/development-resources/error-codes
@@ -186,15 +185,39 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      */
     private OrdersService $ordersService;
 
-    private $paymentsApiService;
+    /**
+     * @var PaymentsApi $paymentsApiService
+     */
+    private PaymentsApi $paymentsApiService;
 
-    private $paymentResults = [];
+    /**
+     * @var array $paymentResults
+     */
+    private array $paymentResults = [];
 
-    private $orderRequestData = [];
+    /**
+     * @var array $orderRequestData
+     */
+    private array $orderRequestData = [];
 
-    private $remainingAmount = null;
+    /**
+     * @var int|null $remainingAmount
+     */
+    private ?int $remainingAmount = null;
+
+    /**
+     * @var AbstractSalesChannelContextFactory $salesChannelContextFactory
+     */
     private AbstractSalesChannelContextFactory $salesChannelContextFactory;
+
+    /**
+     * @var EntityRepository $orderRepository
+     */
     private EntityRepository $orderRepository;
+
+    /**
+     * @var EntityRepository $orderTransactionRepository
+     */
     private EntityRepository $orderTransactionRepository;
 
     /**
@@ -217,6 +240,9 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @param EntityRepository $productRepository
      * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param LoggerInterface $logger
+     * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
+     * @param EntityRepository $orderTransactionRepository
+     * @param EntityRepository $orderRepository
      */
     public function __construct(
         OrdersService $ordersService,
@@ -262,62 +288,30 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
 
-
+    /**
+     * @param PaymentHandlerType $type
+     * @param string $paymentMethodId
+     * @param Context $context
+     *
+     * @return bool
+     */
     public function supports(PaymentHandlerType $type, string $paymentMethodId, Context $context): bool
     {
         return false;
     }
-    abstract public static function getPaymentMethodCode();
 
+    /**
+     * @return string
+     */
+    abstract public static function getPaymentMethodCode(): string;
+
+    /**
+     * @return string|null
+     */
     public static function getBrand(): ?string
     {
         return null;
     }
-
-    /**
-     * Load OrderTransaction and Order with related data.
-     *
-     * @param PaymentTransactionStruct $transaction
-     * @param Context $context
-     *
-     * @return array{OrderTransactionEntity, OrderEntity, string|null, string|null}
-     */
-    private function loadOrderTransactionAndOrder(PaymentTransactionStruct $transaction, Context $context): array
-    {
-        $orderTransactionId = $transaction->getOrderTransactionId();
-
-        $orderTransaction = $this->orderTransactionRepository
-            ->search(new Criteria([$orderTransactionId]), $context)
-            ->get($orderTransactionId);
-
-        if (!$orderTransaction) {
-            throw new \RuntimeException("OrderTransaction not found.");
-        }
-
-        $orderId = $orderTransaction->getOrderId();
-
-        $criteria = new Criteria([$orderId]);
-        $criteria->addAssociation('currency');
-        $criteria->addAssociation('language');
-        $criteria->addAssociation('salesChannel');
-        $criteria->addAssociation('customer');
-        $criteria->addAssociation('lineItems');
-
-        $order = $this->orderRepository->search($criteria, $context)->first();
-
-        if (!$order) {
-            throw new \RuntimeException("Order not found.");
-        }
-
-        $billingAddress = $order->getBillingAddress();
-        $countryStateId = $billingAddress?->getCountryStateId();
-
-        $customer = $order->getOrderCustomer()?->getCustomer();
-        $customerGroupId = $customer?->getGroupId();
-
-        return [$orderTransaction, $order, $countryStateId, $customerGroupId];
-    }
-
 
     /**
      * @param Request $request
@@ -370,7 +364,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $countStateData += $countStoredStateData;
         //If condition to check more than 1 PM
         if ($countStateData > 1) {
-            $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction, $order);
+            $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $order);
             $this->handleAdyenOrderPayment(
                 $transaction,
                 $adyenOrderResponse,
@@ -474,37 +468,75 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         return new RedirectResponse($transaction->getReturnUrl());
     }
 
-    private function getReturnUrl(PaymentTransactionStruct $transaction, OrderEntity $orderEntity): string
-    {
-        $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
-        parse_str($query, $params);
-        $token =  $params['_sw_payment_token'] ?? '';
-
-        return $this->router->generate(
-            'payment.adyen.proxy-finalize-transaction',
-            [
-                '_sw_payment_token' => $token,
-                'orderId' => $orderEntity->getId(),
-                'transactionId' => $transaction->getOrderTransactionId()
-            ],
-            UrlGeneratorInterface::ABSOLUTE_URL
-        );
-    }
-
     /**
+     * @param PaymentTransactionStruct $transaction
+     * @param $adyenOrderResponse
      * @param SalesChannelContext $salesChannelContext
-     * @param $transaction
-     * @return array
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
+     * @return void
      */
-    private function createAdyenOrder(SalesChannelContext $salesChannelContext, $transaction, OrderEntity $order): array
-    {
-        $uuid = Uuid::randomHex();
-        $currency = $salesChannelContext->getCurrency()->getIsoCode();
-        $amount = $this->currency->sanitize(
+    public function handleAdyenOrderPayment(
+        PaymentTransactionStruct $transaction,
+        $adyenOrderResponse,
+        SalesChannelContext $salesChannelContext,
+        OrderEntity $order,
+        OrderTransactionEntity $orderTransaction
+    ): void {
+        if (empty($adyenOrderResponse)) {
+            return;
+        }
+        $transactionId = $transaction->getOrderTransactionId();
+
+        //New Multi-Gift-card implementation
+        $remainingOrderAmount = $this->currency->sanitize(
             $order->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
-        return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
+
+        $this->orderRequestData = [
+            'orderData' => $adyenOrderResponse['orderData'],
+            'pspReference' => $adyenOrderResponse['pspReference']
+        ];
+
+        $stateData = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken(
+            $salesChannelContext->getToken()
+        );
+
+        foreach ($stateData->getElements() as $statedataArray) {
+            $storedStateData = json_decode($statedataArray->getStateData(), true);
+            $giftcardValue = $this->currency->sanitize(
+                $storedStateData['giftcard']['value'],
+                $salesChannelContext->getCurrency()->getIsoCode()
+            );
+            $partialAmount = min($remainingOrderAmount, $giftcardValue); //convert to integer from float
+
+            $giftcardPaymentRequest = $this->getPaymentRequest(
+                $salesChannelContext,
+                $orderTransaction,
+                $transaction,
+                $order,
+                $storedStateData,
+                $partialAmount,
+                $this->orderRequestData
+            );
+
+            //make /payments call
+            $this->paymentsCall($salesChannelContext, $giftcardPaymentRequest, $orderTransaction);
+
+            $remainingOrderAmount -= $partialAmount;
+
+            // Remove the used state.data
+            $this->paymentStateDataService->deletePaymentStateDataFromId($statedataArray->getId());
+        }
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw PaymentException::asyncProcessInterrupted(
+                $transactionId,
+                'Invalid payment state data.'
+            );
+        }
+
+        $this->remainingAmount = $remainingOrderAmount;
     }
 
     /**
@@ -551,9 +583,11 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentTransactionStruct $transaction
+     * @param OrderEntity $orderEntity
      * @param array $request
      * @param int|null $partialAmount
      * @param array|null $adyenOrderData
+     *
      * @return IntegrationPaymentRequest
      */
     protected function preparePaymentsRequest(
@@ -587,7 +621,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         } else {
             $paymentMethodType = $request['paymentMethod']['type'];
         }
-      
+
         $paymentMethod->setType($paymentMethodType ?? 'zip');
         $paymentRequest->setPaymentMethod($paymentMethod);
 
@@ -901,9 +935,105 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     }
 
     /**
+     * @param $salesChannelContext
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param $transaction
+     * @param OrderEntity $order
+     * @param $stateData
+     * @param $partialAmount
+     * @param $orderRequestData
+     * @param array $billieData
+     *
+     * @return IntegrationPaymentRequest
+     */
+    protected function getPaymentRequest(
+        $salesChannelContext,
+        OrderTransactionEntity $orderTransactionEntity,
+        $transaction,
+        OrderEntity $order,
+        $stateData,
+        $partialAmount,
+        $orderRequestData,
+        array $billieData = []
+    ): IntegrationPaymentRequest {
+        $transactionId = $orderTransactionEntity->getId();
+        if (!empty($billieData)) {
+            $stateData['billieData'] = $billieData;
+        }
+
+        try {
+            return $this->preparePaymentsRequest(
+                $salesChannelContext,
+                $transaction,
+                $order,
+                $stateData,
+                $partialAmount,
+                $orderRequestData
+            );
+        } catch (PaymentException $exception) {
+            $this->logger->error($exception->getMessage());
+            throw $exception;
+        } catch (\Exception $exception) {
+            $message = sprintf(
+                "There was an error with the payment method. Order number: %s Missing data: %s",
+                $order->getOrderNumber(),
+                $exception->getMessage()
+            );
+            $this->logger->error($message);
+            throw PaymentException::asyncProcessInterrupted($transactionId, $message);
+        }
+    }
+
+    /**
+     * Load OrderTransaction and Order with related data.
+     *
+     * @param PaymentTransactionStruct $transaction
+     * @param Context $context
+     *
+     * @return array{OrderTransactionEntity, OrderEntity, string|null, string|null}
+     */
+    protected function loadOrderTransactionAndOrder(PaymentTransactionStruct $transaction, Context $context): array
+    {
+        $orderTransactionId = $transaction->getOrderTransactionId();
+
+        $orderTransaction = $this->orderTransactionRepository
+            ->search(new Criteria([$orderTransactionId]), $context)
+            ->get($orderTransactionId);
+
+        if (!$orderTransaction) {
+            throw new \RuntimeException("OrderTransaction not found.");
+        }
+
+        $orderId = $orderTransaction->getOrderId();
+
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('currency');
+        $criteria->addAssociation('language');
+        $criteria->addAssociation('salesChannel');
+        $criteria->addAssociation('customer');
+        $criteria->addAssociation('lineItems');
+
+        $order = $this->orderRepository->search($criteria, $context)->first();
+
+        if (!$order) {
+            throw new \RuntimeException("Order not found.");
+        }
+
+        $billingAddress = $order->getBillingAddress();
+        $countryStateId = $billingAddress?->getCountryStateId();
+
+        $customer = $order->getOrderCustomer()?->getCustomer();
+        $customerGroupId = $customer?->getGroupId();
+
+        return [$orderTransaction, $order, $countryStateId, $customerGroupId];
+    }
+
+    /**
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentTransactionStruct $transaction
      * @param CheckoutPaymentMethod $paymentMethod
+     * @param OrderEntity $orderEntity
+     *
      * @return IntegrationPaymentRequest
      */
     private function getPayPalPaymentRequest(
@@ -932,45 +1062,6 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $payPalPaymentRequest->setReturnUrl($transaction->getReturnUrl());
 
         return $payPalPaymentRequest;
-    }
-
-    private function getPaymentRequest(
-        $salesChannelContext,
-        OrderTransactionEntity $orderTransactionEntity,
-        $transaction,
-        OrderEntity $order,
-        $stateData,
-        $partialAmount,
-        $orderRequestData,
-        $billieData = []
-    ) {
-        $transactionId = $orderTransactionEntity->getId();
-        if (!empty($billieData)) {
-            $stateData['billieData'] = $billieData;
-        }
-
-        try {
-            $request = $this->preparePaymentsRequest(
-                $salesChannelContext,
-                $transaction,
-                $order,
-                $stateData,
-                $partialAmount,
-                $orderRequestData
-            );
-            return $request;
-        } catch (PaymentException $exception) {
-            $this->logger->error($exception->getMessage());
-            throw $exception;
-        } catch (\Exception $exception) {
-            $message = sprintf(
-                "There was an error with the payment method. Order number: %s Missing data: %s",
-                $order->getOrderNumber(),
-                $exception->getMessage()
-            );
-            $this->logger->error($message);
-            throw PaymentException::asyncProcessInterrupted($transactionId, $message);
-        }
     }
 
     /**
@@ -1082,72 +1173,41 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
     /**
      * @param PaymentTransactionStruct $transaction
-     * @param $adyenOrderResponse
+     * @param OrderEntity $orderEntity
+     *
+     * @return string
+     */
+    private function getReturnUrl(PaymentTransactionStruct $transaction, OrderEntity $orderEntity): string
+    {
+        $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
+        parse_str($query, $params);
+        $token =  $params['_sw_payment_token'] ?? '';
+
+        return $this->router->generate(
+            'payment.adyen.proxy-finalize-transaction',
+            [
+                '_sw_payment_token' => $token,
+                'orderId' => $orderEntity->getId(),
+                'transactionId' => $transaction->getOrderTransactionId()
+            ],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+    }
+
+    /**
      * @param SalesChannelContext $salesChannelContext
      * @param OrderEntity $order
-     * @param OrderTransactionEntity $orderTransaction
-     * @return void
+     *
+     * @return array
      */
-    public function handleAdyenOrderPayment(
-        PaymentTransactionStruct $transaction,
-        $adyenOrderResponse,
-        SalesChannelContext $salesChannelContext,
-        OrderEntity $order,
-        OrderTransactionEntity $orderTransaction
-    ): void {
-        if (empty($adyenOrderResponse)) {
-            return;
-        }
-        $transactionId = $transaction->getOrderTransactionId();
-
-        //New Multi-Gift-card implementation
-        $remainingOrderAmount = $this->currency->sanitize(
+    private function createAdyenOrder(SalesChannelContext $salesChannelContext, OrderEntity $order): array
+    {
+        $uuid = Uuid::randomHex();
+        $currency = $salesChannelContext->getCurrency()->getIsoCode();
+        $amount = $this->currency->sanitize(
             $order->getPrice()->getTotalPrice(),
             $salesChannelContext->getCurrency()->getIsoCode()
         );
-
-        $this->orderRequestData = [
-            'orderData' => $adyenOrderResponse['orderData'],
-            'pspReference' => $adyenOrderResponse['pspReference']
-        ];
-
-        $stateData = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken(
-            $salesChannelContext->getToken()
-        );
-
-        foreach ($stateData->getElements() as $statedataArray) {
-            $storedStateData = json_decode($statedataArray->getStateData(), true);
-            $giftcardValue = $this->currency->sanitize(
-                $storedStateData['giftcard']['value'],
-                $salesChannelContext->getCurrency()->getIsoCode()
-            );
-            $partialAmount = min($remainingOrderAmount, $giftcardValue); //convert to integer from float
-
-            $giftcardPaymentRequest = $this->getPaymentRequest(
-                $salesChannelContext,
-                $orderTransaction,
-                $transaction,
-                $order,
-                $storedStateData,
-                $partialAmount,
-                $this->orderRequestData
-            );
-
-            //make /payments call
-            $this->paymentsCall($salesChannelContext, $giftcardPaymentRequest, $orderTransaction);
-
-            $remainingOrderAmount -= $partialAmount;
-
-            // Remove the used state.data
-            $this->paymentStateDataService->deletePaymentStateDataFromId($statedataArray->getId());
-        }
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw PaymentException::asyncProcessInterrupted(
-                $transactionId,
-                'Invalid payment state data.'
-            );
-        }
-
-        $this->remainingAmount = $remainingOrderAmount;
+        return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
     }
 }
