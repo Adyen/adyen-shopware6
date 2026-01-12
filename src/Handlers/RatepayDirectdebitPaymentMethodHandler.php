@@ -26,16 +26,9 @@ declare(strict_types=1);
 
 namespace Adyen\Shopware\Handlers;
 
-use Shopware\Core\Checkout\Order\OrderEntity;
-use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Adyen\Shopware\Models\PaymentRequest;
-
 class RatepayDirectdebitPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-    public static bool $isOpenInvoice = true;
-    public static bool $supportsManualCapture = true;
-    public static bool $supportsPartialCapture = true;
+    use RatepayPaymentTrait;
 
     /**
      * @return string
@@ -43,37 +36,5 @@ class RatepayDirectdebitPaymentMethodHandler extends AbstractPaymentMethodHandle
     public static function getPaymentMethodCode(): string
     {
         return 'ratepay_directdebit';
-    }
-
-    /**
-     * @param SalesChannelContext $salesChannelContext
-     * @param PaymentTransactionStruct $transaction
-     * @param OrderEntity $orderEntity
-     * @param array $request
-     * @param int|null $partialAmount
-     * @param array|null $adyenOrderData
-     *
-     * @return PaymentRequest
-     */
-    protected function preparePaymentsRequest(
-        SalesChannelContext $salesChannelContext,
-        PaymentTransactionStruct $transaction,
-        OrderEntity $orderEntity,
-        array $request = [],
-        ?int $partialAmount = null,
-        ?array $adyenOrderData = []
-    ): PaymentRequest {
-        $paymentRequest = parent::preparePaymentsRequest(
-            $salesChannelContext,
-            $transaction,
-            $orderEntity,
-            $request,
-            $partialAmount,
-            $adyenOrderData
-        );
-
-        $paymentRequest->setMerchantOrderReference($orderEntity->getOrderNumber());
-
-        return $paymentRequest;
     }
 }
