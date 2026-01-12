@@ -9,10 +9,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 trait RatepayPaymentTrait
 {
-    public static bool $isOpenInvoice = true;
-    public static bool $supportsManualCapture = true;
-    public static bool $supportsPartialCapture = true;
-
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentTransactionStruct $transaction

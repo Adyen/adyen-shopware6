@@ -27,6 +27,10 @@ namespace Adyen\Shopware\Handlers;
 
 class RatepayPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
+    public static bool $isOpenInvoice = true;
+    public static bool $supportsManualCapture = true;
+    public static bool $supportsPartialCapture = true;
+
     use RatepayPaymentTrait;
 
     /**
