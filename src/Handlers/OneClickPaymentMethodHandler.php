@@ -30,7 +30,10 @@ class OneClickPaymentMethodHandler extends AbstractPaymentMethodHandler
     public static bool $supportsManualCapture = true;
     public static bool $supportsPartialCapture = true;
 
-    public static function getPaymentMethodCode()
+    /**
+     * @return string
+     */
+    public static function getPaymentMethodCode(): string
     {
         return 'storedPaymentMethods';
     }
