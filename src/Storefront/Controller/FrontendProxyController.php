@@ -29,6 +29,7 @@ use Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\PaypalPaymentService;
 use Adyen\Shopware\Util\ShopwarePaymentTokenValidator;
 use Error;
 use Exception;
@@ -37,6 +38,7 @@ use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\Exception\EmptyCartException;
+use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\ContextTokenResponse;
@@ -116,6 +118,11 @@ class FrontendProxyController extends StorefrontController
     private RequestStack $requestStack;
 
     /**
+     * @var PaypalPaymentService $paypalPaymentService
+     */
+    private PaypalPaymentService $paypalPaymentService;
+
+    /**
      * @param AbstractCartOrderRoute $cartOrderRoute
      * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
      * @param AbstractContextSwitchRoute $contextSwitchRoute
@@ -128,6 +135,7 @@ class FrontendProxyController extends StorefrontController
      * @param ShopwarePaymentTokenValidator $paymentTokenValidator
      * @param AdyenPaymentService $adyenPaymentService
      * @param RequestStack $requestStack
+     * @param PaypalPaymentService $paypalPaymentService
      */
     public function __construct(//NOSONAR
         AbstractCartOrderRoute $cartOrderRoute,//NOSONAR
@@ -141,9 +149,10 @@ class FrontendProxyController extends StorefrontController
         ExpressCheckoutController $expressCheckoutController,
         ShopwarePaymentTokenValidator $paymentTokenValidator,//NOSONAR
         AdyenPaymentService $adyenPaymentService,//NOSONAR
-        RequestStack $requestStack//NOSONAR
+        RequestStack $requestStack,//NOSONAR
+        PaypalPaymentService $paypalPaymentService//NOSONAR
     ) {
-    //NOSONAR
+        //NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
@@ -156,6 +165,7 @@ class FrontendProxyController extends StorefrontController
         $this->paymentTokenValidator = $paymentTokenValidator;
         $this->adyenPaymentService = $adyenPaymentService;
         $this->requestStack = $requestStack;
+        $this->paypalPaymentService = $paypalPaymentService;
     }
 
     /**
@@ -403,8 +413,10 @@ class FrontendProxyController extends StorefrontController
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
         methods: ['POST']
     )]
-    public function setPaymentMethod(Request $request, SalesChannelContext $context)
-    {
+    public function setPaymentMethod(
+        Request $request,
+        SalesChannelContext $context
+    ): SetPaymentOrderRouteResponse|JsonResponse {
         if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
             return new JsonResponse(null, 401);
         }
@@ -552,5 +564,25 @@ class FrontendProxyController extends StorefrontController
         }
 
         return $this->expressCheckoutController->updatePayPalOrder($request, $salesChannelContext);
+    }
+
+    #[Route(
+        '/adyen/proxy-paypal-order',
+        name: 'payment.adyen.proxy-paypal-order',
+        defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
+        methods: ['POST']
+    )]
+    public function paypalOrder(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
+        $cart = $this->cartService->getCart($context->getToken(), $context);
+
+        $this->paypalPaymentService->createPayPalPaymentRequest($cart, $context);
+        $routeResponse = $this->handlePaymentMethodRoute->load($request, $context);
+
+        return new JsonResponse($routeResponse->getObject());
     }
 }

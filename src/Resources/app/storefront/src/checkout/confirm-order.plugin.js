@@ -297,6 +297,14 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
+    paypalOrder(formData) {
+        this._client.post(
+            adyenCheckoutOptions.paypalOrderUrl,
+            formData,
+            this.afterCreateOrder.bind(this, extraParams, actions)
+        );
+    }
+
     createOrder(formData, extraParams, actions) {
         this._client.post(
             adyenCheckoutOptions.checkoutOrderUrl,
@@ -491,7 +499,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        const PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, {
+        const baseConfig = {
             amount: {
                 value: adyenCheckoutOptions.amount,
                 currency: adyenCheckoutOptions.currency,
@@ -507,25 +515,6 @@ export default class ConfirmOrderPlugin extends Plugin {
                 }
                 ElementLoadingIndicatorUtil.create(document.body);
             },
-            onSubmit: function (state, component, actions) {
-                if (state.isValid) {
-                    let extraParams = {
-                        stateData: JSON.stringify(state.data)
-                    };
-                    let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
-                    // Set a custom response action handler if available.
-                    if ('responseHandler' in componentConfig) {
-                        this.responseHandler = componentConfig.responseHandler.bind(component, this);
-                    }
-
-                    this.confirmOrder(formData, extraParams, actions);
-                } else {
-                    component.showValidation();
-                    if (this.adyenCheckout.options.environment === 'test') {
-                        console.log('Payment failed: ', state);
-                    }
-                }
-            }.bind(this),
             onCancel: (data, component) => {
                 ElementLoadingIndicatorUtil.remove(document.body);
                 componentConfig.onCancel(data, component, this);
@@ -540,15 +529,51 @@ export default class ConfirmOrderPlugin extends Plugin {
                             componentConfig.onError(error, component, this);
                         }
                     );
-
                     return;
                 }
-
                 ElementLoadingIndicatorUtil.remove(document.body);
                 componentConfig.onError(error, component, this);
                 console.log(error);
             }
-        });
+        };
+
+        if (this.selectedAdyenPaymentMethod === 'paypal') {
+            baseConfig.onSubmit = function (state, component, actions) {
+                if (state.isValid) {
+
+                    if ('responseHandler' in componentConfig) {
+                        this.responseHandler = componentConfig.responseHandler.bind(component, this);
+                    }
+                    let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
+                    this.paypalOrder(formData)
+                } else {
+                    component.showValidation();
+                    if (this.adyenCheckout.options.environment === 'test') {
+                        console.log('Payment failed: ', state);
+                    }
+                }
+            }.bind(this);
+        } else {
+            baseConfig.onSubmit = function (state, component, actions) {
+                if (state.isValid) {
+                    let extraParams = {
+                        stateData: JSON.stringify(state.data)
+                    };
+                    let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
+                    if ('responseHandler' in componentConfig) {
+                        this.responseHandler = componentConfig.responseHandler.bind(component, this);
+                    }
+                    this.confirmOrder(formData, extraParams, actions);
+                } else {
+                    component.showValidation();
+                    if (this.adyenCheckout.options.environment === 'test') {
+                        console.log('Payment failed: ', state);
+                    }
+                }
+            }.bind(this);
+        }
+
+        const PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, baseConfig);
 
         if ((selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay")
             && (adyenCheckoutOptions.googleMerchantId !== "" && adyenCheckoutOptions.gatewayMerchantId !== "")) {
