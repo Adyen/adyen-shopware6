@@ -6,7 +6,7 @@
 
         <div id='success-action-container'></div>
 
-        <script>
+        <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
             var adyenSuccessActionConfiguration = document.querySelector('#adyen-success-action-configuration').dataset;
         </script>
     </div>
