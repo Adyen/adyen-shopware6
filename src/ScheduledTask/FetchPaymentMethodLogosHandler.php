@@ -166,10 +166,12 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 throw $exception;
             }
 
-            $mediaId = $this->mediaRepository->search(
+            $media = $this->mediaRepository->search(
                 (new Criteria())->addFilter(new EqualsFilter('fileName', $filename)),
                 $context
-            )->getEntities()->first()?->getId();
+            )->getEntities()->first();
+
+            $mediaId = $media ? $media->getId() : null;
 
             if (!$mediaId) {
                 $this->logger->error(sprintf('The media file with filename %s could not be found.', $filename));
