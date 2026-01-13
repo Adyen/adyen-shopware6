@@ -30,6 +30,7 @@ use Exception;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Content\Media\File\MediaFile;
+use Shopware\Core\Content\Media\MediaException;
 use Shopware\Core\Content\Media\MediaService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -151,14 +152,33 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         string $filename,
         string $paymentMethodEntityId
     ): void {
-        $mediaId = $this->mediaService->createMediaInFolder('adyen', $context, false);
-        $this->mediaService->saveMediaFile(
-            $media,
-            $filename,
-            $context,
-            'adyen',
-            $mediaId
-        );
+        try {
+            $mediaId = $this->mediaService->createMediaInFolder('adyen', $context, false);
+            $this->mediaService->saveMediaFile(
+                $media,
+                $filename,
+                $context,
+                'adyen',
+                $mediaId
+            );
+        } catch (MediaException $exception) {
+            if ($exception->getErrorCode() !== MediaException::MEDIA_DUPLICATED_FILE_NAME) {
+                throw $exception;
+            }
+
+            $media = $this->mediaRepository->search(
+                (new Criteria())->addFilter(new EqualsFilter('fileName', $filename)),
+                $context
+            )->getEntities()->first();
+
+            $mediaId = $media ? $media->getId() : null;
+
+            if (!$mediaId) {
+                $this->logger->error(sprintf('The media file with filename %s could not be found.', $filename));
+
+                return;
+            }
+        }
 
         $this->paymentMethodRepository->update([
             [

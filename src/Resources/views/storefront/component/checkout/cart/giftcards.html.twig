@@ -31,7 +31,9 @@
                  data-translation-adyen-giftcard-remaining-amount="{{ "adyen.giftcard.remainingAmount" | trans }}"
                  data-translation-adyen-giftcard-remove="{{ "adyen.giftcard.removeGiftcard" | trans }}"
             ></div>
-            <script>var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;</script>
+            <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
+                var adyenGiftcardsConfiguration = document.querySelector('#adyen-giftcards-configuration').dataset;
+            </script>
             {# loop through giftcards and display logo #}
             <select id="giftcardDropdown" style="display: none">
                 <option value="" disabled selected>{{ "Please select a giftcard..." | trans }}</option>
