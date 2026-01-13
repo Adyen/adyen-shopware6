@@ -30,8 +30,13 @@ class RatepayPaymentMethodHandler extends AbstractPaymentMethodHandler
     public static bool $isOpenInvoice = true;
     public static bool $supportsManualCapture = true;
     public static bool $supportsPartialCapture = true;
-    
-    public static function getPaymentMethodCode()
+
+    use RatepayPaymentTrait;
+
+    /**
+     * @return string
+     */
+    public static function getPaymentMethodCode(): string
     {
         return 'ratepay';
     }
