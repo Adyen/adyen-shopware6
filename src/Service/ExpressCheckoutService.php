@@ -75,14 +75,14 @@ class ExpressCheckoutService
     private OrderConverter $orderConverter;
 
     public function __construct(
-        CartService                  $cartService,
-        ExpressCheckoutRepository    $expressCheckoutRepository,
-        PaymentMethodsFilterService  $paymentMethodsFilterService,
-        ClientService                $clientService,
-        Currency                     $currencyUtil,
+        CartService $cartService,
+        ExpressCheckoutRepository $expressCheckoutRepository,
+        PaymentMethodsFilterService $paymentMethodsFilterService,
+        ClientService $clientService,
+        Currency $currencyUtil,
         SalesChannelContextPersister $contextPersister,
         EntityRepository $orderRepository,
-        OrderConverter               $orderConverter
+        OrderConverter $orderConverter
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
@@ -106,12 +106,12 @@ class ExpressCheckoutService
      * @return array The configuration for express checkout.
      */
     public function getExpressCheckoutConfig(
-        string              $productId,
-        int                 $quantity,
+        string $productId,
+        int $quantity,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
-        array               $newShipping = [],
-        string              $formattedHandlerIdentifier = ''
+        array $newAddress = [],
+        array $newShipping = [],
+        string $formattedHandlerIdentifier = ''
     ): array {
         try {
             $cartData = $this->createCart(
@@ -141,7 +141,7 @@ class ExpressCheckoutService
 
             // Delete temporary cart for product
             if ($productId !== '-1') {
-                $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
+                $this->deleteTemporaryCart($cartData);
             }
 
             return [
@@ -193,16 +193,16 @@ class ExpressCheckoutService
      * @throws ResolveCountryException|ResolveShippingMethodException
      */
     public function createCart(
-        string              $productId,
-        int                 $quantity,
+        string $productId,
+        int $quantity,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
-        array               $newShipping = [],
-        string              $formattedHandlerIdentifier = '',
-        string              $guestEmail = '',
-        bool                $makeNewCustomer = false,
-        bool                $createNewAddress = false,
-        OrderEntity         $order = null
+        array $newAddress = [],
+        array $newShipping = [],
+        string $formattedHandlerIdentifier = '',
+        string $guestEmail = '',
+        bool $makeNewCustomer = false,
+        bool $createNewAddress = false,
+        OrderEntity $order = null
     ): array {
         $customer = $salesChannelContext->getCustomer();
 
@@ -266,7 +266,7 @@ class ExpressCheckoutService
             $shippingLocation = ShippingLocation::createFromCountry($country);
         }
 
-        return  $this->returnExpressCheckoutCartData(
+        return $this->returnExpressCheckoutCartData(
             $cart,
             $token,
             $formattedHandlerIdentifier,
@@ -323,11 +323,11 @@ class ExpressCheckoutService
      * @throws AdyenException|ResolveCountryException|ResolveShippingMethodException
      */
     public function paypalUpdateOrder(
-        string              $orderId,
-        array               $data,
+        string $orderId,
+        array $data,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
-        array               $newShipping = []
+        array $newAddress = [],
+        array $newShipping = []
     ): PaypalUpdateOrderResponse {
         /** @var OrderEntity|null $order */
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
@@ -385,7 +385,7 @@ class ExpressCheckoutService
 
         $paypalUpdateOrderRequest->setDeliveryMethods($deliveryMethods);
 
-        $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
+        $this->deleteTemporaryCart($cartData);
 
         return $utilityApiService
             ->updatesOrderForPaypalExpressCheckout($paypalUpdateOrderRequest);
@@ -402,11 +402,11 @@ class ExpressCheckoutService
      * @throws ResolveShippingMethodException
      */
     public function updateShopOrder(
-        Request             $request,
-        string              $orderId,
+        Request $request,
+        string $orderId,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
-        array               $newShipping = []
+        array $newAddress = [],
+        array $newShipping = []
     ): void {
         /** @var OrderEntity $order */
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
@@ -471,7 +471,7 @@ class ExpressCheckoutService
             $this->orderRepository->merge($versionId, $scopedCtx);
         });
 
-        $this->cartService->deleteCart($updatedSalesChannelContext);
+        $this->deleteTemporaryCart($cartData);
     }
 
     /**
@@ -493,7 +493,7 @@ class ExpressCheckoutService
         string $formattedHandlerIdentifier,
         CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
-    ) :array {
+    ): array {
         $cart = $this->orderConverter->convertToCart($order, $salesChannelContext->getContext());
         $cart->setRuleIds($salesChannelContext->getRuleIds());
 
@@ -512,7 +512,7 @@ class ExpressCheckoutService
             $shippingLocation = ShippingLocation::createFromAddress($address);
         }
 
-        return  $this->returnExpressCheckoutCartData(
+        return $this->returnExpressCheckoutCartData(
             $cart,
             $salesChannelContext->getToken(),
             $formattedHandlerIdentifier,
@@ -541,7 +541,7 @@ class ExpressCheckoutService
         array $newAddress,
         array $newShipping,
         string $formattedHandlerIdentifier,
-        CustomerEntity       $customer,
+        CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
     ): array {
         $shippingLocation = $salesChannelContext->getShippingLocation();
@@ -570,7 +570,7 @@ class ExpressCheckoutService
             $customer->setActiveShippingAddress($guestCustomerAddress);
         }
 
-        return  $this->returnExpressCheckoutCartData(
+        return $this->returnExpressCheckoutCartData(
             $cart,
             $token,
             $formattedHandlerIdentifier,
@@ -609,7 +609,7 @@ class ExpressCheckoutService
         );
         $shippingLocation = ShippingLocation::createFromAddress($customer->getDefaultBillingAddress());
 
-        return  $this->returnExpressCheckoutCartData(
+        return $this->returnExpressCheckoutCartData(
             $cart,
             $token,
             $formattedHandlerIdentifier,
@@ -640,9 +640,9 @@ class ExpressCheckoutService
         string $formattedHandlerIdentifier,
         array $newShipping,
         ShippingLocation $shippingLocation,
-        ?CustomerEntity       $customer,
+        ?CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
-    ):array {
+    ): array {
         // Get payment method
         $paymentMethod = $salesChannelContext->getPaymentMethod();
         if ($formattedHandlerIdentifier !== '') {
@@ -695,6 +695,8 @@ class ExpressCheckoutService
             'paymentMethods' => $filteredPaymentMethods,
             'updatedSalesChannelContext' => $updatedSalesChannelContext,
             'customerId' => $customer ? $customer->getId() : '',
+            'isTemporaryExpressCart' => ($token !== $salesChannelContext->getToken()),
+            'temporaryToken' => $token,
         ];
     }
 
@@ -707,8 +709,8 @@ class ExpressCheckoutService
      * @throws ResolveShippingMethodException
      */
     private function resolveShippingMethod(
-        ShippingMethodCollection  $filteredMethods,
-        array               $newShipping
+        ShippingMethodCollection $filteredMethods,
+        array $newShipping
     ): ShippingMethodEntity {
         // Check if a specific shipping method ID is provided in the new shipping data
         $newShippingMethodId = $newShipping['id'] ?? null;
@@ -738,11 +740,11 @@ class ExpressCheckoutService
      * @return SalesChannelContext The created SalesChannelContext.
      */
     public function createContext(
-        SalesChannelContext   $salesChannelContext,
-        string                $token,
-        ShippingLocation      $shippingLocation,
-        PaymentMethodEntity   $paymentMethod,
-        ?CustomerEntity       $customer = null,
+        SalesChannelContext $salesChannelContext,
+        string $token,
+        ShippingLocation $shippingLocation,
+        PaymentMethodEntity $paymentMethod,
+        ?CustomerEntity $customer = null,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
         return new SalesChannelContext(
@@ -767,7 +769,7 @@ class ExpressCheckoutService
     private function getFormatedShippingMethods(array $cartData, string $currency): array
     {
         /** @var ShippingMethodEntity $selectedShippingMethod */
-        $selectedShippingMethod =  $cartData['shippingMethod'];
+        $selectedShippingMethod = $cartData['shippingMethod'];
         /** @var Cart $cart */
         $cart = $cartData['cart'];
         /** @var SalesChannelContext $salesChannelContext */
@@ -819,5 +821,38 @@ class ExpressCheckoutService
         );
 
         return $availableShippingMethods;
+    }
+
+    private function deleteTemporaryCart(array $cartData): void
+    {
+        if (
+            empty($cartData['isTemporaryExpressCart']) || $cartData['isTemporaryExpressCart'] !== true ||
+            empty($cartData['temporaryToken'])
+        ) {
+            return;
+        }
+
+        /** @var SalesChannelContext $context */
+        $context = $cartData['updatedSalesChannelContext'];
+
+        $temporaryContext = new SalesChannelContext(
+            $context->getContext(),
+            $cartData['temporaryToken'],
+            null,
+            $context->getSalesChannel(),
+            $context->getCurrency(),
+            $context->getCurrentCustomerGroup(),
+            $context->getTaxRules(),
+            $context->getPaymentMethod(),
+            $context->getShippingMethod(),
+            $context->getShippingLocation(),
+            null,
+            $context->getItemRounding(),
+            $context->getTotalRounding(),
+            $context->getLanguageInfo(),
+            $context->getAreaRuleIds()
+        );
+
+        $this->cartService->deleteCart($temporaryContext);
     }
 }
