@@ -825,9 +825,9 @@ class ExpressCheckoutService
 
     private function deleteTemporaryCart(array $cartData): void
     {
-        if (
-            empty($cartData['isTemporaryExpressCart']) || $cartData['isTemporaryExpressCart'] !== true ||
-            empty($cartData['temporaryToken'])
+        if (empty($cartData['isTemporaryExpressCart'])
+            || $cartData['isTemporaryExpressCart'] !== true
+            || empty($cartData['temporaryToken'])
         ) {
             return;
         }
