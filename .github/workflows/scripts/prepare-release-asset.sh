@@ -4,6 +4,9 @@
 cd ..
 cp -r adyen-shopware6 AdyenPaymentShopware6
 
+# Remove GitHub
+rm -rf AdyenPaymentShopware6/.github
+
 # Remove Shopware dependencies
 composer remove shopware/core --working-dir=./AdyenPaymentShopware6
 composer remove shopware/storefront --working-dir=./AdyenPaymentShopware6
