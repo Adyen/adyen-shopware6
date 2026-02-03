@@ -15,8 +15,28 @@ class Currency
     public function sanitize(mixed $amount, ?string $currency): int
     {
         $decimals = match ($currency) {
-            "CVE", "DJF", "GNF", "IDR", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF" => 0,
-            "BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND" => 3,
+            "CVE",
+            "DJF",
+            "GNF",
+            "IDR",
+            "JPY",
+            "KMF",
+            "KRW",
+            "PYG",
+            "RWF",
+            "UGX",
+            "VND",
+            "VUV",
+            "XAF",
+            "XOF",
+            "XPF" => 0,
+            "BHD",
+            "IQD",
+            "JOD",
+            "KWD",
+            "LYD",
+            "OMR",
+            "TND" => 3,
             default => 2,
         };
 

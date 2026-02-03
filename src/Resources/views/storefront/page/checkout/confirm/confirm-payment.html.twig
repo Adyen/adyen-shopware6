@@ -69,6 +69,7 @@
                  data-google-merchant-id="{{ adyenFrontendData.googleMerchantId }}"
                  data-gateway-merchant-id="{{ adyenFrontendData.gatewayMerchantId }}"
                  data-paypal-order-url="{{ adyenFrontendData.paypalOrderUrl }}"
+                 data-paypal-order-finalize-url="{{ adyenFrontendData.paypalOrderFinalizeUrl }}"
             >
             </div>
             <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>

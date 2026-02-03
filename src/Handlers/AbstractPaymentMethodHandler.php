@@ -177,6 +177,16 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     protected RequestStack $requestStack;
 
     /**
+     * @var array $paymentResults
+     */
+    protected array $paymentResults = [];
+
+    /**
+     * @var AbstractSalesChannelContextFactory $salesChannelContextFactory
+     */
+    protected AbstractSalesChannelContextFactory $salesChannelContextFactory;
+
+    /**
      * @var AbstractContextSwitchRoute
      */
     private AbstractContextSwitchRoute $contextSwitchRoute;
@@ -192,11 +202,6 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     private PaymentsApi $paymentsApiService;
 
     /**
-     * @var array $paymentResults
-     */
-    private array $paymentResults = [];
-
-    /**
      * @var array $orderRequestData
      */
     private array $orderRequestData = [];
@@ -205,11 +210,6 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @var int|null $remainingAmount
      */
     private ?int $remainingAmount = null;
-
-    /**
-     * @var AbstractSalesChannelContextFactory $salesChannelContextFactory
-     */
-    private AbstractSalesChannelContextFactory $salesChannelContextFactory;
 
     /**
      * @var EntityRepository $orderRepository

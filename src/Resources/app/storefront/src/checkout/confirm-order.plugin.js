@@ -126,9 +126,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
     }
 
-    async initializeCheckoutComponent () {
-        const { AdyenCheckout } = window.AdyenWeb;
-        const { locale, clientKey, environment, merchantAccount } = adyenCheckoutConfiguration;
+    async initializeCheckoutComponent() {
+        const {AdyenCheckout} = window.AdyenWeb;
+        const {locale, clientKey, environment, merchantAccount} = adyenCheckoutConfiguration;
         const paymentMethodsResponse = adyenCheckoutOptions.paymentMethodsResponse;
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
@@ -143,7 +143,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
-    handleOnAdditionalDetails (state) {
+    handleOnAdditionalDetails(state) {
         this._client.post(
             `${adyenCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
@@ -218,7 +218,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
 
         // Get the payment method object from paymentMethodsResponse
-        let paymentMethodConfigs = JSON.parse(adyenCheckoutOptions.paymentMethodsResponse).paymentMethods.filter(function(paymentMethod) {
+        let paymentMethodConfigs = JSON.parse(adyenCheckoutOptions.paymentMethodsResponse).paymentMethods.filter(function (paymentMethod) {
             return paymentMethod['type'] === type;
         });
         if (paymentMethodConfigs.length === 0) {
@@ -270,7 +270,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
     }
 
-    confirmOrder(formData, extraParams= {}, actions = {}) {
+    confirmOrder(formData, extraParams = {}, actions = {}) {
         const orderId = adyenCheckoutOptions.orderId;
         formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
         formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
@@ -291,18 +291,54 @@ export default class ConfirmOrderPlugin extends Plugin {
             );
         } catch (e) {
             console.log(e);
-            if(actions.reject) {
+            if (actions.reject) {
                 actions.reject({});
             }
         }
     }
 
-    paypalOrder(formData) {
-        this._client.post(
-            adyenCheckoutOptions.paypalOrderUrl,
-            formData,
-            this.afterCreateOrder.bind(this, extraParams, actions)
-        );
+    paypalOrder(formData, actions) {
+        try {
+            this._client.post(
+                adyenCheckoutOptions.paypalOrderUrl,
+                JSON.stringify(formData),
+                this.responseHandler.bind(this)
+            );
+        } catch (e) {
+            console.log(e);
+            if (actions.reject) {
+                actions.reject({});
+            }
+        }
+    }
+
+    paypalOrderFinalize(state, actions) {
+        try {
+            this._client.post(
+                `${adyenCheckoutOptions.paypalOrderFinalizeUrl}`,
+                JSON.stringify({stateData: JSON.stringify(state.data)}),
+                function (paymentResponse) {
+                    let response = JSON.parse(paymentResponse);
+
+                    if (response.redirectUrl) {
+                        window.location.href = response.redirectUrl;
+
+                        return;
+                    }
+
+                    if (actions.reject) {
+                        actions.reject({});
+                    }
+
+                    window.location.reload();
+                }
+            );
+        } catch (e) {
+            console.log(e);
+            if (actions.reject) {
+                actions.reject({});
+            }
+        }
     }
 
     createOrder(formData, extraParams, actions) {
@@ -313,7 +349,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         );
     }
 
-    afterCreateOrder(extraParams={}, actions, response) {
+    afterCreateOrder(extraParams = {}, actions, response) {
         let order;
         try {
             order = JSON.parse(response);
@@ -374,7 +410,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
-    afterSetPayment(extraParams={}, actions, response) {
+    afterSetPayment(extraParams = {}, actions, response) {
         try {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
@@ -520,18 +556,13 @@ export default class ConfirmOrderPlugin extends Plugin {
                 componentConfig.onCancel(data, component, this);
             },
             onError: (error, component) => {
+                ElementLoadingIndicatorUtil.remove(document.body);
+
                 if (component.props.name === 'PayPal') {
-                    this._client.post(
-                        `${adyenCheckoutOptions.cancelOrderTransactionUrl}`,
-                        JSON.stringify({orderId: this.orderId}),
-                        () => {
-                            ElementLoadingIndicatorUtil.remove(document.body);
-                            componentConfig.onError(error, component, this);
-                        }
-                    );
+
                     return;
                 }
-                ElementLoadingIndicatorUtil.remove(document.body);
+
                 componentConfig.onError(error, component, this);
                 console.log(error);
             }
@@ -540,12 +571,14 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (this.selectedAdyenPaymentMethod === 'paypal') {
             baseConfig.onSubmit = function (state, component, actions) {
                 if (state.isValid) {
-
+                    let formData = {
+                        stateData: JSON.stringify(state.data)
+                    };
                     if ('responseHandler' in componentConfig) {
                         this.responseHandler = componentConfig.responseHandler.bind(component, this);
                     }
-                    let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
-                    this.paypalOrder(formData)
+
+                    this.paypalOrder(formData, actions)
                 } else {
                     component.showValidation();
                     if (this.adyenCheckout.options.environment === 'test') {
@@ -553,6 +586,11 @@ export default class ConfirmOrderPlugin extends Plugin {
                     }
                 }
             }.bind(this);
+
+            baseConfig.onAdditionalDetails = function (state, actions) {
+                this.paypalOrderFinalize(state, actions)
+            }.bind(this);
+
         } else {
             baseConfig.onSubmit = function (state, component, actions) {
                 if (state.isValid) {
@@ -633,7 +671,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (url.searchParams.has(config.sessionKey)) {
             ElementLoadingIndicatorUtil.create(document.body);
 
-            const paymentMethodInstance = AdyenWeb.createComponent(paymentMethodType, this.adyenCheckout,  {
+            const paymentMethodInstance = AdyenWeb.createComponent(paymentMethodType, this.adyenCheckout, {
                 [config.sessionKey]: url.searchParams.get(config.sessionKey),
                 showOrderButton: false,
                 onSubmit: function (state, component, actions) {
@@ -681,7 +719,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                 billingAddress: activeBillingAddress,
                 deliveryAddress: activeShippingAddress
             },
-            onSubmit: function(state, component, actions) {
+            onSubmit: function (state, component, actions) {
                 if (state.isValid) {
                     if (isOneClick) {
                         state.data.paymentMethod.holderName = paymentMethod.holderName ?? '';
@@ -736,7 +774,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                     block: "start",
                 });
 
-                if(isOneClick) {
+                if (isOneClick) {
                     const data = paymentMethodInstance.data || {};
                     const state = {
                         isValid: true,

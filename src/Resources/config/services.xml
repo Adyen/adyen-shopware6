@@ -117,7 +117,7 @@
             <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
         </service>
 
-        <service id="Adyen\Shopware\Service\PaypalPaymentService">
+        <service id="Adyen\Shopware\Service\PaypalPaymentService" autowire="true">
         </service>
 
         <!--Service decorators-->

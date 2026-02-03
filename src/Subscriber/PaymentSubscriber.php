@@ -391,7 +391,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'showVouchersSeparately' => json_encode($this->configurationService
                             ->getShowVouchersSeparately()),
                         'showVouchersCheckout' => json_encode(true),
-                        'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order')
+                        'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order'),
+                        'paypalOrderFinalizeUrl' => $this->router->generate('payment.adyen.proxy-paypal-order-finalize')
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -642,7 +643,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             $salesChannelContext->getCustomer(),
                             $salesChannelContext
                         ),
-                        'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order')
+                        'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order'),
+                        'paypalOrderFinalizeUrl' => $this->router->generate('payment.adyen.proxy-paypal-order-finalize')
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )

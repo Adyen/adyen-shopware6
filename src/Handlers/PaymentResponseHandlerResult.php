@@ -26,7 +26,7 @@ class PaymentResponseHandlerResult
     /**
      * @var array|null $action
      */
-    private ?array $action;
+    private ?array $action = null;
     /**
      * @var array|null $additionalData
      */
@@ -34,7 +34,7 @@ class PaymentResponseHandlerResult
     /**
      * @var string|null $donationToken
      */
-    private ?string $donationToken;
+    private ?string $donationToken = null;
     /**
      * @var bool $isGiftcardOrder
      */
