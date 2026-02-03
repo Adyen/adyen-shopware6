@@ -140,7 +140,7 @@ class ExpressCheckoutService
 
             // Delete temporary cart for product
             if ($productId !== '-1') {
-                $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
+                $this->deleteTemporaryCart($cartData);
             }
 
             return [
@@ -203,7 +203,7 @@ class ExpressCheckoutService
         string $guestEmail = '',
         bool $makeNewCustomer = false,
         bool $createNewAddress = false,
-        ?OrderEntity $order = null
+        OrderEntity $order = null
     ): array {
         $customer = $salesChannelContext->getCustomer();
 
@@ -387,7 +387,7 @@ class ExpressCheckoutService
 
         $paypalUpdateOrderRequest->setDeliveryMethods($deliveryMethods);
 
-        $this->cartService->deleteCart($cartData['updatedSalesChannelContext']);
+        $this->deleteTemporaryCart($cartData);
 
         return $utilityApiService
             ->updatesOrderForPaypalExpressCheckout($paypalUpdateOrderRequest);
@@ -702,6 +702,8 @@ class ExpressCheckoutService
             'paymentMethods' => $filteredPaymentMethods,
             'updatedSalesChannelContext' => $updatedSalesChannelContext,
             'customerId' => $customer ? $customer->getId() : '',
+            'isTemporaryExpressCart' => ($token !== $salesChannelContext->getToken()),
+            'temporaryToken' => $token,
         ];
     }
 
@@ -834,5 +836,38 @@ class ExpressCheckoutService
         );
 
         return $availableShippingMethods;
+    }
+
+    private function deleteTemporaryCart(array $cartData): void
+    {
+        if (empty($cartData['isTemporaryExpressCart'])
+            || $cartData['isTemporaryExpressCart'] !== true
+            || empty($cartData['temporaryToken'])
+        ) {
+            return;
+        }
+
+        /** @var SalesChannelContext $context */
+        $context = $cartData['updatedSalesChannelContext'];
+
+        $temporaryContext = new SalesChannelContext(
+            $context->getContext(),
+            $cartData['temporaryToken'],
+            null,
+            $context->getSalesChannel(),
+            $context->getCurrency(),
+            $context->getCurrentCustomerGroup(),
+            $context->getTaxRules(),
+            $context->getPaymentMethod(),
+            $context->getShippingMethod(),
+            $context->getShippingLocation(),
+            null,
+            $context->getItemRounding(),
+            $context->getTotalRounding(),
+            $context->getLanguageInfo(),
+            $context->getAreaRuleIds()
+        );
+
+        $this->cartService->deleteCart($temporaryContext);
     }
 }
