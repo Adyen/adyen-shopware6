@@ -30,6 +30,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -72,6 +73,20 @@ class ExpressCheckoutService
     /** @var OrderConverter */
     private OrderConverter $orderConverter;
 
+    /** @var SalesChannelContextService $salesChannelContextService */
+    private SalesChannelContextService $salesChannelContextService;
+
+    /**
+     * @param CartService $cartService
+     * @param ExpressCheckoutRepository $expressCheckoutRepository
+     * @param PaymentMethodsFilterService $paymentMethodsFilterService
+     * @param ClientService $clientService
+     * @param Currency $currencyUtil
+     * @param SalesChannelContextPersister $contextPersister
+     * @param EntityRepository $orderRepository
+     * @param OrderConverter $orderConverter
+     * @param SalesChannelContextService $salesChannelContextService
+     */
     public function __construct(
         CartService $cartService,
         ExpressCheckoutRepository $expressCheckoutRepository,
@@ -80,7 +95,8 @@ class ExpressCheckoutService
         Currency $currencyUtil,
         SalesChannelContextPersister $contextPersister,
         EntityRepository $orderRepository,
-        OrderConverter $orderConverter
+        OrderConverter $orderConverter,
+        SalesChannelContextService $salesChannelContextService
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
@@ -90,6 +106,23 @@ class ExpressCheckoutService
         $this->contextPersister = $contextPersister;
         $this->orderRepository = $orderRepository;
         $this->orderConverter = $orderConverter;
+        $this->salesChannelContextService = $salesChannelContextService;
+    }
+
+    /**
+     * @param string $token
+     * @param string $salesChannelId
+     *
+     * @return SalesChannelContext
+     */
+    public function getSalesChannelContext(string $token, string $salesChannelId): SalesChannelContext
+    {
+        return $this->salesChannelContextService->get(
+            new SalesChannelContextServiceParameters(
+                $salesChannelId,
+                $token
+            )
+        );
     }
 
     /**
@@ -202,23 +235,9 @@ class ExpressCheckoutService
         string $formattedHandlerIdentifier = '',
         string $guestEmail = '',
         bool $makeNewCustomer = false,
-        bool $createNewAddress = false,
-        OrderEntity $order = null
+        bool $createNewAddress = false
     ): array {
         $customer = $salesChannelContext->getCustomer();
-
-        // If order already exists for PayPal payments
-        if ($order && $customer) {
-            return $this->returnExpressCartDataForPayPal(
-                $order,
-                $newAddress,
-                $newShipping,
-                $formattedHandlerIdentifier,
-                $customer,
-                $salesChannelContext
-            );
-        }
-
         $token = $salesChannelContext->getToken();
         $cart = $this->cartService->getCart($token, $salesChannelContext);
 
@@ -288,8 +307,10 @@ class ExpressCheckoutService
      * @throws Exception If the customer cannot be found.
      *
      */
-    public function changeContext(string $customerId, SalesChannelContext $salesChannelContext): SalesChannelContext
-    {
+    public function changeContext(
+        string $customerId,
+        SalesChannelContext $salesChannelContext
+    ): SalesChannelContext {
         // Fetch the customer by ID
         $customer = $this->expressCheckoutRepository->findCustomerById($customerId, $salesChannelContext);
 
@@ -307,7 +328,10 @@ class ExpressCheckoutService
 
         $this->contextPersister->save(
             $salesChannelContext->getToken(),
-            [SalesChannelContextService::CUSTOMER_ID => $customerId],
+            [
+                SalesChannelContextService::CUSTOMER_ID => $customerId,
+                SalesChannelContextService::PAYMENT_METHOD_ID => $salesChannelContext->getPaymentMethod()->getId()
+            ],
             $salesChannelContext->getSalesChannel()->getId()
         );
 
@@ -345,10 +369,6 @@ class ExpressCheckoutService
             $newAddress,
             $newShipping,
             'handler_adyen_paypalpaymentmethodhandler',
-            '',
-            false,
-            false,
-            $order
         );
         /** @var Cart $cart */
         $cart = $cartData['cart'];

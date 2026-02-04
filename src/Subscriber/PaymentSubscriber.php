@@ -392,7 +392,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getShowVouchersSeparately()),
                         'showVouchersCheckout' => json_encode(true),
                         'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order'),
-                        'paypalOrderFinalizeUrl' => $this->router->generate('payment.adyen.proxy-paypal-order-finalize')
+                        'paypalExpressOrderFinalizeUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order'),
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -486,7 +487,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
-                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'paypalExpressOrderFinalizeUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -644,7 +647,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             $salesChannelContext
                         ),
                         'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order'),
-                        'paypalOrderFinalizeUrl' => $this->router->generate('payment.adyen.proxy-paypal-order-finalize')
+                        'paypalOrderFinalizeUrl' => $this->router->generate('payment.adyen.proxy-paypal-order-finalize'),
+                        'paypalExpressOrderFinalizeUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )

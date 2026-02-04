@@ -18,14 +18,17 @@ use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
+use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Util\Currency;
+use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Order\IdStruct;
 use Shopware\Core\Checkout\Cart\Order\OrderConverter;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
@@ -61,6 +64,8 @@ class PaypalPaymentService
      * @param SalesChannelRepository $salesChannelRepository
      * @param CartOrderRoute $cartOrderRoute
      * @param HandlePaymentMethodRoute $handlePaymentMethodRoute
+     * @param ExpressCheckoutService $expressCheckoutService
+     * @param CartService $cartService
      */
     public function __construct(
         private readonly ClientService $clientService,
@@ -73,7 +78,9 @@ class PaypalPaymentService
         private readonly PaymentResponseHandler $paymentResponseHandler,
         private readonly SalesChannelRepository $salesChannelRepository,
         private readonly CartOrderRoute $cartOrderRoute,
-        private readonly HandlePaymentMethodRoute $handlePaymentMethodRoute
+        private readonly HandlePaymentMethodRoute $handlePaymentMethodRoute,
+        private readonly ExpressCheckoutService $expressCheckoutService,
+        private readonly CartService $cartService
     ) {
     }
 
@@ -126,6 +133,62 @@ class PaypalPaymentService
     }
 
     /**
+     * Finalize Paypal payment and creates order on Shopware.
+     *
+     * @param SalesChannelContext $context
+     * @param Cart $cart
+     * @param Request $request
+     * @param RequestDataBag $dataBag
+     * @param array $stateData
+     *
+     * @return string Order ID of newly created order
+     *
+     * @throws AdyenException
+     */
+    public function finalizeExpressPaypalPayment(
+        string $cartToken,
+        SalesChannelContext $context,
+        Request $request,
+        RequestDataBag $dataBag,
+        array $stateData
+    ): string {
+        $cart = $this->cartService->getCart($cartToken, $context);
+        if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
+            $context = $this->expressCheckoutService->getSalesChannelContext($cartToken, $context->getSalesChannelId());
+        }
+
+        return $this->finalizePaypalPayment($context, $cart, $request, $dataBag, $stateData);
+    }
+
+    /**
+     * @param Cart $cart
+     * @param SalesChannelContext $context
+     * @param SalesChannelContext $updatedContext
+     *
+     * @param array $stateData
+     *
+     * @return array
+     *
+     * @throws AdyenException
+     * @throws Exception
+     */
+    public function createPayPalExpressPaymentRequest(
+        Cart $cart,
+        SalesChannelContext $context,
+        SalesChannelContext $updatedContext,
+        array $stateData = []
+    ): array {
+        if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
+            $this->expressCheckoutService->changeContext(
+                $updatedContext->getCustomerId(),
+                $updatedContext
+            );
+        }
+
+        return $this->createPayPalPaymentRequest($cart, $updatedContext, $stateData);
+    }
+
+    /**
      * @param Cart $cart
      * @param SalesChannelContext $context
      *
@@ -135,7 +198,7 @@ class PaypalPaymentService
      *
      * @throws AdyenException
      */
-    public function createPayPalPaymentRequest(Cart $cart, SalesChannelContext $context, array $stateData): array
+    public function createPayPalPaymentRequest(Cart $cart, SalesChannelContext $context, array $stateData = []): array
     {
         $paymentRequest = new IntegrationPaymentRequest($stateData);
         //Validate state.data for payment and build request object
@@ -156,8 +219,10 @@ class PaypalPaymentService
         $paymentRequest->setTelephoneNumber($this->getShopperPhoneNumberFromContext($context));
         $paymentRequest->setCountryCode($this->getCountryCodeFromContext($context));
         $paymentRequest->setShopperLocale($this->getShopperLocaleFromContext($context));
-        $paymentRequest->setShopperIP($this->getShopperIpFromContext($context));
-        $paymentRequest->setShopperReference($this->getShopperReferenceFromContext($context));
+        $shopperIp = $this->getShopperIpFromContext($context);
+        $shopperIp && $paymentRequest->setShopperIP($shopperIp);
+        $shopperReference = $this->getShopperReferenceFromContext($context);
+        $shopperReference && $paymentRequest->setShopperReference($shopperReference);
         $paymentRequest->setOrigin($this->getOriginFromContext($context));
         $paymentRequest->setAdditionaldata(['allow3DS2' => true]);
         $paymentRequest->setChannel('Web');
@@ -181,21 +246,21 @@ class PaypalPaymentService
     /**
      * @param SalesChannelContext $context
      *
-     * @return string
+     * @return ?string
      */
-    public function getShopperReferenceFromContext(SalesChannelContext $context): string
+    public function getShopperReferenceFromContext(SalesChannelContext $context): ?string
     {
-        return $context->getCustomer()->getId();
+        return $context->getCustomer()?->getId();
     }
 
     /**
      * @param SalesChannelContext $context
      *
-     * @return string
+     * @return ?string
      */
-    protected function getShopperIpFromContext(SalesChannelContext $context): string
+    protected function getShopperIpFromContext(SalesChannelContext $context): ?string
     {
-        return $context->getCustomer()->getRemoteAddress();
+        return $context->getCustomer()?->getRemoteAddress();
     }
 
     /**

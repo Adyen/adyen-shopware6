@@ -20,6 +20,8 @@
          data-campaign-code="{{ adyenFrontendData.campaignCode }}"
          data-google-merchant-id="{{ adyenFrontendData.googleMerchantId }}"
          data-gateway-merchant-id="{{ adyenFrontendData.gatewayMerchantId }}"
+         data-paypal-express-order-finalize-url="{{ adyenFrontendData.paypalExpressOrderFinalizeUrl }}"
+         data-paypal-express-order-url="{{ adyenFrontendData.paypalExpressOrderUrl }}"
     ></div>
     {% set adyenExpressCheckoutPaymentTypes = ['applepay', 'googlepay', 'paywithgoogle', 'paypal'] %}
     {% for adyenPaymentMethodType in adyenExpressCheckoutPaymentTypes %}
