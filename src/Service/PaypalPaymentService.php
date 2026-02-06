@@ -122,11 +122,15 @@ class PaypalPaymentService
             $this->paymentResponseHandler
                 ->handleShopwareApis($order->getTransactions()->first(), $context, [$paymentDetailsResponse]);
         } catch (PaymentCancelledException $exception) {
-            throw PaymentException::customerCanceled($order->getTransactions()->first()->getId(),
-                $exception->getMessage());
+            throw PaymentException::customerCanceled(
+                $order->getTransactions()->first()->getId(),
+                $exception->getMessage()
+            );
         } catch (PaymentFailedException $exception) {
-            throw PaymentException::asyncFinalizeInterrupted($order->getTransactions()->first()->getId(),
-                $exception->getMessage());
+            throw PaymentException::asyncFinalizeInterrupted(
+                $order->getTransactions()->first()->getId(),
+                $exception->getMessage()
+            );
         }
 
         return $order->getId();
@@ -212,7 +216,6 @@ class PaypalPaymentService
         $customer = $context->getCustomer();
 
         if ($customer && !$customer->getGuest()) {
-
             return $this->createPayPalPaymentRequest($cart, $updatedContext, $stateData);
         }
 
@@ -325,7 +328,6 @@ class PaypalPaymentService
     protected function getCountryCodeFromContext(SalesChannelContext $context): string
     {
         return $context->getCustomer()?->getActiveBillingAddress()?->getCountry()?->getIso() ?? '';
-
     }
 
     /**

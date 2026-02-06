@@ -152,8 +152,7 @@ class FrontendProxyController extends StorefrontController
         AdyenPaymentService $adyenPaymentService,//NOSONAR
         RequestStack $requestStack,//NOSONAR
         PaypalPaymentService $paypalPaymentService//NOSONAR
-    )
-    {
+    ) {
         //NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
@@ -613,12 +612,13 @@ class FrontendProxyController extends StorefrontController
         $stateData = $request->get('stateData') ?? '';
 
         return new JsonResponse(
-            array_merge($this->paypalPaymentService->createPayPalExpressPaymentRequest(
-                $cartData,
-                $context,
-                $updatedSalesChannelContext,
-                json_decode($stateData, true)
-            ),
+            array_merge(
+                $this->paypalPaymentService->createPayPalExpressPaymentRequest(
+                    $cartData,
+                    $context,
+                    $updatedSalesChannelContext,
+                    json_decode($stateData, true)
+                ),
                 ['cartToken' => $cart->getToken()]
             )
         );
