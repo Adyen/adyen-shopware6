@@ -135,33 +135,56 @@ class PaypalPaymentService
     /**
      * Finalize Paypal payment and creates order on Shopware.
      *
+     * @param string $cartToken
      * @param SalesChannelContext $context
-     * @param Cart $cart
      * @param Request $request
      * @param RequestDataBag $dataBag
      * @param array $stateData
+     * @param array $newAddress
      *
      * @return string Order ID of newly created order
      *
      * @throws AdyenException
+     * @throws JsonException
      */
     public function finalizeExpressPaypalPayment(
         string $cartToken,
         SalesChannelContext $context,
         Request $request,
         RequestDataBag $dataBag,
-        array $stateData
+        array $stateData,
+        array $newAddress
     ): string {
-        $cart = $this->cartService->getCart($cartToken, $context);
+        $oldContext = $context;
+        $customerID = null;
+
         if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
             $context = $this->expressCheckoutService->getSalesChannelContext($cartToken, $context->getSalesChannelId());
         }
 
-        return $this->finalizePaypalPayment($context, $cart, $request, $dataBag, $stateData);
+        $cart = $this->cartService->getCart($cartToken, $context, false);
+        if (!empty($newAddress)) {
+            $context = $this->expressCheckoutService->createCustomerAndUpdateContext(
+                $context,
+                $cartToken,
+                $newAddress,
+            );
+
+            $customerID = $context->getCustomer()->getId();
+        }
+
+        $res = $this->finalizePaypalPayment($context, $cart, $request, $dataBag, $stateData);
+
+        $customerID && $this->expressCheckoutService->changeContext(
+            $customerID,
+            $oldContext
+        );
+
+        return $res;
     }
 
     /**
-     * @param Cart $cart
+     * @param array $cartData
      * @param SalesChannelContext $context
      * @param SalesChannelContext $updatedContext
      *
@@ -173,7 +196,7 @@ class PaypalPaymentService
      * @throws Exception
      */
     public function createPayPalExpressPaymentRequest(
-        Cart $cart,
+        array $cartData,
         SalesChannelContext $context,
         SalesChannelContext $updatedContext,
         array $stateData = []
@@ -184,8 +207,29 @@ class PaypalPaymentService
                 $updatedContext
             );
         }
+        /** @var Cart $cart */
+        $cart = $cartData['cart'];
+        $customer = $context->getCustomer();
 
-        return $this->createPayPalPaymentRequest($cart, $updatedContext, $stateData);
+        if ($customer && !$customer->getGuest()) {
+
+            return $this->createPayPalPaymentRequest($cart, $updatedContext, $stateData);
+        }
+
+        $paymentRequest = new IntegrationPaymentRequest($stateData);
+        $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
+        $paymentMethod = $this->getPaymentMethodFromStateData($stateData);
+
+        $this->setPaymentMethod($paymentMethod, PaypalPaymentMethodHandler::getPaymentMethodCode());
+        $amount = $this->getAmountFromCart($cart, $context, false);
+        $paymentRequest->setAmount($amount);
+        $paymentRequest->setMerchantAccount($this->getMerchantAccountForContext($context));
+        $paymentRequest->setReference($this->generateNextOrderNumberForContext($context));
+        $paymentRequest->setReturnUrl($this->salesChannelRepository->getCurrentDomainUrl($context));
+
+        $response = $this->paymentsCall($context, $paymentRequest);
+
+        return $response->toArray();
     }
 
     /**
@@ -474,12 +518,18 @@ class PaypalPaymentService
     /**
      * @param Cart $cart
      * @param SalesChannelContext $context
+     * @param bool $withShipping
      *
      * @return Amount
      */
-    protected function getAmountFromCart(Cart $cart, SalesChannelContext $context): Amount
+    protected function getAmountFromCart(Cart $cart, SalesChannelContext $context, bool $withShipping = true): Amount
     {
         $price = $cart->getPrice()->getTotalPrice();
+
+        if (!$withShipping) {
+            $price -= $cart->getShippingCosts()->getTotalPrice();
+        }
+
         $orderAmount = $this->currency->sanitize(
             $price,
             $context->getCurrency()->getIsoCode()

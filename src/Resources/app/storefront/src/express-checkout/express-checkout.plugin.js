@@ -406,7 +406,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         const productId = productMeta ? productMeta.content : '-1';
         const quantity = this.quantityInput ? this.quantityInput.value : -1;
 
-        return  {
+        return {
             productId: productId,
             quantity: quantity,
             formattedHandlerIdentifier: this.formattedHandlerIdentifier,
@@ -423,7 +423,11 @@ export default class ExpressCheckoutPlugin extends Plugin {
         try {
             this._client.post(
                 `${adyenExpressCheckoutOptions.paypalExpressOrderFinalizeUrl}`,
-                JSON.stringify({stateData: JSON.stringify(state.data), cartToken: this.cartToken}),
+                JSON.stringify({
+                    stateData: JSON.stringify(state.data),
+                    cartToken: this.cartToken,
+                    newAddress: this.newAddress
+                }),
                 function (paymentResponse) {
                     let response = JSON.parse(paymentResponse);
 
@@ -616,6 +620,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
+        extraData.cartToken = this.cartToken;
+        extraData.email = this.email
 
         if (shippingAddress) {
             this.newAddress = extraData.newAddress = shippingAddress;
@@ -656,6 +662,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
+        extraData.cartToken = this.cartToken;
+        extraData.email = this.email
 
         if (selectedShippingOption) {
             this.newShippingMethod = extraData.newShippingMethod = selectedShippingOption;
@@ -864,7 +872,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
                     this.responseHandler(paymentResponse);
                 }
-
             );
         } catch (e) {
             console.log(e);

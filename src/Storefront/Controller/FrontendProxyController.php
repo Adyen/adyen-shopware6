@@ -551,6 +551,9 @@ class FrontendProxyController extends StorefrontController
         return $this->expressCheckoutController->getExpressCheckoutConfig($request, $salesChannelContext);
     }
 
+    /**
+     * @throws Exception
+     */
     #[Route(
         '/adyen/proxy-express-checkout-update-paypal-order',
         name: 'payment.adyen.proxy-express-checkout-update-paypal-order',
@@ -653,7 +656,7 @@ class FrontendProxyController extends StorefrontController
             return new JsonResponse(null, 401);
         }
 
-        $cartData = $this->expressCheckoutController->createCart(
+        $cartData = $this->expressCheckoutController->createCartForPayPalExpressCheckout(
             $data,
             $context
         );
@@ -665,7 +668,7 @@ class FrontendProxyController extends StorefrontController
 
         return new JsonResponse(
             array_merge($this->paypalPaymentService->createPayPalExpressPaymentRequest(
-                $cart,
+                $cartData,
                 $context,
                 $updatedSalesChannelContext,
                 json_decode($stateData, true)
@@ -692,6 +695,7 @@ class FrontendProxyController extends StorefrontController
 
         $cartToken = $request->get('cartToken') ?? $context->getToken();
         $stateData = $request->get('stateData') ?? [];
+        $newAddress = $request->get('newAddress') ?? [];
 
         try {
             $orderId = $this->paypalPaymentService->finalizeExpressPaypalPayment(
@@ -699,7 +703,8 @@ class FrontendProxyController extends StorefrontController
                 $context,
                 $request,
                 $dataBag,
-                json_decode($stateData, true)
+                json_decode($stateData, true),
+                $newAddress
             );
 
             return new JsonResponse([
