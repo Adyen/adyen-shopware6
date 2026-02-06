@@ -170,27 +170,6 @@ class FrontendProxyController extends StorefrontController
         $this->paypalPaymentService = $paypalPaymentService;
     }
 
-    /**
-     * @deprecated This method is deprecated and will be removed in future versions.
-     */
-    #[Route(
-        '/adyen/proxy-switch-context',
-        name: 'payment.adyen.proxy-switch-context',
-        defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
-        methods: ['PATCH']
-    )]
-    public function switchContext(
-        Request $request,
-        RequestDataBag $data,
-        SalesChannelContext $context
-    ): JsonResponse|ContextTokenResponse {
-        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
-            return new JsonResponse(null, 401);
-        }
-
-        return $this->contextSwitchRoute->switchContext($data, $context);
-    }
-
     #[Route(
         '/adyen/proxy-checkout-order',
         name: 'payment.adyen.proxy-checkout-order',
@@ -427,21 +406,6 @@ class FrontendProxyController extends StorefrontController
     }
 
     #[Route(
-        '/adyen/proxy-cancel-order-transaction',
-        name: 'payment.adyen.proxy-cancel-order-transaction',
-        defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
-        methods: ['POST']
-    )]
-    public function cancelOrderTransaction(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
-            return new JsonResponse(null, 401);
-        }
-
-        return $this->paymentController->cancelOrderTransaction($request, $context);
-    }
-
-    #[Route(
         '/adyen/proxy-check-balance',
         name: 'payment.adyen.proxy-check-balance',
         defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
@@ -454,24 +418,6 @@ class FrontendProxyController extends StorefrontController
         }
 
         return $this->orderApiController->getPaymentMethodsBalance($context, $request);
-    }
-
-    /**
-     * @deprecated This method is deprecated and will be removed in future versions.
-     */
-    #[Route(
-        '/adyen/proxy-cancel-adyen-order',
-        name: 'payment.adyen.proxy-cancel-adyen-order',
-        defaults: ['XmlHttpRequest' => true, 'csrf_protected' => false],
-        methods: ['POST']
-    )]
-    public function cancelAdyenOrder(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
-            return new JsonResponse(null, 401);
-        }
-
-        return $this->orderApiController->cancelOrder($context, $request);
     }
 
     #[Route(

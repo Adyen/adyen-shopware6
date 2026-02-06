@@ -368,9 +368,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'cancelOrderTransactionUrl' => $this->router->generate(
-                            'payment.adyen.proxy-cancel-order-transaction',
-                        ),
                         'expressCheckoutUpdatePaypalOrderUrl' =>
                             $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
                         'amount' => $amountInMinorUnits,
@@ -474,9 +471,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'changedPayment' => false,
                                 'paymentFailed' => true,
                             ]
-                        ),
-                        'cancelOrderTransactionUrl' => $this->router->generate(
-                            'payment.adyen.proxy-cancel-order-transaction',
                         ),
                         'expressCheckoutUpdatePaypalOrderUrl' =>
                             $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
@@ -595,9 +589,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'changedPayment' => false,
                                 'paymentFailed' => true,
                             ]
-                        ),
-                        'cancelOrderTransactionUrl' => $this->router->generate(
-                            'payment.adyen.proxy-cancel-order-transaction',
                         ),
                         'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                         'currency' => $currency,

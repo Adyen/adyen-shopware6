@@ -608,55 +608,6 @@ class ExpressCheckoutService
     }
 
     /**
-     * @param OrderEntity $order
-     * @param array $newAddress
-     * @param array $newShipping
-     * @param string $formattedHandlerIdentifier
-     * @param CustomerEntity $customer
-     * @param SalesChannelContext $salesChannelContext
-     *
-     * @return array
-     * @throws ResolveCountryException
-     * @throws ResolveShippingMethodException
-     */
-    private function returnExpressCartDataForPayPal(
-        OrderEntity $order,
-        array $newAddress,
-        array $newShipping,
-        string $formattedHandlerIdentifier,
-        CustomerEntity $customer,
-        SalesChannelContext $salesChannelContext
-    ): array {
-        $cart = $this->orderConverter->convertToCart($order, $salesChannelContext->getContext());
-        $cart->setRuleIds($salesChannelContext->getRuleIds());
-
-        $shippingLocation = $salesChannelContext->getShippingLocation();
-
-        if ($newAddress) {
-            $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
-            $address = $this->expressCheckoutRepository->updateOrderAddressAndCustomer(
-                $newAddress,
-                $customer,
-                $order->getBillingAddressId(),
-                $order->getOrderCustomer() ? $order->getOrderCustomer()->getId() : '',
-                $salesChannelContext
-            );
-
-            $shippingLocation = ShippingLocation::createFromAddress($address);
-        }
-
-        return $this->returnExpressCheckoutCartData(
-            $cart,
-            $salesChannelContext->getToken(),
-            $formattedHandlerIdentifier,
-            $newShipping,
-            $shippingLocation,
-            $customer,
-            $salesChannelContext
-        );
-    }
-
-    /**
      * @param Cart $cart
      * @param string $token
      * @param array $newAddress
