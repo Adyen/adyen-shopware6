@@ -525,14 +525,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $paymentMethod->setType($paymentMethodType ?? 'zip');
         $paymentRequest->setPaymentMethod($paymentMethod);
 
-        if ($paymentMethodType === 'paypal'
-            && $paymentMethod->getSubtype() === 'express'
-            && $salesChannelContext->getCustomer()
-            && $salesChannelContext->getCustomer()->getGuest()
-        ) {
-            return $this->getPayPalPaymentRequest($salesChannelContext, $transaction, $paymentMethod);
-        }
-
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
             $paymentRequest->setStorePaymentMethod($request['storePaymentMethod']);
             $paymentRequest->setRecurringProcessingModel('CardOnFile');
@@ -1024,39 +1016,5 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $salesChannelContext->getCurrency()->getIsoCode()
         );
         return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
-    }
-
-    /**
-     * @param SalesChannelContext $salesChannelContext
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param CheckoutPaymentMethod $paymentMethod
-     *
-     * @return IntegrationPaymentRequest
-     */
-    private function getPayPalPaymentRequest(
-        SalesChannelContext $salesChannelContext,
-        AsyncPaymentTransactionStruct $transaction,
-        CheckoutPaymentMethod $paymentMethod
-    ): IntegrationPaymentRequest {
-        $payPalPaymentRequest = new IntegrationPaymentRequest([]);
-
-        $price = $transaction->getOrder()->getPrice()->getPositionPrice();
-        $amount = $this->currency->sanitize(
-            $price,
-            $salesChannelContext->getCurrency()->getIsoCode()
-        );
-        $amountInfo = new Amount();
-        $amountInfo->setCurrency($salesChannelContext->getCurrency()->getIsoCode());
-        $amountInfo->setValue($amount);
-        $payPalPaymentRequest->setAmount($amountInfo);
-
-        $payPalPaymentRequest->setPaymentMethod($paymentMethod);
-        $payPalPaymentRequest->setReference($transaction->getOrder()->getOrderNumber());
-        $payPalPaymentRequest->setMerchantAccount(
-            $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
-        );
-        $payPalPaymentRequest->setReturnUrl($transaction->getReturnUrl());
-
-        return $payPalPaymentRequest;
     }
 }

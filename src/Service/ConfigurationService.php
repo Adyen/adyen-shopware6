@@ -93,9 +93,9 @@ class ConfigurationService
     /**
      * @param string $salesChannelId
      *
-     * @return array|null
+     * @return mixed
      */
-    private function getClientKeyTest(string $salesChannelId): ?array
+    private function getClientKeyTest(string $salesChannelId): mixed
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.clientKeyTest', $salesChannelId);
     }
@@ -126,7 +126,7 @@ class ConfigurationService
      *
      * @return array|null
      */
-    public function getLiveEndpointUrlPrefix(string $salesChannelId): ?array
+    public function getLiveEndpointUrlPrefix(string $salesChannelId): mixed
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.liveEndpointUrlPrefix',
@@ -283,9 +283,9 @@ class ConfigurationService
     /**
      * @param string|null $salesChannelId
      *
-     * @return array|null
+     * @return mixed
      */
-    public function getDeviceFingerprintSnippetId(?string $salesChannelId = null): ?array
+    public function getDeviceFingerprintSnippetId(?string $salesChannelId = null): mixed
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.deviceFingerprintSnippetId',
@@ -350,7 +350,7 @@ class ConfigurationService
      *
      * @return array|null
      */
-    public function isAdyenGivingEnabled(string $salesChannelId): ?array
+    public function isAdyenGivingEnabled(string $salesChannelId): mixed
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.adyenGivingEnabled', $salesChannelId);
     }

@@ -117,6 +117,9 @@
             <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
         </service>
 
+        <service id="Adyen\Shopware\Service\PaypalPaymentService" autowire="true">
+        </service>
+
         <!--Service decorators-->
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"
                  decorates="Shopware\Storefront\Framework\Cookie\CookieProviderInterface">

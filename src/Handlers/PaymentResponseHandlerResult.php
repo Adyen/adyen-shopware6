@@ -16,11 +16,11 @@ class PaymentResponseHandlerResult
     /** @var mixed $pspReference */
     private mixed $pspReference;
     /** @var array|null $action */
-    private ?array $action;
+    private ?array $action = null;
     /** @var array|null $additionalData */
     private ?array $additionalData;
     /** @var string|null $donationToken */
-    private ?string $donationToken;
+    private ?string $donationToken = null;
     /** @var bool $isGiftcardOrder */
     private bool $isGiftcardOrder = false;
 

@@ -33,7 +33,6 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * Class ExpressCheckoutController
@@ -53,9 +52,8 @@ class ExpressCheckoutController
      *
      * @param ExpressCheckoutService $expressCheckoutService
      */
-    public function __construct(
-        ExpressCheckoutService $expressCheckoutService
-    ) {
+    public function __construct(ExpressCheckoutService $expressCheckoutService)
+    {
         $this->expressCheckoutService = $expressCheckoutService;
     }
 
@@ -176,6 +174,38 @@ class ExpressCheckoutController
     }
 
     /**
+     * @param RequestDataBag $data
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return array
+     *
+     * @throws ResolveCountryException
+     * @throws ResolveShippingMethodException
+     * @throws Exception
+     */
+    public function createCartForPayPalExpressCheckout(
+        RequestDataBag $data,
+        SalesChannelContext $salesChannelContext
+    ): array {
+        $customer = $salesChannelContext->getCustomer();
+
+        if ($customer && !$customer->getGuest()) {
+            return $this->createCart($data, $salesChannelContext);
+        }
+
+        $productId = $data->get('productId');
+        $quantity = (int)$data->get('quantity');
+        $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
+
+        return $this->expressCheckoutService->createCartForPayPalGuestExpressCheckout(
+            $productId,
+            $quantity,
+            $salesChannelContext,
+            $formattedHandlerIdentifier
+        );
+    }
+
+    /**
      * Updates the SalesChannelContext for guest customer.
      *
      * @param string $customerId The ID of the customer whose context should be updated.
@@ -204,7 +234,7 @@ class ExpressCheckoutController
     ): JsonResponse {
         $newAddress = $request->request->all()['newAddress'] ?? null;
         $newShipping = $request->request->all()['newShippingMethod'] ?? null;
-        $orderId = $request->request->all()['orderId'] ?? '';
+        $cartToken = $request->request->all()['cartToken'] ?? '';
 
         if ($newAddress === null) {
             $newAddress = [];
@@ -219,7 +249,7 @@ class ExpressCheckoutController
 
         try {
             $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
-                $orderId,
+                $cartToken,
                 [
                     'paymentData' => $paymentData,
                     'pspReference' => $pspReference,

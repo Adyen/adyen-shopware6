@@ -128,6 +128,7 @@ class PaymentResponseHandler
      * @param PaymentResponse|PaymentDetailsResponse $response
      * @param OrderTransactionEntity $orderTransaction
      * @param bool $upsertResponse
+     *
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
@@ -228,6 +229,7 @@ class PaymentResponseHandler
      * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResults
+     *
      * @throws PaymentCancelledException
      * @throws PaymentFailedException
      */
@@ -268,11 +270,13 @@ class PaymentResponseHandler
             $pspReference = $result->getPspReference();
             if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE])
                 && !empty($pspReference)
-                && !$result->isGiftcardOrder()) {
+                && (!is_callable([$result, 'isGiftcardOrder']) || !$result->isGiftcardOrder())) {
                 $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
             }
 
-            if ($result->getAction() && empty($storedTransactionCustomFields[self::ACTION])) {
+            if (is_callable([$result, 'getAction']) &&
+                $result->getAction() &&
+                empty($storedTransactionCustomFields[self::ACTION])) {
                 $transactionCustomFields[self::ACTION] = $result->getAction();
             }
 
@@ -280,7 +284,7 @@ class PaymentResponseHandler
             $additionalData = $result->getAdditionalData();
             if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA])
                 && !empty($additionalData)
-                && !$result->isGiftcardOrder()) {
+                && (!is_callable([$result, 'isGiftcardOrder']) || !$result->isGiftcardOrder())) {
                 $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
             }
         }

@@ -34,6 +34,7 @@ use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
+use Exception;
 use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
 use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
@@ -77,27 +78,27 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private PaymentMethodsFilterService $paymentMethodsFilterService;
 
     /**
-     * @var RouterInterface
+     * @var RouterInterface $router
      */
     private RouterInterface $router;
 
     /**
-     * @var SalesChannelRepository
+     * @var SalesChannelRepository $salesChannelRepository
      */
     private SalesChannelRepository $salesChannelRepository;
 
     /**
-     * @var ConfigurationService
+     * @var ConfigurationService $configurationService
      */
     private ConfigurationService $configurationService;
 
     /**
-     * @var PaymentMethodsService
+     * @var PaymentMethodsService $paymentMethodsService
      */
     private PaymentMethodsService $paymentMethodsService;
 
     /**
-     * @var ExpressCheckoutService
+     * @var ExpressCheckoutService $expressCheckoutService
      */
     private ExpressCheckoutService $expressCheckoutService;
 
@@ -107,42 +108,42 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private RequestStack $requestStack;
 
     /**
-     * @var AbstractCartPersister
+     * @var AbstractCartPersister $cartPersister
      */
     private AbstractCartPersister $cartPersister;
 
     /**
-     * @var CartCalculator
+     * @var CartCalculator $cartCalculator
      */
     private CartCalculator $cartCalculator;
 
     /**
-     * @var Currency
+     * @var Currency $currency
      */
     private Currency $currency;
 
     /**
-     * @var AdyenPluginProvider
+     * @var AdyenPluginProvider $adyenPluginProvider
      */
     private AdyenPluginProvider $adyenPluginProvider;
 
     /**
-     * @var RatePayDeviceFingerprintParamsProvider
+     * @var RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
      */
     private RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
 
     /**
-     * @var AbstractContextSwitchRoute
+     * @var AbstractContextSwitchRoute $contextSwitchRoute
      */
     private AbstractContextSwitchRoute $contextSwitchRoute;
 
     /**
-     * @var AbstractSalesChannelContextFactory
+     * @var AbstractSalesChannelContextFactory $salesChannelContextFactory
      */
     private AbstractSalesChannelContextFactory $salesChannelContextFactory;
 
     /**
-     * @var EntityRepository
+     * @var EntityRepository $paymentMethodRepository
      */
     private EntityRepository $paymentMethodRepository;
 
@@ -368,9 +369,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'cancelOrderTransactionUrl' => $this->router->generate(
-                            'payment.adyen.proxy-cancel-order-transaction',
-                        ),
                         'expressCheckoutUpdatePaypalOrderUrl' =>
                             $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
                         'amount' => $amountInMinorUnits,
@@ -391,6 +389,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'showVouchersSeparately' => json_encode($this->configurationService
                             ->getShowVouchersSeparately()),
                         'showVouchersCheckout' => json_encode(true),
+                        'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order'),
+                        'paypalExpressOrderFinalizeUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order'),
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -403,6 +405,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      *
      * @return void
      *
+     * @throws Exception
      */
     public function onProductPageLoaded(PageLoadedEvent $event): void
     {
@@ -472,9 +475,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'cancelOrderTransactionUrl' => $this->router->generate(
-                            'payment.adyen.proxy-cancel-order-transaction',
-                        ),
                         'expressCheckoutUpdatePaypalOrderUrl' =>
                             $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
                         'userLoggedIn' => json_encode($userLoggedIn),
@@ -484,7 +484,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
-                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'paypalExpressOrderFinalizeUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -591,9 +595,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'cancelOrderTransactionUrl' => $this->router->generate(
-                            'payment.adyen.proxy-cancel-order-transaction',
-                        ),
                         'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                         'currency' => $currency,
                         'amount' => $amount,
@@ -641,6 +642,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             $salesChannelContext->getCustomer(),
                             $salesChannelContext
                         ),
+                        'paypalOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-order'),
+                        'paypalOrderFinalizeUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-order-finalize'),
+                        'paypalExpressOrderFinalizeUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
