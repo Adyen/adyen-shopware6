@@ -163,7 +163,8 @@ class PaymentStateDataService
      * @return EntitySearchResult
      */
     public function fetchRedeemedGiftCardsFromContextToken(string $contextToken):
-    EntitySearchResult {
+    EntitySearchResult
+    {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('token', $contextToken));
         $criteria->addSorting(new FieldSorting('createdAt')); // Sorting by 'created_at' in ascending order
