@@ -49,16 +49,25 @@ class NotificationEntityDefinition extends EntityDefinition
         return self::ENTITY_NAME;
     }
 
+    /**
+     * @return string
+     */
     public function getCollectionClass(): string
     {
         return NotificationEntityCollection::class;
     }
 
+    /**
+     * @return string
+     */
     public function getEntityClass(): string
     {
         return NotificationEntity::class;
     }
 
+    /**
+     * @return FieldCollection
+     */
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([

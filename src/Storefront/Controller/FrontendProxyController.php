@@ -24,10 +24,12 @@
 
 namespace Adyen\Shopware\Storefront\Controller;
 
+use Adyen\AdyenException;
 use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
 use Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
+use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Util\ShopwarePaymentTokenValidator;
 use Error;
@@ -139,10 +141,11 @@ class FrontendProxyController extends StorefrontController
         OrderApiController $orderApiController,//NOSONAR
         DonateController $donateController,//NOSONAR
         ExpressCheckoutController $expressCheckoutController,
-        ShopwarePaymentTokenValidator    $paymentTokenValidator,//NOSONAR
-        AdyenPaymentService         $adyenPaymentService,//NOSONAR
+        ShopwarePaymentTokenValidator $paymentTokenValidator,//NOSONAR
+        AdyenPaymentService $adyenPaymentService,//NOSONAR
         RequestStack $requestStack//NOSONAR
-    ) {//NOSONAR
+    )
+    {//NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
@@ -159,7 +162,7 @@ class FrontendProxyController extends StorefrontController
 
     /**
      * @deprecated This method is deprecated and will be removed in future versions.
-    */
+     */
     #[Route(
         '/adyen/proxy-switch-context',
         name: 'payment.adyen.proxy-switch-context',
@@ -350,7 +353,7 @@ class FrontendProxyController extends StorefrontController
 
     /**
      * @deprecated This method is deprecated and will be removed in future versions.
-    */
+     */
     #[Route(
         '/adyen/proxy-payment-methods',
         name: 'payment.adyen.proxy-payment-methods',
@@ -459,6 +462,10 @@ class FrontendProxyController extends StorefrontController
         return $this->orderApiController->cancelOrder($context, $request);
     }
 
+    /**
+     * @throws AdyenException
+     * @throws ValidationException
+     */
     #[Route(
         '/adyen/proxy-store-giftcard-state-data',
         name: 'payment.adyen.proxy-store-giftcard-state-data',
@@ -543,7 +550,7 @@ class FrontendProxyController extends StorefrontController
         methods: ['POST']
     )]
     public function payPalUpdateOrder(
-        Request             $request,
+        Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {

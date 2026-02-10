@@ -26,5 +26,4 @@ namespace Adyen\Shopware\Exception;
 
 class AuthenticationException extends \Exception
 {
-
 }

@@ -55,6 +55,7 @@ class OrderTransactionRepository
      * @param string $orderId
      * @param array $states
      * @param SalesChannelContext|null $context
+     *
      * @return OrderTransactionEntity|null
      */
     public function getFirstAdyenOrderTransactionByStates(
@@ -87,12 +88,13 @@ class OrderTransactionRepository
 
         return $this->orderTransactionRepository->search(
             $criteria,
-            $context ? $context->getContext(): Context::createDefaultContext()
+            $context ? $context->getContext() : Context::createDefaultContext()
         )->first();
     }
 
     /**
      * @param string $orderId
+     *
      * @return OrderTransactionEntity|null
      */
     public function getFirstAdyenOrderTransaction(string $orderId): ?OrderTransactionEntity
@@ -115,6 +117,7 @@ class OrderTransactionRepository
 
     /**
      * @param string $orderTransactionId
+     *
      * @return OrderTransactionEntity|null
      */
     public function getWithId(string $orderTransactionId): ?OrderTransactionEntity
@@ -134,14 +137,14 @@ class OrderTransactionRepository
      * @param OrderTransactionEntity $orderTransactionEntity
      *
      * @return void
-     *
-     * @throws \JsonException
      */
     public function updateCustomFields(OrderTransactionEntity $orderTransactionEntity): void
     {
-        $this->orderTransactionRepository->update([[
-            'id' => $orderTransactionEntity->getId(),
-            'customFields' => $orderTransactionEntity->getCustomFields(),
-        ]], Context::createDefaultContext());
+        $this->orderTransactionRepository->update([
+            [
+                'id' => $orderTransactionEntity->getId(),
+                'customFields' => $orderTransactionEntity->getCustomFields(),
+            ]
+        ], Context::createDefaultContext());
     }
 }

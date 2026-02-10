@@ -39,24 +39,31 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
     /**
      * @var AdyenPaymentService
      */
-    private $adyenPaymentService;
+    private AdyenPaymentService $adyenPaymentService;
 
     /**
      * @var CaptureService
      */
-    private $captureService;
+    private CaptureService $captureService;
 
     /**
      * @var OrderTransactionStateHandler
      */
-    private $orderTransactionStateHandler;
+    private OrderTransactionStateHandler $orderTransactionStateHandler;
 
     /** @var $configurationService */
     private $configurationService;
 
     /** @var LoggerInterface */
-    private $logger;
+    private LoggerInterface $logger;
 
+    /**
+     * @param AdyenPaymentService $adyenPaymentService
+     * @param CaptureService $captureService
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param ConfigurationService $configurationService
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         AdyenPaymentService $adyenPaymentService,
         CaptureService $captureService,
@@ -145,6 +152,12 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
         }
     }
 
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param Context $context
+     *
+     * @return void
+     */
     private function handleFailedNotification(OrderTransactionEntity $orderTransactionEntity, Context $context): void
     {
         $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);

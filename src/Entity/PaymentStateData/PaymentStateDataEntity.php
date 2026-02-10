@@ -34,12 +34,12 @@ class PaymentStateDataEntity extends Entity
     /**
      * @var string
      */
-    protected $token;
+    protected string $token;
 
     /**
      * @var string
      */
-    protected $statedata;
+    protected string $statedata;
 
     /**
      * @return string
@@ -68,8 +68,8 @@ class PaymentStateDataEntity extends Entity
     /**
      * @param string $stateData
      */
-    public function setStateData(string $statedata): void
+    public function setStateData(string $stateData): void
     {
-        $this->statedata = $statedata;
+        $this->statedata = $stateData;
     }
 }

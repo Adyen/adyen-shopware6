@@ -75,14 +75,14 @@ class ExpressCheckoutService
     private OrderConverter $orderConverter;
 
     public function __construct(
-        CartService                  $cartService,
-        ExpressCheckoutRepository    $expressCheckoutRepository,
-        PaymentMethodsFilterService  $paymentMethodsFilterService,
-        ClientService                $clientService,
-        Currency                     $currencyUtil,
+        CartService $cartService,
+        ExpressCheckoutRepository $expressCheckoutRepository,
+        PaymentMethodsFilterService $paymentMethodsFilterService,
+        ClientService $clientService,
+        Currency $currencyUtil,
         SalesChannelContextPersister $contextPersister,
         EntityRepository $orderRepository,
-        OrderConverter               $orderConverter
+        OrderConverter $orderConverter
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
@@ -103,15 +103,16 @@ class ExpressCheckoutService
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
      * @param string $formattedHandlerIdentifier
+     *
      * @return array The configuration for express checkout.
      */
     public function getExpressCheckoutConfig(
-        string              $productId,
-        int                 $quantity,
+        string $productId,
+        int $quantity,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
-        array               $newShipping = [],
-        string              $formattedHandlerIdentifier = ''
+        array $newAddress = [],
+        array $newShipping = [],
+        string $formattedHandlerIdentifier = ''
     ): array {
         try {
             $cartData = $this->createCart(
@@ -174,6 +175,7 @@ class ExpressCheckoutService
      *
      * @param CustomerEntity|null $customer
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return string
      */
     public function getCountryCode(?CustomerEntity $customer, SalesChannelContext $salesChannelContext): string
@@ -189,20 +191,21 @@ class ExpressCheckoutService
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
+     *
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
      * @throws ResolveCountryException|ResolveShippingMethodException
      */
     public function createCart(
-        string              $productId,
-        int                 $quantity,
+        string $productId,
+        int $quantity,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
-        array               $newShipping = [],
-        string              $formattedHandlerIdentifier = '',
-        string              $guestEmail = '',
-        bool                $makeNewCustomer = false,
-        bool                $createNewAddress = false,
-        OrderEntity         $order = null
+        array $newAddress = [],
+        array $newShipping = [],
+        string $formattedHandlerIdentifier = '',
+        string $guestEmail = '',
+        bool $makeNewCustomer = false,
+        bool $createNewAddress = false,
+        ?OrderEntity $order = null
     ): array {
         $customer = $salesChannelContext->getCustomer();
 
@@ -266,7 +269,7 @@ class ExpressCheckoutService
             $shippingLocation = ShippingLocation::createFromCountry($country);
         }
 
-        return  $this->returnExpressCheckoutCartData(
+        return $this->returnExpressCheckoutCartData(
             $cart,
             $token,
             $formattedHandlerIdentifier,
@@ -319,15 +322,16 @@ class ExpressCheckoutService
      * @param SalesChannelContext $salesChannelContext
      * @param array $newAddress
      * @param array $newShipping
+     *
      * @return PaypalUpdateOrderResponse
      * @throws AdyenException|ResolveCountryException|ResolveShippingMethodException
      */
     public function paypalUpdateOrder(
-        string              $orderId,
-        array               $data,
+        string $orderId,
+        array $data,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
-        array               $newShipping = []
+        array $newAddress = [],
+        array $newShipping = []
     ): PaypalUpdateOrderResponse {
         /** @var OrderEntity|null $order */
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
@@ -397,16 +401,17 @@ class ExpressCheckoutService
      * @param SalesChannelContext $salesChannelContext
      * @param array $newAddress
      * @param array $newShipping
+     *
      * @return void
      * @throws ResolveCountryException
      * @throws ResolveShippingMethodException
      */
     public function updateShopOrder(
-        Request             $request,
-        string              $orderId,
+        Request $request,
+        string $orderId,
         SalesChannelContext $salesChannelContext,
-        array               $newAddress = [],
-        array               $newShipping = []
+        array $newAddress = [],
+        array $newShipping = []
     ): void {
         /** @var OrderEntity $order */
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
@@ -493,7 +498,7 @@ class ExpressCheckoutService
         string $formattedHandlerIdentifier,
         CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
-    ) :array {
+    ): array {
         $cart = $this->orderConverter->convertToCart($order, $salesChannelContext->getContext());
         $cart->setRuleIds($salesChannelContext->getRuleIds());
 
@@ -512,7 +517,7 @@ class ExpressCheckoutService
             $shippingLocation = ShippingLocation::createFromAddress($address);
         }
 
-        return  $this->returnExpressCheckoutCartData(
+        return $this->returnExpressCheckoutCartData(
             $cart,
             $salesChannelContext->getToken(),
             $formattedHandlerIdentifier,
@@ -531,7 +536,9 @@ class ExpressCheckoutService
      * @param CustomerEntity $customer
      * @param string $formattedHandlerIdentifier
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return array
+     *
      * @throws ResolveCountryException
      * @throws ResolveShippingMethodException
      */
@@ -541,7 +548,7 @@ class ExpressCheckoutService
         array $newAddress,
         array $newShipping,
         string $formattedHandlerIdentifier,
-        CustomerEntity       $customer,
+        CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
     ): array {
         $shippingLocation = $salesChannelContext->getShippingLocation();
@@ -570,7 +577,7 @@ class ExpressCheckoutService
             $customer->setActiveShippingAddress($guestCustomerAddress);
         }
 
-        return  $this->returnExpressCheckoutCartData(
+        return $this->returnExpressCheckoutCartData(
             $cart,
             $token,
             $formattedHandlerIdentifier,
@@ -589,7 +596,9 @@ class ExpressCheckoutService
      * @param string $formattedHandlerIdentifier
      * @param string $guestEmail
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return array
+     *
      * @throws ResolveCountryException
      * @throws ResolveShippingMethodException
      */
@@ -609,7 +618,7 @@ class ExpressCheckoutService
         );
         $shippingLocation = ShippingLocation::createFromAddress($customer->getDefaultBillingAddress());
 
-        return  $this->returnExpressCheckoutCartData(
+        return $this->returnExpressCheckoutCartData(
             $cart,
             $token,
             $formattedHandlerIdentifier,
@@ -640,9 +649,9 @@ class ExpressCheckoutService
         string $formattedHandlerIdentifier,
         array $newShipping,
         ShippingLocation $shippingLocation,
-        ?CustomerEntity       $customer,
+        ?CustomerEntity $customer,
         SalesChannelContext $salesChannelContext
-    ):array {
+    ): array {
         // Get payment method
         $paymentMethod = $salesChannelContext->getPaymentMethod();
         if ($formattedHandlerIdentifier !== '') {
@@ -703,12 +712,14 @@ class ExpressCheckoutService
      *
      * @param ShippingMethodCollection $filteredMethods
      * @param array $newShipping Optional new shipping method details.
+     *
      * @return ShippingMethodEntity The resolved shipping method.
+     *
      * @throws ResolveShippingMethodException
      */
     private function resolveShippingMethod(
-        ShippingMethodCollection  $filteredMethods,
-        array               $newShipping
+        ShippingMethodCollection $filteredMethods,
+        array $newShipping
     ): ShippingMethodEntity {
         // Check if a specific shipping method ID is provided in the new shipping data
         $newShippingMethodId = $newShipping['id'] ?? null;
@@ -738,11 +749,11 @@ class ExpressCheckoutService
      * @return SalesChannelContext The created SalesChannelContext.
      */
     public function createContext(
-        SalesChannelContext   $salesChannelContext,
-        string                $token,
-        ShippingLocation      $shippingLocation,
-        PaymentMethodEntity   $paymentMethod,
-        ?CustomerEntity       $customer = null,
+        SalesChannelContext $salesChannelContext,
+        string $token,
+        ShippingLocation $shippingLocation,
+        PaymentMethodEntity $paymentMethod,
+        ?CustomerEntity $customer = null,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
         return new SalesChannelContext(
@@ -762,10 +773,18 @@ class ExpressCheckoutService
         );
     }
 
+    /**
+     * @param array $cartData
+     * @param string $currency
+     *
+     * @return array
+     *
+     * @throws Exception
+     */
     private function getFormatedShippingMethods(array $cartData, string $currency): array
     {
         /** @var ShippingMethodEntity $selectedShippingMethod */
-        $selectedShippingMethod =  $cartData['shippingMethod'];
+        $selectedShippingMethod = $cartData['shippingMethod'];
         /** @var Cart $cart */
         $cart = $cartData['cart'];
         /** @var SalesChannelContext $salesChannelContext */

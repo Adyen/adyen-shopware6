@@ -36,12 +36,12 @@ class OrderRepository
     /**
      * @var EntityRepository
      */
-    private $orderRepository;
+    private EntityRepository $orderRepository;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * OrderRepository constructor.
@@ -49,10 +49,8 @@ class OrderRepository
      * @param EntityRepository $orderRepository
      * @param LoggerInterface $logger
      */
-    public function __construct(
-        EntityRepository $orderRepository,
-        LoggerInterface $logger
-    ) {
+    public function __construct(EntityRepository $orderRepository, LoggerInterface $logger)
+    {
         $this->orderRepository = $orderRepository;
         $this->logger = $logger;
     }
@@ -61,9 +59,10 @@ class OrderRepository
      * @param string $orderId
      * @param Context $context
      * @param array $associations
+     *
      * @return OrderEntity|null
      */
-    public function getOrder(string $orderId, Context $context, array $associations = []) : ?OrderEntity
+    public function getOrder(string $orderId, Context $context, array $associations = []): ?OrderEntity
     {
         $order = null;
 
@@ -80,6 +79,13 @@ class OrderRepository
         return $order;
     }
 
+    /**
+     * @param Criteria $criteria
+     * @param Context $context
+     * @param array $associations
+     *
+     * @return OrderEntity|null
+     */
     public function getOrderByCriteria(Criteria $criteria, Context $context, array $associations = []): ?OrderEntity
     {
         foreach ($associations as $association) {
@@ -88,6 +94,13 @@ class OrderRepository
         return $this->orderRepository->search($criteria, $context)->first();
     }
 
+    /**
+     * @param string $orderNumber
+     * @param Context $context
+     * @param array $associations
+     *
+     * @return OrderEntity|null
+     */
     public function getOrderByOrderNumber(string $orderNumber, Context $context, array $associations = []): ?OrderEntity
     {
         $criteria = new Criteria();
@@ -96,7 +109,14 @@ class OrderRepository
         return $this->getOrderByCriteria($criteria, $context, $associations);
     }
 
-    public function update(string $orderId, array $data, Context $context)
+    /**
+     * @param string $orderId
+     * @param array $data
+     * @param Context $context
+     *
+     * @return void
+     */
+    public function update(string $orderId, array $data, Context $context): void
     {
         $data['id'] = $orderId;
         $this->orderRepository->update([$data], $context);

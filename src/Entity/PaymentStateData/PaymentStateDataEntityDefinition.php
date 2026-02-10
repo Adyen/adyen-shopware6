@@ -46,16 +46,25 @@ class PaymentStateDataEntityDefinition extends EntityDefinition
         return self::ENTITY_NAME;
     }
 
+    /**
+     * @return string
+     */
     public function getCollectionClass(): string
     {
         return PaymentStateDataEntityCollection::class;
     }
 
+    /**
+     * @return string
+     */
     public function getEntityClass(): string
     {
         return PaymentStateDataEntity::class;
     }
 
+    /**
+     * @return FieldCollection
+     */
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([

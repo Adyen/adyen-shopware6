@@ -35,23 +35,29 @@ class OrdersCancelService
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var ClientService
      */
-    private $clientService;
+    private ClientService $clientService;
 
     /**
      * @var OrderRepository
      */
-    private $orderRepository;
+    private OrderRepository $orderRepository;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
+    /**
+     * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
+     * @param OrderRepository $orderRepository
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         ConfigurationService $configurationService,
         ClientService $clientService,
@@ -64,6 +70,13 @@ class OrdersCancelService
         $this->logger = $logger;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @param $orderData
+     * @param $pspReference
+     *
+     * @return array
+     */
     public function cancelOrder(SalesChannelContext $context, $orderData, $pspReference): array
     {
         $responseData = [];
@@ -82,6 +95,13 @@ class OrdersCancelService
         return $responseData;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @param $orderData
+     * @param $pspReference
+     *
+     * @return CancelOrderRequest
+     */
     private function buildOrdersCancelRequestData(
         SalesChannelContext $context,
         $orderData,

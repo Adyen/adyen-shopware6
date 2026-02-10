@@ -38,11 +38,17 @@ class CurrencyNotFoundException extends ShopwareHttpException
         );
     }
 
+    /**
+     * @return int
+     */
     public function getStatusCode(): int
     {
         return Response::HTTP_NOT_FOUND;
     }
 
+    /**
+     * @return string
+     */
     public function getErrorCode(): string
     {
         return 'ADYEN__CURRENCY_NOT_FOUND';

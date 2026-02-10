@@ -89,10 +89,10 @@ class PaymentMethodsFilterService
      * @param EntityRepository $paymentMethodRepository
      */
     public function __construct(
-        ConfigurationService       $configurationService,
-        PaymentMethodsService      $paymentMethodsService,
-        ExpressCheckoutRepository  $expressCheckoutRepository,
-        Currency                   $currency,
+        ConfigurationService $configurationService,
+        PaymentMethodsService $paymentMethodsService,
+        ExpressCheckoutRepository $expressCheckoutRepository,
+        Currency $currency,
         AbstractPaymentMethodRoute $paymentMethodRoute,
         EntityRepository $paymentMethodRepository
     ) {
@@ -109,6 +109,8 @@ class PaymentMethodsFilterService
      *
      * @param PaymentMethodCollection $originalPaymentMethods
      * @param SalesChannelContext $salesChannelContext
+     * @param string $adyenPluginId
+     * @param PaymentMethodsResponse|null $adyenPaymentMethods
      *
      * @return PaymentMethodCollection
      */
@@ -200,6 +202,7 @@ class PaymentMethodsFilterService
      * @param PaymentMethodCollection $paymentMethods
      * @param string $paymentMethodCode
      * @param string $adyenPluginId
+     *
      * @return bool
      */
     public function isPaymentMethodInCollection(
@@ -217,23 +220,16 @@ class PaymentMethodsFilterService
         return isset($filteredPaymentMethod);
     }
 
-    public function getPaymentMethodInCollectionByBrand(
-        PaymentMethodCollection $collection,
-        string $brand,
-        string $adyenPluginId
-    ): ?PaymentMethodEntity {
-        return $collection->filter(
-            function (PaymentMethodEntity $paymentMethod) use ($brand, $adyenPluginId) {
-                return $paymentMethod->getPluginId() === $adyenPluginId &&
-                    $paymentMethod->getHandlerIdentifier()::getBrand() === $brand;
-            }
-        )->first();
-    }
-
+    /**
+     * @param SalesChannelContext $context
+     * @param PaymentMethodCollection|null $paymentMethods
+     *
+     * @return void
+     */
     public function getAvailableNonGiftcardsPaymentMethods(
         SalesChannelContext $context,
         ?PaymentMethodCollection $paymentMethods = null
-    ) {
+    ): void {
         if (is_null($paymentMethods)) {
             $paymentMethods = $this->getShopwarePaymentMethods($context);
         }
@@ -250,57 +246,11 @@ class PaymentMethodsFilterService
     }
 
     /**
-     * Retrieves available gift cards.
+     * @param array $paymentMethods
+     * @param string $type
      *
-     * @deprecated This method is deprecated and will be removed in future versions.
-     *
-     * @param SalesChannelContext $context The sales channel context.
-     * @param array $adyenPaymentMethods Array of Adyen payment methods.
-     * @param string $adyenPluginId The Adyen plugin ID.
-     * @param PaymentMethodCollection|null $paymentMethods Collection of payment methods.
-     *
-     * @return PaymentMethodCollection The filtered payment methods.
-    */
-    public function getAvailableGiftcards(
-        SalesChannelContext $context,
-        array $adyenPaymentMethods,
-        string $adyenPluginId,
-        ?PaymentMethodCollection $paymentMethods = null
-    ): PaymentMethodCollection {
-        if (is_null($paymentMethods)) {
-            $paymentMethods = $this->getShopwarePaymentMethods($context);
-        }
-        $filteredPaymentMethods = clone $paymentMethods;
-
-        $giftcards = $this->filterAdyenPaymentMethodsByType($adyenPaymentMethods, 'giftcard');
-
-        $brands = array_column($giftcards, 'brand');
-
-        foreach ($filteredPaymentMethods as $entity) {
-            $methodHandler = $entity->getHandlerIdentifier();
-
-            /** @var AbstractPaymentMethodHandler $methodHandler */
-            if ($entity->getPluginId() !== $adyenPluginId) {
-                // Remove non-Adyen payment methods
-                $filteredPaymentMethods->remove($entity->getId());
-            } elseif ((method_exists($methodHandler, 'getPaymentMethodCode') &&
-                    $methodHandler::getPaymentMethodCode() != 'giftcard') ||
-                !in_array($methodHandler::getBrand(), $brands)) {
-                // Remove non-giftcards and giftcards that are not in /paymentMethods response
-                $filteredPaymentMethods->remove($entity->getId());
-            } else {
-                $brand = $methodHandler::getBrand();
-                $entity->addExtension('adyenGiftcardData', new ArrayStruct(
-                    array_filter($giftcards, function ($method) use ($brand) {
-                        return $method['brand'] === $brand;
-                    })
-                ));
-            }
-        }
-
-        return $filteredPaymentMethods;
-    }
-
+     * @return array
+     */
     public function filterAdyenPaymentMethodsByType(array $paymentMethods, string $type): array
     {
         return array_filter($paymentMethods, function ($item) use ($type) {
@@ -308,6 +258,11 @@ class PaymentMethodsFilterService
         });
     }
 
+    /**
+     * @param SalesChannelContext $context
+     *
+     * @return PaymentMethodCollection
+     */
     private function getShopwarePaymentMethods(SalesChannelContext $context): PaymentMethodCollection
     {
         $request = new Request();
@@ -316,9 +271,14 @@ class PaymentMethodsFilterService
         return $this->paymentMethodRoute->load($request, $context, new Criteria())->getPaymentMethods();
     }
 
+    /**
+     * @param SalesChannelContext $context
+     *
+     * @return string|null
+     */
     public function getGiftCardPaymentMethodId(SalesChannelContext $context): ?string
     {
-        $paymentMethodHandler =  GiftCardPaymentMethodHandler::class;
+        $paymentMethodHandler = GiftCardPaymentMethodHandler::class;
 
         $criteria = (new Criteria())->addFilter(new EqualsFilter(
             'handlerIdentifier',
@@ -335,11 +295,12 @@ class PaymentMethodsFilterService
      *
      * @param Cart $cart
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return PaymentMethodsResponse
      * @throws Exception
      */
     public function getAvailableExpressCheckoutPaymentMethods(
-        Cart                $cart,
+        Cart $cart,
         SalesChannelContext $salesChannelContext
     ): PaymentMethodsResponse {
         $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
@@ -435,6 +396,7 @@ class PaymentMethodsFilterService
      *
      * @param string $formattedHandlerIdentifier
      * @param Context $context
+     *
      * @return PaymentMethodEntity|null
      */
     public function getPaymentMethodByFormattedHandler(
