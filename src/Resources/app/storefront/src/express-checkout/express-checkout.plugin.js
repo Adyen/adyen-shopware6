@@ -40,7 +40,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.paymentData = null;
         this.blockPayPalShippingOptionChange = false;
         this.stateData = {};
-        this.cartToken = null;
 
         this.googlePayComponent = null;
 
@@ -425,7 +424,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 `${adyenExpressCheckoutOptions.paypalExpressOrderFinalizeUrl}`,
                 JSON.stringify({
                     stateData: JSON.stringify(state.data),
-                    cartToken: this.cartToken,
                     newAddress: this.newAddress
                 }),
                 function (paymentResponse) {
@@ -620,7 +618,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
-        extraData.cartToken = this.cartToken;
         extraData.email = this.email
 
         if (shippingAddress) {
@@ -662,7 +659,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
-        extraData.cartToken = this.cartToken;
         extraData.email = this.email
 
         if (selectedShippingOption) {
@@ -867,11 +863,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this._client.post(
                 adyenExpressCheckoutOptions.paypalExpressOrderUrl,
                 JSON.stringify(formData),
-                (paymentResponse) => {
-                    this.cartToken = JSON.parse(paymentResponse).cartToken;
-
-                    this.responseHandler(paymentResponse);
-                }
+                this.responseHandler.bind(this)
             );
         } catch (e) {
             console.log(e);

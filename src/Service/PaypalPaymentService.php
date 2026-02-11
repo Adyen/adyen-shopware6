@@ -14,6 +14,7 @@ use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
+use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
@@ -23,6 +24,7 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Util\Currency;
 use Exception;
+use JsonException;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Order\IdStruct;
@@ -117,10 +119,13 @@ class PaypalPaymentService
         $this->handlePaymentMethodRoute->load($request, $context);
 
         try {
-            $this->paymentResponseHandler
-                ->handlePaymentResponse($paymentDetailsResponse, $order->getTransactions()->first());
-            $this->paymentResponseHandler
-                ->handleShopwareApis($order->getTransactions()->first(), $context, [$paymentDetailsResponse]);
+            if ($order->getTransactions() &&
+                $order->getTransactions()->first()) {
+                $this->paymentResponseHandler
+                    ->handlePaymentResponse($paymentDetailsResponse, $order->getTransactions()->first());
+                $this->paymentResponseHandler
+                    ->handleShopwareApis($order->getTransactions()->first(), $context, [$paymentDetailsResponse]);
+            }
         } catch (PaymentCancelledException $exception) {
             throw PaymentException::customerCanceled(
                 $order->getTransactions()->first()->getId(),
@@ -150,6 +155,7 @@ class PaypalPaymentService
      *
      * @throws AdyenException
      * @throws JsonException
+     * @throws ResolveCountryException
      */
     public function finalizeExpressPaypalPayment(
         string $cartToken,
@@ -179,10 +185,12 @@ class PaypalPaymentService
 
         $res = $this->finalizePaypalPayment($context, $cart, $request, $dataBag, $stateData);
 
-        $customerID && $this->expressCheckoutService->changeContext(
-            $customerID,
-            $oldContext
-        );
+        if ($customerID !== null) {
+            $this->expressCheckoutService->changeContext(
+                $customerID,
+                $oldContext
+            );
+        }
 
         return $res;
     }
@@ -267,9 +275,14 @@ class PaypalPaymentService
         $paymentRequest->setCountryCode($this->getCountryCodeFromContext($context));
         $paymentRequest->setShopperLocale($this->getShopperLocaleFromContext($context));
         $shopperIp = $this->getShopperIpFromContext($context);
-        $shopperIp && $paymentRequest->setShopperIP($shopperIp);
+        if ($shopperIp) {
+            $paymentRequest->setShopperIP($shopperIp);
+        }
         $shopperReference = $this->getShopperReferenceFromContext($context);
-        $shopperReference && $paymentRequest->setShopperReference($shopperReference);
+
+        if ($shopperReference) {
+            $paymentRequest->setShopperReference($shopperReference);
+        }
         $paymentRequest->setOrigin($this->getOriginFromContext($context));
         $paymentRequest->setAdditionaldata(['allow3DS2' => true]);
         $paymentRequest->setChannel('Web');
@@ -481,7 +494,6 @@ class PaypalPaymentService
             throw $exception;
         }
     }
-
 
     /**
      * @param AdyenException $exception
