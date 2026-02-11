@@ -152,8 +152,7 @@ class FrontendProxyController extends StorefrontController
         AdyenPaymentService $adyenPaymentService,//NOSONAR
         RequestStack $requestStack,//NOSONAR
         PaypalPaymentService $paypalPaymentService//NOSONAR
-    )
-    {
+    ) {
         //NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
