@@ -84,10 +84,11 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
-    async initializeCheckoutComponent () {
-        const { AdyenCheckout } = window.AdyenWeb;
-        const { locale, clientKey, environment, merchantAccount } = adyenCheckoutConfiguration;
+    async initializeCheckoutComponent() {
+        const {AdyenCheckout} = window.AdyenWeb;
+        const {locale, clientKey, environment} = adyenCheckoutConfiguration;
         const paymentMethodsResponse = adyenCheckoutOptions.paymentMethodsResponse;
+
         const ADYEN_CHECKOUT_CONFIG = {
             locale,
             clientKey,
@@ -101,7 +102,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         this.adyenCheckout = await AdyenCheckout(ADYEN_CHECKOUT_CONFIG);
     }
 
-    handleOnAdditionalDetails (state) {
+    handleOnAdditionalDetails(state) {
         this._client.post(
             `${adyenCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({orderId: this.orderId, stateData: JSON.stringify(state.data)}),
@@ -110,7 +111,6 @@ export default class ConfirmOrderPlugin extends Plugin {
                     location.href = this.errorUrl.toString();
                     return;
                 }
-
                 this.responseHandler(paymentResponse);
             }.bind(this)
         );
@@ -173,7 +173,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
 
         // Get the payment method object from paymentMethodsResponse
-        let paymentMethodConfigs = JSON.parse(adyenCheckoutOptions.paymentMethodsResponse).paymentMethods.filter(function(paymentMethod) {
+        let paymentMethodConfigs = JSON.parse(adyenCheckoutOptions.paymentMethodsResponse).paymentMethods.filter(function (paymentMethod) {
             return paymentMethod['type'] === type;
         });
         if (paymentMethodConfigs.length === 0) {
@@ -225,7 +225,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         });
     }
 
-    confirmOrder(formData, extraParams= {}, actions = {}) {
+    confirmOrder(formData, extraParams = {}, actions = {}) {
         const orderId = adyenCheckoutOptions.orderId;
         formData.set('affiliateCode', adyenCheckoutOptions.affiliateCode);
         formData.set('campaignCode', adyenCheckoutOptions.campaignCode);
@@ -244,9 +244,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                 formData,
                 this.afterSetPayment.bind(this, extraParams, actions)
             );
-        } catch (e) {
-            console.log(e);
-            if(actions.reject) {
+        } catch (error) {
+            console.log(error);
+            if (actions.reject) {
                 actions.reject({});
             }
         }
@@ -260,7 +260,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         );
     }
 
-    afterCreateOrder(extraParams={}, actions, response) {
+    afterCreateOrder(extraParams = {}, actions, response) {
         let order;
         try {
             order = JSON.parse(response);
@@ -321,7 +321,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
-    afterSetPayment(extraParams={}, actions, response) {
+    afterSetPayment(extraParams = {}, actions, response) {
         try {
             const responseObject = JSON.parse(response);
             if (responseObject.success) {
@@ -370,8 +370,8 @@ export default class ConfirmOrderPlugin extends Plugin {
                 JSON.stringify({'orderId': orderId}),
                 this.responseHandler.bind(this),
             );
-        } catch (e) {
-            console.log(e);
+        } catch (error) {
+            console.log(error);
         }
     }
 
@@ -392,17 +392,17 @@ export default class ConfirmOrderPlugin extends Plugin {
                     .mount('[data-adyen-payment-action-container]');
                 const modalActionTypes = ['threeDS2', 'qrCode']
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
-                    const bootstrapVersion = window.jQuery && $.fn.tooltip && $.fn.tooltip.Constructor && $.fn.tooltip.Constructor.VERSION;
-                    const isBootstrap4 = bootstrapVersion && bootstrapVersion.startsWith('4');
-                    if (window.jQuery && isBootstrap4) {
-                        // Bootstrap v4 support
-                        $('[data-adyen-payment-action-modal]').modal({show: true});
-                    } else {
-                        // Bootstrap v5 support
-                        var adyenPaymentModal = new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
+                    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+                        // Bootstrap 5 modal support
+                        const adyenPaymentModal = new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
                             keyboard: false
                         });
                         adyenPaymentModal.show();
+                    } else if (window.jQuery && typeof $.fn.modal === 'function') {
+                        // Bootstrap 4 modal support
+                        $('[data-adyen-payment-action-modal]').modal({show: true});
+                    } else {
+                        console.error("No modal implementation found. Please check your setup.");
                     }
                 }
             }
@@ -563,7 +563,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (url.searchParams.has(config.sessionKey)) {
             ElementLoadingIndicatorUtil.create(document.body);
 
-            const paymentMethodInstance = AdyenWeb.createComponent(paymentMethodType, this.adyenCheckout,  {
+            const paymentMethodInstance = AdyenWeb.createComponent(paymentMethodType, this.adyenCheckout, {
                 [config.sessionKey]: url.searchParams.get(config.sessionKey),
                 showOrderButton: false,
                 onSubmit: function (state, component, actions) {
@@ -611,10 +611,10 @@ export default class ConfirmOrderPlugin extends Plugin {
                 billingAddress: activeBillingAddress,
                 deliveryAddress: activeShippingAddress
             },
-            onSubmit: function(state, component, actions) {
+            onSubmit: function (state, component, actions) {
                 if (state.isValid) {
-                    if (isOneClick) {
-                        state.data.paymentMethod.holderName = paymentMethod.holderName ?? '';
+                    if (isOneClick && typeof paymentMethod.holderName !== "undefined") {
+                        state.data.paymentMethod.holderName = paymentMethod.holderName;
                     }
 
                     let extraParams = {
@@ -648,24 +648,25 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             const paymentMethodInstance = AdyenWeb.createComponent(paymentMethod.type, this.adyenCheckout, configuration);
             paymentMethodInstance.mount(componentSelector);
+
             this.checkoutMainContent.addEventListener('click', function (event) {
                 const submitButton = event.target.closest('#confirmOrderForm button[type="submit"]');
                 if (!submitButton) {
                     return;
                 }
+                event.preventDefault();
 
                 const form = DomAccess.querySelector(document, '#confirmOrderForm', false);
                 if (!form.checkValidity()) {
                     return;
                 }
-
                 event.preventDefault();
                 this.el.parentNode.scrollIntoView({
                     behavior: "smooth",
                     block: "start",
                 });
 
-                if(isOneClick) {
+                if (isOneClick) {
                     const data = paymentMethodInstance.data || {};
                     const state = {
                         isValid: true,
@@ -675,7 +676,7 @@ export default class ConfirmOrderPlugin extends Plugin {
                     return;
                 }
 
-                paymentMethodInstance.submit();
+                paymentMethodInstance.submit()
             }.bind(this));
         } catch (err) {
             console.error(paymentMethod.type, err);
