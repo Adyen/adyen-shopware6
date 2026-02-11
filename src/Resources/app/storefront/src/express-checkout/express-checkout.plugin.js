@@ -40,6 +40,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.paymentData = null;
         this.blockPayPalShippingOptionChange = false;
         this.stateData = {};
+        this.cartToken = null;
 
         this.googlePayComponent = null;
 
@@ -126,7 +127,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             var name = (intermediatePaymentData && intermediatePaymentData.shippingAddress && intermediatePaymentData.shippingAddress.name || '').trim();
             var parts = name.split(/\s+/).filter(Boolean);
             var firstName = parts[0] || '';
-            var lastName  = parts.length > 1 ? parts.slice(1).join(' ') : '.';
+            var lastName = parts.length > 1 ? parts.slice(1).join(' ') : '.';
 
             let transformedAddress = {
                 state: intermediatePaymentData.shippingAddress.administrativeArea,
@@ -179,7 +180,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                             .then(result => actions.resolve(result))
                             .catch(() => actions.reject());
                     } else {
-                        actions.resolve({ transactionState: 'SUCCESS' });
+                        actions.resolve({transactionState: 'SUCCESS'});
                     }
                 } catch (e) {
                     console.error('onAuthorized error:', e);
@@ -290,7 +291,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         for (let i = 0; i < checkoutElements.length; i++) {
             let type = checkoutElements[i].getElementsByClassName('adyen-type')[0].value;
             if (availableTypes.includes(type)) {
-                this.initializeCheckoutComponent(data).then(function (checkoutInstance) {
+                this.initializeCheckoutComponent(data, type).then(function (checkoutInstance) {
                     this.mountElement(type, checkoutInstance, checkoutElements[i]);
                 }.bind(this));
             }
@@ -321,96 +322,126 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
         }
 
-        if((paymentType === "paywithgoogle" || paymentType === "googlepay") && this.googlePayComponent) {
+        if ((paymentType === "paywithgoogle" || paymentType === "googlepay") && this.googlePayComponent) {
             this.googlePayComponent.unmount();
         }
 
         const paymentMethodInstance = AdyenWeb.createComponent(paymentType, checkoutInstance, paymentMethodConfig);
 
-        if(paymentType === "paywithgoogle" || paymentType === "googlepay") {
+        if (paymentType === "paywithgoogle" || paymentType === "googlepay") {
             this.googlePayComponent = paymentMethodInstance;
         }
 
         paymentMethodInstance.mount(mountElement);
     }
 
-    async initializeCheckoutComponent(data) {
-        const { AdyenCheckout } = window.AdyenWeb;
+    async initializeCheckoutComponent(data, type) {
+        const {AdyenCheckout} = window.AdyenWeb;
         const {locale, clientKey, environment} = adyenCheckoutConfiguration;
 
-        const ADYEN_EXPRESS_CHECKOUT_CONFIG = {
+        const baseConfig = {
             locale,
             clientKey,
             environment,
             showPayButton: true,
             countryCode: data.countryCode,
             amount: {
-                value: data.amount,
-                currency: data.currency,
+                value: data.amount, currency: data.currency,
             },
             paymentMethodsResponse: data.paymentMethodsResponse,
             onAdditionalDetails: this.handleOnAdditionalDetails.bind(this),
             onError: (error, component) => {
                 let componentWithPayButton = adyenConfiguration.componentsWithPayButton['googlepay'];
-                if (component.props.name === 'PayPal' && error.name === 'CANCEL') {
-                    this._client.post(
-                        `${adyenExpressCheckoutOptions.cancelOrderTransactionUrl}`,
-                        JSON.stringify({orderId: this.orderId})
-                    );
-
-                    componentWithPayButton = adyenConfiguration.componentsWithPayButton['paypal'];
-                }
 
                 ElementLoadingIndicatorUtil.remove(document.body);
                 componentWithPayButton.onError(error, component, this);
                 console.log(error);
             },
-            onSubmit: function (state, component, actions) {
+        };
+
+        if (type === "paypal") {
+            baseConfig.onSubmit = function (state, component, actions) {
+                this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
+                const paypalComponentConfig = adyenConfiguration.componentsWithPayButton['paypal'];
+                this.responseHandler = paypalComponentConfig.responseHandler.bind(component, this);
+
+                this.paypalExpressOrder(this.getExpressRequestData(state), actions);
+
+            }.bind(this);
+
+            baseConfig.onAdditionalDetails = function (state, actions) {
+                this.paypalExpressOrderFinalize(state, actions)
+            }.bind(this);
+
+        } else {
+            baseConfig.onSubmit = function (state, component, actions) {
                 if (!state.isValid) {
                     return;
                 }
 
                 const type = state.data.paymentMethod.type;
                 if (type === 'applepay') {
-                    if(!this.userLoggedIn){
+                    if (!this.userLoggedIn) {
                         this.stateData = state.data;
                     }
 
                     this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
                 }
 
-                const productMeta = document.querySelector('meta[itemprop="productID"]');
-                const productId = productMeta ? productMeta.content : '-1';
-                const quantity = this.quantityInput ? this.quantityInput.value : -1;
-
-                if (type === 'paypal') {
-                    this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
-                    const paypalComponentConfig = adyenConfiguration.componentsWithPayButton['paypal'];
-                    if ('responseHandler' in paypalComponentConfig) {
-                        this.responseHandler = paypalComponentConfig.responseHandler.bind(component, this);
-                    }
-                }
-
-                const requestData = {
-                    productId: productId,
-                    quantity: quantity,
-                    formattedHandlerIdentifier: this.formattedHandlerIdentifier,
-                    newAddress: this.newAddress,
-                    newShippingMethod: this.newShippingMethod,
-                    email: this.email,
-                    affiliateCode: adyenExpressCheckoutOptions.affiliateCode,
-                    campaignCode: adyenExpressCheckoutOptions.campaignCode
-                };
-
                 let extraParams = {
                     stateData: JSON.stringify(state.data)
                 };
 
-                this.createOrder(JSON.stringify(requestData), extraParams, actions);
+                this.createOrder(JSON.stringify(this.getExpressRequestData()), extraParams, actions);
             }.bind(this)
-        };
+        }
 
-        return Promise.resolve(await AdyenCheckout(ADYEN_EXPRESS_CHECKOUT_CONFIG));
+        return Promise.resolve(await AdyenCheckout(baseConfig));
+    }
+
+    getExpressRequestData(state = {}) {
+        const productMeta = document.querySelector('meta[itemprop="productID"]');
+        const productId = productMeta ? productMeta.content : '-1';
+        const quantity = this.quantityInput ? this.quantityInput.value : -1;
+
+        return {
+            productId: productId,
+            quantity: quantity,
+            formattedHandlerIdentifier: this.formattedHandlerIdentifier,
+            newAddress: this.newAddress,
+            newShippingMethod: this.newShippingMethod,
+            email: this.email,
+            affiliateCode: adyenExpressCheckoutOptions.affiliateCode,
+            campaignCode: adyenExpressCheckoutOptions.campaignCode,
+            stateData: JSON.stringify(state.data)
+        };
+    }
+
+    paypalExpressOrderFinalize(state, actions) {
+        try {
+            this._client.post(`${adyenExpressCheckoutOptions.paypalExpressOrderFinalizeUrl}`, JSON.stringify({
+                stateData: JSON.stringify(state.data), cartToken: this.cartToken, newAddress: this.newAddress
+            }), function (paymentResponse) {
+                let response = JSON.parse(paymentResponse);
+
+                if (response.redirectUrl) {
+                    window.location.href = response.redirectUrl;
+
+                    return;
+                }
+
+                if (actions.reject) {
+                    actions.reject({});
+                }
+
+                window.location.reload();
+            });
+        } catch (e) {
+            console.log(e);
+            if (actions.reject) {
+                actions.reject({});
+            }
+        }
     }
 
     createOrder(requestData, extraParams, actions) {
@@ -580,6 +611,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
+        extraData.cartToken = this.cartToken;
+        extraData.email = this.email;
 
         if (shippingAddress) {
             this.newAddress = extraData.newAddress = shippingAddress;
@@ -620,30 +653,28 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
+        extraData.cartToken = this.cartToken;
+        extraData.email = this.email
 
         if (selectedShippingOption) {
             this.newShippingMethod = extraData.newShippingMethod = selectedShippingOption;
         }
 
         return new Promise((resolve, reject) => {
-            this._client.post(
-                `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
-                JSON.stringify(extraData),
-                function (response) {
-                    try {
-                        const responseObject = JSON.parse(response);
+            this._client.post(`${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`, JSON.stringify(extraData), function (response) {
+                try {
+                    const responseObject = JSON.parse(response);
 
-                        if (!responseObject || this._client._request.status !== 200) {
-                            reject(data.errors.METHOD_UNAVAILABLE);
-                        } else {
-                            component.updatePaymentData(responseObject.paymentData);
-                            resolve();
-                        }
-                    } catch (error) {
+                    if (!responseObject || this._client._request.status !== 200) {
                         reject(data.errors.METHOD_UNAVAILABLE);
+                    } else {
+                        component.updatePaymentData(responseObject.paymentData);
+                        resolve();
                     }
-                }.bind(this)
-            );
+                } catch (error) {
+                    reject(data.errors.METHOD_UNAVAILABLE);
+                }
+            }.bind(this));
         });
     }
 
@@ -674,7 +705,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
     }
 
     // Callback for ApplePay payment method
-    handleApplePayAuthorization({ authorizedEvent, billingAddress, deliveryAddress }, actions) {
+    handleApplePayAuthorization({authorizedEvent, billingAddress, deliveryAddress}, actions) {
         const shippingAddress = {
             firstName: deliveryAddress.firstName,
             lastName: deliveryAddress.lastName,
@@ -732,7 +763,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.getApplePayExpressCheckoutConfiguration(resolve, reject, extraData);
     }
 
-    getApplePayExpressCheckoutConfiguration(resolve, reject, extraData){
+    getApplePayExpressCheckoutConfiguration(resolve, reject, extraData) {
         let amount = 0;
         let applePayShippingMethodUpdate = {};
 
@@ -816,5 +847,20 @@ export default class ExpressCheckoutPlugin extends Plugin {
         extraData.quantity = quantity;
 
         return extraData;
+    }
+
+    paypalExpressOrder(formData, actions) {
+        try {
+            this._client.post(adyenExpressCheckoutOptions.paypalExpressOrderUrl, JSON.stringify(formData), (paymentResponse) => {
+                this.cartToken = JSON.parse(paymentResponse).cartToken;
+
+                this.responseHandler(paymentResponse);
+            });
+        } catch (e) {
+            console.log(e);
+            if (actions.reject) {
+                actions.reject({});
+            }
+        }
     }
 }

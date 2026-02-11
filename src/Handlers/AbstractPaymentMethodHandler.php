@@ -88,6 +88,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     /**
      * Error codes that are safe to display to the shopper.
+     *
      * @see https://docs.adyen.com/development-resources/error-codes
      */
     const SAFE_ERROR_CODES = ['124'];
@@ -277,7 +278,9 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return RedirectResponse
+     *
      * @throws PaymentProcessException|AdyenException
      */
     public function pay(
@@ -290,7 +293,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $this->clientService->getClient($salesChannelContext->getSalesChannel()->getId())
         );
 
-        $countStateData= 0;
+        $countStateData = 0;
         $requestStateData = $dataBag->get('stateData');
         if ($requestStateData) {
             $requestStateData = json_decode($requestStateData, true);
@@ -400,6 +403,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     *
      * @throws AsyncPaymentFinalizeException
      * @throws CustomerCanceledAsyncPaymentException
      */
@@ -490,6 +494,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param array $request
      * @param int|null $partialAmount
      * @param array|null $adyenOrderData
+     *
      * @return IntegrationPaymentRequest
      */
     protected function preparePaymentsRequest(
@@ -525,14 +530,6 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
         $paymentMethod->setType($paymentMethodType ?? 'zip');
         $paymentRequest->setPaymentMethod($paymentMethod);
-
-        if ($paymentMethodType === 'paypal'
-            && $paymentMethod->getSubtype() === 'express'
-            && $salesChannelContext->getCustomer()
-            && $salesChannelContext->getCustomer()->getGuest()
-        ) {
-            return $this->getPayPalPaymentRequest($salesChannelContext, $transaction, $paymentMethod);
-        }
 
         if (!empty($request['storePaymentMethod']) && $request['storePaymentMethod'] === true) {
             $paymentRequest->setStorePaymentMethod($request['storePaymentMethod']);
@@ -758,7 +755,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                         $this->getProduct($orderLine->getProductId(), $salesChannelContext->getContext()) :
                         null;
 
-                $domainUrl= null;
+                $domainUrl = null;
                 $domains = $salesChannelContext->getSalesChannel()->getDomains();
                 if ($domains && $domains->first()) {
                     $domainUrl = $domains->first()->getUrl();
@@ -928,6 +925,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     /**
      * @param string $productId
      * @param Context $context
+     *
      * @return ProductEntity
      */
     private function getProduct(string $productId, Context $context): ProductEntity
@@ -963,6 +961,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
 
     /**
      * @param string $address
+     *
      * @return array
      */
     private function getSplitStreetAddressHouseNumber(string $address): array
@@ -1000,7 +999,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
     {
         $query = parse_url($transaction->getReturnUrl(), PHP_URL_QUERY);
         parse_str($query, $params);
-        $token =  $params['_sw_payment_token'] ?? '';
+        $token = $params['_sw_payment_token'] ?? '';
 
         return $this->router->generate(
             'payment.adyen.proxy-finalize-transaction',
@@ -1029,39 +1028,5 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         );
 
         return $this->ordersService->createOrder($salesChannelContext, $uuid, $amount, $currency);
-    }
-
-    /**
-     * @param SalesChannelContext $salesChannelContext
-     * @param AsyncPaymentTransactionStruct $transaction
-     * @param CheckoutPaymentMethod $paymentMethod
-     *
-     * @return IntegrationPaymentRequest
-     */
-    private function getPayPalPaymentRequest(
-        SalesChannelContext $salesChannelContext,
-        AsyncPaymentTransactionStruct $transaction,
-        CheckoutPaymentMethod $paymentMethod
-    ): IntegrationPaymentRequest {
-        $payPalPaymentRequest = new IntegrationPaymentRequest([]);
-
-        $price = $transaction->getOrder()->getPrice()->getPositionPrice();
-        $amount = $this->currency->sanitize(
-            $price,
-            $salesChannelContext->getCurrency()->getIsoCode()
-        );
-        $amountInfo = new Amount();
-        $amountInfo->setCurrency($salesChannelContext->getCurrency()->getIsoCode());
-        $amountInfo->setValue($amount);
-        $payPalPaymentRequest->setAmount($amountInfo);
-
-        $payPalPaymentRequest->setPaymentMethod($paymentMethod);
-        $payPalPaymentRequest->setReference($transaction->getOrder()->getOrderNumber());
-        $payPalPaymentRequest->setMerchantAccount(
-            $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
-        );
-        $payPalPaymentRequest->setReturnUrl($transaction->getReturnUrl());
-
-        return $payPalPaymentRequest;
     }
 }

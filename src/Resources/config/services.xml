@@ -68,7 +68,7 @@
         </service>
         <service id="Adyen\Shopware\Service\ExpressCheckoutService" autowire="true">
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
-            <argument type="service" id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository" />
+            <argument type="service" id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsFilterService"/>
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
@@ -96,10 +96,10 @@
         </service>
         <service id="Adyen\Shopware\Service\PaymentMethodsFilterService">
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
-            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService" />
-            <argument type="service" id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository" />
+            <argument type="service" id="Adyen\Shopware\Service\PaymentMethodsService"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
-            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute" />
+            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute"/>
             <argument type="service" id="payment_method.repository"/>
         </service>
         <service id="Adyen\Shopware\Service\OrdersService" autowire="true"></service>
@@ -113,8 +113,12 @@
             <argument type="service" id="order_transaction.repository"/>
         </service>
 
-        <service id="Adyen\Shopware\Service\FetchLogosService" public="true" class="Adyen\Shopware\Service\FetchLogosService">
+        <service id="Adyen\Shopware\Service\FetchLogosService" public="true"
+                 class="Adyen\Shopware\Service\FetchLogosService">
             <argument type="service" id="Adyen\Shopware\ScheduledTask\FetchPaymentMethodLogosHandler"/>
+        </service>
+
+        <service id="Adyen\Shopware\Service\PaypalPaymentService" autowire="true">
         </service>
 
         <!--Service decorators-->
