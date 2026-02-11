@@ -333,8 +333,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'giftcardBalance' => $giftcardDetails['giftcardBalance'],
                         'checkBalanceUrl' => $this->router
                             ->generate('payment.adyen.proxy-check-balance'),
-                        'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
-                        'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
+                        'setGiftcardUrl' =>
+                            $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
+                        'removeGiftcardUrl' =>
+                            $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
                         'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
                         'fetchRedeemedGiftcardsUrl' => $this->router
                             ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
@@ -379,12 +381,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
-                        'showVouchersSeparately' => json_encode($this->configurationService->getShowVouchersSeparately()),
+                        'showVouchersSeparately' =>
+                            json_encode($this->configurationService->getShowVouchersSeparately()),
                         'showVouchersCheckout' => json_encode(true),
                         'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order'),
                         'paypalExpressOrderFinalizeUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
-                        'paypalExpressOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order'),
+                        'paypalExpressOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order'),
                     ],
                     $expressCheckoutConfiguration
                 )
