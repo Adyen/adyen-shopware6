@@ -220,9 +220,10 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
         }
 
-        this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
-            document.querySelector('.product-detail-quantity-input') ||
-            document.querySelector('#productDetailPageBuyProductForm input.quantity-selector-group-input');
+        this.productDetailPageBuyProductForm = document.getElementById('productDetailPageBuyProductForm');
+        if (this.productDetailPageBuyProductForm) {
+            this.quantityInput = this.productDetailPageBuyProductForm.querySelector('.js-quantity-selector');
+        }
 
         this.listenOnQuantityChange();
 
@@ -504,8 +505,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 JSON.stringify({'orderId': orderId}),
                 this.responseHandler.bind(this),
             );
-        } catch (error) {
-            console.log(error);
+        } catch (e) {
+            console.log(e);
             actions.reject({});
         }
     }
@@ -541,8 +542,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     }
                 }
             }
-        } catch (error) {
-            console.log(error);
+        } catch (e) {
+            console.log(e);
         }
     }
 
@@ -561,6 +562,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     actions.reject({});
                     return;
                 }
+
                 actions.resolve({});
                 this.responseHandler(paymentResponse);
             }.bind(this)
