@@ -70,10 +70,10 @@ use Symfony\Component\Routing\RouterInterface;
 
 abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 {
-    public const string SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
-    public const string SHOPPER_INTERACTION_ECOMMERCE = 'Ecommerce';
+    const  SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
+    const SHOPPER_INTERACTION_ECOMMERCE = 'Ecommerce';
 
-    const array ALLOWED_LINE_ITEM_TYPES = [
+    const ALLOWED_LINE_ITEM_TYPES = [
         'product',
         'option-values',
         'customized-products-option'
