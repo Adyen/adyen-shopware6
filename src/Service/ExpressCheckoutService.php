@@ -550,7 +550,7 @@ class ExpressCheckoutService
             $salesChannelContext,
             $newAddress,
             $newShipping,
-            'handler_adyen_paypalpaymentmethodhandler',
+            '',
             '',
             false,
             false,
