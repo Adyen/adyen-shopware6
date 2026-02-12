@@ -450,7 +450,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
             $partialAmount = min($remainingOrderAmount, $giftcardValue); //convert to integer from float
 
-            $giftcardPaymentRequest = $this->getPaymentRequest(
+            $giftcardPaymentRequest = $this->getAdyenPaymentRequest(
                 $salesChannelContext,
                 $transaction,
                 $storedStateData,
