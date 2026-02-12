@@ -225,6 +225,7 @@ class ExpressCheckoutController
     /**
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     * @param string $cartToken
      *
      * @return JsonResponse
      *
@@ -232,11 +233,11 @@ class ExpressCheckoutController
      */
     public function updatePayPalOrder(
         Request $request,
-        SalesChannelContext $salesChannelContext
+        SalesChannelContext $salesChannelContext,
+        string $cartToken
     ): JsonResponse {
         $newAddress = $request->request->all()['newAddress'] ?? null;
         $newShipping = $request->request->all()['newShippingMethod'] ?? null;
-        $cartToken = $request->request->all()['cartToken'] ?? '';
 
         if ($newAddress === null) {
             $newAddress = [];
