@@ -316,7 +316,7 @@ class ExpressCheckoutService
     ): array {
         $customer = $salesChannelContext->getCustomer();
 
-        if($order && $customer) {
+        if ($order && $customer) {
             return $this->returnExpressCartDataForExistingOrder(
                 $order,
                 $newAddress,
