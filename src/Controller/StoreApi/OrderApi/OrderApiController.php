@@ -222,7 +222,7 @@ class OrderApiController
      */
     private function filterGiftcardStateData($fetchedRedeemedGiftcards, $salesChannelContext): array
     {
-        $responseArray = array();
+        $responseArray = [];
         $remainingOrderAmount = $this->cartService
             ->getCart($salesChannelContext->getToken(), $salesChannelContext)
             ->getPrice()->getTotalPrice();

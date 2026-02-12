@@ -14,7 +14,7 @@ class DataArrayValidator
      */
     public static function getArrayOnlyWithApprovedKeys(array $array, array $approvedKeys): array
     {
-        $result = array();
+        $result = [];
 
         foreach ($approvedKeys as $approvedKey) {
             if (isset($array[$approvedKey])) {
