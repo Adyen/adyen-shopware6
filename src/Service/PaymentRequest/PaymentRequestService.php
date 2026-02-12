@@ -68,16 +68,16 @@ class PaymentRequestService
      *
      * @see https://docs.adyen.com/development-resources/error-codes
      */
-    const array SAFE_ERROR_CODES = ['124'];
+    const SAFE_ERROR_CODES = ['124'];
 
     /** @var string */
-    const string SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
+    const SHOPPER_INTERACTION_CONTAUTH = 'ContAuth';
 
     /** @var string */
-    const string SHOPPER_INTERACTION_ECOMMERCE = 'Ecommerce';
+    const SHOPPER_INTERACTION_ECOMMERCE = 'Ecommerce';
 
     /** @var string[] */
-    const array ALLOWED_LINE_ITEM_TYPES = [
+    const ALLOWED_LINE_ITEM_TYPES = [
         'product',
         'option-values',
         'customized-products-option'
