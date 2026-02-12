@@ -1,4 +1,26 @@
-<?php
+<?php declare(strict_types=1);
+/**
+ *                       ######
+ *                       ######
+ * ############    ####( ######  #####. ######  ############   ############
+ * #############  #####( ######  #####. ######  #############  #############
+ *        ######  #####( ######  #####. ######  #####  ######  #####  ######
+ * ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
+ * ###### ######  #####( ######  #####. ######  #####          #####  ######
+ * #############  #############  #############  #############  #####  ######
+ *  ############   ############  #############   ############  #####  ######
+ *                                      ######
+ *                               #############
+ *                               ############
+ *
+ * Adyen Payment Module
+ *
+ * Copyright (c) 2021 Adyen B.V.
+ * This file is open source and available under the MIT license.
+ * See the LICENSE file for more info.
+ *
+ * Author: Adyen <shopware@adyen.com>
+ */
 
 namespace Adyen\Shopware\Service;
 
@@ -26,7 +48,6 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
-use Shopware\Core\Framework\Api\Controller\ApiController;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -35,8 +56,6 @@ use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 class ExpressCheckoutService
 {
@@ -989,8 +1008,6 @@ class ExpressCheckoutService
      * @param SalesChannelContext $salesChannelContext
      *
      * @return void
-     *
-     * @throws JsonException
      */
     private function setShippingInContext(SalesChannelContext $salesChannelContext): void
     {

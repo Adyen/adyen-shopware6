@@ -40,7 +40,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.paymentData = null;
         this.blockPayPalShippingOptionChange = false;
         this.stateData = {};
-        this.cartToken = null;
 
         this.googlePayComponent = null;
 
@@ -400,7 +399,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
     paypalExpressOrderFinalize(state, actions) {
         try {
             this._client.post(`${adyenExpressCheckoutOptions.paypalExpressOrderFinalizeUrl}`, JSON.stringify({
-                stateData: JSON.stringify(state.data), cartToken: this.cartToken, newAddress: this.newAddress
+                stateData: JSON.stringify(state.data), newAddress: this.newAddress
             }), function (paymentResponse) {
                 let response = JSON.parse(paymentResponse);
 
@@ -567,7 +566,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
-        extraData.cartToken = this.cartToken;
         extraData.email = this.email
 
         if (shippingAddress) {
@@ -605,7 +603,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         const extraData = this.getDataForPayPalCallbacks();
         extraData.currentPaymentData = currentPaymentData;
-        extraData.cartToken = this.cartToken;
         extraData.email = this.email
 
         if (selectedShippingOption) {
@@ -781,11 +778,10 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
     paypalExpressOrder(formData, actions) {
         try {
-            this._client.post(adyenExpressCheckoutOptions.paypalExpressOrderUrl, JSON.stringify(formData), (paymentResponse) => {
-                this.cartToken = JSON.parse(paymentResponse).cartToken;
-
-                this.responseHandler(paymentResponse);
-            });
+            this._client.post(adyenExpressCheckoutOptions.paypalExpressOrderUrl,
+                JSON.stringify(formData),
+                this.responseHandler.bind(this)
+            );
         } catch (e) {
             console.log(e);
             if (actions.reject) {

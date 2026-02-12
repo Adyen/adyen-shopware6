@@ -120,6 +120,18 @@
         <service id="Adyen\Shopware\Service\PaypalPaymentService" autowire="true">
         </service>
 
+        <service id="Adyen\Shopware\Service\PaymentRequest\PaymentRequestService">
+            <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Util\Currency"/>
+            <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
+            <argument type="service" id="Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_api"/>
+        </service>
+
         <!--Service decorators-->
         <service id="Adyen\Shopware\Framework\Cookie\AdyenCookieProvider"
                  decorates="Shopware\Storefront\Framework\Cookie\CookieProviderInterface">
