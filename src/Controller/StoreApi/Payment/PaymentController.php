@@ -196,6 +196,8 @@ class PaymentController
      * @param SalesChannelContext $context
      *
      * @return JsonResponse
+     *
+     * @throws JsonException
      */
     #[Route('/store-api/adyen/payment-details', name: 'store-api.action.adyen.payment-details', methods: ['POST'])]
     public function postPaymentDetails(
@@ -233,7 +235,7 @@ class PaymentController
 
         try {
             if ($newAddress || $newShipping) {
-                $this->expressCheckoutService->updateShopOrder($request, $orderId, $context, $newAddress, $newShipping);
+                $this->expressCheckoutService->updateShopOrder($orderId, $context, $newAddress, $newShipping);
             }
 
             $result = $this->paymentDetailsService->getPaymentDetails(
