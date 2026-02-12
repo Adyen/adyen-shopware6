@@ -625,13 +625,11 @@ class FrontendProxyController extends StorefrontController
         $this->requestStack->getSession()->set('adyenCartToken', $cart->getToken());
 
         return new JsonResponse(
-            array_merge(
-                $this->paypalPaymentService->createPayPalExpressPaymentRequest(
-                    $cartData,
-                    $context,
-                    $updatedSalesChannelContext,
-                    json_decode($stateData, true)
-                )
+            $this->paypalPaymentService->createPayPalExpressPaymentRequest(
+                $cartData,
+                $context,
+                $updatedSalesChannelContext,
+                json_decode($stateData, true)
             )
         );
     }

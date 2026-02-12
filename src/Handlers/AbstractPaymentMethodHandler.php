@@ -313,6 +313,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @return RedirectResponse
      *
      * @throws AdyenException
+     * @throws PaymentException
      */
     public function pay(
         Request $request,
