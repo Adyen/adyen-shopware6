@@ -519,11 +519,10 @@ class ExpressCheckoutService
      * @param SalesChannelContext $salesChannelContext
      * @param array $newAddress
      * @param array $newShipping
-     *
+     * @param string $formattedHandlerIdentifier
      *
      * @return void
      *
-     * @throws JsonException
      * @throws ResolveCountryException
      * @throws ResolveShippingMethodException
      */
@@ -531,7 +530,8 @@ class ExpressCheckoutService
         string $orderId,
         SalesChannelContext $salesChannelContext,
         array $newAddress = [],
-        array $newShipping = []
+        array $newShipping = [],
+        string $formattedHandlerIdentifier = ''
     ): void {
         /** @var OrderEntity $order */
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
@@ -541,7 +541,7 @@ class ExpressCheckoutService
             $salesChannelContext,
             $newAddress,
             $newShipping,
-            '',
+            $formattedHandlerIdentifier,
             '',
             false,
             false,

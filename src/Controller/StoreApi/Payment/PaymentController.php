@@ -29,7 +29,6 @@ use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
-use Adyen\Exception\MissingDataException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -41,7 +40,6 @@ use Adyen\Shopware\Service\Repository\OrderRepository;
 use JsonException;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -52,7 +50,6 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
-use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -194,6 +191,7 @@ class PaymentController
     /**
      * @param Request $request
      * @param SalesChannelContext $context
+     * @param string $formattedHandlerIdentifier
      *
      * @return JsonResponse
      *
@@ -202,7 +200,8 @@ class PaymentController
     #[Route('/store-api/adyen/payment-details', name: 'store-api.action.adyen.payment-details', methods: ['POST'])]
     public function postPaymentDetails(
         Request $request,
-        SalesChannelContext $context
+        SalesChannelContext $context,
+        string $formattedHandlerIdentifier = ''
     ): JsonResponse {
         $orderId = $request->request->get('orderId');
         $paymentResponse = $this->paymentResponseService->getWithOrderId($orderId, $context->getContext());
@@ -235,7 +234,13 @@ class PaymentController
 
         try {
             if ($newAddress || $newShipping) {
-                $this->expressCheckoutService->updateShopOrder($orderId, $context, $newAddress, $newShipping);
+                $this->expressCheckoutService->updateShopOrder(
+                    $orderId,
+                    $context,
+                    $newAddress,
+                    $newShipping,
+                    $formattedHandlerIdentifier
+                );
             }
 
             $result = $this->paymentDetailsService->getPaymentDetails(
