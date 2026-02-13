@@ -248,6 +248,10 @@ class FrontendProxyController extends StorefrontController
             $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
             $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
             $this->requestStack->getSession()->set('adyenCustomerId', $cartData['customerId']);
+            $this->requestStack->getSession()->set(
+                'adyenFormattedHandlerIdentifier',
+                $data->get('formattedHandlerIdentifier') ?? ''
+            );
 
             return new JsonResponse(['id' => $order->getId()]);
         } catch (InvalidCartException|EmptyCartException|Error|Exception $exception) {
@@ -372,6 +376,9 @@ class FrontendProxyController extends StorefrontController
         return $this->paymentController->getPaymentStatus($request, $context);
     }
 
+    /**
+     * @throws \JsonException
+     */
     #[Route(
         '/adyen/proxy-payment-details',
         name: 'payment.adyen.proxy-payment-details',
@@ -383,8 +390,9 @@ class FrontendProxyController extends StorefrontController
         if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
             return new JsonResponse(null, 401);
         }
+        $formattedHandler = $request->getSession()->get('adyenFormattedHandlerIdentifier');
 
-        return $this->paymentController->postPaymentDetails($request, $context);
+        return $this->paymentController->postPaymentDetails($request, $context, $formattedHandler);
     }
 
     #[Route(

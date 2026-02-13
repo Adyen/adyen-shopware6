@@ -540,7 +540,8 @@ class ExpressCheckoutService
         string $orderId,
         SalesChannelContext $salesChannelContext,
         array $newAddress = [],
-        array $newShipping = []
+        array $newShipping = [],
+        string $formattedHandlerIdentifier = ''
     ): void {
         /** @var OrderEntity $order */
         $order = $this->expressCheckoutRepository->getOrderById($orderId, $salesChannelContext->getContext());
@@ -550,7 +551,7 @@ class ExpressCheckoutService
             $salesChannelContext,
             $newAddress,
             $newShipping,
-            '',
+            $formattedHandlerIdentifier,
             '',
             false,
             false,
