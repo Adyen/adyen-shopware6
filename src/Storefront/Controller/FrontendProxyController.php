@@ -155,8 +155,7 @@ class FrontendProxyController extends StorefrontController
         RequestStack $requestStack,//NOSONAR
         PaypalPaymentService $paypalPaymentService,//NOSONAR
         LoggerInterface $logger//NOSONAR
-    ) {
-        //NOSONAR
+    ) {//NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
