@@ -42,6 +42,8 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.stateData = {};
 
         this.googlePayComponent = null;
+        this.checkoutInstances = {};
+        this.activePaymentType = null;
 
         let onPaymentDataChanged = (intermediatePaymentData) => {
             return new Promise(async resolve => { //NOSONAR
@@ -149,6 +151,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         const googlePayConfig = {
             onClick: (resolve, reject) => {
                 this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
+                this.activePaymentType = 'googlepay';
                 resolve();
             },
             isExpress: true,
@@ -340,6 +343,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         if (type === "paypal") {
             baseConfig.onSubmit = function (state, component, actions) {
+                this.activePaymentType = 'paypal';
                 this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.paypal;
                 const paypalComponentConfig = adyenConfiguration.componentsWithPayButton['paypal'];
                 this.responseHandler = paypalComponentConfig.responseHandler.bind(component, this);
@@ -359,6 +363,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 }
 
                 const type = state.data.paymentMethod.type;
+                this.activePaymentType = type;
                 if (type === 'applepay') {
                     if (!this.userLoggedIn) {
                         this.stateData = state.data;
@@ -375,7 +380,11 @@ export default class ExpressCheckoutPlugin extends Plugin {
             }.bind(this)
         }
 
-        return Promise.resolve(await AdyenCheckout(baseConfig));
+        const checkout = await AdyenCheckout(baseConfig);
+
+        this.checkoutInstances[type] = checkout; // Store by type instead of overwriting
+
+        return checkout;
     }
 
     getExpressRequestData(state = {}) {
@@ -505,6 +514,34 @@ export default class ExpressCheckoutPlugin extends Plugin {
             const paymentResponse = JSON.parse(response);
             if (paymentResponse.isFinal || paymentResponse.action.type === 'voucher') {
                 location.href = this.returnUrl;
+                return
+            }
+
+            if (paymentResponse.action) {
+                const actionModalConfiguration = {};
+
+                if (paymentResponse.action.type === 'threeDS2') {
+                    actionModalConfiguration.challengeWindowSize = '05';
+                }
+
+                // Use the correct checkout instance based on active payment type
+                const checkoutInstance = this.checkoutInstances[this.activePaymentType] || this.checkoutInstances[Object.keys(this.checkoutInstances)[0]];
+
+                checkoutInstance
+                    .createFromAction(paymentResponse.action, actionModalConfiguration)
+                    .mount('[data-adyen-payment-action-container]');
+                const modalActionTypes = ['threeDS2', 'qrCode'];
+                if (modalActionTypes.includes(paymentResponse.action.type)) {
+                    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+                        const adyenPaymentModal =
+                            new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
+                                keyboard: false
+                            });
+                        adyenPaymentModal.show();
+                    } else if (window.jQuery && typeof $.fn.modal === 'function') {
+                        $('[data-adyen-payment-action-modal]').modal({show: true});
+                    }
+                }
             }
         } catch (e) {
             console.log(e);
