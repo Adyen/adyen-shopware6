@@ -10,15 +10,15 @@ class PaymentResponseHandlerResult
     /**
      * @var string|null $resultCode
      */
-    private ?string $resultCode;
+    private ?string $resultCode = null;
     /**
      * @var string|null $refusalReason
      */
-    private ?string $refusalReason;
+    private ?string $refusalReason = null;
     /**
      * @var string|null $refusalReasonCode
      */
-    private ?string $refusalReasonCode;
+    private ?string $refusalReasonCode = null;
     /**
      * @var mixed $pspReference
      */
@@ -30,7 +30,7 @@ class PaymentResponseHandlerResult
     /**
      * @var array|null $additionalData
      */
-    private ?array $additionalData;
+    private ?array $additionalData = null;
     /**
      * @var string|null $donationToken
      */
