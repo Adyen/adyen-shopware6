@@ -45,7 +45,6 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStat
 use Shopware\Core\Checkout\Order\Exception\EmptyCartException;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\SalesChannel\ContextTokenResponse;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -174,29 +173,6 @@ class FrontendProxyController extends StorefrontController
     }
 
     /**
-     * @return JsonResponse|ContextTokenResponse
-     *
-     * @deprecated This method is deprecated and will be removed in future versions.
-     * @Route(
-     *     "/adyen/proxy-switch-context",
-     *     name="payment.adyen.proxy-switch-context",
-     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *     methods={"PATCH"}
-     * )
-     */
-    public function switchContext(
-        Request $request,
-        RequestDataBag $data,
-        SalesChannelContext $context
-    ) {
-        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
-            return new JsonResponse(null, 401);
-        }
-
-        return $this->contextSwitchRoute->switchContext($data, $context);
-    }
-
-    /**
      * @Route(
      *     "/adyen/proxy-checkout-order",
      *     name="payment.adyen.proxy-checkout-order",
@@ -281,6 +257,10 @@ class FrontendProxyController extends StorefrontController
             $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
             $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
             $this->requestStack->getSession()->set('adyenCustomerId', $cartData['customerId']);
+            $this->requestStack->getSession()->set(
+                'adyenFormattedHandlerIdentifier',
+                $data->get('formattedHandlerIdentifier') ?? ''
+            );
 
             return new JsonResponse(['id' => $order->getId()]);
         } catch (InvalidCartException|EmptyCartException|Error|Exception $exception) {
@@ -418,6 +398,7 @@ class FrontendProxyController extends StorefrontController
      *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *     methods={"POST"}
      * )
+     * @throws \JsonException
      */
     public function paymentDetails(Request $request, SalesChannelContext $context): JsonResponse
     {
@@ -425,7 +406,9 @@ class FrontendProxyController extends StorefrontController
             return new JsonResponse(null, 401);
         }
 
-        return $this->paymentController->postPaymentDetails($request, $context);
+        $formattedHandler = $request->getSession()->get('adyenFormattedHandlerIdentifier');
+
+        return $this->paymentController->postPaymentDetails($request, $context, $formattedHandler);
     }
 
     /**
