@@ -22,7 +22,7 @@ class PaymentResponseHandlerResult
     /**
      * @var mixed $pspReference
      */
-    private mixed $pspReference;
+    private mixed $pspReference = null;
     /**
      * @var array|null $action
      */
