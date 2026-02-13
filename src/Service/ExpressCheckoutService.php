@@ -48,7 +48,6 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
-use Shopware\Core\Framework\Api\Controller\ApiController;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -56,9 +55,6 @@ use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 class ExpressCheckoutService
 {
@@ -302,6 +298,7 @@ class ExpressCheckoutService
      * @param bool $makeNewCustomer
      * @param bool $createNewAddress
      * @param string|null $token
+     * @param OrderEntity|null $order
      *
      * @return array
      *
@@ -318,9 +315,22 @@ class ExpressCheckoutService
         string $guestEmail = '',
         bool $makeNewCustomer = false,
         bool $createNewAddress = false,
-        ?string $token = null
+        ?string $token = null,
+        ?OrderEntity $order = null
     ): array {
         $customer = $salesChannelContext->getCustomer();
+
+        if ($order && $customer) {
+            return $this->returnExpressCartDataForExistingOrder(
+                $order,
+                $newAddress,
+                $newShipping,
+                $formattedHandlerIdentifier,
+                $customer,
+                $salesChannelContext
+            );
+        }
+
         !$token && $token = $salesChannelContext->getToken();
         $cart = $this->cartService->getCart($token, $salesChannelContext);
 
@@ -515,18 +525,18 @@ class ExpressCheckoutService
     }
 
     /**
-     * @param Request $request
      * @param string $orderId
      * @param SalesChannelContext $salesChannelContext
      * @param array $newAddress
      * @param array $newShipping
      *
      * @return void
+     *
      * @throws ResolveCountryException
      * @throws ResolveShippingMethodException
+     * @throws Exception
      */
     public function updateShopOrder(
-        Request $request,
         string $orderId,
         SalesChannelContext $salesChannelContext,
         array $newAddress = [],
@@ -540,7 +550,12 @@ class ExpressCheckoutService
             $salesChannelContext,
             $newAddress,
             $newShipping,
-            'handler_adyen_paypalpaymentmethodhandler',
+            '',
+            '',
+            false,
+            false,
+            '',
+            $order
         );
         /** @var SalesChannelContext $updatedSalesChannelContext */
         $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
@@ -592,6 +607,7 @@ class ExpressCheckoutService
         });
 
         $this->cartService->deleteCart($updatedSalesChannelContext);
+        $this->changeContext($cartData['customerId'], $salesChannelContext);
     }
 
     /**
@@ -1058,6 +1074,56 @@ class ExpressCheckoutService
                 SalesChannelContextService::SHIPPING_METHOD_ID => $salesChannelContext->getShippingMethod()->getId()
             ],
             $salesChannelContext->getSalesChannel()->getId()
+        );
+    }
+
+
+    /**
+     * @param OrderEntity $order
+     * @param array $newAddress
+     * @param array $newShipping
+     * @param string $formattedHandlerIdentifier
+     * @param CustomerEntity $customer
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return array
+     * @throws ResolveCountryException
+     * @throws ResolveShippingMethodException
+     */
+    private function returnExpressCartDataForExistingOrder(
+        OrderEntity $order,
+        array $newAddress,
+        array $newShipping,
+        string $formattedHandlerIdentifier,
+        CustomerEntity $customer,
+        SalesChannelContext $salesChannelContext
+    ): array {
+        $cart = $this->orderConverter->convertToCart($order, $salesChannelContext->getContext());
+        $cart->setRuleIds($salesChannelContext->getRuleIds());
+
+        $shippingLocation = $salesChannelContext->getShippingLocation();
+
+        if ($newAddress) {
+            $this->expressCheckoutRepository->resolveCountry($salesChannelContext, $newAddress);
+            $address = $this->expressCheckoutRepository->updateOrderAddressAndCustomer(
+                $newAddress,
+                $customer,
+                $order->getBillingAddressId(),
+                $order->getOrderCustomer() ? $order->getOrderCustomer()->getId() : '',
+                $salesChannelContext
+            );
+
+            $shippingLocation = ShippingLocation::createFromAddress($address);
+        }
+
+        return $this->returnExpressCheckoutCartData(
+            $cart,
+            $salesChannelContext->getToken(),
+            $formattedHandlerIdentifier,
+            $newShipping,
+            $shippingLocation,
+            $customer,
+            $salesChannelContext
         );
     }
 }

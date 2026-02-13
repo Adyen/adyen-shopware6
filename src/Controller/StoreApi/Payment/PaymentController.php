@@ -37,6 +37,7 @@ use Adyen\Shopware\Service\PaymentMethodsService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaymentStatusService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
+use JsonException;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
@@ -208,6 +209,8 @@ class PaymentController
      * @param SalesChannelContext $context
      *
      * @return JsonResponse
+     *
+     * @throws JsonException
      */
     public function postPaymentDetails(
         Request $request,
@@ -244,7 +247,7 @@ class PaymentController
 
         try {
             if ($newAddress || $newShipping) {
-                $this->expressCheckoutService->updateShopOrder($request, $orderId, $context, $newAddress, $newShipping);
+                $this->expressCheckoutService->updateShopOrder($orderId, $context, $newAddress, $newShipping);
             }
 
             $result = $this->paymentDetailsService->getPaymentDetails(
