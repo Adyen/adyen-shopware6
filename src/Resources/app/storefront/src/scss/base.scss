@@ -22,159 +22,171 @@
 
 @import "modal";
 
-.adyen-payment-method-container-div, .adyen-update-payment-details{
-    display: none;
+.adyen-payment-method-container-div, .adyen-update-payment-details {
+  display: none;
 }
 
-.paypal-checkout-sandbox{
-    pointer-events: auto;
+.paypal-checkout-sandbox {
+  pointer-events: auto;
 }
 
 .adyen-checkout__card__brands img {
-    vertical-align: top;
+  vertical-align: top;
 }
 
 #donation-container,
 #success-action-container {
-    margin-top: -50px;
-    margin-bottom: 50px;
+  margin-top: -50px;
+  margin-bottom: 50px;
 }
 
 .adyen-close-giftcard-component {
-    float: right;
-    cursor:pointer;
-    display: none;
-    font-weight: bold
+  float: right;
+  cursor: pointer;
+  display: none;
+  font-weight: bold
 }
 
 .adyen-remove-giftcard {
-    display: none;
-    float: right;
-    margin-left: auto;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1;
-    text-decoration: none;
-    color: #6b7280;
-    transition: .15s ease;
-    &:hover { color: #111827; }
+  display: none;
+  float: right;
+  margin-left: auto;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  color: #6b7280;
+  transition: .15s ease;
+
+  &:hover {
+    color: #111827;
+  }
 }
 
 .adyen-deducted-balance {
-    display: none;
+  display: none;
 }
 
 .adyen-voucher-details {
-    padding-left: 1rem;
-    padding-bottom: 1rem;
-    background-color: #f9f9f9;
+  padding-left: 1rem;
+  padding-bottom: 1rem;
+  background-color: #f9f9f9;
 
-    .voucher-detail {
-        display: grid;
-        grid-template-columns: 1fr 4fr;
-    }
+  .voucher-detail {
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+  }
 
-    dd {
-        margin-left: 4px;
-    }
+  dd {
+    margin-left: 4px;
+  }
 }
 
 .adyen-payment-action-container {
-    height: 100%;
+  height: 100%;
 }
 
 #giftcardDropdown {
-    display: block;
-    background-clip: padding-box;
-    border: 1px solid #cccccc;
-    border-radius: 1px;
-    font-size: 14px;
-    height: 32px;
-    line-height: 1.42857143;
-    padding: 4px 25px 5px 10px;
-    vertical-align: baseline;
-    width: 100%;
-    box-sizing: border-box;
+  display: block;
+  background-clip: padding-box;
+  border: 1px solid #cccccc;
+  border-radius: 1px;
+  font-size: 14px;
+  height: 32px;
+  line-height: 1.42857143;
+  padding: 4px 25px 5px 10px;
+  vertical-align: baseline;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .adyen-giftcard-logo {
-    width: 75px;
-    margin: 0 10px 5px 0;
-    float: left;
+  width: 75px;
+  margin: 0 10px 5px 0;
+  float: left;
 }
 
-#adyen-giftcard-component{
-    margin: 15px 0;
+#adyen-giftcard-component {
+  margin: 15px 0;
 }
 
 .adyen-giftcard-summary {
-    margin-top: 5px;
-    color: #666;
-    font-size: 90%;
+  margin-top: 5px;
+  color: #666;
+  font-size: 90%;
 }
 
 #adyen-express-checkout-applepay,
 #adyen-express-checkout-paywithgoogle,
 #adyen-express-checkout-paypal {
-    margin-top: 10px;
+  margin-top: 10px;
 }
 
 #adyen-express-checkout-paywithgoogle button,
 #adyen-express-checkout-applepay button {
-    width: 100%;
+  width: 100%;
 }
 
 .checkout-aside-summary-list {
-    .adyen-giftcard-line {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+  .adyen-giftcard-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
-    .adyen-giftcard-logo {
-        object-fit: contain;
-        display: block;
-    }
+  .adyen-giftcard-logo {
+    object-fit: contain;
+    display: block;
+  }
 
-    .adyen-giftcard-title {
-        font-weight: 600;
-        margin-bottom: 12px;
-    }
+  .adyen-giftcard-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
 
-    .adyen-giftcard-value-strong { font-weight: 600; }
+  .adyen-giftcard-value-strong {
+    font-weight: 600;
+  }
 }
 
 .adyen-add-giftcard-row {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
 }
 
 .adyen-link-add-giftcard {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    color: #111827;
-    text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #111827;
+  text-decoration: none;
 }
 
 .adyen-link-add-giftcard:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .adyen-icon-plus {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    width: 18px;
-    height: 18px;
-    border: 2px solid currentColor;
-    border-radius: 50%;
-    line-height: 1;
-    font-size: 14px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  line-height: 1;
+  font-size: 14px;
+}
+
+#adyen-express-checkout-applepay apple-pay-button {
+  --apple-pay-button-width: 100%;
+  --apple-pay-button-height: 48px;
+  display: block;
+  width: 100%;
 }
