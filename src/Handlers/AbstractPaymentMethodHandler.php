@@ -336,7 +336,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $this->paymentsCall($salesChannelContext, $request, $transaction);
             //Remove all state data if stored or from giftcard
             if ($storedStateData) {
-                $this->paymentStateDataService->deletePaymentStateDataFromId($storedStateData['id']);
+                $this->paymentStateDataService->deletePaymentStateDataFromId(
+                    $storedStateData['id'],
+                    $salesChannelContext
+                );
             }
 
             $paymentMethodType = array_key_exists('paymentMethod', $stateData) ?
@@ -464,7 +467,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $remainingOrderAmount -= $partialAmount;
 
             // Remove the used state.data
-            $this->paymentStateDataService->deletePaymentStateDataFromId($statedataArray->getId());
+            $this->paymentStateDataService->deletePaymentStateDataFromId(
+                $statedataArray->getId(),
+                $salesChannelContext
+            );
         }
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw PaymentException::asyncProcessInterrupted(
