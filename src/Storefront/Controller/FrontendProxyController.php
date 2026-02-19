@@ -361,6 +361,9 @@ class FrontendProxyController extends StorefrontController
         return $this->paymentController->getPaymentMethods($context);
     }
 
+    /**
+     * @throws Exception
+     */
     #[Route(
         '/adyen/proxy-payment-status',
         name: 'payment.adyen.proxy-payment-status',
@@ -373,7 +376,14 @@ class FrontendProxyController extends StorefrontController
             return new JsonResponse(null, 401);
         }
 
-        return $this->paymentController->getPaymentStatus($request, $context);
+        $response = $this->paymentController->getPaymentStatus($request, $context);
+        $adyenCustomerId = $request->getSession()->get('adyenCustomerId');
+
+        if ($adyenCustomerId !== null) {
+            $this->expressCheckoutController->changeContext($adyenCustomerId, $context);
+        }
+
+        return $response;
     }
 
     /**
