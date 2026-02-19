@@ -49,6 +49,7 @@ use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Checkout\Payment\Exception\PaymentProcessException;
+use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -341,7 +342,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $this->paymentsCall($salesChannelContext, $request, $transaction);
             //Remove all state data if stored or from giftcard
             if ($storedStateData) {
-                $this->paymentStateDataService->deletePaymentStateDataFromId($storedStateData['id']);
+                $this->paymentStateDataService->deletePaymentStateDataFromId(
+                    $storedStateData['id'],
+                    $salesChannelContext
+                );
             }
 
             $paymentMethodType = array_key_exists('paymentMethod', $stateData) ?
@@ -470,7 +474,10 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             $remainingOrderAmount -= $partialAmount;
 
             // Remove the used state.data
-            $this->paymentStateDataService->deletePaymentStateDataFromId($statedataArray->getId());
+            $this->paymentStateDataService->deletePaymentStateDataFromId(
+                $statedataArray->getId(),
+                $salesChannelContext
+            );
         }
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new AsyncPaymentProcessException(

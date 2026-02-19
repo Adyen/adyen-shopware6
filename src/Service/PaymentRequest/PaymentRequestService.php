@@ -545,17 +545,11 @@ class PaymentRequestService
         }
 
         // Date of birth
-
-        $birthDay = $stateData['dateOfBirthDay'] ?? '';
-
-        if (empty($birthDay) && $customer->getBirthday()) {
-            $birthDay = $customer->getBirthday()->format('Y-m-d');
-        }
-
-        $paymentRequest->setDateOfBirth($birthDay);
+        $shopperDob = $stateData['dateOfBirth'] ??
+            ($customer->getBirthday() ? $customer->getBirthday()->format('Y-m-d') : '');
+        $paymentRequest->setDateOfBirth($shopperDob);
 
         // Country code
-
         $countryCode = $stateData['countryCode'];
 
         if (empty($countryCode) &&
