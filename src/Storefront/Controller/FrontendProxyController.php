@@ -406,7 +406,7 @@ class FrontendProxyController extends StorefrontController
             return new JsonResponse(null, 401);
         }
 
-        $formattedHandler = $request->getSession()->get('adyenFormattedHandlerIdentifier');
+        $formattedHandler = $request->getSession()->get('adyenFormattedHandlerIdentifier') ?? '';
 
         return $this->paymentController->postPaymentDetails($request, $context, $formattedHandler);
     }
