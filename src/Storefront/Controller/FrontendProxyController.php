@@ -379,7 +379,7 @@ class FrontendProxyController extends StorefrontController
         $response = $this->paymentController->getPaymentStatus($request, $context);
         $adyenCustomerId = $request->getSession()->get('adyenCustomerId');
 
-        if ($adyenCustomerId !== null) {
+        if ($adyenCustomerId !== null && !$context->getCustomer()) {
             $this->expressCheckoutController->changeContext($adyenCustomerId, $context);
         }
 
