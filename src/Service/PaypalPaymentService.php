@@ -43,6 +43,8 @@ use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
+use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
 use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -176,15 +178,14 @@ class PaypalPaymentService
             $this->paymentResponseHandler
                 ->handleShopwareApis($paymentTransaction, $context, [$paymentDetailsResponse]);
         } catch (PaymentCancelledException $exception) {
-            throw PaymentException::customerCanceled(
-                $order->getTransactions()->first()->getId(),
+            throw new CustomerCanceledAsyncPaymentException(
+                $order->getPrimaryOrderTransactionId() ?? '',
                 $exception->getMessage()
             );
         } catch (PaymentFailedException $exception) {
-            throw PaymentException::asyncFinalizeInterrupted(
-                $order->getTransactions()->first()->getId(),
-                $exception->getMessage()
-            );
+            throw new AsyncPaymentFinalizeException(
+                $order->getPrimaryOrderTransactionId() ?? '',
+                $exception->getMessage());
         }
 
         return $order->getId();

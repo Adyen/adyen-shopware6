@@ -528,7 +528,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     ? PaymentRequestService::SHOPPER_INTERACTION_CONTAUTH
                     : PaymentRequestService::SHOPPER_INTERACTION_ECOMMERCE
             );
-        } catch (PaymentException $exception) {
+        } catch (AsyncPaymentProcessException $exception) {
             $this->logger->error($exception->getMessage());
 
             throw $exception;
@@ -539,10 +539,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $exception->getMessage()
             );
             $this->logger->error($message);
-            throw PaymentException::asyncProcessInterrupted(
-                $transaction->getOrder()->getTransactions()->first()->getId(),
-                $message
-            );
+            throw new AsyncPaymentProcessException($transaction->getOrderTransaction()->getId(), $message);
         }
     }
 
@@ -572,7 +569,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             );
             $this->displaySafeErrorMessages($exception);
             $this->logger->error($message);
-            throw PaymentException::asyncProcessInterrupted($transactionId, $message);
+            throw new AsyncPaymentProcessException($transactionId, $message);
         }
         $this->paymentResults[] = $this->paymentResponseHandler
             ->handlePaymentResponse($response, $transaction->getOrderTransaction(), false);
