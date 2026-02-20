@@ -38,21 +38,33 @@ class RefundEntityDefinition extends EntityDefinition
 {
     public const ENTITY_NAME = 'adyen_refund';
 
+    /**
+     * @return string
+     */
     public function getEntityName(): string
     {
         return self::ENTITY_NAME;
     }
 
+    /**
+     * @return string
+     */
     public function getEntityClass(): string
     {
         return RefundEntity::class;
     }
 
+    /**
+     * @return string
+     */
     public function getCollectionClass(): string
     {
         return RefundEntityCollection::class;
     }
 
+    /**
+     * @return FieldCollection
+     */
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([

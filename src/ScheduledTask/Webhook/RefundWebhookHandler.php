@@ -74,7 +74,9 @@ class RefundWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
+     *
      * @return void
+     *
      * @throws AdyenException
      */
     public function handleWebhook(
@@ -95,7 +97,9 @@ class RefundWebhookHandler implements WebhookHandlerInterface
      * @param OrderTransactionEntity $orderTransactionEntity
      * @param NotificationEntity $notificationEntity
      * @param Context $context
+     *
      * @return void
+     *
      * @throws AdyenException
      * @throws Exception
      */
@@ -105,7 +109,7 @@ class RefundWebhookHandler implements WebhookHandlerInterface
         Context $context
     ): void {
         // Determine whether refund was full or partial.
-        $refundedAmount = (int) $notificationEntity->getAmountValue();
+        $refundedAmount = (int)$notificationEntity->getAmountValue();
 
         $currencyUtil = new Currency();
         $totalPrice = $orderTransactionEntity->getAmount()->getTotalPrice();
@@ -141,7 +145,7 @@ class RefundWebhookHandler implements WebhookHandlerInterface
 
             $this->adyenPaymentService->updateTotalRefundedAmount(
                 $adyenPayment,
-                (int) $notificationEntity->getAmountValue()
+                (int)$notificationEntity->getAmountValue()
             );
         } catch (Exception $e) {
             $this->logger->error(
@@ -160,7 +164,9 @@ class RefundWebhookHandler implements WebhookHandlerInterface
     /**
      * @param OrderTransactionEntity $orderTransactionEntity
      * @param NotificationEntity $notificationEntity
+     *
      * @return void
+     *
      * @throws AdyenException
      */
     private function handleFailedNotification(

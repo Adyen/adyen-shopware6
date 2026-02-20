@@ -37,6 +37,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
  */
 class PaymentCaptureEntityCollection extends EntityCollection
 {
+    /**
+     * @return string
+     */
     protected function getExpectedClass(): string
     {
         return PaymentCaptureEntity::class;

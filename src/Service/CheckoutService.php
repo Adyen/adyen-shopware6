@@ -23,19 +23,24 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Service\Checkout;
 
 class CheckoutService extends Checkout
 {
     /**
-     * @var ClientService
+     * @var Client
      */
-    private $client;
+    private Client $client;
 
-    public function __construct(
-        Client $client
-    ) {
+    /**
+     * @param Client $client
+     *
+     * @throws AdyenException
+     */
+    public function __construct(Client $client)
+    {
         $this->client = $client;
         parent::__construct($this->client);
     }

@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Entity\PaymentResponse;
 
+use DateTimeInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -34,33 +35,32 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
-    protected $orderTransactionId;
+    protected string $orderTransactionId;
 
     /**
      * @var OrderTransactionEntity
      */
-    protected $orderTransaction;
+    protected OrderTransactionEntity $orderTransaction;
 
     /**
      * @var string
      */
-    protected $resultCode;
+    protected string $resultCode;
 
     /**
      * @var string
      */
-    protected $response;
+    protected string $response;
 
     /**
-     * @var \DateTimeInterface|null
+     * @var DateTimeInterface|null
      */
     protected $createdAt;
 
     /**
      * @var string
      */
-    protected $pspreference;
-
+    protected string $pspreference;
 
     /**
      * @return string
@@ -102,7 +102,7 @@ class PaymentResponseEntity extends Entity
         return $this->resultCode;
     }
 
-     /**
+    /**
      * @param string $resultCode
      */
     public function setResultCode(string $resultCode): void
@@ -142,12 +142,12 @@ class PaymentResponseEntity extends Entity
         $this->pspreference = $pspreference;
     }
 
-    public function getCreatedAt(): ?\DateTimeInterface
+    public function getCreatedAt(): ?DateTimeInterface
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(?\DateTimeInterface $createdAt): void
+    public function setCreatedAt(?DateTimeInterface $createdAt): void
     {
         $this->createdAt = $createdAt;
     }

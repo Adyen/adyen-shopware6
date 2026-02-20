@@ -22,6 +22,9 @@ class CancellationWebhookHandler implements WebhookHandlerInterface
 
     private OrderTransactionStateHandler $orderTransactionStateHandler;
 
+    /**
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     */
     public function __construct(OrderTransactionStateHandler $orderTransactionStateHandler)
     {
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;

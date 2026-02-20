@@ -9,11 +9,12 @@ class DataArrayValidator
      *
      * @param array $array
      * @param array $approvedKeys
+     *
      * @return array
      */
     public static function getArrayOnlyWithApprovedKeys(array $array, array $approvedKeys): array
     {
-        $result = array();
+        $result = [];
 
         foreach ($approvedKeys as $approvedKey) {
             if (isset($array[$approvedKey])) {

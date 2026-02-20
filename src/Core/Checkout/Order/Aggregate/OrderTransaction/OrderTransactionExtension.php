@@ -44,6 +44,11 @@ class OrderTransactionExtension extends EntityExtension
         return OrderTransactionDefinition::class;
     }
 
+    /**
+     * @param FieldCollection $collection
+     *
+     * @return void
+     */
     public function extendFields(FieldCollection $collection): void
     {
         $field = new OneToManyAssociationField(

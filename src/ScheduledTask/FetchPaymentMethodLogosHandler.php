@@ -63,6 +63,13 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
      */
     private bool $enableUrlUploadFeature;
 
+    /**
+     * @param EntityRepository $scheduledTaskRepository
+     * @param MediaService $mediaService
+     * @param EntityRepository $paymentMethodRepository
+     * @param $mediaRepository
+     * @param bool $enableUrlUploadFeature
+     */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
         MediaService $mediaService,
@@ -77,11 +84,17 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         $this->enableUrlUploadFeature = $enableUrlUploadFeature;
     }
 
+    /**
+     * @return iterable
+     */
     public static function getHandledMessages(): iterable
     {
         return [ FetchPaymentMethodLogos::class ];
     }
 
+    /**
+     * @return void
+     */
     public function run(): void
     {
         if (!$this->enableUrlUploadFeature) {
@@ -132,6 +145,11 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         }
     }
 
+    /**
+     * @param PaymentMethodInterface $paymentMethod
+     *
+     * @return MediaFile|null
+     */
     private function fetchLogoFromUrl(PaymentMethodInterface $paymentMethod): ?MediaFile
     {
         $source = sprintf(
@@ -153,6 +171,14 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         return $media;
     }
 
+    /**
+     * @param MediaFile $media
+     * @param Context $context
+     * @param string $filename
+     * @param string $paymentMethodEntityId
+     *
+     * @return void
+     */
     private function attachLogoToPaymentMethod(
         MediaFile $media,
         Context $context,

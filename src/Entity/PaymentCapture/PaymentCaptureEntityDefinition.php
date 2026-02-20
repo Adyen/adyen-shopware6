@@ -38,21 +38,33 @@ class PaymentCaptureEntityDefinition extends EntityDefinition
 {
     public const ENTITY_NAME = 'adyen_payment_capture';
 
+    /**
+     * @return string
+     */
     public function getEntityName(): string
     {
         return self::ENTITY_NAME;
     }
 
+    /**
+     * @return string
+     */
     public function getEntityClass(): string
     {
         return PaymentCaptureEntity::class;
     }
 
+    /**
+     * @return string
+     */
     public function getCollectionClass(): string
     {
         return PaymentCaptureEntityCollection::class;
     }
 
+    /**
+     * @return FieldCollection
+     */
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([

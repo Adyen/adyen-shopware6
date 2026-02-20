@@ -79,7 +79,7 @@ class DisablePaymentMethodCommand extends Command
                 $message = 'Payment method is disabled successfully.';
                 $output->writeln($message);
             } else {
-                throw new \Exception('Invalid parameter! For usage please check manual --help.');
+                throw new Exception('Invalid parameter! For usage please check manual --help.');
             }
         } catch (Exception $e) {
             $output->writeln($e->getMessage());
