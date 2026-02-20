@@ -107,9 +107,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private RequestStack $requestStack;
 
     /**
-     * @var AbstractCartPersister
+     * @var AbstractCartPersister $cartPersister
      */
-    private AbstractCartPersister $cartPersister;
+    private $cartPersister;
 
     /**
      * @var CartCalculator
@@ -142,9 +142,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private AbstractSalesChannelContextFactory $salesChannelContextFactory;
 
     /**
-     * @var EntityRepository
+     * @var EntityRepository $paymentMethodRepository
      */
-    private EntityRepository $paymentMethodRepository;
+    private $paymentMethodRepository;
 
     /**
      * PaymentSubscriber constructor.
