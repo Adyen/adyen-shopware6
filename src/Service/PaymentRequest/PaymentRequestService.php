@@ -550,7 +550,7 @@ class PaymentRequestService
         $paymentRequest->setDateOfBirth($shopperDob);
 
         // Country code
-        $countryCode = $stateData['countryCode'];
+        $countryCode = $stateData['countryCode'] ?? '';
 
         if (empty($countryCode) &&
             $customer->getActiveBillingAddress() &&
