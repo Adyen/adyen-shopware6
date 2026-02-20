@@ -27,7 +27,6 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
 
-use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
@@ -57,6 +56,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
