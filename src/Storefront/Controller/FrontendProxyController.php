@@ -29,29 +29,31 @@ use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
 use Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
+use Adyen\Shopware\Exception\ResolveCountryException;
+use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\PaypalPaymentService;
 use Adyen\Shopware\Util\ShopwarePaymentTokenValidator;
 use Error;
 use Exception;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Exception\InvalidCartException;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\Exception\EmptyCartException;
-use Shopware\Core\Checkout\Order\SalesChannel\SetPaymentOrderRouteResponse;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopware\Core\System\SalesChannel\ContextTokenResponse;
-use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
+use Symfony\Component\Routing\Annotation\Route;
+use OpenApi\Annotations as OA;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -69,11 +71,6 @@ class FrontendProxyController extends StorefrontController
      * @var CartService
      */
     private CartService $cartService;
-
-    /**
-     * @var AbstractContextSwitchRoute
-     */
-    private AbstractContextSwitchRoute $contextSwitchRoute;
 
     /**
      * @var AbstractHandlePaymentMethodRoute
@@ -121,9 +118,18 @@ class FrontendProxyController extends StorefrontController
     private RequestStack $requestStack;
 
     /**
+     * @var PaypalPaymentService $paypalPaymentService
+     */
+    private PaypalPaymentService $paypalPaymentService;
+
+    /**
+     * @var LoggerInterface $logger
+     */
+    private LoggerInterface $logger;
+
+    /**
      * @param AbstractCartOrderRoute $cartOrderRoute
      * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
-     * @param AbstractContextSwitchRoute $contextSwitchRoute
      * @param CartService $cartService
      * @param RouterInterface $router
      * @param PaymentController $paymentController
@@ -133,25 +139,27 @@ class FrontendProxyController extends StorefrontController
      * @param ShopwarePaymentTokenValidator $paymentTokenValidator
      * @param AdyenPaymentService $adyenPaymentService
      * @param RequestStack $requestStack
+     * @param PaypalPaymentService $paypalPaymentService
+     * @param LoggerInterface $logger
      */
     public function __construct(//NOSONAR
         AbstractCartOrderRoute $cartOrderRoute,//NOSONAR
         AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,//NOSONAR
-        AbstractContextSwitchRoute $contextSwitchRoute,//NOSONAR
         CartService $cartService,//NOSONAR
         RouterInterface $router,//NOSONAR
         PaymentController $paymentController,//NOSONAR
         OrderApiController $orderApiController,//NOSONAR
         DonateController $donateController,//NOSONAR
-        ExpressCheckoutController        $expressCheckoutController,
-        ShopwarePaymentTokenValidator    $paymentTokenValidator,//NOSONAR
-        AdyenPaymentService         $adyenPaymentService,//NOSONAR
-        RequestStack $requestStack//NOSONAR
+        ExpressCheckoutController $expressCheckoutController,
+        ShopwarePaymentTokenValidator $paymentTokenValidator,//NOSONAR
+        AdyenPaymentService $adyenPaymentService,//NOSONAR
+        RequestStack $requestStack,//NOSONAR
+        PaypalPaymentService $paypalPaymentService,//NOSONAR
+        LoggerInterface $logger//NOSONAR
     ) {//NOSONAR
         $this->cartOrderRoute = $cartOrderRoute;
         $this->cartService = $cartService;
         $this->handlePaymentMethodRoute = $handlePaymentMethodRoute;
-        $this->contextSwitchRoute = $contextSwitchRoute;
         $this->router = $router;
         $this->paymentController = $paymentController;
         $this->orderApiController = $orderApiController;
@@ -160,29 +168,8 @@ class FrontendProxyController extends StorefrontController
         $this->paymentTokenValidator = $paymentTokenValidator;
         $this->adyenPaymentService = $adyenPaymentService;
         $this->requestStack = $requestStack;
-    }
-
-    /**
-     * @return JsonResponse|ContextTokenResponse
-     *
-     * @deprecated This method is deprecated and will be removed in future versions.
-     * @Route(
-     *     "/adyen/proxy-switch-context",
-     *     name="payment.adyen.proxy-switch-context",
-     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *     methods={"PATCH"}
-     * )
-     */
-    public function switchContext(
-        Request $request,
-        RequestDataBag $data,
-        SalesChannelContext $context
-    ) {
-        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
-            return new JsonResponse(null, 401);
-        }
-
-        return $this->contextSwitchRoute->switchContext($data, $context);
+        $this->paypalPaymentService = $paypalPaymentService;
+        $this->logger = $logger;
     }
 
     /**
@@ -270,6 +257,10 @@ class FrontendProxyController extends StorefrontController
             $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
             $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
             $this->requestStack->getSession()->set('adyenCustomerId', $cartData['customerId']);
+            $this->requestStack->getSession()->set(
+                'adyenFormattedHandlerIdentifier',
+                $data->get('formattedHandlerIdentifier') ?? ''
+            );
 
             return new JsonResponse(['id' => $order->getId()]);
         } catch (InvalidCartException|EmptyCartException|Error|Exception $exception) {
@@ -407,6 +398,7 @@ class FrontendProxyController extends StorefrontController
      *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *     methods={"POST"}
      * )
+     * @throws \JsonException
      */
     public function paymentDetails(Request $request, SalesChannelContext $context): JsonResponse
     {
@@ -414,7 +406,9 @@ class FrontendProxyController extends StorefrontController
             return new JsonResponse(null, 401);
         }
 
-        return $this->paymentController->postPaymentDetails($request, $context);
+        $formattedHandler = $request->getSession()->get('adyenFormattedHandlerIdentifier') ?? '';
+
+        return $this->paymentController->postPaymentDetails($request, $context, $formattedHandler);
     }
 
     /**
@@ -432,23 +426,6 @@ class FrontendProxyController extends StorefrontController
         }
 
         return $this->paymentController->updatePaymentMethod($request, $context);
-    }
-
-    /**
-     * @Route(
-     *     "/adyen/proxy-cancel-order-transaction",
-     *     name="payment.adyen.proxy-cancel-order-transaction",
-     *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
-     *     methods={"POST"}
-     * )
-     */
-    public function cancelOrderTransaction(Request $request, SalesChannelContext $context): JsonResponse
-    {
-        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
-            return new JsonResponse(null, 401);
-        }
-
-        return $this->paymentController->cancelOrderTransaction($request, $context);
     }
 
     /**
@@ -566,15 +543,218 @@ class FrontendProxyController extends StorefrontController
      *     defaults={"XmlHttpRequest"=true, "csrf_protected": false},
      *     methods={"POST"}
      * )
+     * @throws \JsonException
      */
     public function payPalUpdateOrder(
-        Request             $request,
+        Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         if ($salesChannelContext->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
             return new JsonResponse(null, 401);
         }
 
-        return $this->expressCheckoutController->updatePayPalOrder($request, $salesChannelContext);
+        $cartToken = $this->getCartTokenFromSession($request);
+
+        return $this->expressCheckoutController->updatePayPalOrder($request, $salesChannelContext, $cartToken);
+    }
+
+    /**
+     * @Route(
+     *      "/adyen/proxy-paypal-order",
+     *      name="payment.adyen.proxy-paypal-order",
+     *      defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *      methods={"POST"}
+     *  )
+     *
+     * @param Request $request
+     * @param SalesChannelContext $context
+     *
+     * @return JsonResponse
+     *
+     * @throws AdyenException
+     */
+
+    public function paypalOrder(Request $request, SalesChannelContext $context): JsonResponse
+    {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
+        $cart = $this->cartService->getCart($context->getToken(), $context);
+        $stateData = $request->get('stateData') ?? [];
+
+        return new JsonResponse(
+            $this->paypalPaymentService->createPayPalPaymentRequest(
+                $cart,
+                $context,
+                json_decode($stateData, true)
+            )
+        );
+    }
+
+    /**
+     * @Route(
+     *      "/adyen/proxy-finalize-paypal-order",
+     *      name="payment.adyen.proxy-paypal-order-finalize",
+     *      defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *      methods={"POST"}
+     *  )
+     *
+     * @param Request $request
+     * @param RequestDataBag $dataBag
+     * @param SalesChannelContext $context
+     *
+     * @return JsonResponse
+     */
+    public function finalizePaypalOrder(
+        Request $request,
+        RequestDataBag $dataBag,
+        SalesChannelContext $context
+    ): JsonResponse {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
+        $cart = $this->cartService->getCart($context->getToken(), $context);
+        $stateData = $request->get('stateData') ?? '';
+
+        try {
+            $orderId = $this->paypalPaymentService->finalizePaypalPayment(
+                $context,
+                $cart,
+                $request,
+                $dataBag,
+                json_decode($stateData, true)
+            );
+
+            return new JsonResponse([
+                'redirectUrl' => $this->router->generate(
+                    'frontend.checkout.finish.page',
+                    ['orderId' => $orderId],
+                    UrlGeneratorInterface::ABSOLUTE_URL
+                )
+            ]);
+        } catch (Exception $exception) {
+            $this->logger->error('Error during finalizing PayPal order. Reason: ' . $exception->getMessage());
+
+            return new JsonResponse(null, 400);
+        }
+    }
+
+    /**
+     * @Route(
+     *      "/adyen/proxy-paypal-express-order",
+     *      name="payment.adyen.proxy-paypal-express-order",
+     *       defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *       methods={"POST"}
+     *  )
+     *
+     * @param Request $request
+     * @param RequestDataBag $data
+     * @param SalesChannelContext $context
+     *
+     * @return JsonResponse
+     *
+     * @throws AdyenException
+     * @throws ResolveCountryException
+     * @throws ResolveShippingMethodException
+     */
+    public function paypalExpressCheckoutOrder(
+        Request $request,
+        RequestDataBag $data,
+        SalesChannelContext $context
+    ): JsonResponse {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
+        $cartData = $this->expressCheckoutController->createCartForPayPalExpressCheckout(
+            $data,
+            $context
+        );
+
+        $cart = $cartData['cart'];
+        /** @var  SalesChannelContext $updatedSalesChannelContext */
+        $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
+        $stateData = $request->get('stateData') ?? '';
+        $this->requestStack->getSession()->set('adyenCartToken', $cart->getToken());
+
+        return new JsonResponse(
+            $this->paypalPaymentService->createPayPalExpressPaymentRequest(
+                $cartData,
+                $context,
+                $updatedSalesChannelContext,
+                json_decode($stateData, true)
+            )
+        );
+    }
+
+    /**
+     * @Route(
+     *       "/adyen/proxy-paypal-express-order-finalize",
+     *       name="payment.adyen.proxy-paypal-express-order-finalize",
+     *        defaults={"XmlHttpRequest"=true, "csrf_protected": false},
+     *        methods={"POST"}
+     *   )
+     *
+     * @param Request $request
+     * @param RequestDataBag $dataBag
+     * @param SalesChannelContext $context
+     *
+     * @return JsonResponse
+     */
+    public function finalizePaypalExpressOrder(
+        Request $request,
+        RequestDataBag $dataBag,
+        SalesChannelContext $context
+    ): JsonResponse {
+        if ($context->getToken() !== $request->getSession()->get('adyenSwContextToken')) {
+            return new JsonResponse(null, 401);
+        }
+
+        $cartToken = $this->getCartTokenFromSession($request);
+        $stateData = $request->get('stateData') ?? [];
+        $newAddress = $request->get('newAddress') ?? [];
+
+        try {
+            $orderId = $this->paypalPaymentService->finalizeExpressPaypalPayment(
+                $cartToken,
+                $context,
+                $request,
+                $dataBag,
+                json_decode($stateData, true),
+                $newAddress
+            );
+
+            return new JsonResponse([
+                'redirectUrl' => $this->router->generate(
+                    'frontend.checkout.finish.page',
+                    ['orderId' => $orderId],
+                    UrlGeneratorInterface::ABSOLUTE_URL
+                )
+            ]);
+        } catch (Exception $exception) {
+            $this->logger->error(
+                'Error during finalizing PayPal express order. Reason: ' . $exception->getMessage()
+            );
+
+            return new JsonResponse(null, 400);
+        }
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return string
+     */
+    private function getCartTokenFromSession(Request $request): string
+    {
+        $cartToken = $request->getSession()->get('adyenCartToken');
+
+        if ($cartToken === null) {
+            throw new UnauthorizedHttpException('Unauthorized.');
+        }
+
+        return $cartToken;
     }
 }

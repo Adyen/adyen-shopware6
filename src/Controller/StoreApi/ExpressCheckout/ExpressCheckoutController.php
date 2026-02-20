@@ -29,6 +29,7 @@ use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ExpressCheckoutService;
 use Exception;
+use JsonException;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -37,6 +38,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * Class ExpressCheckoutController
+ *
  * @package Adyen\Shopware\Controller\StoreApi\ExpressCheckout
  * @Route(defaults={"_routeScope"={"store-api"}})
  */
@@ -52,9 +54,8 @@ class ExpressCheckoutController
      *
      * @param ExpressCheckoutService $expressCheckoutService
      */
-    public function __construct(
-        ExpressCheckoutService $expressCheckoutService
-    ) {
+    public function __construct(ExpressCheckoutService $expressCheckoutService)
+    {
         $this->expressCheckoutService = $expressCheckoutService;
     }
 
@@ -67,10 +68,11 @@ class ExpressCheckoutController
      *
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return JsonResponse
      */
     public function getExpressCheckoutConfig(
-        Request             $request,
+        Request $request,
         SalesChannelContext $salesChannelContext
     ): JsonResponse {
         $productId = $request->request->get('productId');
@@ -140,11 +142,12 @@ class ExpressCheckoutController
      *
      * @param RequestDataBag $data
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     *
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
      * @throws Exception
      */
     public function createCart(
-        RequestDataBag      $data,
+        RequestDataBag $data,
         SalesChannelContext $salesChannelContext
     ): array {
         $productId = $data->get('productId');
@@ -173,14 +176,46 @@ class ExpressCheckoutController
     }
 
     /**
+     * @param RequestDataBag $data
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return array
+     *
+     * @throws ResolveCountryException
+     * @throws ResolveShippingMethodException
+     * @throws Exception
+     */
+    public function createCartForPayPalExpressCheckout(
+        RequestDataBag $data,
+        SalesChannelContext $salesChannelContext
+    ): array {
+        $customer = $salesChannelContext->getCustomer();
+
+        if ($customer && !$customer->getGuest()) {
+            return $this->createCart($data, $salesChannelContext);
+        }
+
+        $productId = $data->get('productId');
+        $quantity = (int)$data->get('quantity');
+        $formattedHandlerIdentifier = $data->get('formattedHandlerIdentifier') ?? '';
+
+        return $this->expressCheckoutService->createCartForPayPalGuestExpressCheckout(
+            $productId,
+            $quantity,
+            $salesChannelContext,
+            $formattedHandlerIdentifier
+        );
+    }
+
+    /**
      * Updates the SalesChannelContext for guest customer.
      *
      * @param string $customerId The ID of the customer whose context should be updated.
      * @param SalesChannelContext $salesChannelContext The existing sales channel context to be updated.
      *
+     * @return SalesChannelContext The updated SalesChannelContext with the customer's details.
      * @throws \Exception If the customer cannot be found.
      *
-     * @return SalesChannelContext The updated SalesChannelContext with the customer's details.
      */
     public function changeContext(string $customerId, SalesChannelContext $salesChannelContext): SalesChannelContext
     {
@@ -190,16 +225,19 @@ class ExpressCheckoutController
     /**
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     * @param string $cartToken
+     *
      * @return JsonResponse
      *
+     * @throws JsonException
      */
     public function updatePayPalOrder(
-        Request             $request,
-        SalesChannelContext $salesChannelContext
+        Request $request,
+        SalesChannelContext $salesChannelContext,
+        string $cartToken
     ): JsonResponse {
         $newAddress = $request->request->all()['newAddress'] ?? null;
         $newShipping = $request->request->all()['newShippingMethod'] ?? null;
-        $orderId = $request->request->all()['orderId'] ?? '';
 
         if ($newAddress === null) {
             $newAddress = [];
@@ -214,7 +252,7 @@ class ExpressCheckoutController
 
         try {
             $paypalUpdateOrderResponse = $this->expressCheckoutService->paypalUpdateOrder(
-                $orderId,
+                $cartToken,
                 [
                     'paymentData' => $paymentData,
                     'pspReference' => $pspReference,

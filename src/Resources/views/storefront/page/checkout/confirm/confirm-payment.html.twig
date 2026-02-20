@@ -46,7 +46,6 @@
                  data-payment-finish-url="{{ adyenFrontendData.paymentFinishUrl }}"
                  data-payment-error-url="{{ adyenFrontendData.paymentErrorUrl }}"
                  data-update-payment-url="{{ adyenFrontendData.updatePaymentUrl }}"
-                 data-cancel-order-transaction-url="{{ adyenFrontendData.cancelOrderTransactionUrl }}"
                  data-order-id="{{ adyenFrontendData.orderId }}"
                  data-currency="{{ adyenFrontendData.currency }}"
                  data-amount="{{ adyenFrontendData.amount }}"
@@ -65,6 +64,8 @@
                  data-translation-adyen-giftcard-remaining-amount="{{ "adyen.giftcard.remainingAmount" | trans }}"
                  data-google-merchant-id="{{ adyenFrontendData.googleMerchantId }}"
                  data-gateway-merchant-id="{{ adyenFrontendData.gatewayMerchantId }}"
+                 data-paypal-order-url="{{ adyenFrontendData.paypalOrderUrl }}"
+                 data-paypal-order-finalize-url="{{ adyenFrontendData.paypalOrderFinalizeUrl }}"
             >
             </div>
             <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>

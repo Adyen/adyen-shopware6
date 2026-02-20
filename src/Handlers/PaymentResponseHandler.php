@@ -53,44 +53,37 @@ class PaymentResponseHandler
     const PRESENT_TO_SHOPPER = 'PresentToShopper';
     const ERROR = 'Error';
     const CANCELLED = 'Cancelled';
-
-    const PSP_REFERENCE = 'pspReference';
     const ORIGINAL_PSP_REFERENCE = 'originalPspReference';
     const ADDITIONAL_DATA = 'additionalData';
     const ACTION = 'action';
     const DONATION_TOKEN = 'donationToken';
 
-    // Merchant reference parameter in return GET parameters list
-    const ADYEN_MERCHANT_REFERENCE = 'adyenMerchantReference';
-
-    // Merchant reference key in API response
-    const MERCHANT_REFERENCE = 'merchantReference';
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @var PaymentResponseService
      */
-    private $paymentResponseService;
+    private PaymentResponseService $paymentResponseService;
 
     /**
      * @var OrderTransactionStateHandler
      */
-    private $transactionStateHandler;
+    private OrderTransactionStateHandler $transactionStateHandler;
 
     private $orderTransactionRepository;
 
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var CaptureService
      */
-    private $captureService;
+    private CaptureService $captureService;
 
     /**
      * @param LoggerInterface $logger
@@ -120,6 +113,7 @@ class PaymentResponseHandler
      * @param PaymentResponse|PaymentDetailsResponse $response
      * @param OrderTransactionEntity $orderTransaction
      * @param bool $upsertResponse
+     *
      * @return PaymentResponseHandlerResult
      */
     public function handlePaymentResponse(
@@ -220,6 +214,7 @@ class PaymentResponseHandler
      * @param AsyncPaymentTransactionStruct $transaction
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentResponseHandlerResult[] $paymentResponseHandlerResults
+     *
      * @throws PaymentCancelledException
      * @throws PaymentFailedException
      */
@@ -253,11 +248,13 @@ class PaymentResponseHandler
             $pspReference = $result->getPspReference();
             if (empty($storedTransactionCustomFields[self::ORIGINAL_PSP_REFERENCE])
                 && !empty($pspReference)
-                && !$result->isGiftcardOrder()) {
+                && (!is_callable([$result, 'isGiftcardOrder']) || !$result->isGiftcardOrder())) {
                 $transactionCustomFields[self::ORIGINAL_PSP_REFERENCE] = $pspReference;
             }
 
-            if ($result->getAction() && empty($storedTransactionCustomFields[self::ACTION])) {
+            if (is_callable([$result, 'getAction']) &&
+                $result->getAction() &&
+                empty($storedTransactionCustomFields[self::ACTION])) {
                 $transactionCustomFields[self::ACTION] = $result->getAction();
             }
 
@@ -265,7 +262,7 @@ class PaymentResponseHandler
             $additionalData = $result->getAdditionalData();
             if (empty($storedTransactionCustomFields[self::ADDITIONAL_DATA])
                 && !empty($additionalData)
-                && !$result->isGiftcardOrder()) {
+                && (!is_callable([$result, 'isGiftcardOrder']) || !$result->isGiftcardOrder())) {
                 $transactionCustomFields[self::ADDITIONAL_DATA] = $additionalData;
             }
         }
@@ -404,6 +401,7 @@ class PaymentResponseHandler
      * @param string $transactionStateTechnicalName
      * @param string $resultCode
      * @param bool $requiresManualCapture
+     *
      * @return bool
      * @throws PaymentCancelledException
      */
