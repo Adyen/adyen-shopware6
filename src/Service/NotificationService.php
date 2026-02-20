@@ -26,6 +26,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler;
+use DateInvalidOperationException;
 use DateTimeInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -40,13 +41,19 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 class NotificationService
 {
     /** @var EntityRepository */
-    protected $notificationRepository;
+    protected EntityRepository $notificationRepository;
 
+    /**
+     * @param EntityRepository $notificationRepository
+     */
     public function __construct(EntityRepository $notificationRepository)
     {
         $this->notificationRepository = $notificationRepository;
     }
 
+    /**
+     * @return int
+     */
     public function getNumberOfUnprocessedNotifications(): int
     {
         return $this->notificationRepository->search(
@@ -55,6 +62,11 @@ class NotificationService
         )->count();
     }
 
+    /**
+     * @param array $notification
+     *
+     * @return bool
+     */
     public function isDuplicateNotification(array $notification): bool
     {
         $filters = [];
@@ -77,6 +89,11 @@ class NotificationService
         )->count() > 0;
     }
 
+    /**
+     * @param array $notification
+     *
+     * @return void
+     */
     public function insertNotification(array $notification): void
     {
         //TODO Handle the notification as a model object to avoid this?
@@ -100,7 +117,7 @@ class NotificationService
             $fields['paymentMethod'] = $notification['paymentMethod'];
         }
         if (isset($notification['amount']['value'])) {
-            $fields['amountValue'] = (string) $notification['amount']['value'];
+            $fields['amountValue'] = (string)$notification['amount']['value'];
         }
         if (isset($notification['amount']['currency'])) {
             $fields['amountCurrency'] = $notification['amount']['currency'];
@@ -121,6 +138,12 @@ class NotificationService
         );
     }
 
+    /**
+     * @param string $notificationId
+     * @param DateTimeInterface $scheduledProcessingTime
+     *
+     * @return void
+     */
     public function setNotificationSchedule(string $notificationId, DateTimeInterface $scheduledProcessingTime): void
     {
         $this->notificationRepository->update(
@@ -134,7 +157,12 @@ class NotificationService
         );
     }
 
-    public function getNotificationById($notificationId)
+    /**
+     * @param $notificationId
+     *
+     * @return \Shopware\Core\Framework\DataAbstractionLayer\Search\TElement|null
+     */
+    public function getNotificationById($notificationId): ?\Shopware\Core\Framework\DataAbstractionLayer\Search\TElement
     {
         return $this->notificationRepository->search(
             (new Criteria())->addFilter(new EqualsFilter('id', $notificationId)),
@@ -142,6 +170,11 @@ class NotificationService
         )->first();
     }
 
+    /**
+     * @param string $orderNumber
+     *
+     * @return EntityCollection
+     */
     public function getAllNotificationsByOrderNumber(string $orderNumber): EntityCollection
     {
         return $this->notificationRepository->search(
@@ -150,6 +183,9 @@ class NotificationService
         )->getEntities();
     }
 
+    /**
+     * @return EntityCollection
+     */
     public function getUnscheduledNotifications(): EntityCollection
     {
         return $this->notificationRepository->search(
@@ -158,12 +194,17 @@ class NotificationService
                 new EqualsFilter('processing', 0),
                 new EqualsFilter('scheduledProcessingTime', null)
             )
-            ->addSorting(new FieldSorting('createdAt'))
-            ->setLimit(100),
+                ->addSorting(new FieldSorting('createdAt'))
+                ->setLimit(100),
             Context::createDefaultContext()
         )->getEntities();
     }
 
+    /**
+     * @return EntityCollection
+     *
+     * @throws DateInvalidOperationException
+     */
     public function getScheduledUnprocessedNotifications(): EntityCollection
     {
         $oneDayAgo = (new \DateTime())->sub(new \DateInterval('P1D'));
@@ -174,7 +215,7 @@ class NotificationService
                 new EqualsFilter('processing', 0),
                 new NotFilter(
                     NotFilter::CONNECTION_AND,
-                    [ new EqualsFilter('scheduledProcessingTime', null) ]
+                    [new EqualsFilter('scheduledProcessingTime', null)]
                 ),
                 new RangeFilter(
                     'scheduledProcessingTime',
@@ -184,12 +225,17 @@ class NotificationService
                     ]
                 )
             )
-            ->addSorting(new FieldSorting('scheduledProcessingTime', FieldSorting::ASCENDING))
-            ->setLimit(100),
+                ->addSorting(new FieldSorting('scheduledProcessingTime', FieldSorting::ASCENDING))
+                ->setLimit(100),
             Context::createDefaultContext()
         )->getEntities();
     }
 
+    /**
+     * @return EntityCollection
+     *
+     * @throws DateInvalidOperationException
+     */
     public function getSkippedUnprocessedNotifications(): EntityCollection
     {
         $oneDayAgo = (new \DateTime())->sub(new \DateInterval('P1D'));
@@ -199,7 +245,7 @@ class NotificationService
                 new EqualsFilter('done', 0),
                 new NotFilter(
                     NotFilter::CONNECTION_AND,
-                    [ new EqualsFilter('scheduledProcessingTime', null) ]
+                    [new EqualsFilter('scheduledProcessingTime', null)]
                 ),
                 new MultiFilter(
                     MultiFilter::CONNECTION_AND,
@@ -231,6 +277,13 @@ class NotificationService
         )->getEntities();
     }
 
+    /**
+     * @param string $notificationId
+     * @param string $property
+     * @param bool $state
+     *
+     * @return void
+     */
     public function changeNotificationState(string $notificationId, string $property, bool $state): void
     {
         $this->notificationRepository->update(
@@ -244,6 +297,13 @@ class NotificationService
         );
     }
 
+    /**
+     * @param string $notificationId
+     * @param string $errorMessage
+     * @param int $errorCount
+     *
+     * @return void
+     */
     public function saveError(string $notificationId, string $errorMessage, int $errorCount): void
     {
         $this->notificationRepository->update(
@@ -263,10 +323,13 @@ class NotificationService
      *
      * @param NotificationEntity $notification
      * @param bool $reschedule
+     *
      * @return \DateTimeInterface|null
      */
-    public function calculateScheduledProcessingTime(NotificationEntity $notification, bool $reschedule = false)
-    {
+    public function calculateScheduledProcessingTime(
+        NotificationEntity $notification,
+        bool $reschedule = false
+    ): \DateTime|DateTimeInterface|null {
         if ($reschedule) {
             $scheduledProcessingTime = new \DateTime();
         } else {
@@ -291,6 +354,7 @@ class NotificationService
 
     /**
      * @param NotificationEntity $notification
+     *
      * @return bool
      */
     public function canBeRescheduled(NotificationEntity $notification): bool

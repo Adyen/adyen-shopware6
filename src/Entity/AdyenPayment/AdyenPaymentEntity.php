@@ -35,57 +35,57 @@ class AdyenPaymentEntity extends Entity
     /**
      * @var string
      */
-    protected $pspreference;
+    protected string $pspreference;
 
     /**
      * @var string
      */
-    protected $originalReference;
+    protected string $originalReference;
 
     /**
      * @var string
      */
-    protected $merchantReference;
+    protected string $merchantReference;
 
     /**
      * @var string
      */
-    protected $merchantOrderReference;
-
-    /**
-     * @var string
-     */
-    protected $orderTransactionId;
-
-    /**
-     * @var string
-     */
-    protected $paymentMethod;
+    protected string $merchantOrderReference;
 
     /**
      * @var int
      */
-    protected $amountValue;
+    protected int $orderTransactionId;
 
     /**
      * @var string
      */
-    protected $amountCurrency;
+    protected string $paymentMethod;
 
     /**
      * @var int
      */
-    protected $totalRefunded;
+    protected int $amountValue;
 
     /**
      * @var string
      */
-    protected $additionalData;
+    protected string $amountCurrency;
+
+    /**
+     * @var int
+     */
+    protected int $totalRefunded;
 
     /**
      * @var string
      */
-    protected $captureMode;
+    protected string $additionalData;
+
+    /**
+     * @var string
+     */
+    protected string $captureMode;
 
     /**
      * @var \DateTimeInterface|null
@@ -167,9 +167,9 @@ class AdyenPaymentEntity extends Entity
     }
 
     /**
-     * @return string
+     * @return int
      */
-    public function getOrderTransactionId(): string
+    public function getOrderTransactionId(): int
     {
         return $this->orderTransactionId;
     }

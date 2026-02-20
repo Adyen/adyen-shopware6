@@ -48,16 +48,14 @@ class PaymentStateDataService
      */
     protected LoggerInterface $logger;
 
-
     /**
      * PaymentStateDataService constructor.
+     *
      * @param EntityRepository $paymentStateDataRepository
      * @param LoggerInterface $logger
      */
-    public function __construct(
-        EntityRepository $paymentStateDataRepository,
-        LoggerInterface $logger
-    ) {
+    public function __construct(EntityRepository $paymentStateDataRepository, LoggerInterface $logger)
+    {
         $this->paymentStateDataRepository = $paymentStateDataRepository;
         $this->logger = $logger;
     }
@@ -66,6 +64,7 @@ class PaymentStateDataService
      * @param string $contextToken
      * @param string $stateData
      * @param array $additionalData
+     *
      * @throws AdyenException
      */
     public function insertPaymentStateData(string $contextToken, string $stateData, array $additionalData = []): void
@@ -92,6 +91,7 @@ class PaymentStateDataService
 
     /**
      * @param string $contextToken
+     *
      * @return PaymentStateDataEntity|null
      */
     public function getPaymentStateDataFromContextToken(string $contextToken): ?PaymentStateDataEntity
@@ -102,6 +102,11 @@ class PaymentStateDataService
         )->first();
     }
 
+    /**
+     * @param string $stateDataId
+     *
+     * @return PaymentStateDataEntity|null
+     */
     public function getPaymentStateDataFromId(string $stateDataId): ?PaymentStateDataEntity
     {
         return $this->paymentStateDataRepository->search(
@@ -110,6 +115,12 @@ class PaymentStateDataService
         )->first();
     }
 
+    /**
+     * @param PaymentStateDataEntity $stateData
+     * @param $newToken
+     *
+     * @return void
+     */
     public function updateStateDataContextToken(PaymentStateDataEntity $stateData, $newToken): void
     {
         $this->paymentStateDataRepository->update([
@@ -133,6 +144,12 @@ class PaymentStateDataService
         );
     }
 
+    /**
+     * @param string $stateDataId
+     * @param SalesChannelContext $context
+     *
+     * @return void
+     */
     public function deletePaymentStateDataFromId(string $stateDataId, SalesChannelContext $context): void
     {
         $stateData = $this->getPaymentStateDataFromId($stateDataId);
@@ -148,6 +165,11 @@ class PaymentStateDataService
         $this->deletePaymentStateData($stateData);
     }
 
+    /**
+     * @param string $contextToken
+     *
+     * @return \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult
+     */
     public function fetchRedeemedGiftCardsFromContextToken(string $contextToken):
     \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult
     {
@@ -166,9 +188,10 @@ class PaymentStateDataService
      *
      * @param mixed $salesChannelContext The sales channel context.
      * @param int|mixed $remainingOrderAmount The remaining order amount.
+     *
      * @return array Array containing 'giftcardDiscount' and 'giftcardBalance'.
-    */
-    public function getGiftcardTotalDiscountAndBalance($salesChannelContext, $remainingOrderAmount): array
+     */
+    public function getGiftcardTotalDiscountAndBalance(mixed $salesChannelContext, mixed $remainingOrderAmount): array
     {
         $fetchedRedeemedGiftcards = $this->fetchRedeemedGiftCardsFromContextToken($salesChannelContext->getToken());
         $totalGiftcardBalance = 0;
@@ -192,6 +215,11 @@ class PaymentStateDataService
         ];
     }
 
+    /**
+     * @param $salesChannelContext
+     *
+     * @return int
+     */
     public function countStoredStateData($salesChannelContext): int
     {
         $stateData = $this->fetchRedeemedGiftCardsFromContextToken(
@@ -200,6 +228,12 @@ class PaymentStateDataService
         return $stateData->getTotal();
     }
 
+    /**
+     * @param $salesChannelContext
+     * @param string $transactionId
+     *
+     * @return array|null
+     */
     public function getStoredStateData($salesChannelContext, string $transactionId): ?array
     {
         // Check for state.data in db using the context token

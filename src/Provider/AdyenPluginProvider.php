@@ -33,18 +33,24 @@ class AdyenPluginProvider implements ResetInterface
     /**
      * @var string|null
      */
-    protected $adyenPluginId = null;
+    protected ?string $adyenPluginId = null;
 
     /**
      * @var PluginIdProvider
      */
-    protected $pluginIdProvider;
+    protected PluginIdProvider $pluginIdProvider;
 
+    /**
+     * @param PluginIdProvider $pluginIdProvider
+     */
     public function __construct(PluginIdProvider $pluginIdProvider)
     {
         $this->pluginIdProvider = $pluginIdProvider;
     }
 
+    /**
+     * @return string
+     */
     public function getAdyenPluginId(): string
     {
         if (isset($this->adyenPluginId)) {
@@ -59,7 +65,10 @@ class AdyenPluginProvider implements ResetInterface
         return $this->adyenPluginId;
     }
 
-    public function reset()
+    /**
+     * @return void
+     */
+    public function reset(): void
     {
         $this->adyenPluginId = null;
     }

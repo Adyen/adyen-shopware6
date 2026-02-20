@@ -31,10 +31,14 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 class PluginPaymentMethodsService
 {
     /** @var AdyenPluginProvider */
-    protected $adyenPluginProvider;
+    protected AdyenPluginProvider $adyenPluginProvider;
 
     protected $paymentMethodRepository;
 
+    /**
+     * @param AdyenPluginProvider $adyenPluginProvider
+     * @param $paymentMethodRepository
+     */
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
         $paymentMethodRepository
@@ -43,7 +47,12 @@ class PluginPaymentMethodsService
         $this->paymentMethodRepository = $paymentMethodRepository;
     }
 
-    public function getPluginPaymentMethods(string $identifier = null): array
+    /**
+     * @param string|null $identifier
+     *
+     * @return array
+     */
+    public function getPluginPaymentMethods(?string $identifier = null): array
     {
         $criteria = new Criteria();
         $criteria->addFilter(
@@ -70,6 +79,7 @@ class PluginPaymentMethodsService
 
     /**
      * @param string $paymentMethod
+     *
      * @return string|null
      */
     public function getGiftcardHandlerIdentifierFromTxVariant(string $paymentMethod): ?string

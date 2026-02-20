@@ -127,6 +127,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     /**
      * @param EntityRepository $scheduledTaskRepository
+     * @param LoggerInterface $logger
      * @param NotificationService $notificationService
      * @param OrderRepository $orderRepository
      * @param EntityRepository $paymentMethodRepository
@@ -159,11 +160,17 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         self::$webhookHandlerFactory = $webhookHandlerFactory;
     }
 
+    /**
+     * @return iterable
+     */
     public static function getHandledMessages(): iterable
     {
-        return [ ProcessNotifications::class ];
+        return [ProcessNotifications::class];
     }
 
+    /**
+     * @return void
+     */
     public function run(): void
     {
         $context = Context::createDefaultContext();
@@ -285,6 +292,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     /**
      * @param NotificationEntity $notification
      * @param string $currentTransactionState
+     *
      * @return ProcessorInterface|null
      */
     private function createProcessor(
@@ -297,8 +305,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 'success' => $notification->isSuccess()
             ]);
 
-            $isManual = (bool) $this->captureService->isManualCaptureActive();
-            $isOnShipment = (bool) $this->captureService->isCaptureOnShipmentEnabled();
+            $isManual = (bool)$this->captureService->isManualCaptureActive();
+            $isOnShipment = (bool)$this->captureService->isCaptureOnShipmentEnabled();
 
             $isAutoCapture = !($isManual || $isOnShipment);
 
@@ -321,15 +329,15 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     /**
      * @param OrderTransactionEntity $orderTransaction
      * @param NotificationEntity $notification
+     *
      * @return string|null
      */
     private function getCurrentTransactionState(
         OrderTransactionEntity $orderTransaction,
         NotificationEntity $notification
     ): ?string {
-        $currentTransactionState = self::WEBHOOK_MODULE_STATE_MAPPING[
-            $orderTransaction->getStateMachineState()->getTechnicalName()
-            ] ?? '';
+        $currentTransactionState =
+            self::WEBHOOK_MODULE_STATE_MAPPING[$orderTransaction->getStateMachineState()->getTechnicalName()] ?? '';
 
         if (empty($currentTransactionState)) {
             $logContext['paymentState'] = $orderTransaction->getStateMachineState()->getTechnicalName();
@@ -348,6 +356,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param OrderEntity $order
      * @param NotificationEntity $notification
      * @param array $logContext
+     *
      * @return OrderTransactionEntity|null
      */
     private function getOrderTransaction(
@@ -392,6 +401,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param NotificationEntity $notification
      * @param Context $context
      * @param array $logContext
+     *
      * @return OrderEntity|null
      */
     private function getOrder(
@@ -438,6 +448,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     /**
      * @param string $notificationId
      * @param string $merchantReference
+     *
      * @return void
      */
     private function markAsProcessing(string $notificationId, string $merchantReference): void
@@ -449,6 +460,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     /**
      * @param string $notificationId
      * @param string|null $merchantReference
+     *
      * @return void
      */
     private function markAsDone(string $notificationId, ?string $merchantReference = null): void
@@ -462,13 +474,14 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param string $notificationId
      * @param string|null $merchantReference
      * @param \DateTime|null $dateTime
+     *
      * @return void
      */
     private function rescheduleNotification(
         string $notificationId,
         ?string $merchantReference = null,
         ?\DateTime $dateTime = null
-    ) {
+    ): void {
         $this->notificationService->changeNotificationState($notificationId, 'processing', false);
         $this->notificationService->setNotificationSchedule($notificationId, $dateTime ?? new \DateTime());
         $this->logger->debug("Payment notification {$notificationId} for order {$merchantReference} rescheduled.");
@@ -476,13 +489,15 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     /**
      * set notification error and increment error count
+     *
      * @param NotificationEntity $notification
      * @param string $errorMessage
+     *
      * @return void
      */
     private function logNotificationFailure(NotificationEntity $notification, string $errorMessage): void
     {
-        $errorCount = (int) $notification->getErrorCount();
+        $errorCount = (int)$notification->getErrorCount();
         $this->notificationService
             ->saveError($notification->getId(), $errorMessage, ++$errorCount);
     }

@@ -27,11 +27,10 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class ContainerParametersService
 {
-
     /**
      * @var ParameterBagInterface
      */
-    private $params;
+    private ParameterBagInterface $params;
 
     /**
      * ContainerParametersService constructor.
@@ -48,7 +47,7 @@ class ContainerParametersService
      *
      * @return mixed
      */
-    public function getApplicationRootDir()
+    public function getApplicationRootDir(): mixed
     {
         return $this->params->get('kernel.project_dir');
     }
@@ -57,9 +56,10 @@ class ContainerParametersService
      * This method returns the value of the defined parameter.
      *
      * @param $parameterName
+     *
      * @return mixed
      */
-    public function getParameter($parameterName)
+    public function getParameter($parameterName): mixed
     {
         return $this->params->get($parameterName);
     }

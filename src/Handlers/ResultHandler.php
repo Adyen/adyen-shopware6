@@ -40,37 +40,39 @@ use Psr\Log\LoggerInterface;
 
 class ResultHandler
 {
-
     const PA_RES = 'PaRes';
     const MD = 'MD';
     const REDIRECT_RESULT = 'redirectResult';
     const PAYLOAD = 'payload';
 
+    /**
+     * @var PaymentResponseService $paymentResponseService
+     */
+    private PaymentResponseService $paymentResponseService;
 
     /**
-     * @var PaymentResponseService
+     * @var LoggerInterface $logger
      */
-    private $paymentResponseService;
+    private LoggerInterface $logger;
 
     /**
-     * @var LoggerInterface
+     * @var PaymentResponseHandler $paymentResponseHandler
      */
-    private $logger;
+    private PaymentResponseHandler $paymentResponseHandler;
 
     /**
-     * @var PaymentResponseHandler
+     * @var PaymentDetailsService $paymentDetailsService
      */
-    private $paymentResponseHandler;
+    private PaymentDetailsService $paymentDetailsService;
 
     /**
-     * @var PaymentDetailsService
+     * @var PaymentResponseHandlerResult $paymentResponseHandlerResult
      */
-    private $paymentDetailsService;
+    private PaymentResponseHandlerResult $paymentResponseHandlerResult;
 
     /**
-     * @var PaymentResponseHandlerResult
+     * @var EntityRepository $orderTransactionRepository
      */
-    private $paymentResponseHandlerResult;
     private EntityRepository $orderTransactionRepository;
 
     /**
@@ -81,6 +83,7 @@ class ResultHandler
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param PaymentDetailsService $paymentDetailsService
      * @param PaymentResponseHandlerResult $paymentResponseHandlerResult
+     * @param EntityRepository $orderTransactionRepository
      */
     public function __construct(
         PaymentResponseService $paymentResponseService,
@@ -102,14 +105,17 @@ class ResultHandler
      * @param PaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
-     * @throws PaymentFailedException
+     *
+     * @return void
+     *
      * @throws PaymentCancelledException
+     * @throws PaymentFailedException
      */
     public function processResult(
         PaymentTransactionStruct $transaction,
         Request $request,
         SalesChannelContext $salesChannelContext
-    ) {
+    ): void {
         $orderTransactionId = $transaction->getOrderTransactionId();
 
         // 1. Load OrderTransaction to get Order ID
@@ -155,7 +161,7 @@ class ResultHandler
 
             // Validate the return
 
-            $paymentDetailRequest = new PaymentDetailsRequest(['details'=>$details]);
+            $paymentDetailRequest = new PaymentDetailsRequest(['details' => $details]);
 
             $result = $this->paymentDetailsService->getPaymentDetails(
                 $paymentDetailRequest,

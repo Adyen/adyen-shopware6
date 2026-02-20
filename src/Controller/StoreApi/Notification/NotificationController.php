@@ -67,7 +67,7 @@ class NotificationController
         methods: ['POST']
     )]
     public function processNotification(
-        string  $salesChannelId,
+        string $salesChannelId,
         Request $request
     ): JsonResponse {
         if (is_null($this->notificationReceiverService->getActiveSalesChannelById($salesChannelId))) {

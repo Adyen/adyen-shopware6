@@ -44,32 +44,32 @@ class ClientService
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var LoggerInterface
      */
-    private $genericLogger;
+    private LoggerInterface $genericLogger;
 
     /**
      * @var LoggerInterface
      */
-    private $apiLogger;
+    private LoggerInterface $apiLogger;
 
     /**
      * @var string
      */
-    private $shopwareVersion;
+    private string $shopwareVersion;
 
     /**
      * @var EntityRepository
      */
-    private $pluginRepository;
+    private EntityRepository $pluginRepository;
 
     /**
      * @var CacheItemPoolInterface
      */
-    private $cache;
+    private CacheItemPoolInterface $cache;
 
     /**
      * Client constructor.
@@ -98,9 +98,13 @@ class ClientService
     }
 
     /**
+     * @param $salesChannelId
+     *
+     * @return Client
+     *
      * @throws AdyenException
      */
-    public function getClient($salesChannelId)
+    public function getClient($salesChannelId): Client
     {
         try {
             if (empty($salesChannelId)) {
@@ -131,7 +135,7 @@ class ClientService
      *
      * @return string
      */
-    public function getModuleVersion()
+    public function getModuleVersion(): string
     {
         try {
             $moduleVersionCacheItem = $this->cache->getItem(self::MODULE_VERSION_CACHE_TAG);
@@ -166,9 +170,10 @@ class ClientService
      * @param string $apiVersion
      * @param string $endpoint
      * @param string $salesChannelId
+     *
      * @return void
      */
-    public function logRequest(array $request, string $apiVersion, string $endpoint, string $salesChannelId)
+    public function logRequest(array $request, string $apiVersion, string $endpoint, string $salesChannelId): void
     {
         $environment = $this->configurationService->getEnvironment($salesChannelId);
         $context = ['apiVersion' => $apiVersion];
@@ -186,9 +191,10 @@ class ClientService
     /**
      * @param array $response
      * @param string $salesChannelId
+     *
      * @return void
      */
-    public function logResponse(array $response, string $salesChannelId)
+    public function logResponse(array $response, string $salesChannelId): void
     {
         $environment = $this->configurationService->getEnvironment($salesChannelId);
         $context = [];
@@ -204,6 +210,7 @@ class ClientService
 
     /**
      * @param array $data
+     *
      * @return array
      */
     private function filterReferences(array $data): array

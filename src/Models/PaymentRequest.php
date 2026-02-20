@@ -252,7 +252,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      *
      * @return string[]
      */
-    public static function openAPITypes()
+    public static function openAPITypes(): array
     {
         return self::$openAPITypes;
     }
@@ -262,7 +262,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      *
      * @return array
      */
-    public static function openAPIFormats()
+    public static function openAPIFormats(): array
     {
         return self::$openAPIFormats;
     }
@@ -519,7 +519,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      *
      * @return string[]
      */
-    public static function attributeMap()
+    public static function attributeMap(): array
     {
         return self::$attributeMap;
     }
@@ -529,7 +529,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      *
      * @return string[]
      */
-    public static function setters()
+    public static function setters(): array
     {
         return self::$setters;
     }
@@ -539,7 +539,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      *
      * @return array
      */
-    public static function getters()
+    public static function getters(): array
     {
         return self::$getters;
     }
@@ -548,6 +548,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      * Checks if a property is nullable
      *
      * @param string $property
+     *
      * @return bool
      */
     public static function isNullable(string $property): bool
@@ -561,7 +562,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      * @param mixed[] $data Associated array of property values
      *                      initializing the model
      */
-    public function __construct(array $data = null)
+    public function __construct(?array $data = null)
     {
         parent::__construct($data);
 
@@ -581,7 +582,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      *
      * @return BankAccount|null
      */
-    public function getBankAccount()
+    public function getBankAccount(): ?BankAccount
     {
         return $this->container['bankAccount'];
     }
@@ -593,7 +594,7 @@ class PaymentRequest extends CheckoutPaymentRequest
      *
      * @return self
      */
-    public function setBankAccount($bankAccount)
+    public function setBankAccount(?BankAccount $bankAccount): static
     {
         $this->container['bankAccount'] = $bankAccount;
 

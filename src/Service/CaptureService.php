@@ -39,8 +39,8 @@ use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
+use DateTime;
 use Psr\Log\LoggerAwareTrait;
-use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -56,13 +56,39 @@ class CaptureService
     const REASON_DELIVERY_STATE_MISMATCH = 'DELIVERY_STATE_MISMATCH';
     const REASON_WAITING_AUTH_WEBHOOK = 'WAITING_AUTH_WEBHOOK';
 
+    /**
+     * @var OrderRepository $orderRepository
+     */
     private OrderRepository $orderRepository;
+    /**
+     * @var OrderTransactionRepository $orderTransactionRepository
+     */
     private OrderTransactionRepository $orderTransactionRepository;
+    /**
+     * @var AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository
+     */
     private AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository;
+    /**
+     * @var ConfigurationService $configurationService
+     */
     private ConfigurationService $configurationService;
+    /**
+     * @var ClientService $clientService
+     */
     private ClientService $clientService;
+    /**
+     * @var AdyenPaymentService $adyenPaymentService
+     */
     private AdyenPaymentService $adyenPaymentService;
 
+    /**
+     * @param OrderRepository $orderRepository
+     * @param OrderTransactionRepository $orderTransactionRepository
+     * @param AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository
+     * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
+     * @param AdyenPaymentService $adyenPaymentService
+     */
     public function __construct(
         OrderRepository $orderRepository,
         OrderTransactionRepository $orderTransactionRepository,
@@ -81,16 +107,22 @@ class CaptureService
 
     /**
      * Send capture request for open invoice payments
+     *
      * @throws CaptureException
+     * @throws AdyenException
      */
-    public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context)
+    public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context): array
     {
         $order = $this->orderRepository->getOrderByOrderNumber(
             $orderNumber,
             $context,
             [
-                'transactions', 'currency', 'lineItems', 'deliveries',
-                'deliveries.shippingMethod', 'deliveries.stateMachineState'
+                'transactions',
+                'currency',
+                'lineItems',
+                'deliveries',
+                'deliveries.shippingMethod',
+                'deliveries.stateMachineState'
             ]
         );
 
@@ -176,9 +208,12 @@ class CaptureService
         }
     }
 
-    public function getRescheduleNotificationTime(): \DateTime
+    /**
+     * @return DateTime
+     */
+    public function getRescheduleNotificationTime(): DateTime
     {
-        $dateTime = new \DateTime();
+        $dateTime = new DateTime();
         try {
             $rescheduleTime = $this->configurationService->getRescheduleTime();
             if (is_int($rescheduleTime)) {
@@ -192,6 +227,7 @@ class CaptureService
 
     /**
      * @param $handlerIdentifier
+     *
      * @return bool
      */
     public function isManualCapture($handlerIdentifier): bool
@@ -211,6 +247,8 @@ class CaptureService
 
     /**
      * @param $handlerIdentifier
+     * @param $salesChannelId
+     *
      * @return bool
      */
     public function requiresCaptureOnShipment($handlerIdentifier, $salesChannelId): bool
@@ -220,6 +258,18 @@ class CaptureService
             $handlerIdentifier::$isOpenInvoice;
     }
 
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     * @param string $pspReference
+     * @param string $source
+     * @param string $status
+     * @param int $captureAmount
+     * @param Context $context
+     *
+     * @return void
+     *
+     * @throws AdyenException
+     */
     public function saveCaptureRequest(
         OrderTransactionEntity $orderTransaction,
         string $pspReference,
@@ -227,7 +277,7 @@ class CaptureService
         string $status,
         int $captureAmount,
         Context $context
-    ) {
+    ): void {
         $this->validateNewStatus($status, $pspReference);
 
         $this->adyenPaymentCaptureRepository->getRepository()->create([
@@ -241,8 +291,20 @@ class CaptureService
         ], $context);
     }
 
-    public function updateCaptureRequestStatus(PaymentCaptureEntity $captureEntity, string $newStatus, Context $context)
-    {
+    /**
+     * @param PaymentCaptureEntity $captureEntity
+     * @param string $newStatus
+     * @param Context $context
+     *
+     * @return void
+     *
+     * @throws AdyenException
+     */
+    public function updateCaptureRequestStatus(
+        PaymentCaptureEntity $captureEntity,
+        string $newStatus,
+        Context $context
+    ): void {
         $this->validateNewStatus($newStatus, $captureEntity->getPspReference());
 
         $this->adyenPaymentCaptureRepository->getRepository()->update([
@@ -253,12 +315,22 @@ class CaptureService
         ], $context);
     }
 
+    /**
+     * @param OrderTransactionEntity $transaction
+     * @param NotificationEntity $notification
+     * @param string $newStatus
+     * @param Context $context
+     *
+     * @return void
+     *
+     * @throws AdyenException
+     */
     public function handleCaptureNotification(
         OrderTransactionEntity $transaction,
         NotificationEntity $notification,
         string $newStatus,
         Context $context
-    ) {
+    ): void {
         $criteria = new Criteria();
 
         $criteria->addFilter(new AndFilter([
@@ -287,17 +359,19 @@ class CaptureService
     /**
      * @param OrderTransactionEntity $orderTransaction
      * @param NotificationEntity $notification
+     *
      * @return bool
      */
     public function checkRequiredAmountFullyCapturedInNotification(
         OrderTransactionEntity $orderTransaction,
         NotificationEntity $notification
-    ):bool {
+    ): bool {
         return $notification->getAmountValue() >= $this->getRequiredCaptureAmount($orderTransaction->getOrderId());
     }
 
     /**
      * @param OrderTransactionEntity $orderTransaction
+     *
      * @return bool
      */
     public function isRequiredAmountCaptured(OrderTransactionEntity $orderTransaction): bool
@@ -310,6 +384,7 @@ class CaptureService
 
     /**
      * @param string $orderId
+     *
      * @return int
      */
     public function getRequiredCaptureAmount(string $orderId): int
@@ -327,6 +402,11 @@ class CaptureService
         return $requiredCaptureAmount;
     }
 
+    /**
+     * @param OrderLineItemCollection|null $lineItems
+     *
+     * @return array
+     */
     private function getLineItemsObjectArray(
         ?OrderLineItemCollection $lineItems
     ): array {
@@ -351,6 +431,14 @@ class CaptureService
         return $lineItemObjects;
     }
 
+    /**
+     * @param $captureAmountInMinorUnits
+     * @param string $currency
+     * @param string $salesChannelId
+     * @param $lineItems
+     *
+     * @return PaymentCaptureRequest
+     */
     private function buildCaptureRequest(
         $captureAmountInMinorUnits,
         string $currency,
@@ -372,6 +460,7 @@ class CaptureService
     /**
      * @param string $newStatus
      * @param string $pspReference
+     *
      * @throws AdyenException
      */
     private function validateNewStatus(string $newStatus, string $pspReference): void
@@ -384,9 +473,10 @@ class CaptureService
     }
 
     /**
-     * @param PaymentCaptureRequest $request
+     * @param Client $client
      * @param string $pspReference
-     * @param array $additionalData
+     * @param PaymentCaptureRequest $request
+     *
      * @return PaymentCaptureResponse $response
      * @throws CaptureException
      */
@@ -394,7 +484,7 @@ class CaptureService
         Client $client,
         string $pspReference,
         PaymentCaptureRequest $request
-    ) : PaymentCaptureResponse {
+    ): PaymentCaptureResponse {
 
         try {
             $modification = new ModificationsApi($client);
@@ -412,7 +502,12 @@ class CaptureService
         return $response;
     }
 
-    private function getTotalCapturedAmount(OrderTransactionEntity $orderTransaction)
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     *
+     * @return int
+     */
+    private function getTotalCapturedAmount(OrderTransactionEntity $orderTransaction): int
     {
         $totalCapturedAmount = 0;
         $captures = $this->adyenPaymentCaptureRepository->getCaptureRequestsByOrderId(
@@ -430,18 +525,20 @@ class CaptureService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|bool|float|int|string|null
      */
-    public function isManualCaptureActive(string $salesChannelId = null)
+    public function isManualCaptureActive(?string $salesChannelId = null): float|array|bool|int|string|null
     {
         return $this->configurationService->isManualCaptureActive($salesChannelId);
     }
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|bool|float|int|string|null
      */
-    public function isCaptureOnShipmentEnabled(string $salesChannelId = null)
+    public function isCaptureOnShipmentEnabled(?string $salesChannelId = null): float|array|bool|int|string|null
     {
         return $this->configurationService->isCaptureOnShipmentEnabled($salesChannelId);
     }

@@ -32,9 +32,10 @@ abstract class AdyenTestCase extends TestCase
 {
     /**
      * @param $originalClassName
+     *
      * @return \PHPUnit\Framework\MockObject\MockObject
      */
-    protected function getSimpleMock($originalClassName)
+    protected function getSimpleMock($originalClassName): \PHPUnit\Framework\MockObject\MockObject
     {
         return $this->getMockBuilder($originalClassName)
             ->disableOriginalConstructor()
@@ -44,6 +45,7 @@ abstract class AdyenTestCase extends TestCase
     /**
      * @param string $id
      * @param float $amountTotal
+     *
      * @return OrderEntity
      */
     protected function createThrowAwayOrder(string $id, float $amountTotal): OrderEntity
@@ -59,6 +61,7 @@ abstract class AdyenTestCase extends TestCase
      * @param string $id
      * @param int $amount
      * @param string $status
+     *
      * @return RefundEntity
      */
     protected function createThrowAwayRefund(string $id, int $amount, string $status): RefundEntity
