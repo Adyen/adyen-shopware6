@@ -185,7 +185,8 @@ class PaypalPaymentService
         } catch (PaymentFailedException $exception) {
             throw new AsyncPaymentFinalizeException(
                 $order->getPrimaryOrderTransactionId() ?? '',
-                $exception->getMessage());
+                $exception->getMessage()
+            );
         }
 
         return $order->getId();
