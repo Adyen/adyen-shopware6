@@ -102,6 +102,7 @@ class DonateController
     /**
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return JsonResponse
      */
     #[Route('/store-api/adyen/donate', name: 'store-api.action.adyen.donate', methods: ['POST'])]

@@ -50,27 +50,27 @@ class ResultHandler
     /**
      * @var PaymentResponseService
      */
-    private $paymentResponseService;
+    private PaymentResponseService $paymentResponseService;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @var PaymentResponseHandler
      */
-    private $paymentResponseHandler;
+    private PaymentResponseHandler $paymentResponseHandler;
 
     /**
      * @var PaymentDetailsService
      */
-    private $paymentDetailsService;
+    private PaymentDetailsService $paymentDetailsService;
 
     /**
      * @var PaymentResponseHandlerResult
      */
-    private $paymentResponseHandlerResult;
+    private PaymentResponseHandlerResult $paymentResponseHandlerResult;
 
     /**
      * ResultHandler constructor.
@@ -99,6 +99,7 @@ class ResultHandler
      * @param AsyncPaymentTransactionStruct $transaction
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
+     *
      * @throws PaymentFailedException
      * @throws PaymentCancelledException
      */
@@ -106,7 +107,7 @@ class ResultHandler
         AsyncPaymentTransactionStruct $transaction,
         Request $request,
         SalesChannelContext $salesChannelContext
-    ) {
+    ): void {
         // Retrieve paymentResponse and if it exists
         $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($transaction->getOrderTransaction());
 
@@ -142,7 +143,7 @@ class ResultHandler
 
             // Validate the return
 
-            $paymentDetailRequest = new PaymentDetailsRequest(['details'=>$details]);
+            $paymentDetailRequest = new PaymentDetailsRequest(['details' => $details]);
 
             $result = $this->paymentDetailsService->getPaymentDetails(
                 $paymentDetailRequest,

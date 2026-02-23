@@ -28,11 +28,17 @@ use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTask;
 
 class ScheduleNotifications extends ScheduledTask
 {
+    /**
+     * @return string
+     */
     public static function getTaskName(): string
     {
         return 'adyen.schedule_notifications';
     }
 
+    /**
+     * @return int
+     */
     public static function getDefaultInterval(): int
     {
         return 60; // 1 minute

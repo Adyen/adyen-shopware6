@@ -86,9 +86,12 @@ class WebhookHandlerFactory
 
     /**
      * @param string $eventCode
+     *
+     * @return WebhookHandlerInterface
+     *
      * @throws InvalidDataException
      */
-    public static function create(string $eventCode)
+    public static function create(string $eventCode): WebhookHandlerInterface
     {
         switch ($eventCode) {
             case EventCodes::AUTHORISATION:

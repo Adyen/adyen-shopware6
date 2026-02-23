@@ -32,18 +32,23 @@ class PaymentMethodsBalanceService
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var ClientService
      */
-    private $clientService;
+    private ClientService $clientService;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
+    /**
+     * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
+     * @param LoggerInterface $logger
+     */
     public function __construct(
         ConfigurationService $configurationService,
         ClientService $clientService,
@@ -54,6 +59,13 @@ class PaymentMethodsBalanceService
         $this->logger = $logger;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @param array $paymentMethod
+     * @param array $amount
+     *
+     * @return array
+     */
     public function getPaymentMethodsBalance(
         SalesChannelContext $context,
         array $paymentMethod,
@@ -87,6 +99,13 @@ class PaymentMethodsBalanceService
         return $responseData;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @param array $paymentMethod
+     * @param array $amount
+     *
+     * @return array
+     */
     private function buildPaymentMethodsBalanceRequestData(
         SalesChannelContext $context,
         array $paymentMethod,

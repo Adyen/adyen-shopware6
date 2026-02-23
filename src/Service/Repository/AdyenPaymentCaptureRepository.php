@@ -36,16 +36,15 @@ class AdyenPaymentCaptureRepository
     /**
      * @var EntityRepository
      */
-    private $repository;
+    private EntityRepository $repository;
 
     /**
      * AdyenPaymentCaptureRepository constructor.
      *
      * @param EntityRepository $repository
      */
-    public function __construct(
-        EntityRepository $repository
-    ) {
+    public function __construct(EntityRepository $repository)
+    {
         $this->repository = $repository;
     }
 
@@ -54,9 +53,10 @@ class AdyenPaymentCaptureRepository
      *
      * @param string $orderId
      * @param bool|null $isOnlySuccess
+     *
      * @return EntityCollection
      */
-    public function getCaptureRequestsByOrderId(string $orderId, bool $isOnlySuccess = null): EntityCollection
+    public function getCaptureRequestsByOrderId(string $orderId, ?bool $isOnlySuccess = null): EntityCollection
     {
         $criteria = new Criteria();
         $criteria->addAssociation('orderTransaction');
@@ -74,7 +74,7 @@ class AdyenPaymentCaptureRepository
     /**
      * @return EntityRepository
      */
-    public function getRepository() : EntityRepository
+    public function getRepository(): EntityRepository
     {
         return $this->repository;
     }
