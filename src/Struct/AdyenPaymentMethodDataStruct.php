@@ -31,28 +31,36 @@ class AdyenPaymentMethodDataStruct extends Struct
     /**
      * @var string|null
      */
-    protected $type = null;
+    protected ?string $type = null;
 
     /**
      * @var array|null
      */
-    protected $paymentMethodConfig = null;
+    protected ?array $paymentMethodConfig = null;
 
+    /**
+     * @return string|null
+     */
     public function getType(): ?string
     {
         return $this->type;
     }
 
+    /**
+     * @param string|null $type
+     *
+     * @return void
+     */
     public function setType(?string $type): void
     {
         $this->type = $type;
     }
 
-    public function getPaymentMethodConfig(): ?array
-    {
-        return $this->paymentMethodConfig;
-    }
-
+    /**
+     * @param array|null $paymentMethodConfig
+     *
+     * @return void
+     */
     public function setPaymentMethodConfig(?array $paymentMethodConfig): void
     {
         $this->paymentMethodConfig = $paymentMethodConfig;

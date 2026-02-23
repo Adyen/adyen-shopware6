@@ -64,6 +64,7 @@ class TermsAndConditionsService
      * Retrieves the Terms and Conditions URL
      *
      * @param SalesChannelContext $context The sales channel context.
+     *
      * @return string|null The Terms and Conditions URL
      */
     public function getTermsAndConditionsUrl(SalesChannelContext $salesChannelContext): ?string
@@ -96,6 +97,7 @@ class TermsAndConditionsService
      *
      * @param string|null $tosPageId The CMS page ID containing the Terms and Conditions.
      * @param SalesChannelContext $context The sales channel context.
+     *
      * @return string|null The relative SEO URL or null if not found.
      */
     private function getShopTermsAndConditionsPath(

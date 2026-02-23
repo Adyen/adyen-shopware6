@@ -78,7 +78,7 @@ class AdminController
     /** @var Currency */
     private Currency $currencyUtil;
 
-    /** @var CaptureService  */
+    /** @var CaptureService */
     private CaptureService $captureService;
 
     /** @var AdyenPaymentCaptureRepository */
@@ -145,6 +145,7 @@ class AdminController
 
     /**
      * @param RequestDataBag $dataBag
+     *
      * @return JsonResponse
      */
     #[Route('/api/_action/adyen/verify', name: 'api.action.adyen.verify', methods: ['POST', 'GET'])]
@@ -164,9 +165,9 @@ class AdminController
             );
             $service = new Checkout($client);
 
-            $params = array(
+            $params = [
                 'merchantAccount' => $dataBag->get(ConfigurationService::BUNDLE_NAME . '.config.merchantAccount'),
-            );
+            ];
             $result = $service->paymentMethods($params);
 
             $hasPaymentMethods = isset($result['paymentMethods']);
@@ -184,6 +185,7 @@ class AdminController
      * Send a capture request to the Adyen platform
      *
      * @param Request $request
+     *
      * @return JsonResponse
      */
     #[Route('/api/adyen/capture', name: 'api.adyen_payment_capture.post', methods: ['POST'])]
@@ -236,6 +238,7 @@ class AdminController
      * Get payment capture requests by order
      *
      * @param string $orderId
+     *
      * @return JsonResponse
      */
     #[Route('/api/adyen/orders/{orderId}/captures', name: 'api.adyen_payment_capture.get', methods: ['GET'])]
@@ -250,6 +253,7 @@ class AdminController
      * Get payment capture requests by order
      *
      * @param string $orderId
+     *
      * @return JsonResponse
      */
     #[Route(
@@ -285,6 +289,7 @@ class AdminController
 
     /**
      * @param string $orderId
+     *
      * @return JsonResponse
      */
     #[Route(
@@ -314,6 +319,7 @@ class AdminController
      * Send a refund operation to the Adyen platform
      *
      * @param Request $request
+     *
      * @return JsonResponse
      */
     #[Route('/api/adyen/refunds', name: 'api.adyen_refund.post', methods: ['POST'])]
@@ -357,7 +363,7 @@ class AdminController
         }
 
         try {
-            $this->refundService->refund($order, (float) $refundAmount);
+            $this->refundService->refund($order, (float)$refundAmount);
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
 
@@ -372,6 +378,7 @@ class AdminController
 
     /**
      * @param string $orderId
+     *
      * @return JsonResponse
      */
     #[Route('/api/adyen/orders/{orderId}/refunds', name: 'api.adyen_refund.get', methods: ['GET'])]
@@ -386,6 +393,7 @@ class AdminController
      * Get all the notifications for an order.
      *
      * @param string $orderId
+     *
      * @return JsonResponse
      */
     #[Route('/api/adyen/orders/{orderId}/notifications', name: 'api.adyen_notifications.get', methods: ['GET'])]
@@ -423,6 +431,7 @@ class AdminController
      * Get all the authorised payments of an order from adyen_payment table.
      *
      * @param string $orderId
+     *
      * @return JsonResponse
      */
     #[Route('/api/adyen/orders/{orderId}/partial-payments', name: 'api.adyen_partial_payments.get', methods: ['GET'])]
@@ -453,6 +462,7 @@ class AdminController
      * Build a response containing the data to be displayed
      *
      * @param array $entities
+     *
      * @return array
      */
     private function buildResponseData(array $entities): array
@@ -484,6 +494,7 @@ class AdminController
 
     /**
      * @param string $notificationId
+     *
      * @return JsonResponse
      */
     #[Route(
@@ -516,6 +527,7 @@ class AdminController
 
     /**
      * @param string $orderId
+     *
      * @return JsonResponse
      */
     #[Route(

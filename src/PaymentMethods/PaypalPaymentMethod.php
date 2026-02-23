@@ -28,6 +28,9 @@ use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 
 class PaypalPaymentMethod implements PaymentMethodInterface
 {
+    /** @var string  */
+    public const PAYPAL_PAYMENT_METHOD_NAME = 'PayPal';
+
     /**
      * {@inheritDoc}
      *
@@ -35,7 +38,7 @@ class PaypalPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'PayPal';
+        return self::PAYPAL_PAYMENT_METHOD_NAME;
     }
 
     /**

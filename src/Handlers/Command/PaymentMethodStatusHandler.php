@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Handlers\Command;
 
 use Adyen\Shopware\Provider\AdyenPluginProvider;
+use Exception;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -62,6 +63,15 @@ class PaymentMethodStatusHandler
         $this->salesChannelPaymentMethodRepository = $salesChannelPaymentMethodRepository;
     }
 
+    /**
+     * @param bool $isAll
+     * @param bool $isActive
+     * @param string|null $paymentMethodHandlerIdentifier
+     *
+     * @return void
+     *
+     * @throws Exception
+     */
     public function run(bool $isAll, bool $isActive, ?string $paymentMethodHandlerIdentifier): void
     {
         $criteria = new Criteria();
@@ -83,7 +93,7 @@ class PaymentMethodStatusHandler
             ->getEntities();
 
         if (!count($paymentMethods->getElements())) {
-            throw new \Exception('No payment methods found!');
+            throw new Exception('No payment methods found!');
         }
 
         $criteria = new Criteria();
@@ -106,6 +116,12 @@ class PaymentMethodStatusHandler
         }
     }
 
+    /**
+     * @param string $paymentMethodId
+     * @param string $salesChannelId
+     *
+     * @return void
+     */
     private function enablePaymentMethod(string $paymentMethodId, string $salesChannelId): void
     {
         $this->salesChannelPaymentMethodRepository->create(
@@ -119,6 +135,12 @@ class PaymentMethodStatusHandler
         );
     }
 
+    /**
+     * @param string $paymentMethodId
+     * @param string $salesChannelId
+     *
+     * @return void
+     */
     private function disablePaymentMethod(string $paymentMethodId, string $salesChannelId): void
     {
         $this->salesChannelPaymentMethodRepository

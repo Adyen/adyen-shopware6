@@ -92,6 +92,7 @@ class NotificationReceiverService
     /**
      * @param Request $requestObject
      * @param string $salesChannelId
+     *
      * @return JsonResponse
      * @throws AuthenticationException
      * @throws HMACKeyValidationException
@@ -169,7 +170,8 @@ class NotificationReceiverService
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('id', $salesChannelId));
         $criteria->addFilter(new EqualsFilter('active', 1));
-        return  $this->salesChannelRepository->search($criteria, Context::createDefaultContext())->first();
+
+        return $this->salesChannelRepository->search($criteria, Context::createDefaultContext())->first();
     }
 
     /**
@@ -177,7 +179,9 @@ class NotificationReceiverService
      *
      * @param $notificationItem
      * @param $salesChannelId
+     *
      * @return bool
+     *
      * @throws HMACKeyValidationException
      * @throws InvalidDataException
      */

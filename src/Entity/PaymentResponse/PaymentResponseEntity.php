@@ -35,22 +35,22 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
-    protected $orderTransactionId;
+    protected string $orderTransactionId;
 
     /**
      * @var OrderTransactionEntity
      */
-    protected $orderTransaction;
+    protected OrderTransactionEntity $orderTransaction;
 
     /**
      * @var string
      */
-    protected $resultCode;
+    protected string $resultCode;
 
     /**
      * @var string
      */
-    protected $response;
+    protected string $response;
 
     /**
      * @var DateTimeInterface|null
@@ -60,8 +60,7 @@ class PaymentResponseEntity extends Entity
     /**
      * @var string
      */
-    protected $pspreference;
-
+    protected string $pspreference;
 
     /**
      * @return string
@@ -103,7 +102,7 @@ class PaymentResponseEntity extends Entity
         return $this->resultCode;
     }
 
-     /**
+    /**
      * @param string $resultCode
      */
     public function setResultCode(string $resultCode): void

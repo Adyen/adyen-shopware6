@@ -41,42 +41,42 @@ class PaymentMethodsService
     /**
      * @var ClientService
      */
-    private $clientService;
+    private ClientService $clientService;
 
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var Currency
      */
-    private $currency;
+    private Currency $currency;
 
     /**
      * @var CartService
      */
-    private $cartService;
+    private CartService $cartService;
 
     /**
      * @var SalesChannelRepository
      */
-    private $salesChannelRepository;
+    private SalesChannelRepository $salesChannelRepository;
 
     /**
      * @var OrderRepository
      */
-    private $orderRepository;
+    private OrderRepository $orderRepository;
 
     /**
      * @var CacheInterface
      */
-    private $cache;
+    private CacheInterface $cache;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * PaymentMethodsService constructor.
@@ -114,6 +114,7 @@ class PaymentMethodsService
      * @param SalesChannelContext $context
      * @param string $orderId
      * @param int $amount
+     *
      * @return PaymentMethodsResponse
      */
     public function getPaymentMethods(
@@ -150,6 +151,7 @@ class PaymentMethodsService
 
     /**
      * @param PaymentMethodsResponse $paymentMethodsResponse
+     *
      * @return array
      */
     public function getPaymentMethodsArray(PaymentMethodsResponse $paymentMethodsResponse): array
@@ -171,8 +173,10 @@ class PaymentMethodsService
 
         return $allPaymentMethods;
     }
+
     /**
      * @param string $address
+     *
      * @return array
      */
     public function getSplitStreetAddressHouseNumber(string $address): array
@@ -205,6 +209,7 @@ class PaymentMethodsService
      * @param SalesChannelContext $context
      * @param string $orderId
      * @param int $amount
+     *
      * @return array
      */
     private function buildPaymentMethodsRequestData(

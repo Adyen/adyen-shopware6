@@ -7,17 +7,42 @@ use Adyen\Shopware\Exception\PaymentFailedException;
 
 class PaymentResponseHandlerResult
 {
-    private $resultCode;
-    private $refusalReason;
-    private $refusalReasonCode;
-    private $pspReference;
-    private $action;
-    private $additionalData;
-    private $donationToken;
-    private $isGiftcardOrder = false;
+    /**
+     * @var string|null $resultCode
+     */
+    private ?string $resultCode = null;
+    /**
+     * @var string|null $refusalReason
+     */
+    private ?string $refusalReason = null;
+    /**
+     * @var string|null $refusalReasonCode
+     */
+    private ?string $refusalReasonCode = null;
+    /**
+     * @var mixed $pspReference
+     */
+    private mixed $pspReference = null;
+    /**
+     * @var array|null $action
+     */
+    private ?array $action = null;
+    /**
+     * @var array|null $additionalData
+     */
+    private ?array $additionalData = null;
+    /**
+     * @var string|null $donationToken
+     */
+    private ?string $donationToken = null;
+    /**
+     * @var bool $isGiftcardOrder
+     */
+    private bool $isGiftcardOrder = false;
 
     /**
      * @param PaymentResponseEntity $paymentResponse
+     *
      * @return PaymentResponseHandlerResult
      * @throws PaymentFailedException
      */
@@ -65,15 +90,15 @@ class PaymentResponseHandlerResult
     /**
      * @return null|string
      */
-    public function getResultCode()
+    public function getResultCode(): ?string
     {
         return $this->resultCode;
     }
 
     /**
-     * @param null|string $resultCode
+     * @param string|null $resultCode
      */
-    public function setResultCode($resultCode): void
+    public function setResultCode(?string $resultCode): void
     {
         $this->resultCode = $resultCode;
     }
@@ -81,15 +106,15 @@ class PaymentResponseHandlerResult
     /**
      * @return null|string
      */
-    public function getRefusalReason() : ?string
+    public function getRefusalReason(): ?string
     {
         return $this->refusalReason;
     }
 
     /**
-     * @param null|string $refusalReason
+     * @param string|null $refusalReason
      */
-    public function setRefusalReason($refusalReason): void
+    public function setRefusalReason(?string $refusalReason): void
     {
         $this->refusalReason = $refusalReason;
     }
@@ -97,15 +122,15 @@ class PaymentResponseHandlerResult
     /**
      * @return null|string
      */
-    public function getRefusalReasonCode() : ?string
+    public function getRefusalReasonCode(): ?string
     {
         return $this->refusalReasonCode;
     }
 
     /**
-     * @param null|string $refusalReasonCode
+     * @param string|null $refusalReasonCode
      */
-    public function setRefusalReasonCode($refusalReasonCode): void
+    public function setRefusalReasonCode(?string $refusalReasonCode): void
     {
         $this->refusalReasonCode = $refusalReasonCode;
     }
@@ -113,7 +138,7 @@ class PaymentResponseHandlerResult
     /**
      * @return mixed
      */
-    public function getPspReference()
+    public function getPspReference(): mixed
     {
         return $this->pspReference;
     }
@@ -121,7 +146,7 @@ class PaymentResponseHandlerResult
     /**
      * @param mixed $pspReference
      */
-    public function setPspReference($pspReference): void
+    public function setPspReference(mixed $pspReference): void
     {
         $this->pspReference = $pspReference;
     }
@@ -129,15 +154,15 @@ class PaymentResponseHandlerResult
     /**
      * @return null|array
      */
-    public function getAction()
+    public function getAction(): ?array
     {
         return $this->action;
     }
 
     /**
-     * @param null|array $action
+     * @param array|null $action
      */
-    public function setAction($action): void
+    public function setAction(?array $action): void
     {
         $this->action = $action;
     }
@@ -145,15 +170,15 @@ class PaymentResponseHandlerResult
     /**
      * @return null|array
      */
-    public function getAdditionalData()
+    public function getAdditionalData(): ?array
     {
         return $this->additionalData;
     }
 
     /**
-     * @param null|array $additionalData
+     * @param array|null $additionalData
      */
-    public function setAdditionalData($additionalData): void
+    public function setAdditionalData(?array $additionalData): void
     {
         $this->additionalData = $additionalData;
     }
@@ -182,6 +207,9 @@ class PaymentResponseHandlerResult
         $this->isGiftcardOrder = $isGiftcardOrder;
     }
 
+    /**
+     * @return bool
+     */
     public function isGiftcardOrder(): bool
     {
         return $this->isGiftcardOrder;

@@ -46,23 +46,28 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
     /**
      * @var AdyenPluginProvider
      */
-    private $adyenPluginProvider;
+    private AdyenPluginProvider $adyenPluginProvider;
 
     /**
      * @var PaymentMethodsService
      */
-    private $paymentMethodsService;
+    private PaymentMethodsService $paymentMethodsService;
 
     /**
      * @var PaymentMethodsFilterService
      */
-    private $paymentMethodsFilterService;
+    private PaymentMethodsFilterService $paymentMethodsFilterService;
 
     /**
      * @var PaymentMethodsResponse
      */
-    private $paymentMethodsResponse;
+    private PaymentMethodsResponse $paymentMethodsResponse;
 
+    /**
+     * @param AdyenPluginProvider $adyenPluginProvider
+     * @param PaymentMethodsService $paymentMethodsService
+     * @param PaymentMethodsFilterService $paymentMethodsFilterService
+     */
     public function __construct(
         AdyenPluginProvider $adyenPluginProvider,
         PaymentMethodsService $paymentMethodsService,
@@ -73,7 +78,10 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         $this->paymentMethodsFilterService = $paymentMethodsFilterService;
     }
 
-    public static function getSubscribedEvents()
+    /**
+     * @return array[]
+     */
+    public static function getSubscribedEvents(): array
     {
         return [
             // Ensure event is executed before "Shopware\Core\System\SalesChannel\Api\StoreApiResponseListener".
@@ -81,6 +89,11 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         ];
     }
 
+    /**
+     * @param ResponseEvent $event
+     *
+     * @return void
+     */
     public function adjustPaymentMethodsResponse(ResponseEvent $event): void
     {
         $response = $event->getResponse();
@@ -97,11 +110,20 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         $this->extendPaymentMethodsData($context, $response);
     }
 
-    public function reset()
+    /**
+     * @return void
+     */
+    public function reset(): void
     {
         $this->paymentMethodsResponse = null;
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @param ResponseEvent $event
+     *
+     * @return void
+     */
     private function filterPaymentMethods(SalesChannelContext $context, ResponseEvent $event): void
     {
         if (true !== $event->getRequest()->query->getBoolean('onlyAvailable', false)) {
@@ -130,6 +152,12 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         $event->setResponse($response);
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @param PaymentMethodRouteResponse $response
+     *
+     * @return void
+     */
     private function extendPaymentMethodsData(SalesChannelContext $context, PaymentMethodRouteResponse $response): void
     {
         $methods = $response->getPaymentMethods();
@@ -152,6 +180,12 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         }
     }
 
+    /**
+     * @param SalesChannelContext $context
+     * @param string $type
+     *
+     * @return array|null
+     */
     private function getPaymentMethodConfigByType(SalesChannelContext $context, string $type): ?array
     {
         $paymentMethodsResponse = $this->getPaymentMethodsResponse($context);
@@ -167,6 +201,11 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         return null;
     }
 
+    /**
+     * @param PaymentMethodEntity $method
+     *
+     * @return string|null
+     */
     private function getPaymentMethodType(PaymentMethodEntity $method): ?string
     {
         $callable = [$method->getHandlerIdentifier(), 'getPaymentMethodCode'];
@@ -177,6 +216,11 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         return call_user_func($callable);
     }
 
+    /**
+     * @param SalesChannelContext $context
+     *
+     * @return PaymentMethodsResponse
+     */
     private function getPaymentMethodsResponse(SalesChannelContext $context): PaymentMethodsResponse
     {
         if (isset($this->paymentMethodsResponse)) {
@@ -188,6 +232,11 @@ class PaymentMethodRouteResponseSubscriber implements EventSubscriberInterface, 
         return $this->paymentMethodsResponse;
     }
 
+    /**
+     * @param Request $request
+     *
+     * @return SalesChannelContext|null
+     */
     private function getSalesChannelContext(Request $request): ?SalesChannelContext
     {
         return $request->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
