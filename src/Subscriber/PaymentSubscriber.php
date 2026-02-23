@@ -69,80 +69,80 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     /**
      * @var PaymentStateDataService
      */
-    private $paymentStateDataService;
+    private PaymentStateDataService $paymentStateDataService;
 
     /**
      * @var PaymentMethodsFilterService
      */
-    private $paymentMethodsFilterService;
+    private PaymentMethodsFilterService $paymentMethodsFilterService;
 
     /**
      * @var RouterInterface
      */
-    private $router;
+    private RouterInterface $router;
 
     /**
      * @var SalesChannelRepository
      */
-    private $salesChannelRepository;
+    private SalesChannelRepository $salesChannelRepository;
 
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var PaymentMethodsService
      */
-    private $paymentMethodsService;
+    private PaymentMethodsService $paymentMethodsService;
 
     /**
      * @var ExpressCheckoutService
      */
-    private $expressCheckoutService;
+    private ExpressCheckoutService $expressCheckoutService;
 
     /**
      * @var RequestStack $requestStack
      */
-    private $requestStack;
+    private RequestStack $requestStack;
 
     /**
-     * @var AbstractCartPersister
+     * @var AbstractCartPersister $cartPersister
      */
     private $cartPersister;
 
     /**
      * @var CartCalculator
      */
-    private $cartCalculator;
+    private CartCalculator $cartCalculator;
 
     /**
      * @var Currency
      */
-    private $currency;
+    private Currency $currency;
 
     /**
      * @var AdyenPluginProvider
      */
-    private $adyenPluginProvider;
+    private AdyenPluginProvider $adyenPluginProvider;
 
     /**
      * @var RatePayDeviceFingerprintParamsProvider
      */
-    private $ratePayFingerprintParamsProvider;
+    private RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
 
     /**
      * @var AbstractContextSwitchRoute
      */
-    private $contextSwitchRoute;
+    private AbstractContextSwitchRoute $contextSwitchRoute;
 
     /**
      * @var AbstractSalesChannelContextFactory
      */
-    private $salesChannelContextFactory;
+    private AbstractSalesChannelContextFactory $salesChannelContextFactory;
 
     /**
-     * @var EntityRepository
+     * @var EntityRepository $paymentMethodRepository
      */
     private $paymentMethodRepository;
 
@@ -156,6 +156,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param SalesChannelRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
      * @param PaymentMethodsService $paymentMethodsService
+     * @param ExpressCheckoutService $expressCheckoutService
      * @param RequestStack $requestStack
      * @param AbstractCartPersister $cartPersister
      * @param CartCalculator $cartCalculator
@@ -322,67 +323,72 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 array_merge(
                     $this->getComponentData($salesChannelContext),
                     [
-                    'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
-                    'giftcards' => $giftcards,
-                    'totalPrice' => $page->getCart()->getPrice()->getTotalPrice(),
-                    'totalInMinorUnits' => $amountInMinorUnits,
-                    'currency' => $currency,
-                    'currencySymbol' => $currencySymbol,
-                    'giftcardDiscount' => $giftcardDetails['giftcardDiscount'],
-                    'giftcardBalance' => $giftcardDetails['giftcardBalance'],
-                    'checkBalanceUrl' => $this->router
-                        ->generate('payment.adyen.proxy-check-balance'),
-                    'setGiftcardUrl' => $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
-                    'removeGiftcardUrl' => $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
-                    'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
-                    'fetchRedeemedGiftcardsUrl' => $this->router
-                        ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
-                    'expressCheckoutConfigUrl' =>
-                        $this->router->generate('payment.adyen.proxy-express-checkout-config'),
-                    'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
-                    'checkoutOrderExpressUrl' => $this->router->generate(
-                        'payment.adyen.proxy-checkout-order-express-product'
-                    ),
-                    'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
-                    'paymentHandleExpressUrl' => $this->router->generate(
-                        'payment.adyen.proxy-handle-payment-express-product'
-                    ),
-                    'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
-                    'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
-                    'paymentFinishUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        ['orderId' => '']
-                    ),
-                    'googleMerchantId' => $this->configurationService
-                        ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
-                    'gatewayMerchantId' => $this->configurationService
-                        ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
-                    'paymentErrorUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        [
-                            'orderId' => '',
-                            'changedPayment' => false,
-                            'paymentFailed' => true,
-                        ]
-                    ),
-                    'cancelOrderTransactionUrl' => $this->router->generate(
-                        'payment.adyen.proxy-cancel-order-transaction',
-                    ),
-                    'expressCheckoutUpdatePaypalOrderUrl' =>
-                        $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
-                    'amount' => $amountInMinorUnits,
-                    'countryCode' => $this->expressCheckoutService->getCountryCode(
-                        $salesChannelContext->getCustomer(),
-                        $salesChannelContext
-                    ),
-                    'userLoggedIn' => json_encode($userLoggedIn),
-                    'affiliateCode' => $affiliateCode,
-                    'campaignCode' => $campaignCode,
-                    'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
-                    'addGiftCardOption'    => $this->configurationService->getAddGiftCardOption(),
-                    'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
-                    'showVouchersSeparately' => json_encode($this->configurationService->getShowVouchersSeparately()),
-                    'showVouchersCheckout'   => json_encode(true),
+                        'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
+                        'giftcards' => $giftcards,
+                        'totalPrice' => $page->getCart()->getPrice()->getTotalPrice(),
+                        'totalInMinorUnits' => $amountInMinorUnits,
+                        'currency' => $currency,
+                        'currencySymbol' => $currencySymbol,
+                        'giftcardDiscount' => $giftcardDetails['giftcardDiscount'],
+                        'giftcardBalance' => $giftcardDetails['giftcardBalance'],
+                        'checkBalanceUrl' => $this->router
+                            ->generate('payment.adyen.proxy-check-balance'),
+                        'setGiftcardUrl' =>
+                            $this->router->generate('payment.adyen.proxy-store-giftcard-state-data'),
+                        'removeGiftcardUrl' =>
+                            $this->router->generate('payment.adyen.proxy-remove-giftcard-state-data'),
+                        'shoppingCartPageUrl' => $this->router->generate('frontend.checkout.cart.page'),
+                        'fetchRedeemedGiftcardsUrl' => $this->router
+                            ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
+                        'expressCheckoutConfigUrl' =>
+                            $this->router->generate('payment.adyen.proxy-express-checkout-config'),
+                        'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                        'checkoutOrderExpressUrl' => $this->router->generate(
+                            'payment.adyen.proxy-checkout-order-express-product'
+                        ),
+                        'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
+                        'paymentHandleExpressUrl' => $this->router->generate(
+                            'payment.adyen.proxy-handle-payment-express-product'
+                        ),
+                        'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
+                        'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
+                        'paymentFinishUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            ['orderId' => '']
+                        ),
+                        'googleMerchantId' => $this->configurationService
+                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                        'gatewayMerchantId' => $this->configurationService
+                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                        'paymentErrorUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            [
+                                'orderId' => '',
+                                'changedPayment' => false,
+                                'paymentFailed' => true,
+                            ]
+                        ),
+                        'expressCheckoutUpdatePaypalOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
+                        'amount' => $amountInMinorUnits,
+                        'countryCode' => $this->expressCheckoutService->getCountryCode(
+                            $salesChannelContext->getCustomer(),
+                            $salesChannelContext
+                        ),
+                        'userLoggedIn' => json_encode($userLoggedIn),
+                        'affiliateCode' => $affiliateCode,
+                        'campaignCode' => $campaignCode,
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
+                        'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
+                        'showVouchersSeparately' =>
+                            json_encode($this->configurationService->getShowVouchersSeparately()),
+                        'showVouchersCheckout' => json_encode(true),
+                        'paypalOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-order'),
+                        'paypalExpressOrderFinalizeUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order'),
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -394,7 +400,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param PageLoadedEvent $event
      *
      * @return void
-     *
      */
     public function onProductPageLoaded(PageLoadedEvent $event): void
     {
@@ -439,44 +444,45 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 array_merge(
                     $this->getComponentData($salesChannelContext),
                     [
-                    'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
-                    'expressCheckoutConfigUrl' =>
-                        $this->router->generate('payment.adyen.proxy-express-checkout-config'),
-                    'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
-                    'checkoutOrderExpressUrl' => $this->router->generate(
-                        'payment.adyen.proxy-checkout-order-express-product'
-                    ),
-                    'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
-                    'paymentHandleExpressUrl' => $this->router->generate(
-                        'payment.adyen.proxy-handle-payment-express-product'
-                    ),
-                    'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
-                    'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
-                    'paymentFinishUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        ['orderId' => '']
-                    ),
-                    'paymentErrorUrl' => $this->router->generate(
-                        'frontend.checkout.finish.page',
-                        [
-                            'orderId' => '',
-                            'changedPayment' => false,
-                            'paymentFailed' => true,
-                        ]
-                    ),
-                    'cancelOrderTransactionUrl' => $this->router->generate(
-                        'payment.adyen.proxy-cancel-order-transaction',
-                    ),
-                    'expressCheckoutUpdatePaypalOrderUrl' =>
-                        $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
-                    'userLoggedIn' => json_encode($userLoggedIn),
-                    'affiliateCode' => $affiliateCode,
-                    'campaignCode' => $campaignCode,
-                    'googleMerchantId' => $this->configurationService
-                        ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
-                    'gatewayMerchantId' => $this->configurationService
-                        ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
-                    'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable
+                        'paymentStatusUrl' => $this->router->generate('payment.adyen.proxy-payment-status'),
+                        'expressCheckoutConfigUrl' =>
+                            $this->router->generate('payment.adyen.proxy-express-checkout-config'),
+                        'checkoutOrderUrl' => $this->router->generate('payment.adyen.proxy-checkout-order'),
+                        'checkoutOrderExpressUrl' => $this->router->generate(
+                            'payment.adyen.proxy-checkout-order-express-product'
+                        ),
+                        'paymentHandleUrl' => $this->router->generate('payment.adyen.proxy-handle-payment'),
+                        'paymentHandleExpressUrl' => $this->router->generate(
+                            'payment.adyen.proxy-handle-payment-express-product'
+                        ),
+                        'paymentDetailsUrl' => $this->router->generate('payment.adyen.proxy-payment-details'),
+                        'updatePaymentUrl' => $this->router->generate('payment.adyen.proxy-set-payment'),
+                        'paymentFinishUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            ['orderId' => '']
+                        ),
+                        'paymentErrorUrl' => $this->router->generate(
+                            'frontend.checkout.finish.page',
+                            [
+                                'orderId' => '',
+                                'changedPayment' => false,
+                                'paymentFailed' => true,
+                            ]
+                        ),
+                        'expressCheckoutUpdatePaypalOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-express-checkout-update-paypal-order'),
+                        'userLoggedIn' => json_encode($userLoggedIn),
+                        'affiliateCode' => $affiliateCode,
+                        'campaignCode' => $campaignCode,
+                        'googleMerchantId' => $this->configurationService
+                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                        'gatewayMerchantId' => $this->configurationService
+                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'paypalExpressOrderFinalizeUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
                     $expressCheckoutConfiguration
                 )
@@ -583,9 +589,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                                 'paymentFailed' => true,
                             ]
                         ),
-                        'cancelOrderTransactionUrl' => $this->router->generate(
-                            'payment.adyen.proxy-cancel-order-transaction',
-                        ),
                         'languageId' => $salesChannelContext->getContext()->getLanguageId(),
                         'currency' => $currency,
                         'amount' => $amount,
@@ -613,11 +616,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
-                         'voucherBlockPosition'   => $this->configurationService->getVoucherBlockPosition(),
-                         'showVouchersCheckout'   => json_encode($this->configurationService
-                             ->getShowVouchersCheckout()),
-                         'showVouchersSeparately' => json_encode($this->configurationService
-                             ->getShowVouchersSeparately()),
+                        'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
+                        'showVouchersCheckout' => json_encode($this->configurationService
+                            ->getShowVouchersCheckout()),
+                        'showVouchersSeparately' => json_encode($this->configurationService
+                            ->getShowVouchersSeparately()),
                         // checkout giftcards configuration
                         'totalInMinorUnits' => $amount,
                         'giftcardBalance' => $giftcardDetails['giftcardBalance'],
@@ -629,11 +632,19 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'fetchRedeemedGiftcardsUrl' => $this->router
                             ->generate('payment.adyen.proxy-fetch-redeemed-giftcards'),
                         'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
-                        'giftcards'              => $giftcards,
+                        'giftcards' => $giftcards,
                         'countryCode' => $this->expressCheckoutService->getCountryCode(
                             $salesChannelContext->getCustomer(),
                             $salesChannelContext
                         ),
+                        'paypalOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-order'),
+                        'paypalOrderFinalizeUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-order-finalize'),
+                        'paypalExpressOrderFinalizeUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
+                        'paypalExpressOrderUrl' =>
+                            $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
@@ -641,6 +652,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         );
     }
 
+    /**
+     * @param RequestEvent $event
+     *
+     * @return void
+     */
     public function onKernelRequest(RequestEvent $event)
     {
         $request = $event->getRequest();
@@ -671,9 +687,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     }
 
     /**
-     *
      * @param SalesChannelContext $salesChannelContext
      * @param PaymentMethodEntity $paymentMethod
+     *
      * @return array
      */
     private function getFingerprintParametersForRatepayMethod(
@@ -684,8 +700,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             'handler_adyen_ratepaydirectdebitpaymentmethodhandler' ||
             $paymentMethod->getFormattedHandlerIdentifier() === 'handler_adyen_ratepaypaymentmethodhandler'
         ) {
-            return ['ratepay' => $this->ratePayFingerprintParamsProvider
-                ->getFingerprintParams($salesChannelContext->getSalesChannelId())];
+            return [
+                'ratepay' => $this->ratePayFingerprintParamsProvider
+                    ->getFingerprintParams($salesChannelContext->getSalesChannelId())
+            ];
         }
 
         return [];

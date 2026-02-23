@@ -72,10 +72,6 @@ export default {
                 component.setStatus('ready');
                 window.location.href = self.errorUrl.toString();
             },
-            onCancel: function (data, component, self) {
-                component.setStatus('ready');
-                window.location.href = self.errorUrl.toString();
-            },
             responseHandler: function (plugin, response) {
                 try {
                     response = JSON.parse(response);

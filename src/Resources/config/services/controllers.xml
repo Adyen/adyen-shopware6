@@ -54,10 +54,9 @@
             <argument type="service" id="Adyen\Shopware\Service\NotificationReceiverService"/>
             <tag name="controller.service_arguments"/>
         </service>
-        <service id="Adyen\Shopware\Storefront\Controller\FrontendProxyController">
+        <service id="Adyen\Shopware\Storefront\Controller\FrontendProxyController" autowire="true">
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute"/>
             <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
-            <argument type="service" id="Shopware\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
             <argument type="service" id="Symfony\Component\Routing\RouterInterface"/>
             <argument type="service" id="Adyen\Shopware\Controller\StoreApi\Payment\PaymentController"/>

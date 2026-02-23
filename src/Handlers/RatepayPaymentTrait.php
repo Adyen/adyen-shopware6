@@ -35,25 +35,28 @@ trait RatepayPaymentTrait
     /**
      * @param SalesChannelContext $salesChannelContext
      * @param AsyncPaymentTransactionStruct $transaction
-     * @param array $request
+     * @param array $stateData
      * @param int|null $partialAmount
-     * @param array|null $adyenOrderData
+     * @param array $orderRequestData
+     * @param array $billieData
      *
-     * @return PaymentRequest
+     * @return IntegrationPaymentRequest
      */
-    protected function preparePaymentsRequest(
+    protected function getAdyenPaymentRequest(
         SalesChannelContext $salesChannelContext,
         AsyncPaymentTransactionStruct $transaction,
-        array $request = [],
-        ?int $partialAmount = null,
-        ?array $adyenOrderData = []
-    ): IntegrationPaymentRequest {
-        $paymentRequest = parent::preparePaymentsRequest(
+        array $stateData,
+        ?int $partialAmount,
+        array $orderRequestData,
+        array $billieData = []
+    ): PaymentRequest {
+        $paymentRequest = parent::getAdyenPaymentRequest(
             $salesChannelContext,
             $transaction,
-            $request,
+            $stateData,
             $partialAmount,
-            $adyenOrderData
+            $orderRequestData,
+            $billieData
         );
 
         $paymentRequest->setMerchantOrderReference($transaction->getOrder()->getOrderNumber());
