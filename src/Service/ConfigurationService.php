@@ -38,7 +38,7 @@ class ConfigurationService
     /**
      * @var SystemConfigService
      */
-    private $systemConfigService;
+    private SystemConfigService $systemConfigService;
 
     /**
      * @var EntityRepository|\Shopware\Core\Content\Media\DataAbstractionLayer\MediaRepositoryDecorator
@@ -50,6 +50,7 @@ class ConfigurationService
      *
      * @param SystemConfigService $systemConfigService
      * @param mixed $mediaRepository
+     *
      * @note `media.repository` service is decorated in Shopware 6.4 and does not return EntityRepository object
      */
     public function __construct(
@@ -62,15 +63,17 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|mixed|null
      */
-    public function getMerchantAccount(string $salesChannelId = null)
+    public function getMerchantAccount(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.merchantAccount', $salesChannelId);
     }
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getApiKeyTest(string $salesChannelId)
@@ -80,6 +83,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getApiKeyLive(string $salesChannelId)
@@ -89,6 +93,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     private function getClientKeyTest(string $salesChannelId)
@@ -98,6 +103,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     private function getClientKeyLive(string $salesChannelId)
@@ -107,9 +113,10 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return string
      */
-    public function getEnvironment(string $salesChannelId = null)
+    public function getEnvironment(?string $salesChannelId = null): string
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.environment', $salesChannelId) ?
             Environment::LIVE : Environment::TEST;
@@ -117,6 +124,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getLiveEndpointUrlPrefix(string $salesChannelId)
@@ -129,9 +137,10 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|mixed|null
      */
-    public function getNotificationUsername(string $salesChannelId = null)
+    public function getNotificationUsername(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.notificationUsername',
@@ -141,9 +150,10 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|mixed|null
      */
-    public function getNotificationPassword(string $salesChannelId = null)
+    public function getNotificationPassword(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.notificationPassword',
@@ -153,6 +163,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getHmacTest(string $salesChannelId)
@@ -162,6 +173,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getHmacLive(string $salesChannelId)
@@ -171,7 +183,9 @@ class ConfigurationService
 
     /**
      * Returns HMAC Key based on the configured environment
+     *
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getHmacKey(string $salesChannelId)
@@ -185,6 +199,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getApiKey(string $salesChannelId)
@@ -198,6 +213,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getClientKey(string $salesChannelId)
@@ -211,6 +227,7 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|bool|float|int|string|null
      */
     public function isManualCaptureActive(string $salesChannelId = null)
@@ -223,18 +240,20 @@ class ConfigurationService
      * This can be done via reaching out to Adyen support.
      *
      * @param string|null $salesChannelId
+     *
      * @return array|bool|float|int|string|null
      */
-    public function isAutoCaptureActiveForOpenInvoices(string $salesChannelId = null)
+    public function isAutoCaptureActiveForOpenInvoices(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.autoCaptureOpenInvoice', $salesChannelId);
     }
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|bool|float|int|string|null
      */
-    public function isCaptureOnShipmentEnabled(string $salesChannelId = null)
+    public function isCaptureOnShipmentEnabled(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.captureOnShipmentEnabled',
@@ -244,27 +263,30 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|bool|float|int|string|null
      */
-    public function getRescheduleTime(string $salesChannelId = null)
+    public function getRescheduleTime(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.rescheduleTime', $salesChannelId);
     }
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|bool|float|int|string|null
      */
-    public function getOrderState(string $salesChannelId = null)
+    public function getOrderState(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.orderState', $salesChannelId);
     }
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|mixed|null
      */
-    public function getDeviceFingerprintSnippetId(string $salesChannelId = null)
+    public function getDeviceFingerprintSnippetId(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.deviceFingerprintSnippetId',
@@ -274,9 +296,10 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return bool
      */
-    public function isApplePayExpressCheckoutEnabled(string $salesChannelId = null)
+    public function isApplePayExpressCheckoutEnabled(?string $salesChannelId = null): bool
     {
         return (bool)$this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.applePayExpressCheckoutEnabled',
@@ -286,9 +309,10 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return bool
      */
-    public function isGooglePayExpressCheckoutEnabled(string $salesChannelId = null)
+    public function isGooglePayExpressCheckoutEnabled(?string $salesChannelId = null): bool
     {
         return (bool)$this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googlePayExpressCheckoutEnabled',
@@ -298,9 +322,10 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return array|mixed|null
      */
-    public function getGooglePayMerchantId(string $salesChannelId = null)
+    public function getGooglePayMerchantId(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googleMerchantId',
@@ -310,9 +335,10 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return bool
      */
-    public function isPayPalExpressCheckoutEnabled(string $salesChannelId = null)
+    public function isPayPalExpressCheckoutEnabled(?string $salesChannelId = null): bool
     {
         return (bool)$this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.payPalExpressCheckoutEnabled',
@@ -322,6 +348,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function isAdyenGivingEnabled(string $salesChannelId)
@@ -331,6 +358,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getAdyenGivingCharityMerchantAccount(string $salesChannelId)
@@ -343,6 +371,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getAdyenGivingDonationAmounts(string $salesChannelId)
@@ -355,6 +384,8 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     * @param Context $context
+     *
      * @return array|mixed|null
      */
     public function getAdyenGivingBackgroundUrl(string $salesChannelId, Context $context)
@@ -377,6 +408,8 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     * @param Context $context
+     *
      * @return array|mixed|null
      */
     public function getAdyenGivingCharityLogo(string $salesChannelId, Context $context)
@@ -399,6 +432,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getAdyenGivingCharityDescription(string $salesChannelId)
@@ -411,6 +445,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getAdyenGivingCharityName(string $salesChannelId)
@@ -423,6 +458,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getAdyenGivingCharityWebsite(string $salesChannelId)
@@ -435,6 +471,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return array|mixed|null
      */
     public function getDefaultDomainId(string $salesChannelId): ?string
@@ -444,6 +481,7 @@ class ConfigurationService
 
     /**
      * @param string $salesChannelId
+     *
      * @return null|bool
      */
     public function getIsOverrideDefaultDomainEnabled(string $salesChannelId): ?bool
@@ -458,6 +496,7 @@ class ConfigurationService
      * Returns the refund strategy (FIFO, FILO or ratio) for gift card partial payments.
      *
      * @param string $salesChannelId
+     *
      * @return string|null
      */
     public function getRefundStrategyForGiftcards(string $salesChannelId): ?string
@@ -470,6 +509,7 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return string|null
      */
     public function getAdyenGivingTermsAndConditionsUrl(string $salesChannelId = null): ?string
@@ -482,6 +522,7 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return string|null
      */
     public function getTosPageId(string $salesChannelId = null): ?string
@@ -494,6 +535,7 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return string
      */
     public function getAddGiftCardOption(?string $salesChannelId = null): string
@@ -506,6 +548,7 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return string
      */
     public function getVoucherBlockPosition(?string $salesChannelId = null): string
@@ -518,6 +561,7 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return bool
      */
     public function getShowVouchersCheckout(?string $salesChannelId = null): bool
@@ -530,6 +574,7 @@ class ConfigurationService
 
     /**
      * @param string|null $salesChannelId
+     *
      * @return bool
      */
     public function getShowVouchersSeparately(?string $salesChannelId = null): bool
