@@ -35,10 +35,11 @@ class RefundFailedWebhookHandler implements WebhookHandlerInterface
     /**
      * @var RefundService
      */
-    private $refundService;
+    private RefundService $refundService;
 
     /**
      * @param RefundService $refundService
+     *
      * @return void
      */
     public function __construct(RefundService $refundService)
@@ -52,7 +53,9 @@ class RefundFailedWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
+     *
      * @return void
+     *
      * @throws \Adyen\AdyenException
      */
     public function handleWebhook(

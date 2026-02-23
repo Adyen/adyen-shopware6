@@ -102,6 +102,7 @@ class OrderApiController
     /**
      * @param SalesChannelContext $context
      * @param Request $request
+     *
      * @return JsonResponse
      */
     #[Route(
@@ -121,6 +122,7 @@ class OrderApiController
     /**
      * @param SalesChannelContext $context
      * @param Request $request
+     *
      * @return JsonResponse
      */
     #[Route('/store-api/adyen/orders/cancel', name: 'store-api.action.adyen.orders.cancel', methods: ['POST'])]
@@ -135,7 +137,9 @@ class OrderApiController
     /**
      * @param SalesChannelContext $context
      * @param Request $request
+     *
      * @return JsonResponse
+     *
      * @throws ValidationException
      * @throws AdyenException
      */
@@ -159,6 +163,7 @@ class OrderApiController
     /**
      * @param SalesChannelContext $context
      * @param Request $request
+     *
      * @return JsonResponse
      */
     #[Route('/store-api/adyen/giftcard/remove', name: 'store-api.action.adyen.giftcard.remove', methods: ['POST'])]
@@ -172,6 +177,7 @@ class OrderApiController
 
     /**
      * @param SalesChannelContext $context
+     *
      * @return JsonResponse
      */
     #[Route('/store-api/adyen/giftcard', name: 'store-api.action.adyen.giftcard.fetch', methods: ['POST'])]
@@ -208,9 +214,15 @@ class OrderApiController
         return new JsonResponse(['redeemedGiftcards' => $responseArray]);
     }
 
+    /**
+     * @param $fetchedRedeemedGiftcards
+     * @param $salesChannelContext
+     *
+     * @return array
+     */
     private function filterGiftcardStateData($fetchedRedeemedGiftcards, $salesChannelContext): array
     {
-        $responseArray = array();
+        $responseArray = [];
         $remainingOrderAmount = $this->cartService
             ->getCart($salesChannelContext->getToken(), $salesChannelContext)
             ->getPrice()->getTotalPrice();
@@ -229,7 +241,7 @@ class OrderApiController
                 'brand' => $stateData['paymentMethod']['brand'],
                 'title' => $stateData['giftcard']['title'],
                 'balance' => $stateData['giftcard']['value'],
-                'deductedAmount' =>  $deductedAmount
+                'deductedAmount' => $deductedAmount
             ];
 
             $remainingOrderAmount -= $deductedAmount;

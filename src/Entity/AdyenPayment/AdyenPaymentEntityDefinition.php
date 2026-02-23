@@ -49,16 +49,25 @@ class AdyenPaymentEntityDefinition extends EntityDefinition
         return self::ENTITY_NAME;
     }
 
+    /**
+     * @return string
+     */
     public function getCollectionClass(): string
     {
         return AdyenPaymentEntityCollection::class;
     }
 
+    /**
+     * @return string
+     */
     public function getEntityClass(): string
     {
         return AdyenPaymentEntity::class;
     }
 
+    /**
+     * @return FieldCollection
+     */
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([

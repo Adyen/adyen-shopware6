@@ -34,12 +34,12 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 class TermsAndConditionsRepository
 {
     /**
-     * @var EntityRepository
+     * @var EntityRepository $categoryRepository
      */
     private EntityRepository $categoryRepository;
 
     /**
-     * @var TermsAndConditionsRepository
+     * @var EntityRepository $seoUrlRepository
      */
     private EntityRepository $seoUrlRepository;
 

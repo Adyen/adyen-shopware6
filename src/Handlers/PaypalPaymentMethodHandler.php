@@ -25,10 +25,30 @@
 
 namespace Adyen\Shopware\Handlers;
 
+use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
 class PaypalPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static bool $supportsManualCapture = true;
     public static bool $supportsPartialCapture = true;
+
+    /**
+     * @param AsyncPaymentTransactionStruct $transaction
+     * @param RequestDataBag $dataBag
+     * @param SalesChannelContext $salesChannelContext
+     *
+     * @return RedirectResponse
+     */
+    public function pay(
+        AsyncPaymentTransactionStruct $transaction,
+        RequestDataBag $dataBag,
+        SalesChannelContext $salesChannelContext
+    ): RedirectResponse {
+        return new RedirectResponse($transaction->getReturnUrl());
+    }
 
     /**
      * @return string

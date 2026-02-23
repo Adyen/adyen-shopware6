@@ -36,6 +36,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
  */
 class AdyenPaymentEntityCollection extends EntityCollection
 {
+    /**
+     * @return string
+     */
     protected function getExpectedClass(): string
     {
         return AdyenPaymentEntity::class;

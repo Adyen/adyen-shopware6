@@ -4,7 +4,7 @@ namespace Adyen\Shopware\Util;
 
 class CheckoutStateDataValidator
 {
-    protected $stateDataRootKeys = array(
+    protected array $stateDataRootKeys = [
         'paymentMethod',
         'billingAddress',
         'deliveryAddress',
@@ -23,13 +23,14 @@ class CheckoutStateDataValidator
         'details',
         'origin',
         'billieData'
-    );
+    ];
 
     /**
      * @param array $stateData
+     *
      * @return array
      */
-    public function getValidatedAdditionalData($stateData)
+    public function getValidatedAdditionalData(array $stateData): array
     {
         // Get validated state data array
         if (!empty($stateData)) {

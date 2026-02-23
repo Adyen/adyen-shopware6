@@ -37,17 +37,17 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @var CaptureService
      */
-    private $captureService;
+    private CaptureService $captureService;
 
     /**
      * @var OrderTransactionStateHandler
      */
-    protected $orderTransactionStateHandler;
+    protected OrderTransactionStateHandler $orderTransactionStateHandler;
 
     /**
      * @param CaptureService $captureService
@@ -70,6 +70,7 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
+     *
      * @return void
      */
     public function handleWebhook(
@@ -90,6 +91,7 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
      * @param OrderTransactionEntity $orderTransaction
      * @param NotificationEntity $notification
      * @param Context $context
+     *
      * @return void
      */
     private function handleSuccessfulNotification(
@@ -129,13 +131,14 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
      * @param OrderTransactionEntity $orderTransactionEntity
      * @param NotificationEntity $notificationEntity
      * @param Context $context
+     *
      * @return void
      */
     private function handleFailedNotification(
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity,
         Context $context
-    ) {
+    ): void {
         $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
 
         $this->captureService->handleCaptureNotification(

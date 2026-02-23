@@ -79,6 +79,7 @@ class DonationService
      * @param string $returnUrl
      * @param string $pspReference
      * @param string $paymentMethodCode
+     *
      * @return DonationPaymentResponse
      * @throws AdyenException
      */
@@ -88,7 +89,7 @@ class DonationService
         string $currency,
         int $value,
         string $returnUrl,
-        string$pspReference,
+        string $pspReference,
         string $paymentMethodCode
     ): DonationPaymentResponse {
 

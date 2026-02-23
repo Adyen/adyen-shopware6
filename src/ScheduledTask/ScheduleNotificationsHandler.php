@@ -38,8 +38,12 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
     /**
      * @var NotificationService
      */
-    private $notificationService;
+    private NotificationService $notificationService;
 
+    /**
+     * @param EntityRepository $scheduledTaskRepository
+     * @param NotificationService $notificationService
+     */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
         NotificationService $notificationService
@@ -48,11 +52,17 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
         $this->notificationService = $notificationService;
     }
 
+    /**
+     * @return iterable
+     */
     public static function getHandledMessages(): iterable
     {
         return [ ScheduleNotifications::class ];
     }
 
+    /**
+     * @return void
+     */
     public function run(): void
     {
         $unscheduledNotifications = $this->notificationService->getUnscheduledNotifications();
