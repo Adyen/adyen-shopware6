@@ -31,43 +31,59 @@ class AdyenContextDataStruct extends Struct
     /**
      * @var string|null
      */
-    protected $clientKey = null;
+    protected ?string $clientKey = null;
 
     /**
      * @var string|null
      */
-    protected $environment = null;
+    protected ?string $environment = null;
 
     /**
      * @var bool
      */
-    protected $hasPaymentStateData = false;
+    protected bool $hasPaymentStateData = false;
 
+    /**
+     * @return string|null
+     */
     public function getClientKey(): ?string
     {
         return $this->clientKey;
     }
 
+    /**
+     * @param string|null $clientKey
+     *
+     * @return void
+     */
     public function setClientKey(?string $clientKey): void
     {
         $this->clientKey = $clientKey;
     }
 
+    /**
+     * @return string|null
+     */
     public function getEnvironment(): ?string
     {
         return $this->environment;
     }
 
+    /**
+     * @param string|null $environment
+     *
+     * @return void
+     */
     public function setEnvironment(?string $environment): void
     {
         $this->environment = $environment;
     }
 
-    public function isHasPaymentStateData(): bool
-    {
-        return $this->hasPaymentStateData;
-    }
-
+    /**
+     * @param bool $hasPaymentStateData
+     *
+     * @return void
+     */
     public function setHasPaymentStateData(bool $hasPaymentStateData): void
     {
         $this->hasPaymentStateData = $hasPaymentStateData;

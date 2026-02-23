@@ -121,7 +121,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     /**
      * @return string[]
      */
-    public static function getSubscribedEvents() : array
+    public static function getSubscribedEvents(): array
     {
         return [
             CheckoutFinishPageLoadedEvent::class => 'onCheckoutFinishPageLoaded'
@@ -171,6 +171,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
      * @param array $frontendData
      * @param OrderEntity $order
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return array
      */
     private function buildAdyenGivingData(
@@ -243,6 +244,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     /**
      * @param array $frontendData
      * @param OrderEntity $order
+     *
      * @return array
      */
     private function setOrderProcessingNotification(array $frontendData, OrderEntity $order): array
@@ -269,6 +271,7 @@ class PostPaymentSubscriber extends StorefrontSubscriber implements EventSubscri
     /**
      * @param array $frontendData
      * @param OrderEntity $order
+     *
      * @return array
      */
     private function buildVoucherActionData(array $frontendData, OrderEntity $order): array

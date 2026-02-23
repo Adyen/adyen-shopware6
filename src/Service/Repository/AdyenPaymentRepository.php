@@ -35,34 +35,35 @@ class AdyenPaymentRepository
     /**
      * @var EntityRepository
      */
-    private $repository;
+    private EntityRepository $repository;
 
     /**
      * AdyenPaymentRepository constructor.
      *
      * @param EntityRepository $repository
      */
-    public function __construct(
-        EntityRepository $repository
-    ) {
+    public function __construct(EntityRepository $repository)
+    {
         $this->repository = $repository;
     }
 
     /**
      * @param string $merchantOrderReference
+     *
      * @return string|null
      */
     public function getMerchantReferenceByMerchantOrderReference(string $merchantOrderReference): ?string
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('merchantOrderReference', $merchantOrderReference));
-        $adyenPayment =  $this->repository->search($criteria, Context::createDefaultContext())->first();
+        $adyenPayment = $this->repository->search($criteria, Context::createDefaultContext())->first();
 
-        return $adyenPayment ? $adyenPayment->getMerchantReference() : null;
+        return $adyenPayment?->getMerchantReference();
     }
 
     /**
      * @param string $orderTransactionId
+     *
      * @return EntityCollection
      */
     public function getAdyenPaymentsByOrderTransaction(string $orderTransactionId): EntityCollection

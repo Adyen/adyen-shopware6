@@ -20,6 +20,7 @@
  * See the LICENSE file for more info.
  *
  */
+
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
@@ -148,6 +149,7 @@ class RefundService
      *
      * @param OrderEntity $order
      * @param float $refundAmount
+     *
      * @return void
      * @throws AdyenException
      */
@@ -313,10 +315,14 @@ class RefundService
      * @param OrderEntity $order
      * @param NotificationEntity $notification
      * @param string $newStatus
+     *
      * @throws AdyenException
      */
-    public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification, string $newStatus)
-    {
+    public function handleRefundNotification(
+        OrderEntity $order,
+        NotificationEntity $notification,
+        string $newStatus
+    ): void {
         $statesToSearch = self::REFUNDABLE_STATES;
         // This is included for edge cases where an already processed refund, failed (REFUND_FAILED notification)
         $statesToSearch[] = OrderTransactionStates::STATE_REFUNDED;
@@ -343,6 +349,8 @@ class RefundService
      * @param string $pspReference
      * @param string $source
      * @param string $status
+     * @param int $refundAmount
+     *
      * @throws AdyenException
      */
     public function insertAdyenRefund(
@@ -351,7 +359,7 @@ class RefundService
         string $source,
         string $status,
         int $refundAmount
-    ) : void {
+    ): void {
         $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
 
         $this->adyenRefundRepository->getRepository()->create([
@@ -370,9 +378,10 @@ class RefundService
      *
      * @param RefundEntity $refund
      * @param $status
+     *
      * @throws AdyenException
      */
-    public function updateAdyenRefundStatus(RefundEntity $refund, $status)
+    public function updateAdyenRefundStatus(RefundEntity $refund, $status): void
     {
         if (!in_array($status, RefundEntity::getStatuses())) {
             $message = sprintf('Adyen refund to be updated to invalid status %s', $status);
@@ -393,6 +402,7 @@ class RefundService
      *
      * @param OrderEntity $order
      * @param int $amount
+     *
      * @return bool
      */
     public function isAmountRefundable(OrderEntity $order, int $amount): bool
@@ -418,8 +428,10 @@ class RefundService
      * @param OrderTransactionEntity $orderTransaction
      * @param string $transitionState
      * @param Context $context
+     *
+     * @return void
      */
-    public function doRefund(OrderTransactionEntity $orderTransaction, string $transitionState, Context $context)
+    public function doRefund(OrderTransactionEntity $orderTransaction, string $transitionState, Context $context): void
     {
         try {
             if (OrderTransactionStates::STATE_PARTIALLY_REFUNDED === $transitionState) {
@@ -444,7 +456,9 @@ class RefundService
      *
      * @param OrderEntity $order
      * @param array $states
+     *
      * @return OrderTransactionEntity
+     *
      * @throws AdyenException
      */
     public function getAdyenOrderTransactionForRefund(OrderEntity $order, array $states): OrderTransactionEntity
@@ -479,6 +493,7 @@ class RefundService
      * @param mixed $merchantAccount
      * @param string $pspReference
      * @param array|null $idempotencyExtraData
+     *
      * @return array
      */
     public function getRefundRequest(
@@ -486,7 +501,7 @@ class RefundService
         string $currencyCode,
         mixed $merchantAccount,
         string $pspReference,
-        array $idempotencyExtraData = null
+        ?array $idempotencyExtraData = null
     ): array {
         $amountObject = new Amount();
         $amountObject->setValue($requestRefundAmount);

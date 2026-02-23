@@ -74,7 +74,9 @@ class RefundWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
+     *
      * @return void
+     *
      * @throws AdyenException
      */
     public function handleWebhook(
@@ -95,7 +97,9 @@ class RefundWebhookHandler implements WebhookHandlerInterface
      * @param OrderTransactionEntity $orderTransactionEntity
      * @param NotificationEntity $notificationEntity
      * @param Context $context
+     *
      * @return void
+     *
      * @throws AdyenException
      * @throws Exception
      */
@@ -160,7 +164,9 @@ class RefundWebhookHandler implements WebhookHandlerInterface
     /**
      * @param OrderTransactionEntity $orderTransactionEntity
      * @param NotificationEntity $notificationEntity
+     *
      * @return void
+     *
      * @throws AdyenException
      */
     private function handleFailedNotification(

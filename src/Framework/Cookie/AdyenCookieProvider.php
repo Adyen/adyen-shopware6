@@ -11,7 +11,7 @@ class AdyenCookieProvider implements CookieProviderInterface
     /**
      * @var CookieProviderInterface
      */
-    private $originalService;
+    private CookieProviderInterface $originalService;
 
     /**
      * CustomCookieProvider constructor.
@@ -23,7 +23,7 @@ class AdyenCookieProvider implements CookieProviderInterface
         $this->originalService = $service;
     }
 
-    private static $requiredCookies = [
+    private static array $requiredCookies = [
         [
             'cookie' => 'JSESSIONID',
             'snippet_name' => 'adyen.required_cookie.name',
@@ -118,9 +118,10 @@ class AdyenCookieProvider implements CookieProviderInterface
      * Returns the key as int in case it's found
      *
      * @param array $cookieGroups
+     *
      * @return bool|int
      */
-    private function getRequiredCookieGroupKey($cookieGroups)
+    private function getRequiredCookieGroupKey(array $cookieGroups): bool|int
     {
         $requiredCookieGroupKey = false;
 

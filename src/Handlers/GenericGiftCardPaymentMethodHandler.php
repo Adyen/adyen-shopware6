@@ -31,7 +31,7 @@ namespace Adyen\Shopware\Handlers;
  */
 class GenericGiftCardPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
-    public static $isGiftCard = true;
+    public static bool $isGiftCard = true;
 
     /**
      * @return string

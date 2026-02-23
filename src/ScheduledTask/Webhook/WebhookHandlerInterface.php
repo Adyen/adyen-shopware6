@@ -36,6 +36,7 @@ interface WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
+     *
      * @return void
      */
     public function handleWebhook(

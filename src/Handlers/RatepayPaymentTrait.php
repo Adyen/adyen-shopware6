@@ -1,42 +1,73 @@
-<?php
+<?php declare(strict_types=1);
+/**
+ *                       ######
+ *                       ######
+ * ############    ####( ######  #####. ######  ############   ############
+ * #############  #####( ######  #####. ######  #############  #############
+ *        ######  #####( ######  #####. ######  #####  ######  #####  ######
+ * ###### ######  #####( ######  #####. ######  #####  #####   #####  ######
+ * ###### ######  #####( ######  #####. ######  #####          #####  ######
+ * #############  #############  #############  #############  #####  ######
+ *  ############   ############  #############   ############  #####  ######
+ *                                      ######
+ *                               #############
+ *                               ############
+ *
+ * Adyen Payment Module
+ *
+ * Copyright (c) 2021 Adyen B.V.
+ * This file is open source and available under the MIT license.
+ * See the LICENSE file for more info.
+ *
+ * Author: Adyen <shopware@adyen.com>
+ */
 
 namespace Adyen\Shopware\Handlers;
 
+use Adyen\Shopware\Exception\PaymentException;
 use Adyen\Shopware\Models\PaymentRequest;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 trait RatepayPaymentTrait
 {
     /**
-     * @param SalesChannelContext $salesChannelContext
-     * @param PaymentTransactionStruct $transaction
-     * @param OrderEntity $orderEntity
-     * @param array $request
-     * @param int|null $partialAmount
-     * @param array|null $adyenOrderData
+     * @param $salesChannelContext
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param $transaction
+     * @param OrderEntity $order
+     * @param $stateData
+     * @param $partialAmount
+     * @param $orderRequestData
+     * @param array $billieData
      *
      * @return PaymentRequest
+     *
+     * @throws PaymentException
      */
-    protected function preparePaymentsRequest(
-        SalesChannelContext $salesChannelContext,
-        PaymentTransactionStruct $transaction,
-        OrderEntity $orderEntity,
-        array $request = [],
-        ?int $partialAmount = null,
-        ?array $adyenOrderData = []
+    protected function getAdyenPaymentRequest(
+        $salesChannelContext,
+        OrderTransactionEntity $orderTransactionEntity,
+        $transaction,
+        OrderEntity $order,
+        $stateData,
+        $partialAmount,
+        $orderRequestData,
+        array $billieData = []
     ): PaymentRequest {
-        $paymentRequest = parent::preparePaymentsRequest(
+        $paymentRequest = parent::getAdyenPaymentRequest(
             $salesChannelContext,
+            $orderTransactionEntity,
             $transaction,
-            $orderEntity,
-            $request,
+            $order,
+            $stateData,
             $partialAmount,
-            $adyenOrderData
+            $orderRequestData,
+            $billieData
         );
 
-        $paymentRequest->setMerchantOrderReference($orderEntity->getOrderNumber());
+        $paymentRequest->setMerchantOrderReference($order->getOrderNumber());
 
         return $paymentRequest;
     }

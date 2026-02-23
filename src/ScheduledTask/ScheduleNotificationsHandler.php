@@ -39,8 +39,13 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
     /**
      * @var NotificationService
      */
-    private $notificationService;
+    private NotificationService $notificationService;
 
+    /**
+     * @param EntityRepository $scheduledTaskRepository
+     * @param LoggerInterface $logger
+     * @param NotificationService $notificationService
+     */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
         LoggerInterface $logger,
@@ -50,11 +55,19 @@ class ScheduleNotificationsHandler extends ScheduledTaskHandler
         $this->notificationService = $notificationService;
     }
 
+    /**
+     * @return iterable
+     */
     public static function getHandledMessages(): iterable
     {
         return [ ScheduleNotifications::class ];
     }
 
+    /**
+     * @return void
+     *
+     * @throws \DateInvalidOperationException
+     */
     public function run(): void
     {
         $unscheduledNotifications = $this->notificationService->getUnscheduledNotifications();

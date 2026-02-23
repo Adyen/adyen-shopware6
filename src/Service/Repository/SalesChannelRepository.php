@@ -15,25 +15,26 @@ class SalesChannelRepository
     /**
      * @var EntityRepository
      */
-    private $domainRepository;
+    private EntityRepository $domainRepository;
 
     /**
      * @var EntityRepository
      */
-    private $salesChannelRepository;
+    private EntityRepository $salesChannelRepository;
 
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @var EntityRepository
      */
-    private $languageRepository;
+    private EntityRepository $languageRepository;
 
     /**
      * SalesChannelRepository constructor.
+     *
      * @param EntityRepository $domainRepository
      * @param EntityRepository $salesChannelRepository
      * @param ConfigurationService $configurationService
@@ -53,6 +54,7 @@ class SalesChannelRepository
 
     /**
      * @param SalesChannelContext $context
+     *
      * @return string
      */
     public function getCurrentDomainUrl(SalesChannelContext $context): string
@@ -87,6 +89,7 @@ class SalesChannelRepository
     /**
      * @param SalesChannelContext $context
      * @param array $associations
+     *
      * @return SalesChannelEntity
      */
     public function getSalesChannelAssoc(SalesChannelContext $context, array $associations = []): SalesChannelEntity
@@ -101,6 +104,7 @@ class SalesChannelRepository
 
     /**
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return string
      */
     public function getSalesChannelLocale(SalesChannelContext $salesChannelContext): string
