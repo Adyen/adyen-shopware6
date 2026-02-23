@@ -25,7 +25,6 @@
 namespace Adyen\Shopware\Service\Repository;
 
 use Adyen\Shopware\Entity\Refund\RefundEntity;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -38,17 +37,15 @@ class AdyenRefundRepository
     /**
      * @var EntityRepository
      */
-    private $repository;
+    private EntityRepository $repository;
 
     /**
      * AdyenRefundRepository constructor.
      *
      * @param EntityRepository $repository
-     * @param LoggerInterface $logger
      */
-    public function __construct(
-        EntityRepository $repository
-    ) {
+    public function __construct(EntityRepository $repository)
+    {
         $this->repository = $repository;
     }
 
@@ -56,6 +53,7 @@ class AdyenRefundRepository
      * Get all refunds linked to an order, based on the order id
      *
      * @param string $orderId
+     *
      * @return EntityCollection
      */
     public function getRefundsByOrderId(string $orderId): EntityCollection
@@ -71,8 +69,10 @@ class AdyenRefundRepository
 
     /**
      * Filtering with pspReference and orderTransactionId since multiple refunds are possible
+     *
      * @param string $orderTransactionId
      * @param string $pspReference
+     *
      * @return RefundEntity|null
      */
     public function getRefundForOrderByPspReference(string $orderTransactionId, string $pspReference): ?RefundEntity
@@ -89,7 +89,7 @@ class AdyenRefundRepository
     /**
      * @return EntityRepository
      */
-    public function getRepository() : EntityRepository
+    public function getRepository(): EntityRepository
     {
         return $this->repository;
     }

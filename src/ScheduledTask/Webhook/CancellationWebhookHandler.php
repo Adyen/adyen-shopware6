@@ -20,8 +20,14 @@ class CancellationWebhookHandler implements WebhookHandlerInterface
 {
     use CancellableWebhookHandlerTrait;
 
+    /**
+     * @var OrderTransactionStateHandler $orderTransactionStateHandler
+     */
     private OrderTransactionStateHandler $orderTransactionStateHandler;
 
+    /**
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     */
     public function __construct(OrderTransactionStateHandler $orderTransactionStateHandler)
     {
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
