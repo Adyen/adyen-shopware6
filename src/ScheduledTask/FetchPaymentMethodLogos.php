@@ -28,11 +28,17 @@ use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTask;
 
 class FetchPaymentMethodLogos extends ScheduledTask
 {
+    /**
+     * @return string
+     */
     public static function getTaskName(): string
     {
         return 'adyen.fetch_payment_method_logos';
     }
 
+    /**
+     * @return int
+     */
     public static function getDefaultInterval(): int
     {
         return 604800; // 7 days

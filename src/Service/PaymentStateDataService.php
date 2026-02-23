@@ -30,6 +30,7 @@ use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentProcessException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
@@ -48,9 +49,9 @@ class PaymentStateDataService
      */
     protected LoggerInterface $logger;
 
-
     /**
      * PaymentStateDataService constructor.
+     *
      * @param EntityRepository $paymentStateDataRepository
      * @param LoggerInterface $logger
      */
@@ -66,6 +67,7 @@ class PaymentStateDataService
      * @param string $contextToken
      * @param string $stateData
      * @param array $additionalData
+     *
      * @throws AdyenException
      */
     public function insertPaymentStateData(string $contextToken, string $stateData, array $additionalData = []): void
@@ -92,6 +94,7 @@ class PaymentStateDataService
 
     /**
      * @param string $contextToken
+     *
      * @return PaymentStateDataEntity|null
      */
     public function getPaymentStateDataFromContextToken(string $contextToken): ?PaymentStateDataEntity
@@ -133,6 +136,12 @@ class PaymentStateDataService
         );
     }
 
+    /**
+     * @param string $stateDataId
+     * @param SalesChannelContext $context
+     *
+     * @return void
+     */
     public function deletePaymentStateDataFromId(string $stateDataId, SalesChannelContext $context): void
     {
         $stateData = $this->getPaymentStateDataFromId($stateDataId);
@@ -148,8 +157,13 @@ class PaymentStateDataService
         $this->deletePaymentStateData($stateData);
     }
 
+    /**
+     * @param string $contextToken
+     *
+     * @return EntitySearchResult
+     */
     public function fetchRedeemedGiftCardsFromContextToken(string $contextToken):
-    \Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult
+    EntitySearchResult
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('token', $contextToken));
@@ -166,8 +180,9 @@ class PaymentStateDataService
      *
      * @param mixed $salesChannelContext The sales channel context.
      * @param int|mixed $remainingOrderAmount The remaining order amount.
+     *
      * @return array Array containing 'giftcardDiscount' and 'giftcardBalance'.
-    */
+     */
     public function getGiftcardTotalDiscountAndBalance($salesChannelContext, $remainingOrderAmount): array
     {
         $fetchedRedeemedGiftcards = $this->fetchRedeemedGiftCardsFromContextToken($salesChannelContext->getToken());
@@ -192,6 +207,11 @@ class PaymentStateDataService
         ];
     }
 
+    /**
+     * @param $salesChannelContext
+     *
+     * @return int
+     */
     public function countStoredStateData($salesChannelContext): int
     {
         $stateData = $this->fetchRedeemedGiftCardsFromContextToken(
@@ -200,6 +220,12 @@ class PaymentStateDataService
         return $stateData->getTotal();
     }
 
+    /**
+     * @param $salesChannelContext
+     * @param string $transactionId
+     *
+     * @return array|null
+     */
     public function getStoredStateData($salesChannelContext, string $transactionId): ?array
     {
         // Check for state.data in db using the context token

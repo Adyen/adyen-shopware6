@@ -13,17 +13,19 @@ class RatePayDeviceFingerprintParamsProvider
     /**
      * @var RequestStack
      */
-    protected $requestStack;
+    protected RequestStack $requestStack;
 
     /**
      * @var ConfigurationService
      */
     private ConfigurationService $configurationService;
 
-    public function __construct(
-        RequestStack         $requestStack,
-        ConfigurationService $configurationService
-    ) {
+    /**
+     * @param RequestStack $requestStack
+     * @param ConfigurationService $configurationService
+     */
+    public function __construct(RequestStack $requestStack, ConfigurationService $configurationService)
+    {
         $this->requestStack = $requestStack;
         $this->configurationService = $configurationService;
     }
@@ -32,9 +34,10 @@ class RatePayDeviceFingerprintParamsProvider
      * Provides fingerprint parameters
      *
      * @param string|null $salesChannelId
+     *
      * @return array
      */
-    public function getFingerprintParams(string $salesChannelId = null): array
+    public function getFingerprintParams(?string $salesChannelId = null): array
     {
         return [
             'snippetId' => $this->configurationService->getDeviceFingerprintSnippetId($salesChannelId),
@@ -60,7 +63,6 @@ class RatePayDeviceFingerprintParamsProvider
 
         return (string)$this->requestStack->getSession()->get(self::TOKEN_SESSION_KEY);
     }
-
 
     /**
      * Removes fingerprint token from session

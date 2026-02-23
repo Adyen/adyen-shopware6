@@ -40,22 +40,22 @@ use Shopware\Core\Framework\Context;
 class AuthorisationWebhookHandler implements WebhookHandlerInterface
 {
     /** @var LoggerInterface */
-    private $logger;
+    private LoggerInterface $logger;
 
     /** @var CaptureService */
-    private $captureService;
+    private CaptureService $captureService;
 
     /** @var AdyenPaymentService */
-    private $adyenPaymentService;
+    private AdyenPaymentService $adyenPaymentService;
 
     /** @var OrderTransactionStateHandler */
-    private $orderTransactionStateHandler;
+    private OrderTransactionStateHandler $orderTransactionStateHandler;
 
     /** @var PluginPaymentMethodsService */
-    private $pluginPaymentMethodsService;
+    private PluginPaymentMethodsService $pluginPaymentMethodsService;
 
     /** @var ConfigurationService */
-    private $configurationService;
+    private ConfigurationService $configurationService;
 
     /**
      * @param CaptureService $captureService
@@ -87,7 +87,9 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      * @param string $state
      * @param string $currentTransactionState
      * @param Context $context
+     *
      * @return void
+     *
      * @throws CaptureException|AdyenException
      */
     public function handleWebhook(
@@ -110,7 +112,9 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      * @param OrderTransactionEntity $orderTransaction
      * @param NotificationEntity $notification
      * @param Context $context
+     *
      * @return void
+     *
      * @throws CaptureException
      */
     private function handleSuccessfulNotification(
@@ -166,7 +170,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                     );
                 }
             } else {
-                    $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+                $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
             }
         }
     }
@@ -174,6 +178,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
     /**
      * @param OrderTransactionEntity $orderTransactionEntity
      * @param Context $context
+     *
      * @return void
      */
     private function handleFailedNotification(OrderTransactionEntity $orderTransactionEntity, Context $context): void

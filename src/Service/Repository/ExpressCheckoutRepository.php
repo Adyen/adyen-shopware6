@@ -61,6 +61,17 @@ class ExpressCheckoutRepository
     /** @var EntityRepository */
     private EntityRepository $orderCustomerRepository;
 
+    /**
+     * @param EntityRepository $shippingMethodRepository
+     * @param EntityRepository $customerRepository
+     * @param EntityRepository $countryStateRepository
+     * @param EntityRepository $salutationRepository
+     * @param EntityRepository $countryRepository
+     * @param EntityRepository $orderRepository
+     * @param EntityRepository $orderAddressRepository
+     * @param EntityRepository $customerAddressRepository
+     * @param EntityRepository $orderCustomerRepository
+     */
     public function __construct(
         EntityRepository $shippingMethodRepository,
         EntityRepository $customerRepository,
@@ -88,11 +99,12 @@ class ExpressCheckoutRepository
      *
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      * @param Cart $cart The cart to calculate shipping for.
+     *
      * @return ShippingMethodCollection The collection of available shipping methods.
      */
     public function fetchAvailableShippingMethods(
         SalesChannelContext $salesChannelContext,
-        Cart                $cart
+        Cart $cart
     ): ShippingMethodCollection {
         $criteria = new Criteria();
         $criteria->addAssociation('availabilityRule');
@@ -120,6 +132,7 @@ class ExpressCheckoutRepository
      *
      * @param CustomerEntity|null $customer
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return string
      */
     public function getCountryCode(?CustomerEntity $customer, SalesChannelContext $salesChannelContext): string
@@ -145,7 +158,9 @@ class ExpressCheckoutRepository
      *
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      * @param array $newAddress Optional new address details.
+     *
      * @return CountryEntity The resolved country entity.
+     *
      * @throws ResolveCountryException If the country cannot be resolved.
      */
     public function resolveCountry(SalesChannelContext $salesChannelContext, array $newAddress = []): CountryEntity
@@ -179,6 +194,7 @@ class ExpressCheckoutRepository
 
     /**
      * Retrieves the country ID for the given ISO code.
+     *
      * @param string $isoCode The ISO code of the country (e.g., 'US', 'DE').
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      *
@@ -204,7 +220,9 @@ class ExpressCheckoutRepository
      * Retrieves the salutation ID for the 'undefined' salutation key.
      *
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
+     *
      * @return string The ID of the salutation.
+     *
      * @throws ResolveCountryException
      */
     public function getSalutationId(SalesChannelContext $salesChannelContext): string
@@ -231,8 +249,8 @@ class ExpressCheckoutRepository
      * @return string|null The ID of the state if found, or null if not found.
      */
     public function getStateId(
-        string              $administrativeArea,
-        string              $countryCode,
+        string $administrativeArea,
+        string $countryCode,
         SalesChannelContext $salesChannelContext
     ): ?string {
         $criteria = new Criteria();
@@ -258,8 +276,8 @@ class ExpressCheckoutRepository
      * @param SalesChannelContext $salesChannelContext The sales channel context for the query.
      *
      * @return CustomerEntity The customer entity.
-     * @throws Exception If the customer is not found.
      *
+     * @throws Exception If the customer is not found.
      */
     public function findCustomerById(string $customerId, SalesChannelContext $salesChannelContext): CustomerEntity
     {
@@ -279,17 +297,20 @@ class ExpressCheckoutRepository
 
     /**
      * Creates a guest customer with a default billing and shipping address.
+     *
      * @param SalesChannelContext $salesChannelContext The sales channel context containing customer group and payment
      * method details.
      * @param string $guestEmail The email address for the guest customer.
      * @param array $newAddress The address details for the customer
+     *
      * @return CustomerEntity The created guest customer entity.
+     *
      * @throws ResolveCountryException
      */
     public function createGuestCustomer(
         SalesChannelContext $salesChannelContext,
-        string              $guestEmail,
-        array               $newAddress
+        string $guestEmail,
+        array $newAddress
     ): CustomerEntity {
         // Guest data
         $customerId = Uuid::randomHex();
@@ -384,7 +405,7 @@ class ExpressCheckoutRepository
         SalesChannelContext $salesChannelContext
     ): CustomerAddressEntity {
         $newAddressData = $this->getAddressData($newAddress, $salesChannelContext);
-        $firstName = !empty($newAddress['firstName']) ?  $newAddress['firstName'] : $customer->getFirstName();
+        $firstName = !empty($newAddress['firstName']) ? $newAddress['firstName'] : $customer->getFirstName();
         $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : $customer->getLastName();
         $addressId = Uuid::randomHex();
 
@@ -445,6 +466,7 @@ class ExpressCheckoutRepository
     /**
      * @param string $orderId
      * @param Context $context
+     *
      * @return OrderEntity|null
      */
     public function getOrderById(string $orderId, Context $context): ?OrderEntity
@@ -465,6 +487,7 @@ class ExpressCheckoutRepository
     /**
      * @param array $orderData
      * @param Context $context
+     *
      * @return void
      */
     public function upsertOrder(array $orderData, Context $context): void
@@ -508,18 +531,19 @@ class ExpressCheckoutRepository
      * @param string $orderAddressId
      * @param string $customerOrderId
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return CustomerAddressEntity
      * @throws ResolveCountryException
      */
     public function updateOrderAddressAndCustomer(
-        array               $newAddress,
-        CustomerEntity      $customer,
-        string              $orderAddressId,
-        string              $customerOrderId,
+        array $newAddress,
+        CustomerEntity $customer,
+        string $orderAddressId,
+        string $customerOrderId,
         SalesChannelContext $salesChannelContext
     ): CustomerAddressEntity {
         $newAddressData = $this->getAddressData($newAddress, $salesChannelContext);
-        $firstName = !empty($newAddress['firstName']) ?  $newAddress['firstName'] : $customer->getFirstName();
+        $firstName = !empty($newAddress['firstName']) ? $newAddress['firstName'] : $customer->getFirstName();
         $lastName = !empty($newAddress['lastName']) ? $newAddress['lastName'] : $customer->getLastName();
 
         $addressData = [
@@ -602,6 +626,7 @@ class ExpressCheckoutRepository
     /**
      * @param array $newAddress
      * @param SalesChannelContext $salesChannelContext
+     *
      * @return array
      * @throws ResolveCountryException
      */
@@ -614,15 +639,15 @@ class ExpressCheckoutRepository
         if (!empty($newAddress['state']) && $countryCode) {
             $stateId = $this->getStateId($newAddress['state'], $countryCode, $salesChannelContext);
         }
-        $city = !empty($newAddress['city']) ? $newAddress['city']  : 'Adyen Guest City';
+        $city = !empty($newAddress['city']) ? $newAddress['city'] : 'Adyen Guest City';
         $street = !empty($newAddress['street']) ? $newAddress['street'] : 'Adyen Guest Street 1';
         $zipcode = $newAddress['zipcode'] ?? $newAddress['postalCode'] ?? '1111';
-        $additionalAddressLine1 =  !empty($newAddress['address2']) ? $newAddress['address2'] : '';
-        $additionalAddressLine2 =  !empty($newAddress['address3']) ? $newAddress['address3'] : '';
+        $additionalAddressLine1 = !empty($newAddress['address2']) ? $newAddress['address2'] : '';
+        $additionalAddressLine2 = !empty($newAddress['address3']) ? $newAddress['address3'] : '';
         $phoneNumber = !empty($newAddress['phoneNumber']) ? $newAddress['phoneNumber'] : '';
 
         return [
-            'countryId' =>  $countryId,
+            'countryId' => $countryId,
             'stateId' => $stateId,
             'city' => $city,
             'street' => $street,

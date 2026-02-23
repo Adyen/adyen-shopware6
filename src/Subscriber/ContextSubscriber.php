@@ -45,7 +45,14 @@ class ContextSubscriber implements EventSubscriberInterface
     private CartCalculator $cartCalculator;
     private Currency $currency;
 
-
+    /**
+     * @param ConfigurationService $configurationService
+     * @param PaymentStateDataService $paymentStateDataService
+     * @param AbstractContextSwitchRoute $contextSwitchRoute
+     * @param AbstractCartPersister $cartPersister
+     * @param CartCalculator $cartCalculator
+     * @param Currency $currency
+     */
     public function __construct(
         ConfigurationService $configurationService,
         PaymentStateDataService $paymentStateDataService,
@@ -62,7 +69,10 @@ class ContextSubscriber implements EventSubscriberInterface
         $this->currency = $currency;
     }
 
-    public static function getSubscribedEvents()
+    /**
+     * @return string[]
+     */
+    public static function getSubscribedEvents(): array
     {
         return [
             SalesChannelContextResolvedEvent::class => 'addAdyenData',
@@ -71,6 +81,11 @@ class ContextSubscriber implements EventSubscriberInterface
         ];
     }
 
+    /**
+     * @param SalesChannelContextRestoredEvent $event
+     *
+     * @return void
+     */
     public function onContextRestored(SalesChannelContextRestoredEvent $event): void
     {
         $token = $event->getRestoredSalesChannelContext()->getToken();
@@ -82,6 +97,11 @@ class ContextSubscriber implements EventSubscriberInterface
         }
     }
 
+    /**
+     * @param SalesChannelContextTokenChangeEvent $event
+     *
+     * @return void
+     */
     public function onContextTokenChange(SalesChannelContextTokenChangeEvent $event): void
     {
         $token = $event->getCurrentToken();
@@ -94,6 +114,11 @@ class ContextSubscriber implements EventSubscriberInterface
         }
     }
 
+    /**
+     * @param SalesChannelContextResolvedEvent $event
+     *
+     * @return void
+     */
     public function addAdyenData(SalesChannelContextResolvedEvent $event): void
     {
         $context = $event->getSalesChannelContext();

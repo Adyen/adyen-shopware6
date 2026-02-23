@@ -18,6 +18,14 @@ use Shopware\Core\Framework\Context;
 
 trait CancellableWebhookHandlerTrait
 {
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
+     * @param string $state
+     * @param Context $context
+     *
+     * @return void
+     */
     protected function handleCancelWebhook(
         OrderTransactionEntity $orderTransactionEntity,
         OrderTransactionStateHandler $orderTransactionStateHandler,

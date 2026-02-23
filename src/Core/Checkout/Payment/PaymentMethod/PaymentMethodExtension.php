@@ -34,6 +34,11 @@ use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
 class PaymentMethodExtension extends EntityExtension
 {
+    /**
+     * @param FieldCollection $collection
+     *
+     * @return void
+     */
     public function extendFields(FieldCollection $collection): void
     {
         $field = new ObjectField(
@@ -49,6 +54,9 @@ class PaymentMethodExtension extends EntityExtension
         $collection->add($field);
     }
 
+    /**
+     * @return string
+     */
     public function getDefinitionClass(): string
     {
         return PaymentMethodDefinition::class;

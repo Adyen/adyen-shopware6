@@ -52,6 +52,11 @@ class AdyenPaymentService
      */
     private AbstractPaymentTransactionStructFactory $paymentTransactionStructFactory;
 
+    /**
+     * @param AdyenPaymentRepository $adyenPaymentRepository
+     * @param EntityRepository $orderTransactionRepository
+     * @param AbstractPaymentTransactionStructFactory $paymentTransactionStructFactory
+     */
     public function __construct(
         AdyenPaymentRepository $adyenPaymentRepository,
         EntityRepository $orderTransactionRepository,
@@ -62,6 +67,13 @@ class AdyenPaymentService
         $this->paymentTransactionStructFactory = $paymentTransactionStructFactory;
     }
 
+    /**
+     * @param NotificationEntity $notification
+     * @param OrderTransactionEntity $orderTransaction
+     * @param bool $isManualCapture
+     *
+     * @return void
+     */
     public function insertAdyenPayment(
         NotificationEntity $notification,
         OrderTransactionEntity $orderTransaction,
@@ -88,6 +100,7 @@ class AdyenPaymentService
 
     /**
      * @param string $orderReference
+     *
      * @return string|null
      */
     public function getMerchantReferenceFromOrderReference(string $orderReference): ?string
@@ -100,6 +113,7 @@ class AdyenPaymentService
      *
      * @param string $orderId
      * @param string $sort Sorts the response based on created_at column
+     *
      * @return array
      */
     public function getAdyenPayments(string $orderId, string $sort = FieldSorting::DESCENDING): array
@@ -127,6 +141,7 @@ class AdyenPaymentService
 
     /**
      * @param string $pspreference
+     *
      * @return AdyenPaymentEntity|null
      */
     public function getAdyenPayment(string $pspreference): ?AdyenPaymentEntity
@@ -139,6 +154,11 @@ class AdyenPaymentService
             ->first();
     }
 
+    /**
+     * @param OrderTransactionEntity $orderTransactionEntity
+     *
+     * @return bool
+     */
     public function isFullAmountAuthorized(OrderTransactionEntity $orderTransactionEntity): bool
     {
         $amountSum = 0;
@@ -180,6 +200,12 @@ class AdyenPaymentService
         ], Context::createDefaultContext());
     }
 
+    /**
+     * @param string $orderTransactionId
+     * @param SalesChannelContext $context
+     *
+     * @return AsyncPaymentTransactionStruct
+     */
     public function getPaymentTransactionStruct(
         string $orderTransactionId,
         SalesChannelContext $context
