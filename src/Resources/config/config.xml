@@ -397,6 +397,99 @@
         </input-field>
     </card>
     <card>
+        <title>Apple Pay</title>
+        <input-field type="single-select">
+            <name>applePayButtonType</name>
+            <label>Select Apple Pay button type</label>
+            <helpText>Apple Pay button type. Refer to the documentation to preview how different type options are displayed.
+                <![CDATA[<a href="https://developer.apple.com/design/human-interface-guidelines/apple-pay#Button-types" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>plain</id>
+                    <name>Plain</name>
+                </option>
+                <option>
+                    <id>buy</id>
+                    <name>Buy</name>
+                </option>
+                <option>
+                    <id>donate</id>
+                    <name>Donate</name>
+                </option>
+                <option>
+                    <id>check-out</id>
+                    <name>Check Out</name>
+                </option>
+                <option>
+                    <id>book</id>
+                    <name>Book</name>
+                </option>
+                <option>
+                    <id>subscribe</id>
+                    <name>Subscribe</name>
+                </option>
+                <option>
+                    <id>add-money</id>
+                    <name>Add Money</name>
+                </option>
+                <option>
+                    <id>contribute</id>
+                    <name>Contribute</name>
+                </option>
+                <option>
+                    <id>order</id>
+                    <name>Order</name>
+                </option>
+                <option>
+                    <id>reload</id>
+                    <name>Reload</name>
+                </option>
+                <option>
+                    <id>rent</id>
+                    <name>Rent</name>
+                </option>
+                <option>
+                    <id>support</id>
+                    <name>Support</name>
+                </option>
+                <option>
+                    <id>tip</id>
+                    <name>Tip</name>
+                </option>
+                <option>
+                    <id>top-up</id>
+                    <name>Top Up</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>applePayButtonColor</name>
+            <label>Select Apple Pay button color</label>
+            <helpText>Apple Pay button color. Refer to the documentation to preview how different color options are displayed.
+                <![CDATA[<a href="https://developer.apple.com/design/human-interface-guidelines/apple-pay#Button-styles" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>black</id>
+                    <name>Black</name>
+                </option>
+                <option>
+                    <id>white</id>
+                    <name>White</name>
+                </option>
+                <option>
+                    <id>white-outline</id>
+                    <name>White Outline</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+    <card>
         <title>Adyen Giving</title>
         <input-field type="bool">
             <name>adyenGivingEnabled</name>
