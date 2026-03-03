@@ -198,13 +198,29 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 {}
         };
 
+        const paypalConfigStyle = {};
+        if (adyenExpressCheckoutOptions.paypalButtonColor) {
+            paypalConfigStyle.color = adyenExpressCheckoutOptions.paypalButtonColor;
+        }
+        if (adyenExpressCheckoutOptions.paypalButtonShape) {
+            paypalConfigStyle.shape = adyenExpressCheckoutOptions.paypalButtonShape;
+        }
+        if (adyenExpressCheckoutOptions.paypalButtonLabel) {
+            paypalConfigStyle.label = adyenExpressCheckoutOptions.paypalButtonLabel;
+        }
+        const paypalConfig = {
+            style: paypalConfigStyle
+        };
+
         this.paymentMethodSpecificConfig = {
             "paywithgoogle": googlePayConfig,
-            "googlepay": googlePayConfig
+            "googlepay": googlePayConfig,
+            "paypal": paypalConfig
         };
 
         if (!this.userLoggedIn) {
             this.paymentMethodSpecificConfig.paypal = {
+                ...this.paymentMethodSpecificConfig.paypal,
                 isExpress: true,
                 onAuthorized: this.onShopperDetails.bind(this),
                 blockPayPalCreditButton: true,

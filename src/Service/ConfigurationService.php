@@ -345,6 +345,45 @@ class ConfigurationService
     }
 
     /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonColor(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalButtonColor',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonShape(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalButtonShape',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonLabel(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalButtonLabel',
+            $salesChannelId
+        );
+    }
+
+    /**
      * @param string $salesChannelId
      *
      * @return array|mixed|null

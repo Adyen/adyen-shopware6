@@ -384,6 +384,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
+                        'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
+                        'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
                         'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
                         'showVouchersSeparately' => json_encode($this->configurationService
@@ -485,6 +488,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
+                        'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
+                        'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
                         'paypalExpressOrderFinalizeUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
                         'paypalExpressOrderUrl' =>
