@@ -66,6 +66,11 @@
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
         </service>
+
+        <service id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface"
+                 alias="Shopware\Core\System\SalesChannel\Context\SalesChannelContextService"
+                 public="false"/>
+
         <service id="Adyen\Shopware\Service\ExpressCheckoutService" autowire="true">
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\ExpressCheckoutRepository"/>
@@ -76,6 +81,7 @@
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
             <argument type="service" id="order.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Order\OrderConverter"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextService"/>
         </service>
         <service id="Adyen\Shopware\Service\TermsAndConditionsService" autowire="true">
         </service>
