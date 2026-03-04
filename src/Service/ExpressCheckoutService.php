@@ -53,6 +53,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -99,8 +100,8 @@ class ExpressCheckoutService
     /** @var OrderConverter */
     private OrderConverter $orderConverter;
 
-    /** @var SalesChannelContextService $salesChannelContextService */
-    private SalesChannelContextService $salesChannelContextService;
+    /** @var SalesChannelContextServiceInterface $salesChannelContextService */
+    private SalesChannelContextServiceInterface $salesChannelContextService;
 
     /**
      * @param CartService $cartService
@@ -112,7 +113,7 @@ class ExpressCheckoutService
      * @param SalesChannelContextPersister $contextPersister
      * @param EntityRepository $orderRepository
      * @param OrderConverter $orderConverter
-     * @param SalesChannelContextService $salesChannelContextService
+     * @param SalesChannelContextServiceInterface $salesChannelContextService
      */
     public function __construct(
         CartService $cartService,
@@ -124,7 +125,7 @@ class ExpressCheckoutService
         SalesChannelContextPersister $contextPersister,
         EntityRepository $orderRepository,
         OrderConverter $orderConverter,
-        SalesChannelContextService $salesChannelContextService
+        SalesChannelContextServiceInterface $salesChannelContextService
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
@@ -870,6 +871,7 @@ class ExpressCheckoutService
      * @return SalesChannelContext
      *
      * @throws ResolveCountryException
+     * @throws Exception
      */
     public function createCustomerAndUpdateContext(
         SalesChannelContext $salesChannelContext,
@@ -904,21 +906,13 @@ class ExpressCheckoutService
         $customer->setActiveBillingAddress($guestCustomerAddress);
         $customer->setActiveShippingAddress($guestCustomerAddress);
 
-        return new SalesChannelContext(
-            $salesChannelContext->getContext(),
+        return $this->createContext(
+            $salesChannelContext,
             $token,
-            null,
-            $salesChannelContext->getSalesChannel(),
-            $salesChannelContext->getCurrency(),
-            $salesChannelContext->getCurrentCustomerGroup(),
-            $salesChannelContext->getTaxRules(),
-            $salesChannelContext->getPaymentMethod(),
-            $salesChannelContext->getShippingMethod(),
             $shippingLocation,
+            $salesChannelContext->getPaymentMethod(),
             $customer,
-            $salesChannelContext->getItemRounding(),
-            $salesChannelContext->getTotalRounding(),
-            $salesChannelContext->getAreaRuleIds()
+            $salesChannelContext->getShippingMethod()
         );
     }
 
