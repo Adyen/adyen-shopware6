@@ -621,6 +621,24 @@ export default class ConfirmOrderPlugin extends Plugin {
             };
         }
 
+        if (selectedPaymentMethodObject.type === "paypal") {
+            const {
+                paypalButtonColor,
+                paypalButtonShape,
+                paypalButtonLabel
+            } = adyenCheckoutOptions;
+
+            const style = {
+                ...(paypalButtonColor && { color: paypalButtonColor }),
+                ...(paypalButtonShape && { shape: paypalButtonShape }),
+                ...(paypalButtonLabel && { label: paypalButtonLabel }),
+            };
+
+            if (Object.keys(style).length > 0) {
+                PAY_BUTTON_CONFIG.style = style;
+            }
+        }
+
         const paymentMethodInstance = AdyenWeb.createComponent(selectedPaymentMethodObject.type, this.adyenCheckout, PAY_BUTTON_CONFIG);
 
         try {

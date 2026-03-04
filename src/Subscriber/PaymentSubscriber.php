@@ -578,6 +578,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             'giftcard'
         );
 
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -625,9 +626,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'campaignCode' => $campaignCode,
                         'companyName' => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCompany(),
                         'googleMerchantId' => $this->configurationService
-                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                            ->getGooglePayMerchantId($salesChannelId),
+                        'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
+                        'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
+                        'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                            ->getMerchantAccount($salesChannelId),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
                         'showVouchersCheckout' => json_encode($this->configurationService->getShowVouchersCheckout()),
                         'showVouchersSeparately' => json_encode($this->configurationService
