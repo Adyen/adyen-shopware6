@@ -54,10 +54,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class ExpressCheckoutService
 {
@@ -97,8 +97,8 @@ class ExpressCheckoutService
     /** @var OrderConverter */
     private OrderConverter $orderConverter;
 
-    /** @var SalesChannelContextService $salesChannelContextService */
-    private SalesChannelContextService $salesChannelContextService;
+    /** @var SalesChannelContextServiceInterface $salesChannelContextService */
+    private SalesChannelContextServiceInterface $salesChannelContextService;
 
     /**
      * @param CartService $cartService
@@ -109,7 +109,7 @@ class ExpressCheckoutService
      * @param SalesChannelContextPersister $contextPersister
      * @param EntityRepository $orderRepository
      * @param OrderConverter $orderConverter
-     * @param SalesChannelContextService $salesChannelContextService
+     * @param SalesChannelContextServiceInterface $salesChannelContextService
      */
     public function __construct(
         CartService $cartService,
@@ -120,7 +120,7 @@ class ExpressCheckoutService
         SalesChannelContextPersister $contextPersister,
         EntityRepository $orderRepository,
         OrderConverter $orderConverter,
-        SalesChannelContextService $salesChannelContextService
+        SalesChannelContextServiceInterface $salesChannelContextService
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
