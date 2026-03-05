@@ -636,6 +636,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'campaignCode' => $campaignCode,
                         'companyName' => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCompany(),
                         'googleMerchantId' => $this->configurationService->getGooglePayMerchantId($salesChannelId),
+                        'isBillingAddressReadOnly' => $this->configurationService
+                            ->isBillingAddressReadOnly($salesChannelId),
+                        'isShippingAddressReadOnly' => $this->configurationService
+                            ->isShippingAddressReadOnly($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService->getMerchantAccount($salesChannelId),
                         'googlePayButtonType' => $this->configurationService->getGooglePayButtonType($salesChannelId),
                         'googlePayButtonColor' => $this->configurationService->getGooglePayButtonColor($salesChannelId),

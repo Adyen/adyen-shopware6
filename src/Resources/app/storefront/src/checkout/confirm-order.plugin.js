@@ -794,6 +794,21 @@ export default class ConfirmOrderPlugin extends Plugin {
             };
         }
 
+        if (paymentMethod.type === 'ratepay' ||
+            paymentMethod.type === 'affirm' ||
+            paymentMethod.type === 'facilypay_3x' ||
+            paymentMethod.type === 'facilypay_4x' ||
+            paymentMethod.type === 'facilypay_6x' ||
+            paymentMethod.type === 'facilypay_10x' ||
+            paymentMethod.type === 'facilypay_12x'
+        ) {
+            configuration.visibility = {
+                personalDetails: "editable",
+                billingAddress: adyenCheckoutOptions.billingAddressReadOnly ? "readOnly" : "editable",
+                deliveryAddress: adyenCheckoutOptions.shippingAddressReadOnly ? "readOnly" : "editable",
+            };
+        }
+
         if (!isOneClick && paymentMethod.type === 'scheme' && adyenCheckoutOptions.displaySaveCreditCardOption) {
             configuration.enableStoreDetails = true;
         }
