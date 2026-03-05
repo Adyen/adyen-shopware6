@@ -379,14 +379,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'userLoggedIn' => json_encode($userLoggedIn),
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'googleMerchantId' => $this->configurationService
                             ->getGooglePayMerchantId($salesChannelId),
+                        'gatewayMerchantId' => $this->configurationService
+                            ->getMerchantAccount($salesChannelId),
                         'googlePayButtonType' => $this->configurationService->getGooglePayButtonType($salesChannelId),
                         'googlePayButtonColor' => $this->configurationService->getGooglePayButtonColor($salesChannelId),
                         'googlePayButtonSize' => $this->configurationService->getGooglePayButtonSize($salesChannelId),
-                        'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelId),
-                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
@@ -486,14 +486,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'userLoggedIn' => json_encode($userLoggedIn),
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'googleMerchantId' => $this->configurationService
                             ->getGooglePayMerchantId($salesChannelId),
+                        'gatewayMerchantId' => $this->configurationService
+                            ->getMerchantAccount($salesChannelId),
                         'googlePayButtonType' => $this->configurationService->getGooglePayButtonType($salesChannelId),
                         'googlePayButtonColor' => $this->configurationService->getGooglePayButtonColor($salesChannelId),
                         'googlePayButtonSize' => $this->configurationService->getGooglePayButtonSize($salesChannelId),
-                        'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelId),
-                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
@@ -631,16 +631,14 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
                         'companyName' => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCompany(),
-                        'googleMerchantId' => $this->configurationService
-                            ->getGooglePayMerchantId($salesChannelId),
+                        'googleMerchantId' => $this->configurationService->getGooglePayMerchantId($salesChannelId),
+                        'gatewayMerchantId' => $this->configurationService->getMerchantAccount($salesChannelId),
                         'googlePayButtonType' => $this->configurationService->getGooglePayButtonType($salesChannelId),
                         'googlePayButtonColor' => $this->configurationService->getGooglePayButtonColor($salesChannelId),
                         'googlePayButtonSize' => $this->configurationService->getGooglePayButtonSize($salesChannelId),
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
-                        'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelId),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
                         'showVouchersCheckout' => json_encode($this->configurationService->getShowVouchersCheckout()),
                         'showVouchersSeparately' => json_encode($this->configurationService
