@@ -381,6 +381,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'campaignCode' => $campaignCode,
                         'googleMerchantId' => $this->configurationService
                             ->getGooglePayMerchantId($salesChannelId),
+                        'googlePayButtonType' => $this->configurationService->getGooglePayButtonType($salesChannelId),
+                        'googlePayButtonColor' => $this->configurationService->getGooglePayButtonColor($salesChannelId),
+                        'googlePayButtonSize' => $this->configurationService->getGooglePayButtonSize($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
@@ -485,6 +488,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'campaignCode' => $campaignCode,
                         'googleMerchantId' => $this->configurationService
                             ->getGooglePayMerchantId($salesChannelId),
+                        'googlePayButtonType' => $this->configurationService->getGooglePayButtonType($salesChannelId),
+                        'googlePayButtonColor' => $this->configurationService->getGooglePayButtonColor($salesChannelId),
+                        'googlePayButtonSize' => $this->configurationService->getGooglePayButtonSize($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
