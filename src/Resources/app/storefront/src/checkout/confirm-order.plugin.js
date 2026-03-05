@@ -611,13 +611,27 @@ export default class ConfirmOrderPlugin extends Plugin {
             }.bind(this);
         }
 
-        const PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, baseConfig);
+        let PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, baseConfig);
 
-        if ((selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay")
-            && (adyenCheckoutOptions.googleMerchantId !== "" && adyenCheckoutOptions.gatewayMerchantId !== "")) {
+        const {
+            googlepayButtonType,
+            googlepayButtonColor,
+            googlepayButtonSize,
+            googleMerchantId,
+            gatewayMerchantId
+        } = adyenCheckoutOptions;
+
+        if (selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay") {
+            PAY_BUTTON_CONFIG = {
+                ...PAY_BUTTON_CONFIG,
+                ...(googlepayButtonType && {buttonType: googlepayButtonType}),
+                ...(googlepayButtonColor && {buttonColor: googlepayButtonColor}),
+                ...(googlepayButtonSize && {buttonSizeMode: googlepayButtonSize})
+            }
+
             PAY_BUTTON_CONFIG.configuration = {
-                merchantId: adyenCheckoutOptions.googleMerchantId,
-                gatewayMerchantId: adyenCheckoutOptions.gatewayMerchantId
+                ...(googleMerchantId !== "" && {merchantId: googleMerchantId}),
+                ...(gatewayMerchantId !== "" && {gatewayMerchantId: gatewayMerchantId})
             };
         }
 
@@ -629,9 +643,9 @@ export default class ConfirmOrderPlugin extends Plugin {
             } = adyenCheckoutOptions;
 
             const style = {
-                ...(paypalButtonColor && { color: paypalButtonColor }),
-                ...(paypalButtonShape && { shape: paypalButtonShape }),
-                ...(paypalButtonLabel && { label: paypalButtonLabel }),
+                ...(paypalButtonColor && {color: paypalButtonColor}),
+                ...(paypalButtonShape && {shape: paypalButtonShape}),
+                ...(paypalButtonLabel && {label: paypalButtonLabel}),
             };
 
             if (Object.keys(style).length > 0) {
