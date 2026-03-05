@@ -390,6 +390,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
+                        'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
+                        'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
                         'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
                         'showVouchersSeparately' => json_encode($this->configurationService
@@ -497,6 +499,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
+                        'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
+                        'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
                         'paypalExpressOrderFinalizeUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
                         'paypalExpressOrderUrl' =>

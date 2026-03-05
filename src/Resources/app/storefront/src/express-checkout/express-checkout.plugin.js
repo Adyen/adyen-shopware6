@@ -155,7 +155,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
             googlepayButtonColor,
             googlepayButtonSize
         } = adyenExpressCheckoutOptions;
-
         const googlePayConfig = {
             ...(googlepayButtonType && {buttonType: googlepayButtonType}),
             ...(googlepayButtonColor && {buttonColor: googlepayButtonColor}),
@@ -210,13 +209,11 @@ export default class ExpressCheckoutPlugin extends Plugin {
             paypalButtonShape,
             paypalButtonLabel
         } = adyenExpressCheckoutOptions;
-
         const paypalConfigStyle = {
             ...(paypalButtonColor && {color: paypalButtonColor}),
             ...(paypalButtonShape && {shape: paypalButtonShape}),
             ...(paypalButtonLabel && {label: paypalButtonLabel}),
         };
-
         let paypalConfig;
         if (Object.keys(paypalConfigStyle).length > 0) {
             paypalConfig = {
@@ -224,10 +221,20 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
         }
 
+        const {
+            applepayButtonType,
+            applepayButtonColor,
+        } = adyenExpressCheckoutOptions;
+        const applePayConfig = {
+            ...(applepayButtonType && {buttonType: applepayButtonType}),
+            ...(applepayButtonColor && {buttonColor: applepayButtonColor}),
+        };
+
         this.paymentMethodSpecificConfig = {
             paywithgoogle: googlePayConfig,
             googlepay: googlePayConfig,
-            ...(paypalConfig && {paypal: paypalConfig})
+            ...(paypalConfig && {paypal: paypalConfig}),
+            ...(applePayConfig && {applepay: applePayConfig})
         };
 
         if (!this.userLoggedIn) {
@@ -242,6 +249,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
 
             this.paymentMethodSpecificConfig.applepay = {
+                ...this.paymentMethodSpecificConfig.applepay,
                 isExpress: true,
                 requiredBillingContactFields: ['postalAddress'],
                 requiredShippingContactFields: ['postalAddress', 'name', 'phone', 'email'],

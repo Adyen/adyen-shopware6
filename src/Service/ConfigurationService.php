@@ -308,6 +308,32 @@ class ConfigurationService
     /**
      * @param string|null $salesChannelId
      *
+     * @return mixed
+     */
+    public function getApplePayButtonType(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.applePayButtonType',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getApplePayButtonColor(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.applePayButtonColor',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
      * @return bool
      */
     public function isGooglePayExpressCheckoutEnabled(?string $salesChannelId = null): bool
@@ -323,7 +349,7 @@ class ConfigurationService
      *
      * @return array|mixed|null
      */
-    public function getGooglePayMerchantId(?string $salesChannelId = null)
+    public function getGooglePayMerchantId(?string $salesChannelId = null): mixed
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googleMerchantId',
