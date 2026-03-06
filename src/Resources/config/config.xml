@@ -214,6 +214,94 @@
         </input-field>
     </card>
     <card>
+        <title>PayPal</title>
+        <input-field type="single-select">
+            <name>paypalButtonColor</name>
+            <label>Select PayPal button color</label>
+            <helpText>PayPal button color. Refer to the documentation to preview how different color options are displayed.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#color" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>gold</id>
+                    <name>Gold</name>
+                </option>
+                <option>
+                    <id>blue</id>
+                    <name>Blue</name>
+                </option>
+                <option>
+                    <id>silver</id>
+                    <name>Silver</name>
+                </option>
+                <option>
+                    <id>white</id>
+                    <name>White</name>
+                </option>
+                <option>
+                    <id>black</id>
+                    <name>Black</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>paypalButtonShape</name>
+            <label>Select PayPal button shape</label>
+            <helpText>PayPal button shape. Refer to the documentation to preview how different shape options are displayed.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#shape" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>rect</id>
+                    <name>Rect</name>
+                </option>
+                <option>
+                    <id>pill</id>
+                    <name>Pill</name>
+                </option>
+                <option>
+                    <id>sharp</id>
+                    <name>Sharp</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>paypalButtonLabel</name>
+            <label>Select PayPal button label</label>
+            <helpText>PayPal button label. Refer to the documentation to preview how different label options are displayed.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#label" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>paypal</id>
+                    <name>Paypal</name>
+                </option>
+                <option>
+                    <id>checkout</id>
+                    <name>Checkout</name>
+                </option>
+                <option>
+                    <id>buynow</id>
+                    <name>Buynow</name>
+                </option>
+                <option>
+                    <id>pay</id>
+                    <name>Pay</name>
+                </option>
+                <option>
+                    <id>installment</id>
+                    <name>Installment</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+    <card>
         <title>Google Merchant ID</title>
         <input-field type="text">
             <name>googleMerchantId</name>
