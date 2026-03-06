@@ -566,13 +566,25 @@ export default class ConfirmOrderPlugin extends Plugin {
             }.bind(this);
         }
 
-        const PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, baseConfig);
+        let PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, baseConfig);
 
-        if ((selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay")
-            && (adyenCheckoutOptions.googleMerchantId !== "" && adyenCheckoutOptions.gatewayMerchantId !== "")) {
-            PAY_BUTTON_CONFIG.configuration = {
-                merchantId: adyenCheckoutOptions.googleMerchantId,
-                gatewayMerchantId: adyenCheckoutOptions.gatewayMerchantId
+        if (selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay") {
+            const {
+                googlepayButtonType,
+                googlepayButtonColor,
+                googlepayButtonSize,
+                googleMerchantId,
+                gatewayMerchantId
+            } = adyenCheckoutOptions;
+            PAY_BUTTON_CONFIG = {
+                ...PAY_BUTTON_CONFIG,
+                ...(googlepayButtonType && { buttonType: googlepayButtonType }),
+                ...(googlepayButtonColor && { buttonColor: googlepayButtonColor }),
+                ...(googlepayButtonSize && { buttonSizeMode: googlepayButtonSize }),
+                configuration: {
+                    ...(googleMerchantId && { merchantId: googleMerchantId }),
+                    ...(gatewayMerchantId && { gatewayMerchantId })
+                }
             };
         }
 
