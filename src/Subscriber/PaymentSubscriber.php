@@ -382,6 +382,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'userLoggedIn' => json_encode($userLoggedIn),
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'googleMerchantId' => $this->configurationService
                             ->getGooglePayMerchantId($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
@@ -392,7 +393,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
-                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
+                        'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
                         'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
                         'showVouchersSeparately' => json_encode($this->configurationService
@@ -490,6 +492,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'userLoggedIn' => json_encode($userLoggedIn),
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
+                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'googleMerchantId' => $this->configurationService
                             ->getGooglePayMerchantId($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
@@ -500,7 +503,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
-                        'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
+                        'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
+                        'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
                         'paypalExpressOrderFinalizeUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
                         'paypalExpressOrderUrl' =>
