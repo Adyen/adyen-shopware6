@@ -16,7 +16,9 @@
                  data-last-name="{{ billingAddress.lastName }}"
                  data-shopper-email="{{ context.customer.email }}"
                  data-telephone-number="{{ billingAddress.phoneNumber ?? shippingAddress.phoneNumber }}"
-                 data-date-of-birth="{{ context.customer.birthday ? context.customer.birthday|date('Y-m-d') : '' }}"
+                {% if context.customer.birthday %}
+                    data-date-of-birth="{{ context.customer.birthday|date('Y-m-d') }}"
+                {% endif %}
             ></div>
             <div id="active-billing-address"
                 data-street="{{ adyenFrontendData.billingAddressStreetHouse.street }}"
