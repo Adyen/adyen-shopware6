@@ -298,6 +298,32 @@ class ConfigurationService
      *
      * @return bool
      */
+    public function isBillingAddressReadOnly(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.billingAddressReadOnly',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return bool
+     */
+    public function isShippingAddressReadOnly(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.shippingAddressReadOnly',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return bool
+     */
     public function isApplePayExpressCheckoutEnabled(?string $salesChannelId = null): bool
     {
         return (bool)$this->systemConfigService->get(
