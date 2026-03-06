@@ -386,6 +386,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelId),
+                        'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
+                        'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
+                        'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
@@ -485,9 +488,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
                         'googleMerchantId' => $this->configurationService
-                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                            ->getGooglePayMerchantId($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                            ->getMerchantAccount($salesChannelId),
+                        'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
+                        'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
+                        'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'paypalExpressOrderFinalizeUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
