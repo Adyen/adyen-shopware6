@@ -649,6 +649,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
+                        'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
+                        'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
                         'showVouchersCheckout' => json_encode($this->configurationService->getShowVouchersCheckout()),
                         'showVouchersSeparately' => json_encode($this->configurationService
