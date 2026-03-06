@@ -335,6 +335,45 @@ class ConfigurationService
     /**
      * @param string|null $salesChannelId
      *
+     * @return mixed
+     */
+    public function getGooglePayButtonType(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.googlePayButtonType',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getGooglePayButtonColor(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.googlePayButtonColor',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getGooglePayButtonSize(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.googlePayButtonSize',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
      * @return bool
      */
     public function isPayPalExpressCheckoutEnabled(?string $salesChannelId = null): bool

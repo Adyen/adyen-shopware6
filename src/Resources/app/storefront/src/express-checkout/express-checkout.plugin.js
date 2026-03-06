@@ -148,7 +148,15 @@ export default class ExpressCheckoutPlugin extends Plugin {
             });
         };
 
+        const {
+            googlepayButtonType,
+            googlepayButtonColor,
+            googlepayButtonSize
+        } = adyenExpressCheckoutOptions;
         const googlePayConfig = {
+            ...(googlepayButtonType && {buttonType: googlepayButtonType}),
+            ...(googlepayButtonColor && {buttonColor: googlepayButtonColor}),
+            ...(googlepayButtonSize && {buttonSizeMode: googlepayButtonSize}),
             onClick: (resolve, reject) => {
                 this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
                 this.activePaymentType = 'googlepay';
@@ -162,7 +170,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 allowedCountryCodes: [], phoneNumberRequired: true
             },
             shippingOptionRequired: !this.userLoggedIn,
-            buttonSizeMode: "fill",
             onAuthorized: (paymentData, actions) => {
                 try {
                     const cfg = this.paymentMethodSpecificConfig && this.paymentMethodSpecificConfig.paywithgoogle && this.paymentMethodSpecificConfig.paywithgoogle.paymentDataCallbacks;
@@ -181,7 +188,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     actions.reject();
                 }
             },
-            buttonColor: "white",
             paymentDataCallbacks: !this.userLoggedIn ? {
                 onPaymentDataChanged: onPaymentDataChanged, onPaymentAuthorized: onPaymentAuthorized
             } : {}
