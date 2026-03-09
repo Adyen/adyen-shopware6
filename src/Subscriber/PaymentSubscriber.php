@@ -361,6 +361,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelId),
+                        'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
+                        'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
+                        'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
                         'paymentErrorUrl' => $this->router->generate(
                             'frontend.checkout.finish.page',
                             [
@@ -480,6 +483,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ->getGooglePayMerchantId($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
                             ->getMerchantAccount($salesChannelId),
+                        'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
+                        'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
+                        'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'paypalExpressOrderFinalizeUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
