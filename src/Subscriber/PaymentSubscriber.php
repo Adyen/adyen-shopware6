@@ -291,9 +291,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $expressCheckoutConfigurationAvailable = true;
         $expressCheckoutConfiguration = [];
-        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
-        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
-        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled($salesChannelId);
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled($salesChannelId);
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled($salesChannelId);
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
@@ -357,9 +358,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             ['orderId' => '']
                         ),
                         'googleMerchantId' => $this->configurationService
-                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                            ->getGooglePayMerchantId($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                            ->getMerchantAccount($salesChannelId),
                         'paymentErrorUrl' => $this->router->generate(
                             'frontend.checkout.finish.page',
                             [
@@ -417,9 +418,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $expressCheckoutConfigurationAvailable = true;
         $expressCheckoutConfiguration = [];
-        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
-        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
-        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled($salesChannelId);
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled($salesChannelId);
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled($salesChannelId);
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
@@ -475,9 +477,9 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
                         'googleMerchantId' => $this->configurationService
-                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
+                            ->getGooglePayMerchantId($salesChannelId),
                         'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                            ->getMerchantAccount($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'paypalExpressOrderFinalizeUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
