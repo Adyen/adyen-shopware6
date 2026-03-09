@@ -190,6 +190,23 @@
         </input-field>
     </card>
     <card>
+        <title>Address form settings</title>
+        <input-field type="bool">
+            <name>billingAddressReadOnly</name>
+            <label>Configure the billing address to be displayed as read-only, preventing customer edits</label>
+            <helpText>
+                If set to true, the billing address will be read-only. Otherwise, it will be editable.
+            </helpText>
+        </input-field>
+        <input-field type="bool">
+            <name>shippingAddressReadOnly</name>
+            <label>Configure the shipping address to be displayed as read-only, preventing customer edits</label>
+            <helpText>
+                If set to true, the shipping address will be read-only. Otherwise, it will be editable.
+            </helpText>
+        </input-field>
+    </card>
+    <card>
         <title>Express checkout</title>
         <input-field type="bool">
             <name>applePayExpressCheckoutEnabled</name>
