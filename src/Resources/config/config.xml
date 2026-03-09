@@ -302,13 +302,100 @@
         </input-field>
     </card>
     <card>
-        <title>Google Merchant ID</title>
+        <title>GooglePay</title>
         <input-field type="text">
             <name>googleMerchantId</name>
             <label>Google Merchant ID</label>
             <helpText>
                 Enter the Google Mechant ID to use as the primary value when initializing the Google Pay component. If not specified, the ID configured in the Adyen Customer Area will be used as a fallback.
             </helpText>
+        </input-field>
+        <input-field type="single-select">
+            <name>googlePayButtonType</name>
+            <label>Select GooglePay button type</label>
+            <helpText>GooglePay button type. Refer to the documentation to preview how different type options are
+                displayed.
+                <![CDATA[<a href="https://developers.google.com/pay/api/web/reference/request-objects#ButtonOptions" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>book</id>
+                    <name>Book</name>
+                </option>
+                <option>
+                    <id>buy</id>
+                    <name>Buy</name>
+                </option>
+                <option>
+                    <id>checkout</id>
+                    <name>Checkout</name>
+                </option>
+                <option>
+                    <id>donate</id>
+                    <name>Donate</name>
+                </option>
+                <option>
+                    <id>order</id>
+                    <name>Order</name>
+                </option>
+                <option>
+                    <id>pay</id>
+                    <name>Pay</name>
+                </option>
+                <option>
+                    <id>plain</id>
+                    <name>Plain</name>
+                </option>
+                <option>
+                    <id>subscribe</id>
+                    <name>Subscribe</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>googlePayButtonColor</name>
+            <label>Select GooglePay button color</label>
+            <helpText>GooglePay button color. Refer to the documentation to preview how different color options are
+                displayed.
+                <![CDATA[<a href="https://developers.google.com/pay/api/web/reference/request-objects#ButtonOptions" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>default</id>
+                    <name>Default</name>
+                </option>
+                <option>
+                    <id>black</id>
+                    <name>Black</name>
+                </option>
+                <option>
+                    <id>white</id>
+                    <name>White</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>googlePayButtonSize</name>
+            <label>Select GooglePay button size</label>
+            <helpText>GooglePay button size. Refer to the documentation to preview how different sizes are displayed.
+                <![CDATA[<a href="https://developers.google.com/pay/api/web/reference/request-objects#ButtonOptions" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>static</id>
+                    <name>Static</name>
+                </option>
+                <option>
+                    <id>fill</id>
+                    <name>Fill</name>
+                </option>
+            </options>
         </input-field>
     </card>
     <card>
