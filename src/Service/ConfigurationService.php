@@ -312,7 +312,7 @@ class ConfigurationService
      *
      * @return mixed
      */
-    public function getApplePayButtonType(?string $salesChannelId = null): mixed
+    public function getApplePayButtonType(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.applePayButtonType',
@@ -325,7 +325,7 @@ class ConfigurationService
      *
      * @return mixed
      */
-    public function getApplePayButtonColor(?string $salesChannelId = null): mixed
+    public function getApplePayButtonColor(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.applePayButtonColor',
@@ -364,7 +364,7 @@ class ConfigurationService
      *
      * @return mixed
      */
-    public function getGooglePayButtonType(?string $salesChannelId = null): mixed
+    public function getGooglePayButtonType(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googlePayButtonType',
@@ -377,7 +377,7 @@ class ConfigurationService
      *
      * @return mixed
      */
-    public function getGooglePayButtonColor(?string $salesChannelId = null): mixed
+    public function getGooglePayButtonColor(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googlePayButtonColor',
@@ -390,7 +390,7 @@ class ConfigurationService
      *
      * @return mixed
      */
-    public function getGooglePayButtonSize(?string $salesChannelId = null): mixed
+    public function getGooglePayButtonSize(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googlePayButtonSize',
@@ -416,7 +416,7 @@ class ConfigurationService
      *
      * @return mixed
      */
-    public function getPayPalButtonColor(?string $salesChannelId = null): mixed
+    public function getPayPalButtonColor(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.paypalButtonColor',
@@ -429,7 +429,7 @@ class ConfigurationService
      *
      * @return mixed
      */
-    public function getPayPalButtonShape(?string $salesChannelId = null): mixed
+    public function getPayPalButtonShape(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.paypalButtonShape',
@@ -442,7 +442,7 @@ class ConfigurationService
      *
      * @return mixed
      */
-    public function getPayPalButtonLabel(?string $salesChannelId = null): mixed
+    public function getPayPalButtonLabel(?string $salesChannelId = null)
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.paypalButtonLabel',
