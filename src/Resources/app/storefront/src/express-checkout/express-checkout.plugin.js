@@ -221,10 +221,20 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
         }
 
+        const {
+            applepayButtonType,
+            applepayButtonColor,
+        } = adyenExpressCheckoutOptions;
+        const applePayConfig = {
+            ...(applepayButtonType && {buttonType: applepayButtonType}),
+            ...(applepayButtonColor && {buttonColor: applepayButtonColor}),
+        };
+
         this.paymentMethodSpecificConfig = {
             "paywithgoogle": googlePayConfig,
             "googlepay": googlePayConfig,
             ...(paypalConfig && {paypal: paypalConfig}),
+            ...(applePayConfig && {applepay: applePayConfig})
         };
 
         if (!this.userLoggedIn) {
@@ -239,6 +249,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
 
             this.paymentMethodSpecificConfig.applepay = {
+                ...this.paymentMethodSpecificConfig.applepay,
                 isExpress: true,
                 requiredBillingContactFields: ['postalAddress'],
                 requiredShippingContactFields: ['postalAddress', 'name', 'phone', 'email'],
