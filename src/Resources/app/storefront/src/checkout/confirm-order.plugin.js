@@ -607,7 +607,22 @@ export default class ConfirmOrderPlugin extends Plugin {
             }
         }
 
-        const paymentMethodInstance = AdyenWeb.createComponent(selectedPaymentMethodObject.type, this.adyenCheckout, PAY_BUTTON_CONFIG);
+        if (selectedPaymentMethodObject.type === "applepay") {
+            const {
+                applepayButtonType,
+                applepayButtonColor,
+            } = adyenCheckoutOptions;
+            PAY_BUTTON_CONFIG = {
+                ...PAY_BUTTON_CONFIG,
+                ...(applepayButtonType && {buttonType: applepayButtonType}),
+                ...(applepayButtonColor && {buttonColor: applepayButtonColor}),
+            }
+        }
+
+        const paymentMethodInstance = AdyenWeb.createComponent(
+            selectedPaymentMethodObject.type,
+            this.adyenCheckout, PAY_BUTTON_CONFIG
+        );
 
         try {
             if ('isAvailable' in paymentMethodInstance) {
