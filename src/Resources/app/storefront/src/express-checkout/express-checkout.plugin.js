@@ -26,7 +26,6 @@ import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-l
 import adyenConfiguration from '../configuration/adyen';
 
 export default class ExpressCheckoutPlugin extends Plugin {
-    // NOSONAR
     init() {
         this._client = new HttpClient();
         this.paymentMethodInstance = null;
@@ -618,15 +617,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     .mount('[data-adyen-payment-action-container]');
                 const modalActionTypes = ['threeDS2', 'qrCode'];
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
-                    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
-                        const adyenPaymentModal =
-                            new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
-                                keyboard: false
-                            });
-                        adyenPaymentModal.show();
-                    } else if (window.jQuery && typeof $.fn.modal === 'function') {
-                        $('[data-adyen-payment-action-modal]').modal({show: true});
-                    }
+                    this.showPaymentActionModal();
                 }
             }
         } catch (error) {
