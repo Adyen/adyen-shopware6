@@ -238,6 +238,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
     /**
      * @param PageLoadedEvent $event
+     *
+     * @throws Exception
      */
     public function onShoppingCartLoaded(PageLoadedEvent $event): void
     {
@@ -297,9 +299,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $expressCheckoutConfigurationAvailable = true;
         $expressCheckoutConfiguration = [];
-        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
-        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
-        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+        list($salesChannelId, $googlePayAvailable, $payPalAvailable, $applePayAvailable) =
+            $this->getPaymentMethodsAvailability($salesChannelContext);
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
@@ -379,10 +380,6 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'userLoggedIn' => json_encode($userLoggedIn),
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
-                        'googleMerchantId' => $this->configurationService
-                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
-                        'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'addGiftCardOption' => $this->configurationService->getAddGiftCardOption(),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
@@ -394,6 +391,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
                         'paypalExpressOrderUrl' => $this->router->generate('payment.adyen.proxy-paypal-express-order'),
                     ],
+                    $this->getExpressCheckoutButtonConfig($salesChannelId),
                     $expressCheckoutConfiguration
                 )
             )
@@ -423,9 +421,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
         $expressCheckoutConfigurationAvailable = true;
         $expressCheckoutConfiguration = [];
-        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled();
-        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled();
-        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled();
+        list($salesChannelId, $googlePayAvailable, $payPalAvailable, $applePayAvailable) =
+            $this->getPaymentMethodsAvailability($salesChannelContext);
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
@@ -480,16 +477,13 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'userLoggedIn' => json_encode($userLoggedIn),
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
-                        'googleMerchantId' => $this->configurationService
-                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
-                        'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
                         'paypalExpressOrderFinalizeUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order-finalize'),
                         'paypalExpressOrderUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
+                    $this->getExpressCheckoutButtonConfig($salesChannelId),
                     $expressCheckoutConfiguration
                 )
             )
@@ -572,6 +566,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             'giftcard'
         );
 
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
         $page->addExtension(
             self::ADYEN_DATA_EXTENSION_ID,
             new ArrayEntity(
@@ -618,10 +613,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'affiliateCode' => $affiliateCode,
                         'campaignCode' => $campaignCode,
                         'companyName' => $salesChannelContext->getCustomer()->getActiveBillingAddress()->getCompany(),
-                        'googleMerchantId' => $this->configurationService
-                            ->getGooglePayMerchantId($salesChannelContext->getSalesChannelId()),
-                        'gatewayMerchantId' => $this->configurationService
-                            ->getMerchantAccount($salesChannelContext->getSalesChannelId()),
+                        'isBillingAddressReadOnly' => $this->configurationService
+                            ->isBillingAddressReadOnly($salesChannelId),
+                        'isShippingAddressReadOnly' => $this->configurationService
+                            ->isShippingAddressReadOnly($salesChannelId),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),
                         'showVouchersCheckout' => json_encode($this->configurationService->getShowVouchersCheckout()),
                         'showVouchersSeparately' => json_encode($this->configurationService
@@ -651,6 +646,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalExpressOrderUrl' =>
                             $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
+                    $this->getExpressCheckoutButtonConfig($salesChannelId),
                     $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
                 )
             )
@@ -691,6 +687,26 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         }
     }
 
+    private function getExpressCheckoutButtonConfig(string $salesChannelId): array
+    {
+        return [
+            'googleMerchantId' => $this->configurationService->getGooglePayMerchantId($salesChannelId),
+            'gatewayMerchantId' => $this->configurationService->getMerchantAccount($salesChannelId),
+            'googlePayButtonType' => $this->configurationService->getGooglePayButtonType($salesChannelId),
+            'googlePayButtonColor' => $this->configurationService->getGooglePayButtonColor($salesChannelId),
+            'googlePayButtonSize' => $this->configurationService->getGooglePayButtonSize($salesChannelId),
+            'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
+            'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
+            'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
+            'paypalButtonInstallmentsMX' => $this->configurationService
+                ->getPayPalButtonNumberOfInstallmentsForMexico($salesChannelId),
+            'paypalButtonInstallmentsBR' => $this->configurationService
+                ->getPayPalButtonNumberOfInstallmentsForBrazil($salesChannelId),
+            'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
+            'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
+        ];
+    }
+
     /**
      *
      * @param SalesChannelContext $salesChannelContext
@@ -713,5 +729,18 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         }
 
         return [];
+    }
+
+    /**
+     * @param SalesChannelContext $salesChannelContext
+     * @return array
+     */
+    public function getPaymentMethodsAvailability(SalesChannelContext $salesChannelContext): array
+    {
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled($salesChannelId);
+        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled($salesChannelId);
+        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled($salesChannelId);
+        return array($salesChannelId, $googlePayAvailable, $payPalAvailable, $applePayAvailable);
     }
 }
