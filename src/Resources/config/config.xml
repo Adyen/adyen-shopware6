@@ -317,6 +317,88 @@
                 </option>
             </options>
         </input-field>
+        <input-field type="single-select">
+            <name>paypalInstallmentsForMX</name>
+            <label>Select the number of installments for Mexico if the PayPal installment label is selected</label>
+            <helpText>Number of installments for Mexico. Refer to the documentation to preview the installment label option.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#label" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>3</id>
+                    <name>3</name>
+                </option>
+                <option>
+                    <id>6</id>
+                    <name>6</name>
+                </option>
+                <option>
+                    <id>9</id>
+                    <name>9</name>
+                </option>
+                <option>
+                    <id>12</id>
+                    <name>12</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>paypalInstallmentsForBR</name>
+            <label>Select the number of installments for Brazil if the PayPal installment label is selected</label>
+            <helpText>Number of installments for Brazil. Refer to the documentation to preview the installment label option.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#label" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>2</id>
+                    <name>2</name>
+                </option>
+                <option>
+                    <id>3</id>
+                    <name>3</name>
+                </option>
+                <option>
+                    <id>4</id>
+                    <name>4</name>
+                </option>
+                <option>
+                    <id>5</id>
+                    <name>5</name>
+                </option>
+                <option>
+                    <id>6</id>
+                    <name>6</name>
+                </option>
+                <option>
+                    <id>7</id>
+                    <name>7</name>
+                </option>
+                <option>
+                    <id>8</id>
+                    <name>8</name>
+                </option>
+                <option>
+                    <id>9</id>
+                    <name>9</name>
+                </option>
+                <option>
+                    <id>10</id>
+                    <name>10</name>
+                </option>
+                <option>
+                    <id>11</id>
+                    <name>11</name>
+                </option>
+                <option>
+                    <id>12</id>
+                    <name>12</name>
+                </option>
+            </options>
+        </input-field>
     </card>
     <card>
         <title>GooglePay</title>

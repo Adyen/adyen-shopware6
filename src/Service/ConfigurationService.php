@@ -475,6 +475,32 @@ class ConfigurationService
     }
 
     /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonNumberOfInstallmentsForMexico(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalInstallmentsForMX',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonNumberOfInstallmentsForBrazil(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalInstallmentsForBR',
+            $salesChannelId
+        );
+    }
+
+    /**
      * @param string $salesChannelId
      *
      * @return array|mixed|null

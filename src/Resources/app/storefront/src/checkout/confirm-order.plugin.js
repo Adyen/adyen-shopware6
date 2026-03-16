@@ -637,13 +637,25 @@ export default class ConfirmOrderPlugin extends Plugin {
             const {
                 paypalButtonColor,
                 paypalButtonShape,
-                paypalButtonLabel
+                paypalButtonLabel,
+                paypalButtonInstallmentsMexico,
+                paypalButtonInstallmentsBrazil
             } = adyenCheckoutOptions;
 
             const style = {
                 ...(paypalButtonColor && {color: paypalButtonColor}),
                 ...(paypalButtonShape && {shape: paypalButtonShape}),
                 ...(paypalButtonLabel && {label: paypalButtonLabel}),
+                ...(
+                    paypalButtonLabel === 'installment' &&
+                    activeBillingAddress?.country === 'MX' &&
+                    {period: paypalButtonInstallmentsMexico}
+                ),
+                ...(
+                    paypalButtonLabel === 'installment' &&
+                    activeBillingAddress?.country === 'BR' &&
+                    {period: paypalButtonInstallmentsBrazil}
+                )
             };
 
             if (Object.keys(style).length > 0) {
