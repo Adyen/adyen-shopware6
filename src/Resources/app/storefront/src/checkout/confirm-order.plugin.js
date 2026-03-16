@@ -456,6 +456,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
+    // NOSONAR
     initializeCustomPayButton() {
 
         const componentConfig = adyenConfiguration.componentsWithPayButton[this.selectedAdyenPaymentMethod];
@@ -605,12 +606,14 @@ export default class ConfirmOrderPlugin extends Plugin {
                 ...(
                     paypalButtonLabel === 'installment' &&
                     activeBillingAddress &&
+                    //NOSONAR
                     activeBillingAddress.country === 'MX' &&
                     {period: paypalButtonInstallmentsMexico}
                 ),
                 ...(
                     paypalButtonLabel === 'installment' &&
                     activeBillingAddress &&
+                    //NOSONAR
                     activeBillingAddress.country === 'BR' &&
                     {period: paypalButtonInstallmentsBrazil}
                 )

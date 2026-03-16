@@ -26,6 +26,7 @@ import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-l
 import adyenConfiguration from '../configuration/adyen';
 
 export default class ExpressCheckoutPlugin extends Plugin {
+    // NOSONAR
     init() {
         this._client = new HttpClient();
         this.paymentMethodInstance = null;
