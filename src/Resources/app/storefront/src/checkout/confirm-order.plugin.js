@@ -604,12 +604,14 @@ export default class ConfirmOrderPlugin extends Plugin {
                 ...(paypalButtonLabel && {label: paypalButtonLabel}),
                 ...(
                     paypalButtonLabel === 'installment' &&
-                    activeBillingAddress?.country === 'MX' &&
+                    activeBillingAddress &&
+                    activeBillingAddress.country === 'MX' &&
                     {period: paypalButtonInstallmentsMexico}
                 ),
                 ...(
                     paypalButtonLabel === 'installment' &&
-                    activeBillingAddress?.country === 'BR' &&
+                    activeBillingAddress &&
+                    activeBillingAddress.country === 'BR' &&
                     {period: paypalButtonInstallmentsBrazil}
                 )
             };
