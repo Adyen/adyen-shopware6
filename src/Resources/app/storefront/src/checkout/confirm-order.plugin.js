@@ -611,14 +611,69 @@ export default class ConfirmOrderPlugin extends Plugin {
             }.bind(this);
         }
 
-        const PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, baseConfig);
+        let PAY_BUTTON_CONFIG = Object.assign(componentConfig.extra, selectedPaymentMethodObject, baseConfig);
 
-        if ((selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay")
-            && (adyenCheckoutOptions.googleMerchantId !== "" && adyenCheckoutOptions.gatewayMerchantId !== "")) {
-            PAY_BUTTON_CONFIG.configuration = {
-                merchantId: adyenCheckoutOptions.googleMerchantId,
-                gatewayMerchantId: adyenCheckoutOptions.gatewayMerchantId
+        if (selectedPaymentMethodObject.type === "paywithgoogle" || selectedPaymentMethodObject.type === "googlepay") {
+            const {
+                googlepayButtonType,
+                googlepayButtonColor,
+                googlepayButtonSize,
+                googleMerchantId,
+                gatewayMerchantId
+            } = adyenCheckoutOptions;
+            PAY_BUTTON_CONFIG = {
+                ...PAY_BUTTON_CONFIG,
+                ...(googlepayButtonType && { buttonType: googlepayButtonType }),
+                ...(googlepayButtonColor && { buttonColor: googlepayButtonColor }),
+                ...(googlepayButtonSize && { buttonSizeMode: googlepayButtonSize }),
+                configuration: {
+                    ...(googleMerchantId && { merchantId: googleMerchantId }),
+                    ...(gatewayMerchantId && { gatewayMerchantId })
+                }
             };
+        }
+
+        if (selectedPaymentMethodObject.type === "paypal") {
+            const {
+                paypalButtonColor,
+                paypalButtonShape,
+                paypalButtonLabel,
+                paypalButtonInstallmentsMexico,
+                paypalButtonInstallmentsBrazil
+            } = adyenCheckoutOptions;
+
+            const style = {
+                ...(paypalButtonColor && {color: paypalButtonColor}),
+                ...(paypalButtonShape && {shape: paypalButtonShape}),
+                ...(paypalButtonLabel && {label: paypalButtonLabel}),
+                ...(
+                    paypalButtonLabel === 'installment' &&
+                    activeBillingAddress?.country === 'MX' &&
+                    {period: paypalButtonInstallmentsMexico}
+                ),
+                ...(
+                    paypalButtonLabel === 'installment' &&
+                    activeBillingAddress?.country === 'BR' &&
+                    {period: paypalButtonInstallmentsBrazil}
+                )
+            };
+
+            if (Object.keys(style).length > 0) {
+                PAY_BUTTON_CONFIG.style = style;
+            }
+        }
+
+        if (selectedPaymentMethodObject.type === "applepay") {
+            const {
+                applepayButtonType,
+                applepayButtonColor,
+            } = adyenCheckoutOptions;
+
+            PAY_BUTTON_CONFIG = {
+                ...PAY_BUTTON_CONFIG,
+                ...(applepayButtonType && {buttonType: applepayButtonType}),
+                ...(applepayButtonColor && {buttonColor: applepayButtonColor}),
+            }
         }
 
         const paymentMethodInstance = AdyenWeb.createComponent(selectedPaymentMethodObject.type, this.adyenCheckout, PAY_BUTTON_CONFIG);
@@ -746,6 +801,21 @@ export default class ConfirmOrderPlugin extends Plugin {
             configuration.clickToPayConfiguration = {
                 merchantDisplayName: adyenCheckoutConfiguration.merchantAccount,
                 shopperEmail: shopperDetails.shopperEmail
+            };
+        }
+
+        if (paymentMethod.type === 'ratepay' ||
+            paymentMethod.type === 'affirm' ||
+            paymentMethod.type === 'facilypay_3x' ||
+            paymentMethod.type === 'facilypay_4x' ||
+            paymentMethod.type === 'facilypay_6x' ||
+            paymentMethod.type === 'facilypay_10x' ||
+            paymentMethod.type === 'facilypay_12x'
+        ) {
+            configuration.visibility = {
+                personalDetails: "editable",
+                billingAddress: adyenCheckoutOptions.billingAddressReadOnly ? "readOnly" : "editable",
+                deliveryAddress: adyenCheckoutOptions.shippingAddressReadOnly ? "readOnly" : "editable",
             };
         }
 

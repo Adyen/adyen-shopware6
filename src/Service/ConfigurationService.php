@@ -297,10 +297,62 @@ class ConfigurationService
      *
      * @return bool
      */
+    public function isBillingAddressReadOnly(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.billingAddressReadOnly',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return bool
+     */
+    public function isShippingAddressReadOnly(?string $salesChannelId = null): bool
+    {
+        return (bool)$this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.shippingAddressReadOnly',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return bool
+     */
     public function isApplePayExpressCheckoutEnabled(?string $salesChannelId = null): bool
     {
         return (bool)$this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.applePayExpressCheckoutEnabled',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getApplePayButtonType(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.applePayButtonType',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getApplePayButtonColor(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.applePayButtonColor',
             $salesChannelId
         );
     }
@@ -323,10 +375,49 @@ class ConfigurationService
      *
      * @return array|mixed|null
      */
-    public function getGooglePayMerchantId(?string $salesChannelId = null)
+    public function getGooglePayMerchantId(?string $salesChannelId = null): mixed
     {
         return $this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.googleMerchantId',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getGooglePayButtonType(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.googlePayButtonType',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getGooglePayButtonColor(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.googlePayButtonColor',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getGooglePayButtonSize(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.googlePayButtonSize',
             $salesChannelId
         );
     }
@@ -340,6 +431,71 @@ class ConfigurationService
     {
         return (bool)$this->systemConfigService->get(
             self::BUNDLE_NAME . '.config.payPalExpressCheckoutEnabled',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonColor(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalButtonColor',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonShape(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalButtonShape',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonLabel(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalButtonLabel',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonNumberOfInstallmentsForMexico(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalInstallmentsForMX',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPayPalButtonNumberOfInstallmentsForBrazil(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.paypalInstallmentsForBR',
             $salesChannelId
         );
     }

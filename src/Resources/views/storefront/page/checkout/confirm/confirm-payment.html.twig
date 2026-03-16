@@ -15,6 +15,10 @@
                  data-first-name="{{ billingAddress.firstName }}"
                  data-last-name="{{ billingAddress.lastName }}"
                  data-shopper-email="{{ context.customer.email }}"
+                 data-telephone-number="{{ billingAddress.phoneNumber ?? shippingAddress.phoneNumber }}"
+                {% if context.customer.birthday %}
+                    data-date-of-birth="{{ context.customer.birthday|date('Y-m-d') }}"
+                {% endif %}
             ></div>
             <div id="active-billing-address"
                 data-street="{{ adyenFrontendData.billingAddressStreetHouse.street }}"
@@ -65,8 +69,20 @@
                  data-campaign-code="{{ adyenFrontendData.campaignCode }}"
                  data-translation-adyen-giftcard-discount="{{ "adyen.giftcard.discount" | trans }}"
                  data-translation-adyen-giftcard-remaining-amount="{{ "adyen.giftcard.remainingAmount" | trans }}"
+                 data-billing-address-read-only="{{ adyenFrontendData.isBillingAddressReadOnly }}"
+                 data-shipping-address-read-only="{{ adyenFrontendData.isShippingAddressReadOnly }}"
                  data-google-merchant-id="{{ adyenFrontendData.googleMerchantId }}"
                  data-gateway-merchant-id="{{ adyenFrontendData.gatewayMerchantId }}"
+                 data-googlepay-button-type="{{ adyenFrontendData.googlePayButtonType }}"
+                 data-googlepay-button-color="{{ adyenFrontendData.googlePayButtonColor }}"
+                 data-googlepay-button-size="{{ adyenFrontendData.googlePayButtonSize }}"
+                 data-paypal-button-color="{{ adyenFrontendData.paypalButtonColor }}"
+                 data-paypal-button-shape="{{ adyenFrontendData.paypalButtonShape }}"
+                 data-paypal-button-label="{{ adyenFrontendData.paypalButtonLabel }}"
+                 data-paypal-button-installments-mexico="{{ adyenFrontendData.paypalButtonInstallmentsMX }}"
+                 data-paypal-button-installments-brazil="{{ adyenFrontendData.paypalButtonInstallmentsBR }}"
+                 data-applepay-button-type="{{ adyenFrontendData.applePayButtonType }}"
+                 data-applepay-button-color="{{ adyenFrontendData.applePayButtonColor }}"
                  data-paypal-order-url="{{ adyenFrontendData.paypalOrderUrl }}"
                  data-paypal-order-finalize-url="{{ adyenFrontendData.paypalOrderFinalizeUrl }}"
             >
