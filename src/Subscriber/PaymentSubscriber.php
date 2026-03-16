@@ -367,6 +367,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
+                        'paypalButtonInstallmentsMX' => $this->configurationService
+                            ->getPayPalButtonNumberOfInstallmentsForMexico($salesChannelId),
+                        'paypalButtonInstallmentsBR' => $this->configurationService
+                            ->getPayPalButtonNumberOfInstallmentsForBrazil($salesChannelId),
                         'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
                         'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
                         'paymentErrorUrl' => $this->router->generate(
@@ -494,6 +498,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
+                        'paypalButtonInstallmentsMX' => $this->configurationService
+                            ->getPayPalButtonNumberOfInstallmentsForMexico($salesChannelId),
+                        'paypalButtonInstallmentsBR' => $this->configurationService
+                            ->getPayPalButtonNumberOfInstallmentsForBrazil($salesChannelId),
                         'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
                         'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
                         'expressCheckoutConfigurationAvailable' => $expressCheckoutConfigurationAvailable,
@@ -645,6 +653,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                         'paypalButtonColor' => $this->configurationService->getPayPalButtonColor($salesChannelId),
                         'paypalButtonShape' => $this->configurationService->getPayPalButtonShape($salesChannelId),
                         'paypalButtonLabel' => $this->configurationService->getPayPalButtonLabel($salesChannelId),
+                        'paypalButtonInstallmentsMX' => $this->configurationService
+                            ->getPayPalButtonNumberOfInstallmentsForMexico($salesChannelId),
+                        'paypalButtonInstallmentsBR' => $this->configurationService
+                            ->getPayPalButtonNumberOfInstallmentsForBrazil($salesChannelId),
                         'applePayButtonType' => $this->configurationService->getApplePayButtonType($salesChannelId),
                         'applePayButtonColor' => $this->configurationService->getApplePayButtonColor($salesChannelId),
                         'voucherBlockPosition' => $this->configurationService->getVoucherBlockPosition(),

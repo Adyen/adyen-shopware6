@@ -207,12 +207,25 @@ export default class ExpressCheckoutPlugin extends Plugin {
         const {
             paypalButtonColor,
             paypalButtonShape,
-            paypalButtonLabel
+            paypalButtonLabel,
+            paypalButtonInstallmentsMexico,
+            paypalButtonInstallmentsBrazil,
+            countryCode
         } = adyenExpressCheckoutOptions;
         const paypalConfigStyle = {
             ...(paypalButtonColor && {color: paypalButtonColor}),
             ...(paypalButtonShape && {shape: paypalButtonShape}),
             ...(paypalButtonLabel && {label: paypalButtonLabel}),
+            ...(
+                paypalButtonLabel === 'installment' &&
+                countryCode === 'MX' &&
+                {period: paypalButtonInstallmentsMexico}
+            ),
+            ...(
+                paypalButtonLabel === 'installment' &&
+                countryCode === 'BR' &&
+                {period: paypalButtonInstallmentsBrazil}
+            )
         };
         let paypalConfig;
         if (Object.keys(paypalConfigStyle).length > 0) {
