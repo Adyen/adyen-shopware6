@@ -179,7 +179,8 @@
     font-size: 14px;
 }
 
-#adyen-express-checkout-applepay apple-pay-button {
+#adyen-express-checkout-applepay apple-pay-button,
+#adyen-confirm-button apple-pay-button {
   --apple-pay-button-width: 100%;
   --apple-pay-button-height: 48px;
   display: block;
