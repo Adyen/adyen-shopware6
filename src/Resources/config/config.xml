@@ -190,6 +190,23 @@
         </input-field>
     </card>
     <card>
+        <title>Address form settings</title>
+        <input-field type="bool">
+            <name>billingAddressReadOnly</name>
+            <label>Configure the billing address to be displayed as read-only, preventing customer edits</label>
+            <helpText>
+                If set to true, the billing address will be read-only. Otherwise, it will be editable.
+            </helpText>
+        </input-field>
+        <input-field type="bool">
+            <name>shippingAddressReadOnly</name>
+            <label>Configure the shipping address to be displayed as read-only, preventing customer edits</label>
+            <helpText>
+                If set to true, the shipping address will be read-only. Otherwise, it will be editable.
+            </helpText>
+        </input-field>
+    </card>
+    <card>
         <title>Express checkout</title>
         <input-field type="bool">
             <name>applePayExpressCheckoutEnabled</name>
@@ -214,13 +231,361 @@
         </input-field>
     </card>
     <card>
-        <title>Google Merchant ID</title>
+        <title>PayPal</title>
+        <input-field type="single-select">
+            <name>paypalButtonColor</name>
+            <label>Select PayPal button color</label>
+            <helpText>PayPal button color. Refer to the documentation to preview how different color options are displayed.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#color" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>gold</id>
+                    <name>Gold</name>
+                </option>
+                <option>
+                    <id>blue</id>
+                    <name>Blue</name>
+                </option>
+                <option>
+                    <id>silver</id>
+                    <name>Silver</name>
+                </option>
+                <option>
+                    <id>white</id>
+                    <name>White</name>
+                </option>
+                <option>
+                    <id>black</id>
+                    <name>Black</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>paypalButtonShape</name>
+            <label>Select PayPal button shape</label>
+            <helpText>PayPal button shape. Refer to the documentation to preview how different shape options are displayed.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#shape" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>rect</id>
+                    <name>Rect</name>
+                </option>
+                <option>
+                    <id>pill</id>
+                    <name>Pill</name>
+                </option>
+                <option>
+                    <id>sharp</id>
+                    <name>Sharp</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>paypalButtonLabel</name>
+            <label>Select PayPal button label</label>
+            <helpText>PayPal button label. Refer to the documentation to preview how different label options are displayed.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#label" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>paypal</id>
+                    <name>Paypal</name>
+                </option>
+                <option>
+                    <id>checkout</id>
+                    <name>Checkout</name>
+                </option>
+                <option>
+                    <id>buynow</id>
+                    <name>Buynow</name>
+                </option>
+                <option>
+                    <id>pay</id>
+                    <name>Pay</name>
+                </option>
+                <option>
+                    <id>installment</id>
+                    <name>Installment</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>paypalInstallmentsForMX</name>
+            <label>Select the number of installments for Mexico if the PayPal installment label is selected</label>
+            <helpText>Number of installments for Mexico. Refer to the documentation to preview the installment label option.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#label" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>3</id>
+                    <name>3</name>
+                </option>
+                <option>
+                    <id>6</id>
+                    <name>6</name>
+                </option>
+                <option>
+                    <id>9</id>
+                    <name>9</name>
+                </option>
+                <option>
+                    <id>12</id>
+                    <name>12</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>paypalInstallmentsForBR</name>
+            <label>Select the number of installments for Brazil if the PayPal installment label is selected</label>
+            <helpText>Number of installments for Brazil. Refer to the documentation to preview the installment label option.
+                <![CDATA[<a href="https://developer.paypal.com/sdk/js/reference/#label" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>2</id>
+                    <name>2</name>
+                </option>
+                <option>
+                    <id>3</id>
+                    <name>3</name>
+                </option>
+                <option>
+                    <id>4</id>
+                    <name>4</name>
+                </option>
+                <option>
+                    <id>5</id>
+                    <name>5</name>
+                </option>
+                <option>
+                    <id>6</id>
+                    <name>6</name>
+                </option>
+                <option>
+                    <id>7</id>
+                    <name>7</name>
+                </option>
+                <option>
+                    <id>8</id>
+                    <name>8</name>
+                </option>
+                <option>
+                    <id>9</id>
+                    <name>9</name>
+                </option>
+                <option>
+                    <id>10</id>
+                    <name>10</name>
+                </option>
+                <option>
+                    <id>11</id>
+                    <name>11</name>
+                </option>
+                <option>
+                    <id>12</id>
+                    <name>12</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+    <card>
+        <title>GooglePay</title>
         <input-field type="text">
             <name>googleMerchantId</name>
             <label>Google Merchant ID</label>
             <helpText>
                 Enter the Google Mechant ID to use as the primary value when initializing the Google Pay component. If not specified, the ID configured in the Adyen Customer Area will be used as a fallback.
             </helpText>
+        </input-field>
+        <input-field type="single-select">
+            <name>googlePayButtonType</name>
+            <label>Select GooglePay button type</label>
+            <helpText>GooglePay button type. Refer to the documentation to preview how different type options are displayed.
+                <![CDATA[<a href="https://developers.google.com/pay/api/web/reference/request-objects#ButtonOptions" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>book</id>
+                    <name>Book</name>
+                </option>
+                <option>
+                    <id>buy</id>
+                    <name>Buy</name>
+                </option>
+                <option>
+                    <id>checkout</id>
+                    <name>Checkout</name>
+                </option>
+                <option>
+                    <id>donate</id>
+                    <name>Donate</name>
+                </option>
+                <option>
+                    <id>order</id>
+                    <name>Order</name>
+                </option>
+                <option>
+                    <id>pay</id>
+                    <name>Pay</name>
+                </option>
+                <option>
+                    <id>plain</id>
+                    <name>Plain</name>
+                </option>
+                <option>
+                    <id>subscribe</id>
+                    <name>Subscribe</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>googlePayButtonColor</name>
+            <label>Select GooglePay button color</label>
+            <helpText>GooglePay button color. Refer to the documentation to preview how different color options are displayed.
+                <![CDATA[<a href="https://developers.google.com/pay/api/web/reference/request-objects#ButtonOptions" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>default</id>
+                    <name>Default</name>
+                </option>
+                <option>
+                    <id>black</id>
+                    <name>Black</name>
+                </option>
+                <option>
+                    <id>white</id>
+                    <name>White</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>googlePayButtonSize</name>
+            <label>Select GooglePay button size</label>
+            <helpText>GooglePay button size. Refer to the documentation to preview how different sizes are displayed.
+                <![CDATA[<a href="https://developers.google.com/pay/api/web/reference/request-objects#ButtonOptions" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>static</id>
+                    <name>Static</name>
+                </option>
+                <option>
+                    <id>fill</id>
+                    <name>Fill</name>
+                </option>
+            </options>
+        </input-field>
+    </card>
+    <card>
+        <title>Apple Pay</title>
+        <input-field type="single-select">
+            <name>applePayButtonType</name>
+            <label>Select Apple Pay button type</label>
+            <helpText>Apple Pay button type. Refer to the documentation to preview how different type options are displayed.
+                <![CDATA[<a href="https://developer.apple.com/design/human-interface-guidelines/apple-pay#Button-types" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>plain</id>
+                    <name>Plain</name>
+                </option>
+                <option>
+                    <id>buy</id>
+                    <name>Buy</name>
+                </option>
+                <option>
+                    <id>donate</id>
+                    <name>Donate</name>
+                </option>
+                <option>
+                    <id>check-out</id>
+                    <name>Check Out</name>
+                </option>
+                <option>
+                    <id>book</id>
+                    <name>Book</name>
+                </option>
+                <option>
+                    <id>subscribe</id>
+                    <name>Subscribe</name>
+                </option>
+                <option>
+                    <id>add-money</id>
+                    <name>Add Money</name>
+                </option>
+                <option>
+                    <id>contribute</id>
+                    <name>Contribute</name>
+                </option>
+                <option>
+                    <id>order</id>
+                    <name>Order</name>
+                </option>
+                <option>
+                    <id>reload</id>
+                    <name>Reload</name>
+                </option>
+                <option>
+                    <id>rent</id>
+                    <name>Rent</name>
+                </option>
+                <option>
+                    <id>support</id>
+                    <name>Support</name>
+                </option>
+                <option>
+                    <id>tip</id>
+                    <name>Tip</name>
+                </option>
+                <option>
+                    <id>top-up</id>
+                    <name>Top Up</name>
+                </option>
+            </options>
+        </input-field>
+        <input-field type="single-select">
+            <name>applePayButtonColor</name>
+            <label>Select Apple Pay button color</label>
+            <helpText>Apple Pay button color. Refer to the documentation to preview how different color options are displayed.
+                <![CDATA[<a href="https://developer.apple.com/design/human-interface-guidelines/apple-pay#Button-styles" target="_blank">
+                    Documentation
+                </a>   ]]>
+            </helpText>
+            <options>
+                <option>
+                    <id>black</id>
+                    <name>Black</name>
+                </option>
+                <option>
+                    <id>white</id>
+                    <name>White</name>
+                </option>
+                <option>
+                    <id>white-outline</id>
+                    <name>White Outline</name>
+                </option>
+            </options>
         </input-field>
     </card>
     <card>
