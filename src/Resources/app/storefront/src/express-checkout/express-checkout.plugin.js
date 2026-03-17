@@ -150,7 +150,15 @@ export default class ExpressCheckoutPlugin extends Plugin {
             });
         };
 
+        const {
+            googlepayButtonType,
+            googlepayButtonColor,
+            googlepayButtonSize
+        } = adyenExpressCheckoutOptions;
         const googlePayConfig = {
+            ...(googlepayButtonType && {buttonType: googlepayButtonType}),
+            ...(googlepayButtonColor && {buttonColor: googlepayButtonColor}),
+            ...(googlepayButtonSize && {buttonSizeMode: googlepayButtonSize}),
             onClick: (resolve, reject) => {
                 this.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
                 this.activePaymentType = 'googlepay';
@@ -165,7 +173,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 phoneNumberRequired: true
             },
             shippingOptionRequired: !this.userLoggedIn,
-            buttonSizeMode: "fill",
             onAuthorized: (paymentData, actions) => {
                 try {
                     const cfg =
@@ -189,7 +196,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     actions.reject();
                 }
             },
-            buttonColor: "white",
             paymentDataCallbacks: !this.userLoggedIn ?
                 {
                     onPaymentDataChanged: onPaymentDataChanged,
@@ -198,13 +204,55 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 {}
         };
 
+        const {
+            paypalButtonColor,
+            paypalButtonShape,
+            paypalButtonLabel,
+            paypalButtonInstallmentsMexico,
+            paypalButtonInstallmentsBrazil,
+            countryCode
+        } = adyenExpressCheckoutOptions;
+        const paypalConfigStyle = {
+            ...(paypalButtonColor && {color: paypalButtonColor}),
+            ...(paypalButtonShape && {shape: paypalButtonShape}),
+            ...(paypalButtonLabel && {label: paypalButtonLabel}),
+            ...(
+                paypalButtonLabel === 'installment' &&
+                countryCode === 'MX' &&
+                {period: paypalButtonInstallmentsMexico}
+            ),
+            ...(
+                paypalButtonLabel === 'installment' &&
+                countryCode === 'BR' &&
+                {period: paypalButtonInstallmentsBrazil}
+            )
+        };
+        let paypalConfig;
+        if (Object.keys(paypalConfigStyle).length > 0) {
+            paypalConfig = {
+                style: paypalConfigStyle
+            };
+        }
+
+        const {
+            applepayButtonType,
+            applepayButtonColor,
+        } = adyenExpressCheckoutOptions;
+        const applePayConfig = {
+            ...(applepayButtonType && {buttonType: applepayButtonType}),
+            ...(applepayButtonColor && {buttonColor: applepayButtonColor}),
+        };
+
         this.paymentMethodSpecificConfig = {
             "paywithgoogle": googlePayConfig,
-            "googlepay": googlePayConfig
+            "googlepay": googlePayConfig,
+            ...(paypalConfig && {paypal: paypalConfig}),
+            ...(applePayConfig && {applepay: applePayConfig})
         };
 
         if (!this.userLoggedIn) {
             this.paymentMethodSpecificConfig.paypal = {
+                ...this.paymentMethodSpecificConfig.paypal,
                 isExpress: true,
                 onAuthorized: this.onShopperDetails.bind(this),
                 blockPayPalCreditButton: true,
@@ -214,6 +262,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
 
             this.paymentMethodSpecificConfig.applepay = {
+                ...this.paymentMethodSpecificConfig.applepay,
                 isExpress: true,
                 requiredBillingContactFields: ['postalAddress'],
                 requiredShippingContactFields: ['postalAddress', 'name', 'phone', 'email'],
@@ -568,15 +617,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
                     .mount('[data-adyen-payment-action-container]');
                 const modalActionTypes = ['threeDS2', 'qrCode'];
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
-                    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
-                        const adyenPaymentModal =
-                            new bootstrap.Modal(document.getElementById('adyen-payment-action-modal'), {
-                                keyboard: false
-                            });
-                        adyenPaymentModal.show();
-                    } else if (window.jQuery && typeof $.fn.modal === 'function') {
-                        $('[data-adyen-payment-action-modal]').modal({show: true});
-                    }
+                    this.showPaymentActionModal();
                 }
             }
         } catch (error) {
