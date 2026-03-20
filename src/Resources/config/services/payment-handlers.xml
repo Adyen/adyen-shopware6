@@ -21,7 +21,7 @@
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\KlarnaAccountPaymentMethodHandler"
+        <service id="Adyen\Shopware\Handlers\KlarnaPayOverTimePaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method"/>
         </service>
