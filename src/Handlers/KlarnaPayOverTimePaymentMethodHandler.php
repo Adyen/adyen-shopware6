@@ -25,7 +25,7 @@
 
 namespace Adyen\Shopware\Handlers;
 
-class KlarnaAccountPaymentMethodHandler extends AbstractPaymentMethodHandler
+class KlarnaPayOverTimePaymentMethodHandler extends AbstractPaymentMethodHandler
 {
     public static bool $isOpenInvoice = true;
     public static bool $supportsManualCapture = true;
