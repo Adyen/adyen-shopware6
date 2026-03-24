@@ -133,8 +133,7 @@ class NotificationReceiverService
             throw new AuthenticationException();
         }
 
-        if (
-            !array_key_exists('merchantReference', $firstNotificationItem) ||
+        if (!array_key_exists('merchantReference', $firstNotificationItem) ||
             empty($firstNotificationItem['merchantReference'])
         ) {
             throw new ValidationException(
