@@ -133,6 +133,14 @@ class NotificationReceiverService
             throw new AuthenticationException();
         }
 
+        if (!array_key_exists('merchantReference', $firstNotificationItem) ||
+            empty($firstNotificationItem['merchantReference'])
+        ) {
+            throw new ValidationException(
+                'Webhook validation failed. Missing merchantReference in the payload.'
+            );
+        }
+
         $acceptedMessage = '[accepted]';
         $isLive = isset($request['live']) && $request['live'] === 'true';
 
