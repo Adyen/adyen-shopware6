@@ -199,7 +199,7 @@ class NotificationReceiverService
             print_r($notificationItem, true));
 
         if (empty($notificationItem['merchantReference'])) {
-            // duplicated so do nothing but return accepted to Adyen
+            // missing merchantReference, so do nothing but return accepted to Adyen
             $this->logger->info('Merchant reference is missing, so the notification is skipped.');
 
             return true;
