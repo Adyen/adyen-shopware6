@@ -197,9 +197,15 @@ class NotificationReceiverService
         $this->logger->info('The content of the notification item is: ' .
             print_r($notificationItem, true));
 
+        if (empty($notificationItem['merchantReference'])) {
+            // missing merchantReference, so do nothing but return accepted to Adyen
+            $this->logger->info('Merchant reference is missing, so the notification is skipped.');
+
+            return true;
+        }
+
         // check if notification already exists
-        if (!$this->notificationService->isDuplicateNotification($notificationItem)
-            && !empty($notificationItem['merchantReference'])) {
+        if (!$this->notificationService->isDuplicateNotification($notificationItem)) {
             try {
                 $this->notificationService->insertNotification($notificationItem);
                 return true;
