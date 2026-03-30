@@ -176,6 +176,7 @@ class CaptureService
 
                 $request = $this->buildCaptureRequest(
                     $captureAmount,
+                    $orderNumber,
                     $currencyIso,
                     $order->getSalesChannelId(),
                     $lineItemsObjectArray
@@ -433,6 +434,7 @@ class CaptureService
 
     /**
      * @param $captureAmountInMinorUnits
+     * @param string $merchantReference
      * @param string $currency
      * @param string $salesChannelId
      * @param $lineItems
@@ -441,6 +443,7 @@ class CaptureService
      */
     private function buildCaptureRequest(
         $captureAmountInMinorUnits,
+        string $merchantReference,
         string $currency,
         string $salesChannelId,
         $lineItems
@@ -452,6 +455,7 @@ class CaptureService
         $request = new PaymentCaptureRequest();
         $request->setAmount($amount);
         $request->setMerchantAccount($this->configurationService->getMerchantAccount($salesChannelId));
+        $request->setReference($merchantReference);
         $request->setLineItems($lineItems);
 
         return $request;
