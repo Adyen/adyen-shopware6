@@ -209,6 +209,7 @@ class RefundService
                     $currency,
                     $merchantAccount,
                     $adyenPayment->getPspreference(),
+                    $adyenPayment->getMerchantReference(),
                     [
                         'totalRefunded' => $adyenPayment->getTotalRefunded(),
                         'originalPspReference' => $adyenPayment->getPspreference()
@@ -234,6 +235,7 @@ class RefundService
                     $order->getCurrency()->getIsoCode(),
                     $merchantAccount,
                     $adyenPayment->getPspreference(),
+                    $adyenPayment->getMerchantReference(),
                     [
                         'totalRefunded' => $adyenPayment->getTotalRefunded(),
                         'originalPspReference' => $adyenPayment->getPspreference()
@@ -478,6 +480,7 @@ class RefundService
      * @param string $currencyCode
      * @param mixed $merchantAccount
      * @param string $pspReference
+     * @param string $merchantReference
      * @param array|null $idempotencyExtraData
      * @return array
      */
@@ -486,6 +489,7 @@ class RefundService
         string $currencyCode,
         $merchantAccount,
         string $pspReference,
+        string $merchantReference,
         array $idempotencyExtraData = null
     ): array {
         $amountObject = new Amount();
@@ -494,6 +498,7 @@ class RefundService
 
         $refundRequestObject = new PaymentRefundRequest();
         $refundRequestObject->setMerchantAccount($merchantAccount);
+        $refundRequestObject->setReference($merchantReference);
         $refundRequestObject->setAmount($amountObject);
 
         $idempotencyKey = $this->idempotencyHelper->createKeyFromRequest(
