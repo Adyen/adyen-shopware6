@@ -385,10 +385,12 @@ class PaymentController
                     $order->getPrice()->getTaxRules()
                 );
 
+                $transactionId = Uuid::randomHex();
                 $this->orderRepository->update($orderId, [
+                    'primaryOrderTransactionId' => $transactionId,
                     'transactions' => [
                         [
-                            'id' => Uuid::randomHex(),
+                            'id' => $transactionId,
                             'paymentMethodId' => $paymentMethodId,
                             'stateId' => $initialStateId,
                             'amount' => $transactionAmount,
