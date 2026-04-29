@@ -441,14 +441,15 @@ class ExpressCheckoutService
                 SalesChannelContextService::CUSTOMER_ID => $customerId,
                 SalesChannelContextService::PAYMENT_METHOD_ID => $salesChannelContext->getPaymentMethod()->getId()
             ],
-            $salesChannelContext->getSalesChannel()->getId()
+            $salesChannelContext->getSalesChannel()->getId(),
+            $customerId
         );
 
         return $salesChannelContext;
     }
 
     /**
-     * @param string $orderId
+     * @param string $cartToken
      * @param array $data
      * @param SalesChannelContext $salesChannelContext
      * @param array $newAddress
@@ -525,16 +526,17 @@ class ExpressCheckoutService
     }
 
     /**
-     * @param Request $request
      * @param string $orderId
      * @param SalesChannelContext $salesChannelContext
      * @param array $newAddress
      * @param array $newShipping
+     * @param string $formattedHandlerIdentifier
      *
      * @return void
+     *
+     * @throws JsonException
      * @throws ResolveCountryException
      * @throws ResolveShippingMethodException
-     * @throws JsonException
      */
     public function updateShopOrder(
         string $orderId,
