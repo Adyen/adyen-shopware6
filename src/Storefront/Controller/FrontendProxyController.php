@@ -43,6 +43,7 @@ use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\Exception\EmptyCartException;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
+use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRouteResponse;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\ContextTokenResponse;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -220,9 +221,11 @@ class FrontendProxyController extends StorefrontController
             return new JsonResponse(null, 401);
         }
 
+        $errorUrl = $this->overridePaymentReturnUrls($request);
+
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
-        return new JsonResponse($routeResponse->getObject());
+        return $this->buildHandlePaymentResponse($routeResponse, $errorUrl);
     }
 
     #[Route(
@@ -299,9 +302,11 @@ class FrontendProxyController extends StorefrontController
             $salesChannelContext = $this->expressCheckoutController->changeContext($customerId, $salesChannelContext);
         }
 
+        $errorUrl = $this->overridePaymentReturnUrls($request);
+
         $routeResponse = $this->handlePaymentMethodRoute->load($request, $salesChannelContext);
 
-        return new JsonResponse($routeResponse->getObject());
+        return $this->buildHandlePaymentResponse($routeResponse, $errorUrl);
     }
 
     #[Route(
@@ -715,5 +720,56 @@ class FrontendProxyController extends StorefrontController
         }
 
         return $cartToken;
+    }
+
+    /**
+     * Replaces any client-supplied finishUrl/errorUrl on the request with values
+     * generated server-side from the orderId.
+     *
+     * @return string the server-built errorUrl, used to detect failure responses
+     */
+    private function overridePaymentReturnUrls(Request $request): string
+    {
+        $orderId = (string) ($request->request->get('orderId') ?? $request->query->get('orderId') ?? '');
+
+        $finishUrl = $this->router->generate(
+            'frontend.checkout.finish.page',
+            ['orderId' => $orderId],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+        $errorUrl = $this->router->generate(
+            'frontend.checkout.finish.page',
+            [
+                'orderId' => $orderId,
+                'changedPayment' => false,
+                'paymentFailed' => true,
+            ],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+
+        $request->request->set('finishUrl', $finishUrl);
+        $request->request->set('errorUrl', $errorUrl);
+        $request->query->remove('finishUrl');
+        $request->query->remove('errorUrl');
+
+        return $errorUrl;
+    }
+
+    /**
+     * Wraps the core route response and adds an explicit paymentFailed flag,
+     * so the storefront JS does not need to compare URLs to detect failure.
+     */
+    private function buildHandlePaymentResponse(
+        HandlePaymentMethodRouteResponse $routeResponse,
+        string $errorUrl
+    ): JsonResponse {
+        $redirect = $routeResponse->getRedirectResponse();
+        $redirectUrl = $redirect ? $redirect->getTargetUrl() : null;
+        $paymentFailed = $redirectUrl !== null && str_starts_with($redirectUrl, $errorUrl);
+
+        return new JsonResponse([
+            'redirectUrl' => $redirectUrl,
+            'paymentFailed' => $paymentFailed,
+        ]);
     }
 }

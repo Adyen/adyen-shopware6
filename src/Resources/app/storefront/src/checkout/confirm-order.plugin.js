@@ -324,9 +324,6 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
 
         this.orderId = order.id;
-        this.finishUrl = new URL(
-            location.origin + adyenCheckoutOptions.paymentFinishUrl);
-        this.finishUrl.searchParams.set('orderId', order.id);
         this.errorUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', order.id);
@@ -343,8 +340,6 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         let params = {
             'orderId': this.orderId,
-            'finishUrl': this.finishUrl.toString(),
-            'errorUrl': this.errorUrl.toString(),
         };
         // Append any extra parameters passed, e.g. stateData
         for (const property in extraParams) {
@@ -395,9 +390,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        // If payment call returns the errorUrl, then no need to proceed further.
-        // Redirect to error page.
-        if (this.returnUrl === this.errorUrl.toString()) {
+        if (response.paymentFailed) {
             if (actions.reject) {
                 actions.reject({});
             }
