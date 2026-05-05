@@ -32,7 +32,6 @@ use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
 use Adyen\Shopware\Entity\Refund\RefundEntityDefinition;
 use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
-use Adyen\Shopware\PaymentMethods\KlarnaDebitRiskPaymentMethod;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -53,6 +52,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 class AdyenPaymentShopware6 extends Plugin
 {
     public const SOFORT = 'Adyen\Shopware\Handlers\SofortPaymentMethodHandler';
+    public const KLARNA_ACCOUNT = 'Adyen\Shopware\Handlers\KlarnaAccountPaymentMethodHandler';
 
     public function installJsAssets($shopwareVersion)
     {
@@ -184,6 +184,10 @@ class AdyenPaymentShopware6 extends Plugin
 
         if (\version_compare($currentVersion, '3.17.0', '<')) {
             $this->updateTo3170($updateContext);
+        }
+
+        if (\version_compare($currentVersion, '3.21.0', '<')) {
+            $this->updateTo3210($updateContext);
         }
     }
 
@@ -616,6 +620,28 @@ class AdyenPaymentShopware6 extends Plugin
 
         // Update Sofort to Klarna Debit Risk
         $method = new PaymentMethods\KlarnaDebitRiskPaymentMethod();
+
+        $paymentMethodData = [
+            'id' => $paymentMethodId,
+            'handlerIdentifier' => $method->getPaymentHandler(),
+            'name' => $method->getName(),
+            'description' => $method->getDescription(),
+        ];
+
+        $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
+    }
+
+    private function updateTo3210(UpdateContext $updateContext): void
+    {
+        // Rename Klarna Account to Klarna Pay Over Time
+        $paymentRepository = $this->container->get('payment_method.repository');
+        $paymentMethodId = $this->getPaymentMethodId(self::KLARNA_ACCOUNT);
+
+        if (!$paymentMethodId) {
+            return;
+        }
+
+        $method = new PaymentMethods\KlarnaPayOverTimePaymentMethod();
 
         $paymentMethodData = [
             'id' => $paymentMethodId,

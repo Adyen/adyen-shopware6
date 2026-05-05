@@ -24,9 +24,9 @@
 
 namespace Adyen\Shopware\PaymentMethods;
 
-use Adyen\Shopware\Handlers\KlarnaAccountPaymentMethodHandler;
+use Adyen\Shopware\Handlers\KlarnaPayOverTimePaymentMethodHandler;
 
-class KlarnaAccountPaymentMethod implements PaymentMethodInterface
+class KlarnaPayOverTimePaymentMethod implements PaymentMethodInterface
 {
     /**
      * {@inheritDoc}
@@ -35,7 +35,7 @@ class KlarnaAccountPaymentMethod implements PaymentMethodInterface
      */
     public function getName(): string
     {
-        return 'Klarna Account';
+        return 'Klarna Pay Over Time';
     }
 
     /**
@@ -55,7 +55,7 @@ class KlarnaAccountPaymentMethod implements PaymentMethodInterface
      */
     public function getPaymentHandler(): string
     {
-        return KlarnaAccountPaymentMethodHandler::class;
+        return KlarnaPayOverTimePaymentMethodHandler::class;
     }
 
     /**

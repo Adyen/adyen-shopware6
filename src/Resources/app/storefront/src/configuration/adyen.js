@@ -130,7 +130,7 @@ export default {
         'scheme': 'handler_adyen_cardspaymentmethodhandler',
         'ideal': 'handler_adyen_idealpaymentmethodhandler',
         'klarna': 'handler_adyen_klarnapaylaterpaaymentmethodhandler',
-        'klarna_account': 'handler_adyen_klarnaaccountpaymentmethodhandler',
+        'klarna_account': 'handler_adyen_klarnapayovertimepaymentmethodhandler',
         'klarna_paynow': 'handler_adyen_klarnapaynowpaymentmethodhandler',
         'ratepay': 'handler_adyen_ratepaypaymentmethodhandler',
         'ratepay_directdebit': 'handler_adyen_ratepaydirectdebitpaymentmethodhandler',
