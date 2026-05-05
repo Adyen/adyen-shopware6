@@ -121,7 +121,6 @@ class ContextSubscriber implements EventSubscriberInterface
         foreach ($stateData->getElements() as $statedataArray) {
             $this->paymentStateDataService->updateStateDataContextToken($statedataArray, $token);
         }
-        $this->updateAdyenSessionToken($oldToken, $token);
     }
 
     /**
@@ -138,7 +137,6 @@ class ContextSubscriber implements EventSubscriberInterface
         foreach ($stateData->getElements() as $statedataArray) {
             $this->paymentStateDataService->updateStateDataContextToken($statedataArray, $token);
         }
-        $this->updateAdyenSessionToken($oldToken, $token);
     }
 
     /**
@@ -150,6 +148,7 @@ class ContextSubscriber implements EventSubscriberInterface
     {
         $context = $event->getSalesChannelContext();
         $salesChannelId = $context->getSalesChannelId();
+        $currentToken = $context->getToken();
 
         $extension = new AdyenContextDataStruct();
         $context->addExtension('adyenData', $extension);
@@ -159,20 +158,10 @@ class ContextSubscriber implements EventSubscriberInterface
 
         $data = $this->paymentStateDataService->getPaymentStateDataFromContextToken($context->getToken());
         $extension->setHasPaymentStateData(!empty($data));
-    }
 
-    /**
-     * @param string $oldToken
-     * @param string $newToken
-     *
-     * @return void
-     */
-    private function updateAdyenSessionToken(string $oldToken, string $newToken): void
-    {
         $session = $this->requestStack->getSession();
-
-        if ($session->get('adyenSwContextToken') === $oldToken) {
-            $session->set('adyenSwContextToken', $newToken);
+        if ($session->get('adyenSwContextToken') !== $currentToken) {
+            $session->set('adyenSwContextToken', $currentToken);
         }
     }
 }
