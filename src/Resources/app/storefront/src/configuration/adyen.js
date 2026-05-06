@@ -22,18 +22,22 @@
 
 function validateRequired(self) {
     const requiredFields = document.querySelectorAll("input[required]");
-    if (adyenCheckoutOptions?.accessibilityTweaks === '1') {
-        for (const field of requiredFields) {
-            if (!field.checkValidity()) {
-                field.scrollIntoView({behavior: 'smooth', block: 'center'});
-                field.focus();
+    for (const field of requiredFields) {
+        if (!field.checkValidity()) {
+            field.scrollIntoView({behavior: 'smooth', block: 'center'});
+            field.focus();
 
-                return false;
-            }
+            field.reportValidity();
+            return false;
         }
     }
 
-    return self.confirmOrderForm.checkValidity();
+    if (!self.confirmOrderForm.checkValidity()) {
+        self.confirmOrderForm.reportValidity();
+        return false;
+    }
+
+    return true;
 }
 
 export default {
