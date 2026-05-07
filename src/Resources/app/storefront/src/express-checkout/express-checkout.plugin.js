@@ -540,17 +540,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
 
         this.orderId = order.id;
-        this.finishUrl = new URL(
-            location.origin + adyenExpressCheckoutOptions.paymentFinishUrl);
-        this.finishUrl.searchParams.set('orderId', this.orderId);
         this.errorUrl = new URL(
             location.origin + adyenExpressCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', this.orderId);
 
         let params = {
             'orderId': this.orderId,
-            'finishUrl': this.finishUrl.toString(),
-            'errorUrl': this.errorUrl.toString()
         };
 
         // Append any extra parameters passed, e.g. stateData
@@ -581,9 +576,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             return;
         }
 
-        // If payment call returns the errorUrl, then no need to proceed further.
-        // Redirect to error page.
-        if (this.returnUrl === this.errorUrl.toString()) {
+        if (response.paymentFailed) {
             actions.reject({});
             location.href = this.returnUrl;
         }
