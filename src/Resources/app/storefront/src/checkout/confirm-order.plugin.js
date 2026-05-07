@@ -87,6 +87,18 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
+    _buildPayloadWithFormData(stateData, extra = {}) {
+        const payload = { ...extra, stateData: JSON.stringify(stateData) };
+        if (this.confirmOrderForm) {
+            for (const [key, value] of new FormData(this.confirmOrderForm).entries()) {
+                if (!(key in payload)) {
+                    payload[key] = value;
+                }
+            }
+        }
+        return payload;
+    }
+
     setupPaymentMethodSwitchHandler() {
         document.addEventListener('change', (event) => {
             if (event.target.name === 'paymentMethodId') {
@@ -316,7 +328,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             this._client.post(
                 `${adyenCheckoutOptions.paypalOrderFinalizeUrl}`,
-                JSON.stringify({stateData: JSON.stringify(state.data)}),
+                JSON.stringify(this._buildPayloadWithFormData(state.data)),
                 function (paymentResponse) {
                     let response = JSON.parse(paymentResponse);
 
@@ -564,9 +576,8 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (this.selectedAdyenPaymentMethod === 'paypal') {
             baseConfig.onSubmit = function (state, component, actions) {
                 if (state.isValid) {
-                    let formData = {
-                        stateData: JSON.stringify(state.data)
-                    };
+                    let formData = this._buildPayloadWithFormData(state.data);
+
                     if ('responseHandler' in componentConfig) {
                         this.responseHandler = componentConfig.responseHandler.bind(component, this);
                     }
