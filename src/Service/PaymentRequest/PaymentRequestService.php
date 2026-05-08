@@ -263,7 +263,12 @@ class PaymentRequestService
             $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
 
         $paymentRequest->setOrigin($origin);
-        $paymentRequest->setAdditionaldata(['allow3DS2' => true]);
+        $paymentRequest->setAdditionalData([
+            'allow3DS2' => true,
+            'manualCapture' => (bool)$this->configurationService->isManualCaptureActive(
+                $salesChannelContext->getSalesChannel()->getId()
+            ),
+        ]);
         $paymentRequest->setChannel('Web');
 
         // Set order data for multi-payment scenarios
@@ -339,7 +344,12 @@ class PaymentRequestService
         }
 
         $paymentRequest->setOrigin($this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext));
-        $paymentRequest->setAdditionaldata(['allow3DS2' => true]);
+        $paymentRequest->setAdditionalData([
+            'allow3DS2' => true,
+            'manualCapture' => (bool)$this->configurationService->isManualCaptureActive(
+                $salesChannelContext->getSalesChannel()->getId()
+            ),
+        ]);
         $paymentRequest->setChannel('Web');
         $paymentRequest->setShopperInteraction(self::SHOPPER_INTERACTION_ECOMMERCE);
 
