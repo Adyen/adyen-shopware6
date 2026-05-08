@@ -27,11 +27,17 @@ function validateRequired(self) {
             field.scrollIntoView({behavior: 'smooth', block: 'center'});
             field.focus();
 
+            field.reportValidity();
             return false;
         }
     }
 
-    return self.confirmOrderForm.checkValidity();
+    if (!self.confirmOrderForm.checkValidity()) {
+        self.confirmOrderForm.reportValidity();
+        return false;
+    }
+
+    return true;
 }
 
 export default {

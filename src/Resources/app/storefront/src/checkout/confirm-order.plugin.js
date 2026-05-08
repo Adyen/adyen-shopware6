@@ -87,6 +87,18 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
     }
 
+    _buildPayloadWithFormData(stateData, extra = {}) {
+        const payload = { ...extra, stateData: JSON.stringify(stateData) };
+        if (this.confirmOrderForm) {
+            for (const [key, value] of new FormData(this.confirmOrderForm).entries()) {
+                if (!(key in payload)) {
+                    payload[key] = value;
+                }
+            }
+        }
+        return payload;
+    }
+
     setupPaymentMethodSwitchHandler() {
         document.addEventListener('change', (event) => {
             if (event.target.name === 'paymentMethodId') {
@@ -316,7 +328,7 @@ export default class ConfirmOrderPlugin extends Plugin {
         try {
             this._client.post(
                 `${adyenCheckoutOptions.paypalOrderFinalizeUrl}`,
-                JSON.stringify({stateData: JSON.stringify(state.data)}),
+                JSON.stringify(this._buildPayloadWithFormData(state.data)),
                 function (paymentResponse) {
                     let response = JSON.parse(paymentResponse);
 
@@ -369,9 +381,6 @@ export default class ConfirmOrderPlugin extends Plugin {
         }
 
         this.orderId = order.id;
-        this.finishUrl = new URL(
-            location.origin + adyenCheckoutOptions.paymentFinishUrl);
-        this.finishUrl.searchParams.set('orderId', order.id);
         this.errorUrl = new URL(
             location.origin + adyenCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', order.id);
@@ -388,8 +397,6 @@ export default class ConfirmOrderPlugin extends Plugin {
 
         let params = {
             'orderId': this.orderId,
-            'finishUrl': this.finishUrl.toString(),
-            'errorUrl': this.errorUrl.toString(),
         };
         // Append any extra parameters passed, e.g. stateData
         for (const property in extraParams) {
@@ -440,9 +447,7 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
-        // If payment call returns the errorUrl, then no need to proceed further.
-        // Redirect to error page.
-        if (this.returnUrl === this.errorUrl.toString()) {
+        if (response.paymentFailed) {
             if (actions.reject) {
                 actions.reject({});
             }
@@ -571,9 +576,8 @@ export default class ConfirmOrderPlugin extends Plugin {
         if (this.selectedAdyenPaymentMethod === 'paypal') {
             baseConfig.onSubmit = function (state, component, actions) {
                 if (state.isValid) {
-                    let formData = {
-                        stateData: JSON.stringify(state.data)
-                    };
+                    let formData = this._buildPayloadWithFormData(state.data);
+
                     if ('responseHandler' in componentConfig) {
                         this.responseHandler = componentConfig.responseHandler.bind(component, this);
                     }
