@@ -32,7 +32,7 @@ use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
 use Adyen\Shopware\Entity\Refund\RefundEntityDefinition;
 use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
-use Adyen\Shopware\PaymentMethods\KlarnaDebitRiskPaymentMethod;
+use Adyen\Shopware\Handlers\KlarnaPayOverTimePaymentMethodHandler;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -230,6 +230,24 @@ class AdyenPaymentShopware6 extends Plugin
 
                 $paymentRepository->update([$paymentMethodData], $context);
 
+                return;
+            }
+        }
+
+        if ($paymentMethod->getPaymentHandler() === KlarnaPayOverTimePaymentMethodHandler::class
+            && $paymentMethodId === null) {
+            $klarnaAccountMethodId = $this->getPaymentMethodId(self::KLARNA_ACCOUNT);
+
+            if ($klarnaAccountMethodId) {
+                $paymentMethodData = [
+                    'id' => $klarnaAccountMethodId,
+                    'handlerIdentifier' => $paymentMethod->getPaymentHandler(),
+                    'name' => $paymentMethod->getName(),
+                    'description' => $paymentMethod->getDescription(),
+                    'pluginId' => $pluginId,
+                ];
+
+                $paymentRepository->update([$paymentMethodData], $context);
                 return;
             }
         }
