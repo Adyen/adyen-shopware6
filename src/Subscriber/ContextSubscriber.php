@@ -35,6 +35,7 @@ use Shopware\Core\System\SalesChannel\Event\SalesChannelContextRestoredEvent;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenChangeEvent;
 use Shopware\Core\System\SalesChannel\SalesChannel\AbstractContextSwitchRoute;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class ContextSubscriber implements EventSubscriberInterface
 {
@@ -62,6 +63,10 @@ class ContextSubscriber implements EventSubscriberInterface
      * @var Currency $currency
      */
     private Currency $currency;
+    /**
+     * @var RequestStack $requestStack
+     */
+    private RequestStack $requestStack;
 
     /**
      * @param ConfigurationService $configurationService
@@ -70,6 +75,7 @@ class ContextSubscriber implements EventSubscriberInterface
      * @param AbstractCartPersister $cartPersister
      * @param CartCalculator $cartCalculator
      * @param Currency $currency
+     * @param RequestStack $requestStack
      */
     public function __construct(
         ConfigurationService $configurationService,
@@ -77,7 +83,8 @@ class ContextSubscriber implements EventSubscriberInterface
         AbstractContextSwitchRoute $contextSwitchRoute,
         AbstractCartPersister $cartPersister,
         CartCalculator $cartCalculator,
-        Currency $currency
+        Currency $currency,
+        RequestStack $requestStack
     ) {
         $this->configurationService = $configurationService;
         $this->paymentStateDataService = $paymentStateDataService;
@@ -85,6 +92,7 @@ class ContextSubscriber implements EventSubscriberInterface
         $this->cartPersister = $cartPersister;
         $this->cartCalculator = $cartCalculator;
         $this->currency = $currency;
+        $this->requestStack = $requestStack;
     }
 
     /**
@@ -126,7 +134,6 @@ class ContextSubscriber implements EventSubscriberInterface
         $oldToken = $event->getPreviousToken();
 
         $stateData = $this->paymentStateDataService->fetchRedeemedGiftCardsFromContextToken($oldToken);
-
         foreach ($stateData->getElements() as $statedataArray) {
             $this->paymentStateDataService->updateStateDataContextToken($statedataArray, $token);
         }
@@ -141,6 +148,7 @@ class ContextSubscriber implements EventSubscriberInterface
     {
         $context = $event->getSalesChannelContext();
         $salesChannelId = $context->getSalesChannelId();
+        $currentToken = $context->getToken();
 
         $extension = new AdyenContextDataStruct();
         $context->addExtension('adyenData', $extension);
@@ -150,5 +158,10 @@ class ContextSubscriber implements EventSubscriberInterface
 
         $data = $this->paymentStateDataService->getPaymentStateDataFromContextToken($context->getToken());
         $extension->setHasPaymentStateData(!empty($data));
+
+        $session = $this->requestStack->getSession();
+        if ($session->get('adyenSwContextToken') !== $currentToken) {
+            $session->set('adyenSwContextToken', $currentToken);
+        }
     }
 }
