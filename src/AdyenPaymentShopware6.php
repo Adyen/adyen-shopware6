@@ -32,7 +32,7 @@ use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
 use Adyen\Shopware\Entity\Refund\RefundEntityDefinition;
 use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
-use Adyen\Shopware\PaymentMethods\KlarnaDebitRiskPaymentMethod;
+use Adyen\Shopware\Handlers\KlarnaPayOverTimePaymentMethodHandler;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -53,6 +53,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 class AdyenPaymentShopware6 extends Plugin
 {
     public const SOFORT = 'Adyen\Shopware\Handlers\SofortPaymentMethodHandler';
+    public const KLARNA_ACCOUNT = 'Adyen\Shopware\Handlers\KlarnaAccountPaymentMethodHandler';
 
     /**
      * @param InstallContext $installContext
@@ -174,6 +175,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '5.0.0', '<')) {
             $this->updateTo500($updateContext);
         }
+
+        if (\version_compare($currentVersion, '5.3.0', '<')) {
+            $this->updateTo530($updateContext);
+        }
     }
 
     /**
@@ -226,6 +231,24 @@ class AdyenPaymentShopware6 extends Plugin
 
                 $paymentRepository->update([$paymentMethodData], $context);
 
+                return;
+            }
+        }
+
+        if ($paymentMethod->getPaymentHandler() === KlarnaPayOverTimePaymentMethodHandler::class
+            && $paymentMethodId === null) {
+            $klarnaAccountMethodId = $this->getPaymentMethodId(self::KLARNA_ACCOUNT);
+
+            if ($klarnaAccountMethodId) {
+                $paymentMethodData = [
+                    'id' => $klarnaAccountMethodId,
+                    'handlerIdentifier' => $paymentMethod->getPaymentHandler(),
+                    'name' => $paymentMethod->getName(),
+                    'description' => $paymentMethod->getDescription(),
+                    'pluginId' => $pluginId,
+                ];
+
+                $paymentRepository->update([$paymentMethodData], $context);
                 return;
             }
         }
@@ -735,6 +758,33 @@ class AdyenPaymentShopware6 extends Plugin
             ];
             $paymentRepository->update([$paymentData], $updateContext->getContext());
         }
+    }
+
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
+    private function updateTo530(UpdateContext $updateContext): void
+    {
+        // Rename Klarna Account to Klarna Pay Over Time
+        $paymentRepository = $this->container->get('payment_method.repository');
+        $paymentMethodId = $this->getPaymentMethodId(self::KLARNA_ACCOUNT);
+
+        if (!$paymentMethodId) {
+            return;
+        }
+
+        $method = new PaymentMethods\KlarnaPayOverTimePaymentMethod();
+
+        $paymentMethodData = [
+            'id' => $paymentMethodId,
+            'handlerIdentifier' => $method->getPaymentHandler(),
+            'name' => $method->getName(),
+            'description' => $method->getDescription(),
+        ];
+
+        $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
     }
 
     /**
