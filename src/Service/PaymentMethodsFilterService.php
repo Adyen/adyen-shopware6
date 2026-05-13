@@ -140,7 +140,6 @@ class PaymentMethodsFilterService
                 /** @var AbstractPaymentMethodHandler $pmHandlerIdentifier */
                 $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
                 $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
-                $isSafari = preg_match('/^((?!chrome|android).)*safari/', strtolower($_SERVER['HTTP_USER_AGENT']));
 
                 if ((
                         $pmCode === RatepayPaymentMethod::RATEPAY_PAYMENT_METHOD_TYPE ||
@@ -156,9 +155,6 @@ class PaymentMethodsFilterService
                         $originalPaymentMethods->remove($paymentMethodEntity->getId());
                     }
                 } elseif ($pmCode == 'giftcard' && $pmHandlerIdentifier != GiftCardPaymentMethodHandler::class) {
-                    $originalPaymentMethods->remove($paymentMethodEntity->getId());
-                    // Remove ApplePay PM if the browser is not Safari
-                } elseif ($pmCode == ApplePayPaymentMethodHandler::getPaymentMethodCode() && $isSafari !== 1) {
                     $originalPaymentMethods->remove($paymentMethodEntity->getId());
                 } else {
                     // For all other PMs, search in /paymentMethods response for payment method with matching `type`
@@ -311,14 +307,6 @@ class PaymentMethodsFilterService
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
             return new PaymentMethodsResponse();
-        }
-
-        if (!empty($_SERVER['HTTP_USER_AGENT'])) {
-            $userAgent = $_SERVER['HTTP_USER_AGENT'];
-
-            if ((!strpos($userAgent, 'Safari') || strpos($userAgent, 'Chrome'))) {
-                $applePayAvailable = false;
-            }
         }
 
         $googlePayInSalesChannel = false;
