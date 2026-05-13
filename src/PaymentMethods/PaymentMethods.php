@@ -29,7 +29,7 @@ class PaymentMethods
     const PAYMENT_METHODS = [
         CardsPaymentMethod::class,
         IdealPaymentMethod::class,
-        KlarnaAccountPaymentMethod::class,
+        KlarnaPayOverTimePaymentMethod::class,
         KlarnaPayNowPaymentMethod::class,
         KlarnaPayLaterPaymentMethod::class,
         RatepayPaymentMethod::class,
