@@ -32,9 +32,7 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
-use Shopware\Core\Framework\Adapter\Cache\CacheValueCompressor;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Contracts\Cache\CacheInterface;
 
 class PaymentMethodsService
 {
@@ -69,11 +67,6 @@ class PaymentMethodsService
     private OrderRepository $orderRepository;
 
     /**
-     * @var CacheInterface
-     */
-    private CacheInterface $cache;
-
-    /**
      * @var LoggerInterface
      */
     private LoggerInterface $logger;
@@ -86,7 +79,6 @@ class PaymentMethodsService
      * @param ConfigurationService $configurationService
      * @param Currency $currency
      * @param CartService $cartService
-     * @param CacheInterface $cache
      * @param SalesChannelRepository $salesChannelRepository
      * @param OrderRepository $orderRepository
      */
@@ -96,7 +88,6 @@ class PaymentMethodsService
         ConfigurationService $configurationService,
         Currency $currency,
         CartService $cartService,
-        CacheInterface $cache,
         SalesChannelRepository $salesChannelRepository,
         OrderRepository $orderRepository
     ) {
@@ -105,7 +96,6 @@ class PaymentMethodsService
         $this->currency = $currency;
         $this->cartService = $cartService;
         $this->salesChannelRepository = $salesChannelRepository;
-        $this->cache = $cache;
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
     }
@@ -124,14 +114,6 @@ class PaymentMethodsService
     ): PaymentMethodsResponse {
         $requestData = $this->buildPaymentMethodsRequestData($context, $orderId, $amount);
 
-        $paymentRequestString = json_encode($requestData);
-        $cacheKey = 'adyen_payment_methods_' . md5($paymentRequestString);
-        $paymentMethodsResponseCache = $this->cache->getItem($cacheKey);
-
-        if ($paymentMethodsResponseCache->isHit() && $paymentMethodsResponseCache->get()) {
-            return CacheValueCompressor::uncompress($paymentMethodsResponseCache->get());
-        }
-
         $responseData = new PaymentMethodsResponse();
         try {
             $paymentsApiService = new PaymentsApi(
@@ -139,9 +121,6 @@ class PaymentMethodsService
             );
 
             $responseData = $paymentsApiService->paymentMethods(new PaymentMethodsRequest($requestData));
-
-            $paymentMethodsResponseCache->set(CacheValueCompressor::compress($responseData));
-            $this->cache->save($paymentMethodsResponseCache);
         } catch (AdyenException $e) {
             $this->logger->error($e->getMessage());
         }
