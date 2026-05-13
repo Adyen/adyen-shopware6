@@ -101,6 +101,7 @@ class ContextSubscriber implements EventSubscriberInterface
     {
         $context = $event->getSalesChannelContext();
         $salesChannelId = $context->getSalesChannelId();
+        $currentToken = $context->getToken();
 
         $extension = new AdyenContextDataStruct();
         $context->addExtension('adyenData', $extension);
@@ -110,5 +111,10 @@ class ContextSubscriber implements EventSubscriberInterface
 
         $data = $this->paymentStateDataService->getPaymentStateDataFromContextToken($context->getToken());
         $extension->setHasPaymentStateData(!empty($data));
+
+        $session = $this->requestStack->getSession();
+        if ($session->get('adyenSwContextToken') !== $currentToken) {
+            $session->set('adyenSwContextToken', $currentToken);
+        }
     }
 }
