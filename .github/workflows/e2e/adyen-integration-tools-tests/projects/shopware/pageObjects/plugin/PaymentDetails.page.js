@@ -30,7 +30,7 @@ export class PaymentDetailsPage extends SPRBasePage {
         this.clearPaySelector = this.paymentDetailsList.locator("img[alt='Clearpay']");
         this.klarnaPayNowSelector = this.paymentDetailsList.locator("img[alt='Klarna Pay Now']");
         this.klarnaPayLaterSelector = this.paymentDetailsList.locator("img[alt='Klarna Pay Later']");
-        this.klarnaPayAccountSelector = this.paymentDetailsList.locator("img[alt='Klarna Account']");
+        this.klarnaPayOverTimeSelector = this.paymentDetailsList.locator("img[alt='Klarna Pay Over Time']");
         this.sepaDirectDebitWrapper = this.paymentDetailsList.locator(".adyen-checkout__fieldset--iban-input");
         this.sepaDirectDebitSelector = this.paymentDetailsList.locator("img[alt='SEPA direct debit']");
         this.multiBancoSelector = this.paymentDetailsList.locator("img[alt='Multibanco']");
@@ -120,8 +120,8 @@ export class PaymentDetailsPage extends SPRBasePage {
         await this.getPaymentMethodReady(this.klarnaPayLaterSelector);
     }
 
-    async selectKlarnaPayAccount(){
-        await this.getPaymentMethodReady(this.klarnaPayAccountSelector);
+    async selectKlarnaPayOverTime(){
+        await this.getPaymentMethodReady(this.klarnaPayOverTimeSelector);
     }
 
     async selectSepaDirectDebit(){
