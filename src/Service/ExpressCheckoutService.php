@@ -37,6 +37,7 @@ use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Util\Currency;
 use Exception;
 use JsonException;
+use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
@@ -57,7 +58,6 @@ use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\Request;
 
 class ExpressCheckoutService
 {
@@ -100,6 +100,9 @@ class ExpressCheckoutService
     /** @var SalesChannelContextServiceInterface $salesChannelContextService */
     private SalesChannelContextServiceInterface $salesChannelContextService;
 
+    /** @var AbstractCartPersister */
+    private AbstractCartPersister $cartPersister;
+
     /**
      * @param CartService $cartService
      * @param ExpressCheckoutRepository $expressCheckoutRepository
@@ -110,6 +113,7 @@ class ExpressCheckoutService
      * @param EntityRepository $orderRepository
      * @param OrderConverter $orderConverter
      * @param SalesChannelContextServiceInterface $salesChannelContextService
+     * @param AbstractCartPersister $cartPersister
      */
     public function __construct(
         CartService $cartService,
@@ -120,7 +124,8 @@ class ExpressCheckoutService
         SalesChannelContextPersister $contextPersister,
         EntityRepository $orderRepository,
         OrderConverter $orderConverter,
-        SalesChannelContextServiceInterface $salesChannelContextService
+        SalesChannelContextServiceInterface $salesChannelContextService,
+        AbstractCartPersister $cartPersister
     ) {
         $this->cartService = $cartService;
         $this->expressCheckoutRepository = $expressCheckoutRepository;
@@ -131,6 +136,7 @@ class ExpressCheckoutService
         $this->orderRepository = $orderRepository;
         $this->orderConverter = $orderConverter;
         $this->salesChannelContextService = $salesChannelContextService;
+        $this->cartPersister = $cartPersister;
     }
 
     /**
@@ -1020,7 +1026,7 @@ class ExpressCheckoutService
             $context->getAreaRuleIds()
         );
 
-        $this->cartService->deleteCart($temporaryContext);
+        $this->cartPersister->delete($cartData['temporaryToken'], $temporaryContext);
     }
 
     /**
