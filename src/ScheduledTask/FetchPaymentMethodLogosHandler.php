@@ -38,7 +38,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+#[AsMessageHandler(handles: FetchPaymentMethodLogos::class)]
 class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
 {
     use LoggerAwareTrait;
