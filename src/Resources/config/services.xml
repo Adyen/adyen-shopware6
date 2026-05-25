@@ -71,6 +71,10 @@
                  alias="Shopware\Core\System\SalesChannel\Context\SalesChannelContextService"
                  public="false" />
 
+        <service id="Shopware\Core\Checkout\Cart\AbstractCartPersister"
+                 alias="Shopware\Core\Checkout\Cart\CartPersister"
+                 public="false" />
+
         <service id="Adyen\Shopware\Service\ExpressCheckoutService" autowire="true"/>
 
         <service id="Adyen\Shopware\Service\TermsAndConditionsService" autowire="true">
