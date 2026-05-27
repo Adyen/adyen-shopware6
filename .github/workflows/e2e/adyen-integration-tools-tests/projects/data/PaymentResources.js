@@ -37,11 +37,6 @@ export default class PaymentResources {
     webhookPassword : process.env.WEBHOOK_PASSWORD,
   }
 
-  amazonCredentials = {
-    username: process.env.AMAZON_USERNAME,
-    password: process.env.AMAZON_PASSWORD,
-  }
-
   googleCredentials = {
     username: process.env.GOOGLE_USERNAME,
     password: process.env.GOOGLE_PASSWORD,
