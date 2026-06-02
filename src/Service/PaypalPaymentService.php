@@ -104,7 +104,7 @@ class PaypalPaymentService
      * @param RouterInterface $router
      * @param PaymentRequestService $paymentRequestService
      */
-    public function __construct(
+    public function __construct( // NOSONAR
         ClientService $clientService,
         NumberRangeValueGeneratorInterface $numberRangeValueGenerator,
         PaymentResponseHandler $paymentResponseHandler,
