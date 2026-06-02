@@ -44,7 +44,7 @@ use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Checkout\Payment\PaymentException;
-use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
+use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -63,7 +63,7 @@ readonly class PaypalPaymentService
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param SalesChannelRepository $salesChannelRepository
      * @param CartOrderRoute $cartOrderRoute
-     * @param HandlePaymentMethodRoute $handlePaymentMethodRoute
+     * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
      * @param ExpressCheckoutService $expressCheckoutService
      * @param CartService $cartService
      * @param PaymentRequestService $paymentRequestService
@@ -74,7 +74,7 @@ readonly class PaypalPaymentService
         private PaymentResponseHandler $paymentResponseHandler,
         private SalesChannelRepository $salesChannelRepository,
         private CartOrderRoute $cartOrderRoute,
-        private HandlePaymentMethodRoute $handlePaymentMethodRoute,
+        private AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
         private ExpressCheckoutService $expressCheckoutService,
         private CartService $cartService,
         private PaymentRequestService $paymentRequestService
