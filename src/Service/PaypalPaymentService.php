@@ -45,7 +45,7 @@ use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Exception\AsyncPaymentFinalizeException;
 use Shopware\Core\Checkout\Payment\Exception\CustomerCanceledAsyncPaymentException;
-use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
+use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -75,8 +75,8 @@ class PaypalPaymentService
     /** @var CartOrderRoute $cartOrderRoute */
     private CartOrderRoute $cartOrderRoute;
 
-    /** @var HandlePaymentMethodRoute $handlePaymentMethodRoute */
-    private HandlePaymentMethodRoute $handlePaymentMethodRoute;
+    /** @var AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute */
+    private AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute;
 
     /** @var ExpressCheckoutService $expressCheckoutService */
     private ExpressCheckoutService $expressCheckoutService;
@@ -98,7 +98,7 @@ class PaypalPaymentService
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param SalesChannelRepository $salesChannelRepository
      * @param CartOrderRoute $cartOrderRoute
-     * @param HandlePaymentMethodRoute $handlePaymentMethodRoute
+     * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
      * @param ExpressCheckoutService $expressCheckoutService
      * @param CartService $cartService
      * @param RouterInterface $router
@@ -110,7 +110,7 @@ class PaypalPaymentService
         PaymentResponseHandler $paymentResponseHandler,
         SalesChannelRepository $salesChannelRepository,
         CartOrderRoute $cartOrderRoute,
-        HandlePaymentMethodRoute $handlePaymentMethodRoute,
+        AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
         ExpressCheckoutService $expressCheckoutService,
         CartService $cartService,
         RouterInterface $router,
