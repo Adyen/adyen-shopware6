@@ -509,7 +509,9 @@ export default class ConfirmOrderPlugin extends Plugin {
                 if (!componentConfig.onClick(resolve, reject, this)) {
                     return false;
                 }
-                ElementLoadingIndicatorUtil.create(document.body);
+                if (this.selectedAdyenPaymentMethod !== 'applepay') {
+                    ElementLoadingIndicatorUtil.create(document.body);
+                }
             },
             onCancel: (data, component) => {
                 ElementLoadingIndicatorUtil.remove(document.body);
@@ -553,6 +555,9 @@ export default class ConfirmOrderPlugin extends Plugin {
         } else {
             baseConfig.onSubmit = function (state, component, actions) {
                 if (state.isValid) {
+                    if (this.selectedAdyenPaymentMethod === 'applepay') {
+                        ElementLoadingIndicatorUtil.create(document.body);
+                    }
                     let extraParams = {
                         stateData: JSON.stringify(state.data)
                     };
