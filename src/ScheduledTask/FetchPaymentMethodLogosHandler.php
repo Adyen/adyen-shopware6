@@ -129,7 +129,6 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 continue;
             }
 
-            // Delete old associated media.
             /** @var PaymentMethodEntity $paymentMethodEntity */
             $paymentMethodEntity = $result->getEntities()->first();
 
