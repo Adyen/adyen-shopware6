@@ -31,7 +31,6 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Content\Media\File\MediaFile;
-use Shopware\Core\Content\Media\MediaException;
 use Shopware\Core\Content\Media\MediaService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -133,7 +132,6 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 continue;
             }
 
-            // Delete old associated media.
             /** @var PaymentMethodEntity $paymentMethodEntity */
             $paymentMethodEntity = $result->getEntities()->first();
 
