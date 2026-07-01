@@ -39,7 +39,7 @@ use Exception;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Order\IdStruct;
 use Shopware\Core\Checkout\Cart\Order\OrderConverter;
-use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
+use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -72,8 +72,8 @@ class PaypalPaymentService
     /** @var SalesChannelRepository $salesChannelRepository */
     private SalesChannelRepository $salesChannelRepository;
 
-    /** @var CartOrderRoute $cartOrderRoute */
-    private CartOrderRoute $cartOrderRoute;
+    /** @var AbstractCartOrderRoute $cartOrderRoute */
+    private AbstractCartOrderRoute $cartOrderRoute;
 
     /** @var AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute */
     private AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute;
@@ -97,7 +97,7 @@ class PaypalPaymentService
      * @param NumberRangeValueGeneratorInterface $numberRangeValueGenerator
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param SalesChannelRepository $salesChannelRepository
-     * @param CartOrderRoute $cartOrderRoute
+     * @param AbstractCartOrderRoute $cartOrderRoute
      * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
      * @param ExpressCheckoutService $expressCheckoutService
      * @param CartService $cartService
@@ -109,7 +109,7 @@ class PaypalPaymentService
         NumberRangeValueGeneratorInterface $numberRangeValueGenerator,
         PaymentResponseHandler $paymentResponseHandler,
         SalesChannelRepository $salesChannelRepository,
-        CartOrderRoute $cartOrderRoute,
+        AbstractCartOrderRoute $cartOrderRoute,
         AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
         ExpressCheckoutService $expressCheckoutService,
         CartService $cartService,
