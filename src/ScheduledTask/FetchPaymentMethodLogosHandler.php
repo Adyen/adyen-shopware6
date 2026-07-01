@@ -31,7 +31,6 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Content\Media\File\MediaFile;
-use Shopware\Core\Content\Media\MediaException;
 use Shopware\Core\Content\Media\MediaService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -133,19 +132,14 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
                 continue;
             }
 
-            // Delete old associated media.
             /** @var PaymentMethodEntity $paymentMethodEntity */
             $paymentMethodEntity = $result->getEntities()->first();
-            $mediaId = $paymentMethodEntity->getMediaId();
-            if ($mediaId) {
-                $this->mediaRepository->delete([['id' => $mediaId]], $context);
-            }
 
             $this->attachLogoToPaymentMethod(
                 $media,
                 $context,
                 strtolower($paymentMethod->getGatewayCode()),
-                $paymentMethodEntity->getId()
+                $paymentMethodEntity
             );
         }
     }
@@ -180,7 +174,7 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
      * @param MediaFile $media
      * @param Context $context
      * @param string $filename
-     * @param string $paymentMethodEntityId
+     * @param PaymentMethodEntity $paymentMethodEntity
      *
      * @return void
      */
@@ -188,38 +182,34 @@ class FetchPaymentMethodLogosHandler extends ScheduledTaskHandler
         MediaFile $media,
         Context $context,
         string $filename,
-        string $paymentMethodEntityId
+        PaymentMethodEntity $paymentMethodEntity
     ): void {
-        try {
-            $mediaId = $this->mediaService->createMediaInFolder('adyen', $context, false);
-            $this->mediaService->saveMediaFile(
-                $media,
-                $filename,
-                $context,
-                'adyen',
-                $mediaId
-            );
-        } catch (MediaException $exception) {
-            if ($exception->getErrorCode() !== MediaException::MEDIA_DUPLICATED_FILE_NAME) {
-                throw $exception;
-            }
+        $currentMediaId = $this->mediaRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('fileName', $filename)),
+            $context
+        )->getEntities()->first()?->getId();
 
-            $mediaId = $this->mediaRepository->search(
-                (new Criteria())->addFilter(new EqualsFilter('fileName', $filename)),
-                $context
-            )->getEntities()->first()?->getId();
+        if ($currentMediaId) {
+            $this->mediaRepository->delete([['id' => $currentMediaId]], $context);
+        }
 
-            if (!$mediaId) {
-                $this->logger->error(sprintf('The media file with filename %s could not be found.', $filename));
+        $newMediaId = $this->mediaService->createMediaInFolder('adyen', $context, false);
+        $this->mediaService->saveMediaFile(
+            $media,
+            $filename,
+            $context,
+            'adyen',
+            $newMediaId
+        );
 
-                return;
-            }
+        if ($currentMediaId !== $paymentMethodEntity->getMediaId()) {
+            return;
         }
 
         $this->paymentMethodRepository->update([
             [
-                'id' => $paymentMethodEntityId,
-                'mediaId' => $mediaId
+                'id' => $paymentMethodEntity->getId(),
+                'mediaId' => $newMediaId
             ]
         ], $context);
     }
