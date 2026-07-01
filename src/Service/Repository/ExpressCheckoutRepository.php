@@ -7,6 +7,7 @@ use Exception;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Rule\CartRuleScope;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
+use Shopware\Core\Checkout\Customer\CustomerDefinition;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
@@ -18,6 +19,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopware\Core\System\Country\CountryEntity;
+use Shopware\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class ExpressCheckoutRepository
@@ -61,6 +63,9 @@ class ExpressCheckoutRepository
     /** @var EntityRepository */
     private EntityRepository $orderCustomerRepository;
 
+    /** @var NumberRangeValueGeneratorInterface  */
+    private NumberRangeValueGeneratorInterface $numberRangeValueGenerator;
+
     public function __construct(
         EntityRepository $shippingMethodRepository,
         EntityRepository $customerRepository,
@@ -70,7 +75,8 @@ class ExpressCheckoutRepository
         EntityRepository $orderRepository,
         EntityRepository $orderAddressRepository,
         EntityRepository $customerAddressRepository,
-        EntityRepository $orderCustomerRepository
+        EntityRepository $orderCustomerRepository,
+        NumberRangeValueGeneratorInterface $numberRangeValueGenerator
     ) {
         $this->shippingMethodRepository = $shippingMethodRepository;
         $this->customerRepository = $customerRepository;
@@ -81,6 +87,7 @@ class ExpressCheckoutRepository
         $this->orderAddressRepository = $orderAddressRepository;
         $this->customerAddressRepository = $customerAddressRepository;
         $this->orderCustomerRepository = $orderCustomerRepository;
+        $this->numberRangeValueGenerator = $numberRangeValueGenerator;
     }
 
     /**
@@ -309,7 +316,11 @@ class ExpressCheckoutRepository
         $groupId = $salesChannelContext->getCurrentCustomerGroup()->getId();
         $paymentMethodId = $salesChannelContext->getPaymentMethod()->getId();
         $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
-        $customerNumber = Uuid::randomHex();
+        $customerNumber = $this->numberRangeValueGenerator->getValue(
+            CustomerDefinition::ENTITY_NAME,
+            $salesChannelContext->getContext(),
+            $salesChannelId
+        );
         $remoteAddress = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
         // Address data
