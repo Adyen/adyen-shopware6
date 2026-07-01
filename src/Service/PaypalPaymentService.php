@@ -40,7 +40,7 @@ use JsonException;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Order\IdStruct;
 use Shopware\Core\Checkout\Cart\Order\OrderConverter;
-use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
+use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Checkout\Payment\PaymentException;
@@ -62,7 +62,7 @@ readonly class PaypalPaymentService
      * @param NumberRangeValueGeneratorInterface $numberRangeValueGenerator
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param SalesChannelRepository $salesChannelRepository
-     * @param CartOrderRoute $cartOrderRoute
+     * @param AbstractCartOrderRoute $cartOrderRoute
      * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
      * @param ExpressCheckoutService $expressCheckoutService
      * @param CartService $cartService
@@ -73,7 +73,7 @@ readonly class PaypalPaymentService
         private NumberRangeValueGeneratorInterface $numberRangeValueGenerator,
         private PaymentResponseHandler $paymentResponseHandler,
         private SalesChannelRepository $salesChannelRepository,
-        private CartOrderRoute $cartOrderRoute,
+        private AbstractCartOrderRoute $cartOrderRoute,
         private AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
         private ExpressCheckoutService $expressCheckoutService,
         private CartService $cartService,
