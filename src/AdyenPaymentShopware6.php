@@ -844,6 +844,17 @@ class AdyenPaymentShopware6 extends Plugin
     }
 }
 
-if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-    require_once __DIR__ . '/../vendor/autoload.php';
+$pluginPath = realpath(__DIR__ . '/..');
+$bundledAutoloader = __DIR__ . '/../vendor/autoload.php';
+
+$isManualInstallation = $pluginPath !== false
+    && str_contains(
+        $pluginPath,
+        DIRECTORY_SEPARATOR . 'custom'
+        . DIRECTORY_SEPARATOR . 'plugins'
+        . DIRECTORY_SEPARATOR
+    );
+
+if ($isManualInstallation  && file_exists($bundledAutoloader)) {
+    require_once $bundledAutoloader;
 }
