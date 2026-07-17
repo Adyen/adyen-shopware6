@@ -30,6 +30,7 @@ use Adyen\Shopware\Handlers\GiftCardPaymentMethodHandler;
 use Adyen\Shopware\Handlers\GooglePayPaymentMethodHandler;
 use Adyen\Shopware\Handlers\OneClickPaymentMethodHandler;
 use Adyen\Shopware\Handlers\ApplePayPaymentMethodHandler;
+use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
 use Adyen\Shopware\Service\Repository\ExpressCheckoutRepository;
@@ -131,16 +132,27 @@ class PaymentMethodsFilterService
         if (empty($adyenPaymentMethods->getPaymentMethods())) {
             return $originalPaymentMethods->filter(
                 function (PaymentMethodEntity $item) use ($adyenPluginId) {
-                    return $item->getPluginId() !== $adyenPluginId;
+                    return $item->getPluginId() !== $adyenPluginId
+                        && !in_array(
+                            $item->getHandlerIdentifier(),
+                            PaymentMethods::DEPRECATED_PAYMENT_METHOD_HANDLERS,
+                            true
+                        );
                 }
             );
         }
 
         foreach ($originalPaymentMethods as $paymentMethodEntity) {
+            /** @var AbstractPaymentMethodHandler $pmHandlerIdentifier */
+            $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
+
+            if (in_array($pmHandlerIdentifier, PaymentMethods::DEPRECATED_PAYMENT_METHOD_HANDLERS, true)) {
+                $originalPaymentMethods->remove($paymentMethodEntity->getId());
+                continue;
+            }
+
             //If this is an Adyen PM installed it will only be enabled if it's present in the /paymentMethods response
             if ($paymentMethodEntity->getPluginId() === $adyenPluginId) {
-                /** @var AbstractPaymentMethodHandler $pmHandlerIdentifier */
-                $pmHandlerIdentifier = $paymentMethodEntity->getHandlerIdentifier();
                 $pmCode = $pmHandlerIdentifier::getPaymentMethodCode();
 
                 if ((
@@ -210,8 +222,11 @@ class PaymentMethodsFilterService
     ): bool {
         $filteredPaymentMethod = $paymentMethods->filter(
             function (PaymentMethodEntity $paymentMethod) use ($paymentMethodCode, $adyenPluginId) {
+                $handlerIdentifier = $paymentMethod->getHandlerIdentifier();
+
                 return $paymentMethod->getPluginId() === $adyenPluginId &&
-                    $paymentMethod->getHandlerIdentifier()::getPaymentMethodCode() === $paymentMethodCode;
+                    !in_array($handlerIdentifier, PaymentMethods::DEPRECATED_PAYMENT_METHOD_HANDLERS, true) &&
+                    $handlerIdentifier::getPaymentMethodCode() === $paymentMethodCode;
             }
         )->first();
 

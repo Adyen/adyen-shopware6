@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6a286958784ed62c8cf9dd987f9213bc",
+    "content-hash": "c998b063ba07751f4fc62e8900a2f08e",
     "packages": [
         {
             "name": "adyen/php-api-library",
@@ -5112,6 +5112,7 @@
                 "opensearch-project/opensearch-php": ">2.3.1",
                 "phenx/php-font-lib": "<0.5.5",
                 "shopware/k8s-meta": "<=1.0.3",
+                "symfony/polyfill-php84": "1.38.0",
                 "symfony/symfony": "*",
                 "symfony/web-profiler-bundle": "<7.3.0",
                 "zircote/swagger-php": "4.8.7"
@@ -12505,12 +12506,12 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "ext-json": "*"
     },
-    "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "platform-dev": [],
+    "plugin-api-version": "2.2.0"
 }
