@@ -77,10 +77,6 @@
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method"/>
         </service>
-        <service id="Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler"
-                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
-            <tag name="shopware.payment.method"/>
-        </service>
         <service id="Adyen\Shopware\Handlers\TwintPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method"/>
