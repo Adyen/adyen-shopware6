@@ -665,9 +665,6 @@ export default class ConfirmOrderPlugin extends Plugin {
     }
 
     renderPrePaymentButton(componentConfig, selectedPaymentMethodObject) {
-        if (selectedPaymentMethodObject.type === 'amazonpay') {
-            componentConfig.extra = this.setAddressDetails(componentConfig.extra);
-        }
         const PRE_PAY_BUTTON = Object.assign(componentConfig.extra, selectedPaymentMethodObject, {
             configuration: selectedPaymentMethodObject.configuration,
             amount: {

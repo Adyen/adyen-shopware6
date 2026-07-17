@@ -190,6 +190,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.21.0', '<')) {
             $this->updateTo3210($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.22.0', '<')) {
+            $this->updateTo3220($updateContext);
+        }
     }
 
     public function postUpdate(UpdateContext $updateContext): void
@@ -670,6 +674,13 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
+    }
+
+    private function updateTo3220(UpdateContext $updateContext): void
+    {
+        // Version 3.22.0 removes Amazon Pay
+        $paymentMethodHandler = 'Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler';
+        $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
     }
 
     private function safeCopyAsset($source, $destination): bool
