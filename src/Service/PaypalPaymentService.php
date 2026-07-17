@@ -25,14 +25,7 @@
 namespace Adyen\Shopware\Service;
 
 use Adyen\AdyenException;
-use Adyen\Client;
-use Adyen\Model\Checkout\BillingAddress;
-use Adyen\Model\Checkout\DeliveryAddress;
-use Adyen\Model\Checkout\Amount;
-use Adyen\Model\Checkout\CheckoutPaymentMethod;
-use Adyen\Model\Checkout\Name;
 use Adyen\Model\Checkout\PaymentDetailsRequest;
-use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
@@ -46,12 +39,12 @@ use Exception;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Order\IdStruct;
 use Shopware\Core\Checkout\Cart\Order\OrderConverter;
-use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
+use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Order\OrderDefinition;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
-use Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
+use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -71,10 +64,11 @@ readonly class PaypalPaymentService
      * @param NumberRangeValueGeneratorInterface $numberRangeValueGenerator
      * @param PaymentResponseHandler $paymentResponseHandler
      * @param SalesChannelRepository $salesChannelRepository
-     * @param CartOrderRoute $cartOrderRoute
-     * @param HandlePaymentMethodRoute $handlePaymentMethodRoute
+     * @param AbstractCartOrderRoute $cartOrderRoute
+     * @param AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute
      * @param ExpressCheckoutService $expressCheckoutService
      * @param CartService $cartService
+     * @param RouterInterface $router
      * @param PaymentRequestService $paymentRequestService
      */
     public function __construct(
@@ -82,8 +76,8 @@ readonly class PaypalPaymentService
         private readonly NumberRangeValueGeneratorInterface $numberRangeValueGenerator,
         private readonly PaymentResponseHandler $paymentResponseHandler,
         private readonly SalesChannelRepository $salesChannelRepository,
-        private readonly CartOrderRoute $cartOrderRoute,
-        private readonly HandlePaymentMethodRoute $handlePaymentMethodRoute,
+        private AbstractCartOrderRoute $cartOrderRoute,
+        private readonly AbstractHandlePaymentMethodRoute $handlePaymentMethodRoute,
         private readonly ExpressCheckoutService $expressCheckoutService,
         private readonly CartService $cartService,
         private readonly RouterInterface $router,
@@ -92,7 +86,7 @@ readonly class PaypalPaymentService
     }
 
     /**
-     * Finalize Paypal payment and creates order on Shopware.
+     * Finalize PayPal payment and creates order on Shopware.
      *
      * @param SalesChannelContext $context
      * @param Cart $cart
@@ -156,7 +150,7 @@ readonly class PaypalPaymentService
     }
 
     /**
-     * Finalize Paypal payment and creates order on Shopware.
+     * Finalize PayPal payment and creates order on Shopware.
      *
      * @param string $cartToken
      * @param SalesChannelContext $context
@@ -169,6 +163,7 @@ readonly class PaypalPaymentService
      *
      * @throws AdyenException
      * @throws ResolveCountryException
+     * @throws Exception
      */
     public function finalizeExpressPaypalPayment(
         string $cartToken,

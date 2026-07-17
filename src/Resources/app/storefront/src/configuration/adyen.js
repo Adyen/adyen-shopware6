@@ -62,6 +62,19 @@ export default {
                     resolve();
                     return true;
                 }
+            },
+            onError(error, component) {
+                if (component && typeof component.setStatus === 'function') {
+                    component.setStatus('ready');
+                }
+                if (error && error.statusCode !== 'CANCELED') {
+                    console.error(error);
+                }
+            },
+            onCancel(data, component) {
+                if (component && typeof component.setStatus === 'function') {
+                    component.setStatus('ready');
+                }
             }
         },
         'googlepay': {
