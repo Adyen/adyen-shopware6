@@ -526,7 +526,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 static::$isOpenInvoice,
                 static::class === OneClickPaymentMethodHandler::class
                     ? PaymentRequestService::SHOPPER_INTERACTION_CONTAUTH
-                    : PaymentRequestService::SHOPPER_INTERACTION_ECOMMERCE
+                    : PaymentRequestService::SHOPPER_INTERACTION_ECOMMERCE,
+                static::class
             );
         } catch (AsyncPaymentProcessException $exception) {
             $this->logger->error($exception->getMessage());

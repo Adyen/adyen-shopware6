@@ -134,6 +134,7 @@
         <service id="Adyen\Shopware\Service\PaymentRequest\PaymentRequestService">
             <argument type="service" id="Adyen\Shopware\Service\ClientService"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+            <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
             <argument type="service" id="Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider"/>
