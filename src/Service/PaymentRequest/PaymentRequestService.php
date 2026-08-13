@@ -36,9 +36,11 @@ use Adyen\Model\Checkout\LineItem;
 use Adyen\Model\Checkout\Name;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
+use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
+use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
@@ -86,6 +88,7 @@ class PaymentRequestService
     /**
      * @param ClientService $clientService
      * @param ConfigurationService $configurationService
+     * @param CaptureService $captureService
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
@@ -97,6 +100,7 @@ class PaymentRequestService
     public function __construct(
         private readonly ClientService $clientService,
         private readonly ConfigurationService $configurationService,
+        private readonly CaptureService $captureService,
         private readonly Currency $currency,
         private readonly CheckoutStateDataValidator $checkoutStateDataValidator,
         private readonly RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
@@ -119,6 +123,7 @@ class PaymentRequestService
      * @param array $adyenOrderData
      * @param bool $isOpenInvoice
      * @param string $shopperInteraction
+     * @param string $paymentMethodHandler
      *
      * @return IntegrationPaymentRequest
      */
@@ -131,7 +136,8 @@ class PaymentRequestService
         ?int $partialAmount = null,
         array $adyenOrderData = [],
         bool $isOpenInvoice = false,
-        string $shopperInteraction = self::SHOPPER_INTERACTION_ECOMMERCE
+        string $shopperInteraction = self::SHOPPER_INTERACTION_ECOMMERCE,
+        string $paymentMethodHandler = AbstractPaymentMethodHandler::class
     ): IntegrationPaymentRequest {
         $paymentRequest = new IntegrationPaymentRequest($stateData);
 
@@ -209,12 +215,15 @@ class PaymentRequestService
             $this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext);
 
         $paymentRequest->setOrigin($origin);
-        $paymentRequest->setAdditionalData([
-            'allow3DS2' => true,
-            'manualCapture' => (bool)$this->configurationService->isManualCaptureActive(
+
+        $this->setAdditionalRequestData(
+            $paymentRequest,
+            $this->captureService->isManualCapture(
+                $paymentMethodHandler,
                 $salesChannelContext->getSalesChannel()->getId()
             ),
-        ]);
+            $isOpenInvoice
+        );
         $paymentRequest->setChannel('Web');
 
         // Set order data for multi-payment scenarios
@@ -290,12 +299,14 @@ class PaymentRequestService
         }
 
         $paymentRequest->setOrigin($this->salesChannelRepository->getCurrentDomainUrl($salesChannelContext));
-        $paymentRequest->setAdditionalData([
-            'allow3DS2' => true,
-            'manualCapture' => (bool)$this->configurationService->isManualCaptureActive(
+
+        // Express checkout never uses an open invoice method, so the manual capture setting decides on its own.
+        $this->setAdditionalRequestData(
+            $paymentRequest,
+            (bool)$this->configurationService->isManualCaptureActive(
                 $salesChannelContext->getSalesChannel()->getId()
-            ),
-        ]);
+            )
+        );
         $paymentRequest->setChannel('Web');
         $paymentRequest->setShopperInteraction(self::SHOPPER_INTERACTION_ECOMMERCE);
 
@@ -347,6 +358,29 @@ class PaymentRequestService
 
             throw $exception;
         }
+    }
+
+    /**
+     * @param IntegrationPaymentRequest $paymentRequest
+     * @param bool $isManualCapture
+     * @param bool $isOpenInvoice
+     *
+     * @return void
+     */
+    protected function setAdditionalRequestData(
+        IntegrationPaymentRequest $paymentRequest,
+        bool $isManualCapture,
+        bool $isOpenInvoice = false
+    ): void {
+        $additionalData = ['allow3DS2' => true];
+
+        if ($isManualCapture) {
+            $additionalData['manualCapture'] = true;
+        } elseif ($isOpenInvoice) {
+            $paymentRequest->setCaptureDelayHours(0);
+        }
+
+        $paymentRequest->setAdditionalData($additionalData);
     }
 
     /**
