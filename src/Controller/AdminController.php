@@ -276,7 +276,8 @@ class AdminController
             $isFullAmountAuthorised = $this->adyenPaymentService->isFullAmountAuthorized($orderTransaction);
             $isRequiredAmountCaptured = $this->captureService->isRequiredAmountCaptured($orderTransaction);
             $isPaymentMethodSupportsManualCapture = $this->captureService->isManualCapture(
-                $orderTransaction->getPaymentMethod()->getHandlerIdentifier()
+                $orderTransaction->getPaymentMethod()->getHandlerIdentifier(),
+                $orderTransaction->getOrder()->getSalesChannelId()
             );
 
             if ($isPaymentMethodSupportsManualCapture && $isFullAmountAuthorised && !$isRequiredAmountCaptured) {
@@ -312,7 +313,10 @@ class AdminController
             $paymentMethodHandlerIdentifier = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
 
             return new JsonResponse(
-                $this->captureService->isManualCapture($paymentMethodHandlerIdentifier)
+                $this->captureService->isManualCapture(
+                    $paymentMethodHandlerIdentifier,
+                    $orderTransaction->getOrder()->getSalesChannelId()
+                )
             );
         } catch (Throwable $t) {
             return new JsonResponse(false);
