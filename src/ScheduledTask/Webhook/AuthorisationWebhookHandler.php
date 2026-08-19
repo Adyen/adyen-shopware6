@@ -130,7 +130,10 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
             $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
         }
 
-        $isManualCapture = $this->captureService->isManualCapture($paymentMethodHandler);
+        $isManualCapture = $this->captureService->isManualCapture(
+            $paymentMethodHandler,
+            $orderTransaction->getOrder()->getSalesChannelId()
+        );
         $currencyUtil = new Currency();
         $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
         $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
@@ -141,9 +144,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
             $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
         }
 
-        // check for partial payments
-        $merchantOrderReference = isset(json_decode($notification->getAdditionalData())->merchantOrderReference);
-        if ($merchantOrderReference) {
+        if ($this->isPartialPayment($notification)) {
             return;
         }
 
@@ -173,6 +174,26 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                 $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
             }
         }
+    }
+
+    /**
+     * A payment is only part of an Adyen order if the merchant order reference differs from the
+     * merchant reference of the payment.
+     *
+     * @param NotificationEntity $notification
+     *
+     * @return bool
+     */
+    private function isPartialPayment(NotificationEntity $notification): bool
+    {
+        $additionalData = json_decode($notification->getAdditionalData() ?? '');
+        $merchantOrderReference = $additionalData->merchantOrderReference ?? null;
+
+        if (is_null($merchantOrderReference)) {
+            return false;
+        }
+
+        return $merchantOrderReference !== $notification->getMerchantReference();
     }
 
     /**
