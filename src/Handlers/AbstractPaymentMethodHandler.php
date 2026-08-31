@@ -31,6 +31,7 @@ use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyPaymentMethod;
 use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
@@ -42,6 +43,7 @@ use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
+use Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Order\OrderConverter;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
@@ -107,6 +109,11 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @var RatePayDeviceFingerprintParamsProvider
      */
     protected RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
+
+    /**
+     * @var RivertyDeviceFingerprintParamsProvider
+     */
+    protected RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider;
 
     /**
      * @var PaymentStateDataService
@@ -217,6 +224,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
+     * @param RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -240,6 +248,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         Currency $currency,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
+        RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
         PaymentResponseHandler $paymentResponseHandler,
@@ -262,6 +271,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
         $this->configurationService = $configurationService;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->ratePayFingerprintParamsProvider = $ratePayFingerprintParamsProvider;
+        $this->rivertyFingerprintParamsProvider = $rivertyFingerprintParamsProvider;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
@@ -420,6 +430,10 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
                 $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
             ) {
                 $this->ratePayFingerprintParamsProvider->clear();
+            }
+
+            if ($paymentMethodType === RivertyPaymentMethod::RIVERTY_PAYMENT_METHOD_TYPE) {
+                $this->rivertyFingerprintParamsProvider->clear();
             }
         }
 

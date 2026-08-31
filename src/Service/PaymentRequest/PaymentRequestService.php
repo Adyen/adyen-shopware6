@@ -40,6 +40,7 @@ use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyPaymentMethod;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -47,6 +48,7 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
+use Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -92,6 +94,7 @@ class PaymentRequestService
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
+     * @param RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider
      * @param SalesChannelRepository $salesChannelRepository
      * @param EntityRepository $productRepository
      * @param RequestStack $requestStack
@@ -104,6 +107,7 @@ class PaymentRequestService
         private readonly Currency $currency,
         private readonly CheckoutStateDataValidator $checkoutStateDataValidator,
         private readonly RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
+        private readonly RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider,
         private readonly SalesChannelRepository $salesChannelRepository,
         private readonly EntityRepository $productRepository,
         private readonly RequestStack $requestStack,
@@ -202,6 +206,15 @@ class PaymentRequestService
             RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
         ])) {
             $paymentRequest->setDeviceFingerprint($this->ratePayFingerprintParamsProvider->getToken());
+        }
+
+        // Set device fingerprint for Riverty, only when profile tracking is fully configured
+        if ($paymentMethodType === RivertyPaymentMethod::RIVERTY_PAYMENT_METHOD_TYPE
+            && $this->rivertyFingerprintParamsProvider->isProfileTrackingEnabled(
+                $salesChannelContext->getSalesChannelId()
+            )
+        ) {
+            $paymentRequest->setDeviceFingerprint($this->rivertyFingerprintParamsProvider->getSessionId());
         }
 
         // Set line items for open invoice

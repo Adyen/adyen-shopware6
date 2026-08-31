@@ -190,6 +190,23 @@
         </input-field>
     </card>
     <card>
+        <title>Riverty payment methods configuration</title>
+        <input-field type="text">
+            <name>rivertyProfileTrackingShopId</name>
+            <label>Device fingerprint profile tracking shop id</label>
+            <helpText>
+                Profile tracking technology is used to detect and recognize internet access devices (e.g., PCs, smartphones, tablets, etc.) and to identify potential fraud attempts on your website. To enable this feature, enter the device fingerprint tracking Shop ID provided by Riverty.
+            </helpText>
+        </input-field>
+        <input-field type="text">
+            <name>rivertyProfileTrackingSubdomain</name>
+            <label>Shop subdomain that points to the Experian server</label>
+            <helpText>
+                To enable Profile tracking technology, you must create a CNAME entry (e.g., subdomain.yourdomain.com) on your shop server that points to the Experian server. For more details see the Subdomain setup guide.
+            </helpText>
+        </input-field>
+    </card>
+    <card>
         <title>Address form settings</title>
         <input-field type="bool">
             <name>billingAddressReadOnly</name>
