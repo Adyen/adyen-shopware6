@@ -455,6 +455,102 @@ class ExpressCheckoutService
     }
 
     /**
+     * Persists the express checkout context under the temporary express cart token, so that the
+     * payment can be finalized in a later request.
+     *
+     * @param SalesChannelContext $sessionContext The shopper's live session context.
+     * @param SalesChannelContext $expressContext The context bound to the temporary express cart token.
+     *
+     * @return void
+     *
+     * @throws JsonException
+     */
+    public function persistExpressContext(
+        SalesChannelContext $sessionContext,
+        SalesChannelContext $expressContext
+    ): void {
+        $salesChannelId = $expressContext->getSalesChannel()->getId();
+
+        // Express checkout started from the cart page: no temporary cart is involved, the shopper's
+        // own context row is the one being used and its customer binding must stay intact.
+        if ($expressContext->getToken() === $sessionContext->getToken()) {
+            $this->changeContext($expressContext->getCustomerId(), $expressContext);
+
+            return;
+        }
+
+        // Carry over the shopper's session payload so the express context is not rebuilt from sales channel defaults.
+        $payload = $this->contextPersister->load($sessionContext->getToken(), $salesChannelId);
+        unset($payload['token'], $payload['expired']);
+
+        $payload[SalesChannelContextService::CUSTOMER_ID] = $expressContext->getCustomerId();
+        $payload[SalesChannelContextService::PAYMENT_METHOD_ID] = $expressContext->getPaymentMethod()->getId();
+        $payload[SalesChannelContextService::SHIPPING_METHOD_ID] = $expressContext->getShippingMethod()->getId();
+
+        $this->contextPersister->save($expressContext->getToken(), $payload, $salesChannelId);
+    }
+
+    /**
+     * Snapshot of the shopper's persisted context payload, to be taken BEFORE an express order is
+     * placed and handed back to restoreSessionContext() afterwards.
+     *
+     * @param SalesChannelContext $sessionContext
+     *
+     * @return array<string, mixed>
+     * @throws JsonException
+     */
+    public function snapshotContextPayload(SalesChannelContext $sessionContext): array
+    {
+        $payload = $this->contextPersister->load(
+            $sessionContext->getToken(),
+            $sessionContext->getSalesChannel()->getId()
+        );
+
+        unset($payload['token'], $payload['expired']);
+
+        return $payload;
+    }
+
+    /**
+     * Repairs the shopper's session context after an express order was placed under the temporary
+     * express cart token.
+     *
+     * @param SalesChannelContext $sessionContext The shopper's live session context.
+     * @param string $expressToken The temporary express cart token the order was placed with.
+     * @param array<string, mixed> $payloadSnapshot Payload captured before the order was placed.
+     *
+     * @return void
+     *
+     * @throws JsonException
+     */
+    public function restoreSessionContext(
+        SalesChannelContext $sessionContext,
+        string $expressToken,
+        array $payloadSnapshot
+    ): void {
+        $customerId = $sessionContext->getCustomerId();
+
+        if ($customerId === null || $expressToken === $sessionContext->getToken()) {
+            return;
+        }
+
+        $salesChannelId = $sessionContext->getSalesChannel()->getId();
+
+        // Drop the express row first so it no longer holds the unique customer id, then restore the
+        // shopper's own row from the snapshot.
+        $this->contextPersister->delete($expressToken, $salesChannelId);
+
+        $payloadSnapshot[SalesChannelContextService::CUSTOMER_ID] = $customerId;
+
+        $this->contextPersister->save(
+            $sessionContext->getToken(),
+            $payloadSnapshot,
+            $salesChannelId,
+            $customerId
+        );
+    }
+
+    /**
      * @param string $cartToken
      * @param array $data
      * @param SalesChannelContext $salesChannelContext

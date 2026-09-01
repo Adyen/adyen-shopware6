@@ -221,6 +221,35 @@ class ExpressCheckoutController
     }
 
     /**
+     * @param SalesChannelContext $sessionContext
+     *
+     * @return array<string, mixed>
+     *
+     * @throws \JsonException
+     */
+    public function snapshotContextPayload(SalesChannelContext $sessionContext): array
+    {
+        return $this->expressCheckoutService->snapshotContextPayload($sessionContext);
+    }
+
+    /**
+     * @param SalesChannelContext $sessionContext
+     * @param string $expressToken
+     * @param array<string, mixed> $payloadSnapshot
+     *
+     * @return void
+     *
+     * @throws Exception
+     */
+    public function restoreSessionContext(
+        SalesChannelContext $sessionContext,
+        string $expressToken,
+        array $payloadSnapshot
+    ): void {
+        $this->expressCheckoutService->restoreSessionContext($sessionContext, $expressToken, $payloadSnapshot);
+    }
+
+    /**
      * @param Request $request
      * @param SalesChannelContext $salesChannelContext
      * @param string $cartToken

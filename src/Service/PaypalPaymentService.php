@@ -32,7 +32,6 @@ use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
-use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
 use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Exception;
@@ -163,7 +162,10 @@ readonly class PaypalPaymentService
         $oldContext = $context;
         $customerID = null;
 
-        if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
+        // Captured before the order is placed
+        $sessionPayload = $this->expressCheckoutService->snapshotContextPayload($oldContext);
+
+        if ($context->getToken() !== $cartToken) {
             $context = $this->expressCheckoutService->getSalesChannelContext($cartToken, $context->getSalesChannelId());
         }
 
@@ -184,6 +186,12 @@ readonly class PaypalPaymentService
             $this->expressCheckoutService->changeContext(
                 $customerID,
                 $oldContext
+            );
+        } else {
+            $this->expressCheckoutService->restoreSessionContext(
+                $oldContext,
+                $context->getToken(),
+                $sessionPayload
             );
         }
 
@@ -208,12 +216,7 @@ readonly class PaypalPaymentService
         SalesChannelContext $updatedContext,
         array $stateData = []
     ): array {
-        if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
-            $this->expressCheckoutService->changeContext(
-                $updatedContext->getCustomerId(),
-                $updatedContext
-            );
-        }
+        $this->expressCheckoutService->persistExpressContext($context, $updatedContext);
 
         /** @var Cart $cart */
         $cart = $cartData['cart'];
