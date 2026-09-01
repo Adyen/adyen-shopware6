@@ -1,5 +1,9 @@
-{% if payment.formattedHandlerIdentifier is same as('handler_adyen_rivertypaymentmethodhandler')
-    and adyenFrontendData.riverty is defined %}
+{% if payment.formattedHandlerIdentifier in [
+        'handler_adyen_rivertypaymentmethodhandler',
+        'handler_adyen_rivertyaccountpaymentmethodhandler',
+        'handler_adyen_rivertyinstallmentspaymentmethodhandler',
+        'handler_adyen_sepadirectdebitrivertypaymentmethodhandler'
+    ] and adyenFrontendData.riverty is defined %}
     <div class="adyen-riverty-profile-tracking-disclaimer">
         {{ 'adyen.riverty.profileTrackingDisclaimer'|trans|sw_sanitize }}
     </div>

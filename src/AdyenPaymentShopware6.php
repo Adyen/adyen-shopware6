@@ -798,11 +798,18 @@ class AdyenPaymentShopware6 extends Plugin
      */
     private function updateTo537(UpdateContext $updateContext): void
     {
-        // Version 5.3.7 introduces Riverty
-        $method = new PaymentMethods\RivertyPaymentMethod();
+        // Version 5.3.7 introduces the Riverty payment methods
+        $paymentMethods = [
+            new PaymentMethods\RivertyPaymentMethod(),
+            new PaymentMethods\RivertyAccountPaymentMethod(),
+            new PaymentMethods\RivertyInstallmentsPaymentMethod(),
+            new PaymentMethods\SepadirectdebitRivertyPaymentMethod(),
+        ];
 
-        $this->addPaymentMethod($method, $updateContext->getContext());
-        $this->setPaymentMethodIsActive(true, $updateContext->getContext(), $method);
+        foreach ($paymentMethods as $method) {
+            $this->addPaymentMethod($method, $updateContext->getContext());
+            $this->setPaymentMethodIsActive(true, $updateContext->getContext(), $method);
+        }
     }
 
     /**

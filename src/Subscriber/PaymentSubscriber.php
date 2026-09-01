@@ -756,7 +756,12 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     ): array {
         $salesChannelId = $salesChannelContext->getSalesChannelId();
 
-        if ($paymentMethod->getFormattedHandlerIdentifier() === 'handler_adyen_rivertypaymentmethodhandler'
+        if (in_array($paymentMethod->getFormattedHandlerIdentifier(), [
+            'handler_adyen_rivertypaymentmethodhandler',
+            'handler_adyen_rivertyaccountpaymentmethodhandler',
+            'handler_adyen_rivertyinstallmentspaymentmethodhandler',
+            'handler_adyen_sepadirectdebitrivertypaymentmethodhandler'
+            ])
             && $this->rivertyFingerprintParamsProvider->isProfileTrackingEnabled($salesChannelId)
         ) {
             return [

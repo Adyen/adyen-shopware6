@@ -40,7 +40,10 @@ use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyAccountPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyInstallmentsPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RivertyPaymentMethod;
+use Adyen\Shopware\PaymentMethods\SepadirectdebitRivertyPaymentMethod;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -209,7 +212,12 @@ class PaymentRequestService
         }
 
         // Set device fingerprint for Riverty, only when profile tracking is fully configured
-        if ($paymentMethodType === RivertyPaymentMethod::RIVERTY_PAYMENT_METHOD_TYPE
+        if (in_array($paymentMethodType, [
+                RivertyPaymentMethod::RIVERTY_PAYMENT_METHOD_TYPE,
+                RivertyAccountPaymentMethod::RIVERTY_ACCOUNT_PAYMENT_METHOD_TYPE,
+                RivertyInstallmentsPaymentMethod::RIVERTY_INSTALLMENTS_PAYMENT_METHOD_TYPE,
+                SepadirectdebitRivertyPaymentMethod::SEPADIRECTDEBIT_RIVERTY_PAYMENT_METHOD_TYPE
+            ])
             && $this->rivertyFingerprintParamsProvider->isProfileTrackingEnabled(
                 $salesChannelContext->getSalesChannelId()
             )
