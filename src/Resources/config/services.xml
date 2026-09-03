@@ -128,6 +128,7 @@
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
             <argument type="service" id="Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider"/>
+            <argument type="service" id="Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="product.repository"/>
             <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>

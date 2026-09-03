@@ -30,6 +30,10 @@ use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyAccountPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyInstallmentsPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyPaymentMethod;
+use Adyen\Shopware\PaymentMethods\SepadirectdebitRivertyPaymentMethod;
 use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
@@ -41,6 +45,7 @@ use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
+use Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -103,6 +108,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @var RatePayDeviceFingerprintParamsProvider
      */
     protected RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
+
+    /**
+     * @var RivertyDeviceFingerprintParamsProvider
+     */
+    protected RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider;
 
     /**
      * @var PaymentStateDataService
@@ -198,6 +208,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
+     * @param RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -218,6 +229,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         Currency $currency,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
+        RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
         PaymentResponseHandler $paymentResponseHandler,
@@ -237,6 +249,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->configurationService = $configurationService;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->ratePayFingerprintParamsProvider = $ratePayFingerprintParamsProvider;
+        $this->rivertyFingerprintParamsProvider = $rivertyFingerprintParamsProvider;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
@@ -348,6 +361,15 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                 $paymentMethodType === RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
             ) {
                 $this->ratePayFingerprintParamsProvider->clear();
+            }
+
+            if (in_array($paymentMethodType, [
+                RivertyPaymentMethod::RIVERTY_PAYMENT_METHOD_TYPE,
+                RivertyAccountPaymentMethod::RIVERTY_ACCOUNT_PAYMENT_METHOD_TYPE,
+                RivertyInstallmentsPaymentMethod::RIVERTY_INSTALLMENTS_PAYMENT_METHOD_TYPE,
+                SepadirectdebitRivertyPaymentMethod::SEPADIRECTDEBIT_RIVERTY_PAYMENT_METHOD_TYPE
+            ])) {
+                $this->rivertyFingerprintParamsProvider->clear();
             }
         }
 

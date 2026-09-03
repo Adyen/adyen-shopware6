@@ -34,6 +34,7 @@ use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
+use Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider;
 use Exception;
 use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\CartCalculator;
@@ -133,6 +134,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
     private RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
 
     /**
+     * @var RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider
+     */
+    private RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider;
+
+    /**
      * @var AbstractContextSwitchRoute $contextSwitchRoute
      */
     private AbstractContextSwitchRoute $contextSwitchRoute;
@@ -165,6 +171,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
      * @param AbstractSalesChannelContextFactory $salesChannelContextFactory
      * @param Currency $currency
      * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
+     * @param RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider
      * @param EntityRepository $paymentMethodRepository
      */
     public function __construct(
@@ -183,6 +190,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         AbstractSalesChannelContextFactory $salesChannelContextFactory,
         Currency $currency,
         RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
+        RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider,
         EntityRepository $paymentMethodRepository
     ) {
         $this->adyenPluginProvider = $adyenPluginProvider;
@@ -200,6 +208,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $this->salesChannelContextFactory = $salesChannelContextFactory;
         $this->currency = $currency;
         $this->ratePayFingerprintParamsProvider = $ratePayFingerprintParamsProvider;
+        $this->rivertyFingerprintParamsProvider = $rivertyFingerprintParamsProvider;
         $this->paymentMethodRepository = $paymentMethodRepository;
     }
 
@@ -647,7 +656,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                             $this->router->generate('payment.adyen.proxy-paypal-express-order')
                     ],
                     $this->getExpressCheckoutButtonConfig($salesChannelId),
-                    $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod)
+                    $this->getFingerprintParametersForRatepayMethod($salesChannelContext, $selectedPaymentMethod),
+                    $this->getProfileTrackingParametersForRivertyMethod(
+                        $salesChannelContext,
+                        $selectedPaymentMethod
+                    )
                 )
             )
         );
@@ -725,6 +738,39 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             return [
                 'ratepay' => $this->ratePayFingerprintParamsProvider
                     ->getFingerprintParams($salesChannelContext->getSalesChannelId())
+            ];
+        }
+
+        return [];
+    }
+
+    /**
+     * Riverty profile tracking parameters are only exposed to the storefront when both the shop id
+     * and the Experian subdomain are configured. If either is missing, profile tracking stays off
+     * and no tracking tag is rendered.
+     *
+     * @param SalesChannelContext $salesChannelContext
+     * @param PaymentMethodEntity $paymentMethod
+     *
+     * @return array
+     */
+    private function getProfileTrackingParametersForRivertyMethod(
+        SalesChannelContext $salesChannelContext,
+        PaymentMethodEntity $paymentMethod
+    ): array {
+        $salesChannelId = $salesChannelContext->getSalesChannelId();
+
+        if (in_array($paymentMethod->getFormattedHandlerIdentifier(), [
+            'handler_adyen_rivertypaymentmethodhandler',
+            'handler_adyen_rivertyaccountpaymentmethodhandler',
+            'handler_adyen_rivertyinstallmentspaymentmethodhandler',
+            'handler_adyen_sepadirectdebitrivertypaymentmethodhandler'
+            ])
+            && $this->rivertyFingerprintParamsProvider->isProfileTrackingEnabled($salesChannelId)
+        ) {
+            return [
+                'riverty' => $this->rivertyFingerprintParamsProvider
+                    ->getProfileTrackingParams($salesChannelId)
             ];
         }
 

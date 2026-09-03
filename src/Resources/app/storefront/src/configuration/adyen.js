@@ -45,7 +45,8 @@ export default {
         'scheme', 'ideal', 'sepadirectdebit', 'oneclick', 'bcmc', 'bcmc_mobile', 'blik', 'klarna_b2b', 'eps', 'facilypay_3x',
         'facilypay_4x', 'facilypay_6x', 'facilypay_10x', 'facilypay_12x', 'afterpay_default', 'ratepay',
         'ratepay_directdebit', 'giftcard', 'paybright', 'affirm', 'multibanco', 'mbway', 'vipps', 'mobilepay',
-        'wechatpayQR', 'wechatpayWeb', 'paybybank'
+        'wechatpayQR', 'wechatpayWeb', 'paybybank', 'riverty', 'riverty_account', 'riverty_installments',
+        'sepadirectdebit_riverty'
     ],
     componentsWithPayButton: {
         'applepay': {
@@ -216,6 +217,10 @@ export default {
         'paybybank': 'handler_adyen_openbankingpaymentmethodhandler',
         'klarna_b2b': 'handler_adyen_billiepaymentmethodhandler',
         'ebanking_FI': 'handler_adyen_onlinebankingfinlandpaymentmethodhandler',
-        'onlineBanking_PL': 'handler_adyen_onlinebankingpolandpaymentmethodhandler'
+        'onlineBanking_PL': 'handler_adyen_onlinebankingpolandpaymentmethodhandler',
+        'riverty': 'handler_adyen_rivertypaymentmethodhandler',
+        'riverty_account': 'handler_adyen_rivertyaccountpaymentmethodhandler',
+        'riverty_installments': 'handler_adyen_rivertyinstallmentspaymentmethodhandler',
+        'sepadirectdebit_riverty': 'handler_adyen_sepadirectdebitrivertypaymentmethodhandler'
     }
 }
