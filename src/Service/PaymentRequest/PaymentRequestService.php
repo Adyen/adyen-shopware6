@@ -40,6 +40,10 @@ use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyAccountPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyInstallmentsPaymentMethod;
+use Adyen\Shopware\PaymentMethods\RivertyPaymentMethod;
+use Adyen\Shopware\PaymentMethods\SepadirectdebitRivertyPaymentMethod;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -47,6 +51,7 @@ use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
+use Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -116,6 +121,11 @@ class PaymentRequestService
     private RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
 
     /**
+     * @var RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider
+     */
+    private RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider;
+
+    /**
      * @var SalesChannelRepository $salesChannelRepository
      */
     private SalesChannelRepository $salesChannelRepository;
@@ -142,6 +152,7 @@ class PaymentRequestService
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
+     * @param RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider
      * @param SalesChannelRepository $salesChannelRepository
      * @param EntityRepository $productRepository
      * @param RequestStack $requestStack
@@ -154,6 +165,7 @@ class PaymentRequestService
         Currency $currency,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
+        RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider,
         SalesChannelRepository $salesChannelRepository,
         EntityRepository $productRepository,
         RequestStack $requestStack,
@@ -165,6 +177,7 @@ class PaymentRequestService
         $this->currency = $currency;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->ratePayFingerprintParamsProvider = $ratePayFingerprintParamsProvider;
+        $this->rivertyFingerprintParamsProvider = $rivertyFingerprintParamsProvider;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->productRepository = $productRepository;
         $this->requestStack = $requestStack;
@@ -262,6 +275,20 @@ class PaymentRequestService
             RatepayDirectdebitPaymentMethod::RATEPAY_DIRECTDEBIT_PAYMENT_METHOD_TYPE
         ])) {
             $paymentRequest->setDeviceFingerprint($this->ratePayFingerprintParamsProvider->getToken());
+        }
+
+        // Set device fingerprint for Riverty, only when profile tracking is fully configured
+        if (in_array($paymentMethodType, [
+            RivertyPaymentMethod::RIVERTY_PAYMENT_METHOD_TYPE,
+            RivertyAccountPaymentMethod::RIVERTY_ACCOUNT_PAYMENT_METHOD_TYPE,
+            RivertyInstallmentsPaymentMethod::RIVERTY_INSTALLMENTS_PAYMENT_METHOD_TYPE,
+            SepadirectdebitRivertyPaymentMethod::SEPADIRECTDEBIT_RIVERTY_PAYMENT_METHOD_TYPE
+            ])
+            && $this->rivertyFingerprintParamsProvider->isProfileTrackingEnabled(
+                $salesChannelContext->getSalesChannelId()
+            )
+        ) {
+            $paymentRequest->setDeviceFingerprint($this->rivertyFingerprintParamsProvider->getSessionId());
         }
 
         // Set line items for open invoice

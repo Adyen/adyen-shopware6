@@ -11,6 +11,7 @@
             <argument type="service" id="Adyen\Shopware\Util\Currency"/>
             <argument type="service" id="Adyen\Shopware\Util\CheckoutStateDataValidator"/>
             <argument type="service" id="Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider"/>
+            <argument type="service" id="Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentStateDataService"/>
             <argument type="service" id="Adyen\Shopware\Service\Repository\SalesChannelRepository"/>
             <argument type="service" id="Adyen\Shopware\Handlers\PaymentResponseHandler"/>
@@ -193,6 +194,22 @@
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Adyen\Shopware\Handlers\BilliePaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\RivertyPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\RivertyAccountPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\RivertyInstallmentsPaymentMethodHandler"
+                 parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
+            <tag name="shopware.payment.method.async"/>
+        </service>
+        <service id="Adyen\Shopware\Handlers\SepadirectdebitRivertyPaymentMethodHandler"
                  parent="Adyen\Shopware\Handlers\AbstractPaymentMethodHandler">
             <tag name="shopware.payment.method.async"/>
         </service>

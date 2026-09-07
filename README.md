@@ -61,6 +61,7 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - PayPal
  - PaySafeCard
  - RatePay, RatePay Direct Debit
+ - Riverty (Pay in 14, Monthly Invoice, Installments, Direct Debit)
  - SEPA Direct Debit
  - Swish
  - Trustly
