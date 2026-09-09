@@ -12,8 +12,17 @@ export default class KlarnaPaymentPage {
     this.chooseHowToPayDialog = page.getByRole('dialog', {
       name: /choose how to pay/i,
     });
-    this.cardRadioOption = page.getByRole('radio', { name: /^card/i });
+    this.cardRadioOption = page
+      .getByRole('radio', { name: /^pay in full/i })
+      .first();
     this.continueButton = page.getByRole('button', { name: /^continue$/i });
+
+    this.threeDsDialog = page
+      .getByRole('dialog')
+      .filter({ has: page.locator('iframe') });
+    this.threeDsSubmitButton = this.threeDsDialog
+      .frameLocator('iframe')
+      .getByRole('button', { name: /^submit$/i });
   }
 
   async makeKlarnaPayment(phoneNumber, paynow = false) {
@@ -34,6 +43,20 @@ export default class KlarnaPaymentPage {
 
     await this.confirmAndPayButton.waitFor({ state: 'visible' });
     await this.confirmAndPayButton.click();
+    await this.submitThreeDsChallengeIfPresent();
+  }
+
+  async submitThreeDsChallengeIfPresent() {
+    try {
+      await this.threeDsSubmitButton.waitFor({
+        state: 'visible',
+        timeout: 15000,
+      });
+    } catch {
+      return;
+    }
+
+    await this.threeDsSubmitButton.click();
   }
 
   async cancelKlarnaPayment() {
