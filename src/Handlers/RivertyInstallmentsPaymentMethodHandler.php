@@ -26,6 +26,8 @@ namespace Adyen\Shopware\Handlers;
 
 class RivertyInstallmentsPaymentMethodHandler extends AbstractPaymentMethodHandler
 {
+    use RivertyPaymentTrait;
+
     public static bool $isOpenInvoice = true;
     public static bool $supportsManualCapture = true;
     public static bool $supportsPartialCapture = true;

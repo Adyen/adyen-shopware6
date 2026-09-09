@@ -202,7 +202,7 @@
             <name>rivertyProfileTrackingSubdomain</name>
             <label>Shop subdomain that points to the Experian server</label>
             <helpText>
-                To enable Profile tracking technology, you must create a CNAME entry (e.g., subdomain.yourdomain.com) on your shop server that points to the Experian server. For more details see the Subdomain setup guide.
+                To enable Profile tracking technology, you must create a CNAME entry (e.g., subdomain.yourdomain.com) on your shop server that points to the Experian server. For more details see the Subdomain setup guide. If your shop enforces a Content Security Policy, this subdomain also has to be allowed in the script-src directive.
             </helpText>
         </input-field>
     </card>
