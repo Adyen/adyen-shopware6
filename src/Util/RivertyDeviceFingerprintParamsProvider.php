@@ -4,6 +4,7 @@ namespace Adyen\Shopware\Util;
 
 use Adyen\Shopware\Service\ConfigurationService;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class RivertyDeviceFingerprintParamsProvider
 {
@@ -62,21 +63,43 @@ class RivertyDeviceFingerprintParamsProvider
     }
 
     /**
-     * Creates the session id, sets it in the session and retrieves it
+     * Creates the session id, sets it in the session and retrieves it. Returns an empty string on
+     * requests without a session, where no tracking tag can be rendered anyway.
      *
      * @return string
      */
     public function getSessionId(): string
     {
-        if (!$this->requestStack->getSession()->get(self::SESSION_ID_SESSION_KEY)) {
-            $this->requestStack->getSession()->set(
-                self::SESSION_ID_SESSION_KEY,
-                // This is excluded from Sonar analysis because md5 is used to generate a unique id.
-                md5($this->requestStack->getSession()->get('sessionId') . '_' . microtime())//NOSONAR
-            );
+        $session = $this->getSession();
+
+        if (is_null($session)) {
+            return '';
         }
 
-        return (string)$this->requestStack->getSession()->get(self::SESSION_ID_SESSION_KEY);
+        if (!$session->get(self::SESSION_ID_SESSION_KEY)) {
+            $session->set(self::SESSION_ID_SESSION_KEY, bin2hex(random_bytes(16)));
+        }
+
+        return (string)$session->get(self::SESSION_ID_SESSION_KEY);
+    }
+
+    /**
+     * Retrieves the profile tracking session id without creating one. A missing id means the
+     * tracking tag was never rendered, so there is no fingerprint to report.
+     *
+     * @return string|null
+     */
+    public function getExistingSessionId(): ?string
+    {
+        $session = $this->getSession();
+
+        if (is_null($session)) {
+            return null;
+        }
+
+        $sessionId = $session->get(self::SESSION_ID_SESSION_KEY);
+
+        return empty($sessionId) ? null : (string)$sessionId;
     }
 
     /**
@@ -86,7 +109,30 @@ class RivertyDeviceFingerprintParamsProvider
      */
     public function clear(): void
     {
-        $this->requestStack->getSession()->remove(self::SESSION_ID_SESSION_KEY);
+        $session = $this->getSession();
+
+        if (!is_null($session)) {
+            $session->remove(self::SESSION_ID_SESSION_KEY);
+        }
+    }
+
+    /**
+     * Sales channels without a storefront (and any other request without a session) have nowhere to
+     * keep the profile tracking id, so the session is optional here.
+     *
+     * @return SessionInterface|null
+     */
+    private function getSession(): ?SessionInterface
+    {
+        $requests = [$this->requestStack->getCurrentRequest(), $this->requestStack->getMainRequest()];
+
+        foreach ($requests as $request) {
+            if (!is_null($request) && $request->hasSession()) {
+                return $request->getSession();
+            }
+        }
+
+        return null;
     }
 
     /**
