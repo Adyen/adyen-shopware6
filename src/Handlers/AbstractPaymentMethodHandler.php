@@ -295,8 +295,13 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
         $countStoredStateData = $this->paymentStateDataService->countStoredStateData($salesChannelContext);
         $countStateData += $countStoredStateData;
-        //If condition to check more than 1 PM
-        if ($countStateData > 1 || ($countStateData === 1 && static::getPaymentMethodCode() !== 'giftcard')) {
+        /*
+         * An Adyen order is only required when the payment is split into multiple /payments calls,
+         * which can only happen if at least one giftcard has been redeemed.
+         */
+        if ($countStoredStateData > 0 &&
+            ($countStateData > 1 || static::getPaymentMethodCode() !== 'giftcard')
+        ) {
             $adyenOrderResponse = $this->createAdyenOrder($salesChannelContext, $transaction);
             $this->handleAdyenOrderPayment($transaction, $adyenOrderResponse, $salesChannelContext);
         }
