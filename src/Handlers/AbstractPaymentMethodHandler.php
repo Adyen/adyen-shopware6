@@ -31,10 +31,6 @@ use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
-use Adyen\Shopware\PaymentMethods\RivertyAccountPaymentMethod;
-use Adyen\Shopware\PaymentMethods\RivertyInstallmentsPaymentMethod;
-use Adyen\Shopware\PaymentMethods\RivertyPaymentMethod;
-use Adyen\Shopware\PaymentMethods\SepadirectdebitRivertyPaymentMethod;
 use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
 use Adyen\Shopware\Util\CheckoutStateDataValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
@@ -435,14 +431,7 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
                 $this->ratePayFingerprintParamsProvider->clear();
             }
 
-            if (in_array($paymentMethodType, [
-                RivertyPaymentMethod::RIVERTY_PAYMENT_METHOD_TYPE,
-                RivertyAccountPaymentMethod::RIVERTY_ACCOUNT_PAYMENT_METHOD_TYPE,
-                RivertyInstallmentsPaymentMethod::RIVERTY_INSTALLMENTS_PAYMENT_METHOD_TYPE,
-                SepadirectdebitRivertyPaymentMethod::SEPADIRECTDEBIT_RIVERTY_PAYMENT_METHOD_TYPE
-            ])) {
-                $this->rivertyFingerprintParamsProvider->clear();
-            }
+            $this->clearDeviceFingerprint();
         }
 
         $orderNumber = $order->getOrderNumber();
@@ -602,6 +591,16 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
                 $exception->getMessage()
             );
         }
+    }
+
+    /**
+     * Hook for payment methods that collect a device fingerprint during checkout and have to drop
+     * it once the /payments call has been made. No-op for methods without device fingerprinting.
+     *
+     * @return void
+     */
+    protected function clearDeviceFingerprint(): void
+    {
     }
 
     /**

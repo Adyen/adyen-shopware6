@@ -28,8 +28,6 @@ use Adyen\Shopware\Handlers\RivertyInstallmentsPaymentMethodHandler;
 
 class RivertyInstallmentsPaymentMethod implements PaymentMethodInterface
 {
-    const RIVERTY_INSTALLMENTS_PAYMENT_METHOD_TYPE = 'riverty_installments';
-
     /**
      * @inheritDoc
      */

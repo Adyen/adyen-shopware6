@@ -19,9 +19,14 @@
             window._itt = config;
             // This is excluded from Sonar analysis because the script is provided by Riverty. //NOSONAR
             const script = document.createElement('script');//NOSONAR
-            script.src = `https://${config.h}/container/${config.c}?page=${config.u}`;
+            script.src = `https://${config.h}/container/${config.c}?page=${encodeURIComponent(config.u)}`;
             script.async = true;
             script.onload = function () { this.remove(); };
+            {# A nonce is not inherited by dynamically created scripts, it has to be set explicitly. #}
+            const nonce = '{{ app.request.attributes.get('_cspNonce')|escape('js') }}';
+            if (nonce) {
+                script.setAttribute('nonce', nonce);
+            }
             (document.head || document.documentElement).appendChild(script);
         })();
     </script>

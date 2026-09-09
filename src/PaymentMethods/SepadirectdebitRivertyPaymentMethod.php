@@ -28,8 +28,6 @@ use Adyen\Shopware\Handlers\SepadirectdebitRivertyPaymentMethodHandler;
 
 class SepadirectdebitRivertyPaymentMethod implements PaymentMethodInterface
 {
-    const SEPADIRECTDEBIT_RIVERTY_PAYMENT_METHOD_TYPE = 'sepadirectdebit_riverty';
-
     /**
      * @inheritDoc
      */
