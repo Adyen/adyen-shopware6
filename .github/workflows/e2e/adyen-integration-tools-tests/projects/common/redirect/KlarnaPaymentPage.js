@@ -9,14 +9,36 @@ export default class KlarnaPaymentPage {
     this.closeButton = page.getByLabel('Close');
     this.confirmAndPayButton = page.getByTestId('confirm-and-pay');
 
-    this.chooseHowToPayDialog = page.getByRole('dialog', {
-      name: /choose how to pay/i,
-    });
-    this.cardRadioOption = page.getByRole('radio', { name: /^card/i });
-    this.continueButton = page.getByRole('button', { name: /^continue$/i });
+    this.offersSelectorDialog = page.locator('#offers-selector-dialog');
+    this.payInFullRadioOption = this.offersSelectorDialog
+      .getByRole('radio', { name: /^pay in full/i })
+      .first();
+    this.offersSelectorContinueButton = page.getByTestId(
+      'offers-selector-continue-button'
+    );
+
+    this.payNowSelectorDialog = page.locator(
+      '#offers-selector-pay-now-selector-dialog'
+    );
+    this.cardRadioOption = this.payNowSelectorDialog
+      .getByRole('radio', { name: /^card/i })
+      .first();
+    this.payNowSelectorContinueButton = page.getByTestId(
+      'offers-selector-pay-now-selector-continue-button'
+    );
+
+    this.threeDsSubmitButton = page
+      .getByRole('dialog')
+      .filter({ has: page.locator('iframe') })
+      .frameLocator('iframe')
+      .getByRole('button', { name: /^submit$/i });
   }
 
-  async makeKlarnaPayment(phoneNumber, paynow = false) {
+  async makeKlarnaPayment(
+    phoneNumber,
+    paynow = false,
+    threeDsChallenge = paynow
+  ) {
     await this.waitForKlarnaLoad();
     await this.phoneNumberVerificationDialog.waitFor({ state: 'attached' });
     await this.genericInputField.click();
@@ -27,13 +49,20 @@ export default class KlarnaPaymentPage {
     await this.genericInputField.fill('111111');
 
     if (paynow) {
-      await this.chooseHowToPayDialog.waitFor({ state: 'visible' });
+      await this.offersSelectorDialog.waitFor({ state: 'visible' });
+      await this.payInFullRadioOption.click();
+      await this.offersSelectorContinueButton.click();
+      await this.payNowSelectorDialog.waitFor({ state: 'visible' });
       await this.cardRadioOption.click();
-      await this.continueButton.click();
+      await this.payNowSelectorContinueButton.click();
     }
 
     await this.confirmAndPayButton.waitFor({ state: 'visible' });
     await this.confirmAndPayButton.click();
+
+    if (threeDsChallenge) {
+      await this.threeDsSubmitButton.click();
+    }
   }
 
   async cancelKlarnaPayment() {
