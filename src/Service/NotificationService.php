@@ -61,8 +61,8 @@ class NotificationService
         if (!empty($notification['pspReference'])) {
             $filters[] = new EqualsFilter('pspreference', $notification['pspReference']);
         }
-        if (!empty($notification['success'])) {
-            $filters[] = new EqualsFilter('success', $notification['success']);
+        if (isset($notification['success'])) {
+            $filters[] = new EqualsFilter('success', $this->isSuccessful($notification['success']));
         }
         if (!empty($notification['eventCode'])) {
             $filters[] = new EqualsFilter('eventCode', $notification['eventCode']);
@@ -94,7 +94,7 @@ class NotificationService
             $fields['eventCode'] = $notification['eventCode'];
         }
         if (isset($notification['success'])) {
-            $fields['success'] = "true" === $notification['success'];
+            $fields['success'] = $this->isSuccessful($notification['success']);
         }
         if (isset($notification['paymentMethod'])) {
             $fields['paymentMethod'] = $notification['paymentMethod'];
@@ -305,5 +305,17 @@ class NotificationService
         }
 
         return false;
+    }
+
+    /**
+     * Normalises the success flag of a notification.
+     *
+     * @param mixed $success
+     *
+     * @return bool
+     */
+    private function isSuccessful(mixed $success): bool
+    {
+        return true === $success || 'true' === $success;
     }
 }
