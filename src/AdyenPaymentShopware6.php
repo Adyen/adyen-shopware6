@@ -191,8 +191,8 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo3210($updateContext);
         }
 
-        if (\version_compare($currentVersion, '3.21.6', '<')) {
-            $this->updateTo3216($updateContext);
+        if (\version_compare($currentVersion, '3.21.7', '<')) {
+            $this->updateTo3217($updateContext);
         }
     }
 
@@ -681,9 +681,9 @@ class AdyenPaymentShopware6 extends Plugin
      *
      * @return void
      */
-    private function updateTo3216(UpdateContext $updateContext): void
+    private function updateTo3217(UpdateContext $updateContext): void
     {
-        // Version 3.21.6 introduces the Riverty payment methods
+        // Version 3.21.7 introduces the Riverty payment methods
         $paymentMethods = [
             new PaymentMethods\RivertyPaymentMethod(),
             new PaymentMethods\RivertyAccountPaymentMethod(),
