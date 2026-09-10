@@ -180,8 +180,8 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo530($updateContext);
         }
 
-        if (\version_compare($currentVersion, '5.3.7', '<')) {
-            $this->updateTo537($updateContext);
+        if (\version_compare($currentVersion, '5.3.8', '<')) {
+            $this->updateTo538($updateContext);
         }
     }
 
@@ -796,9 +796,9 @@ class AdyenPaymentShopware6 extends Plugin
      *
      * @return void
      */
-    private function updateTo537(UpdateContext $updateContext): void
+    private function updateTo538(UpdateContext $updateContext): void
     {
-        // Version 5.3.7 introduces the Riverty payment methods
+        // Version 5.3.8 introduces the Riverty payment methods
         $paymentMethods = [
             new PaymentMethods\RivertyPaymentMethod(),
             new PaymentMethods\RivertyAccountPaymentMethod(),
