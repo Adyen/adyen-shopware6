@@ -801,8 +801,6 @@ class AdyenPaymentShopware6 extends Plugin
         // Version 5.3.8 introduces the Riverty payment methods
         $paymentMethods = [
             new PaymentMethods\RivertyPaymentMethod(),
-            new PaymentMethods\RivertyAccountPaymentMethod(),
-            new PaymentMethods\RivertyInstallmentsPaymentMethod(),
             new PaymentMethods\SepadirectdebitRivertyPaymentMethod(),
         ];
 

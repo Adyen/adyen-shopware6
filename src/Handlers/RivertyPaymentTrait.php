@@ -33,10 +33,9 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 trait RivertyPaymentTrait
 {
     /**
-     * Forces the redirect flow for Riverty installments and adds the Riverty profile tracking
-     * session id as device fingerprint. Profile tracking needs both the shop id and the Experian
-     * subdomain, and the id only exists once the storefront has rendered the tracking tag, so
-     * headless channels and gift card partials send nothing.
+     * Adds the Riverty profile tracking session id as device fingerprint. Profile tracking needs
+     * both the shop id and the Experian subdomain, and the id only exists once the storefront has
+     * rendered the tracking tag, so headless channels and gift card partials send nothing.
      *
      * @param $salesChannelContext
      * @param OrderTransactionEntity $orderTransactionEntity
@@ -77,13 +76,6 @@ trait RivertyPaymentTrait
         // Partial gift card payments keep their own payment method type, nothing Riverty specific applies.
         if ($paymentMethodType !== static::getPaymentMethodCode()) {
             return $paymentRequest;
-        }
-
-        // Installments is the only Riverty txvariant Adyen rejects without an explicit redirect
-        // flow, and the only one without an Adyen Web component to set the subtype itself - the
-        // plain redirect component it falls back to sends none.
-        if (static::class === RivertyInstallmentsPaymentMethodHandler::class) {
-            $paymentRequest->getPaymentMethod()?->setSubtype('redirect');
         }
 
         if (!$this->rivertyFingerprintParamsProvider->isProfileTrackingEnabled(
