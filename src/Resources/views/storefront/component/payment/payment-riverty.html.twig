@@ -1,7 +1,5 @@
 {% if payment.formattedHandlerIdentifier in [
         'handler_adyen_rivertypaymentmethodhandler',
-        'handler_adyen_rivertyaccountpaymentmethodhandler',
-        'handler_adyen_rivertyinstallmentspaymentmethodhandler',
         'handler_adyen_sepadirectdebitrivertypaymentmethodhandler'
     ] and adyenFrontendData.riverty is defined %}
     <div class="adyen-riverty-profile-tracking-disclaimer">
