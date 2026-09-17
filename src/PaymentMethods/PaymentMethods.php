@@ -73,8 +73,6 @@ class PaymentMethods
         OnlineBankingFinlandPaymentMethod::class,
         OnlineBankingPolandPaymentMethod::class,
         RivertyPaymentMethod::class,
-        RivertyAccountPaymentMethod::class,
-        RivertyInstallmentsPaymentMethod::class,
         SepadirectdebitRivertyPaymentMethod::class
     ];
 }
