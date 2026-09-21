@@ -47,7 +47,8 @@
     },
     "config": {
         "allow-plugins": {
-            "symfony/*": true
+            "symfony/*": true,
+            "php-http/discovery": true
         }
     },
     "minimum-stability": "dev",
