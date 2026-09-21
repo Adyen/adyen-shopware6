@@ -296,6 +296,32 @@ class ConfigurationService
     /**
      * @param string|null $salesChannelId
      *
+     * @return array|mixed|null
+     */
+    public function getRivertyProfileTrackingShopId(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.rivertyProfileTrackingShopId',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return array|mixed|null
+     */
+    public function getRivertyProfileTrackingSubdomain(?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.rivertyProfileTrackingSubdomain',
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
      * @return bool
      */
     public function isBillingAddressReadOnly(?string $salesChannelId = null): bool

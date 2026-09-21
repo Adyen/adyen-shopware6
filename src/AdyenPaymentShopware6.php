@@ -179,6 +179,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '4.6.0', '<')) {
             $this->updateTo460($updateContext);
         }
+
+        if (\version_compare($currentVersion, '4.6.8', '<')) {
+            $this->updateTo468($updateContext);
+        }
     }
 
     /**
@@ -773,6 +777,25 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
+    }
+
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
+    private function updateTo468(UpdateContext $updateContext): void
+    {
+        // Version 4.6.8 introduces the Riverty payment methods
+        $paymentMethods = [
+            new PaymentMethods\RivertyPaymentMethod(),
+            new PaymentMethods\SepadirectdebitRivertyPaymentMethod(),
+        ];
+
+        foreach ($paymentMethods as $method) {
+            $this->addPaymentMethod($method, $updateContext->getContext());
+            $this->setPaymentMethodIsActive(true, $updateContext->getContext(), $method);
+        }
     }
 
     /**
