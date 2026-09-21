@@ -23,6 +23,9 @@
             "requiredFields": "Fields marked with asterisks (*) are required.",
             "companyNameRequired": "Company name is required.",
             "companyNumberRequired": "Company number is required for billing addresses in Netherlands and Sweden."
+        },
+        "riverty": {
+            "profileTrackingDisclaimer": "We use profile tracking technology to detect and recognise your device and to identify potential fraud attempts. By continuing with Riverty you consent to this check being carried out."
         }
     }
 }
