@@ -190,6 +190,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.21.0', '<')) {
             $this->updateTo3210($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.21.7', '<')) {
+            $this->updateTo3217($updateContext);
+        }
     }
 
     public function postUpdate(UpdateContext $updateContext): void
@@ -670,6 +674,25 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->update([$paymentMethodData], $updateContext->getContext());
+    }
+
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
+    private function updateTo3217(UpdateContext $updateContext): void
+    {
+        // Version 3.21.7 introduces the Riverty payment methods
+        $paymentMethods = [
+            new PaymentMethods\RivertyPaymentMethod(),
+            new PaymentMethods\SepadirectdebitRivertyPaymentMethod(),
+        ];
+
+        foreach ($paymentMethods as $method) {
+            $this->addPaymentMethod($method, $updateContext->getContext());
+            $this->setPaymentMethodIsActive(true, $updateContext->getContext(), $method);
+        }
     }
 
     private function safeCopyAsset($source, $destination): bool

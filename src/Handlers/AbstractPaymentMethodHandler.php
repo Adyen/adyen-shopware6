@@ -41,6 +41,7 @@ use Adyen\Shopware\Service\PaymentStateDataService;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Shopware\Util\RatePayDeviceFingerprintParamsProvider;
+use Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
@@ -107,6 +108,11 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @var RatePayDeviceFingerprintParamsProvider
      */
     protected RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider;
+
+    /**
+     * @var RivertyDeviceFingerprintParamsProvider
+     */
+    protected RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider;
 
     /**
      * @var PaymentStateDataService
@@ -202,6 +208,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
      * @param Currency $currency
      * @param CheckoutStateDataValidator $checkoutStateDataValidator
      * @param RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider
+     * @param RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider
      * @param PaymentStateDataService $paymentStateDataService
      * @param SalesChannelRepository $salesChannelRepository
      * @param PaymentResponseHandler $paymentResponseHandler
@@ -222,6 +229,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         Currency $currency,
         CheckoutStateDataValidator $checkoutStateDataValidator,
         RatePayDeviceFingerprintParamsProvider $ratePayFingerprintParamsProvider,
+        RivertyDeviceFingerprintParamsProvider $rivertyFingerprintParamsProvider,
         PaymentStateDataService $paymentStateDataService,
         SalesChannelRepository $salesChannelRepository,
         PaymentResponseHandler $paymentResponseHandler,
@@ -241,6 +249,7 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         $this->configurationService = $configurationService;
         $this->checkoutStateDataValidator = $checkoutStateDataValidator;
         $this->ratePayFingerprintParamsProvider = $ratePayFingerprintParamsProvider;
+        $this->rivertyFingerprintParamsProvider = $rivertyFingerprintParamsProvider;
         $this->paymentStateDataService = $paymentStateDataService;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->paymentResponseHandler = $paymentResponseHandler;
@@ -359,6 +368,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
             ) {
                 $this->ratePayFingerprintParamsProvider->clear();
             }
+
+            $this->clearDeviceFingerprint();
         }
 
         $orderNumber = $transaction->getOrder()->getOrderNumber();
@@ -491,6 +502,16 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
         }
 
         $this->remainingAmount = $remainingOrderAmount;
+    }
+
+    /**
+     * Hook for payment methods that collect a device fingerprint during checkout and have to drop
+     * it once the /payments call has been made. No-op for methods without device fingerprinting.
+     *
+     * @return void
+     */
+    protected function clearDeviceFingerprint(): void
+    {
     }
 
     /**
