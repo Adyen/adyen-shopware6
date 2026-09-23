@@ -2,6 +2,7 @@
 import CartPlugin from './cart/cart.plugin';
 import ConfirmOrderPlugin from './checkout/confirm-order.plugin';
 import ExpressCheckoutPlugin from './express-checkout/express-checkout.plugin';
+import PaymentMethodAvailabilityPlugin from './checkout/payment-method-availability.plugin';
 import AdyenGivingPlugin from './finish/adyen-giving.plugin';
 import AdyenSuccessAction from './finish/adyen-success-action.plugin';
 
@@ -10,5 +11,6 @@ const PluginManager = window.PluginManager;
 PluginManager.register('CartPlugin', CartPlugin, '#adyen-giftcards-container');
 PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '#adyen-payment-checkout-mask');
 PluginManager.register('ExpressCheckoutPlugin', ExpressCheckoutPlugin, '#adyen-express-checkout');
+PluginManager.register('PaymentMethodAvailabilityPlugin', PaymentMethodAvailabilityPlugin, '[data-adyen-availability-check]');
 PluginManager.register('AdyenGivingPlugin', AdyenGivingPlugin, '#adyen-giving-container');
 PluginManager.register('AdyenSuccessAction', AdyenSuccessAction, '#adyen-success-action-container');
