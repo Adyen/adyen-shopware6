@@ -122,12 +122,17 @@
 
 #adyen-express-checkout-applepay,
 #adyen-express-checkout-paywithgoogle,
-#adyen-express-checkout-paypal {
+#adyen-express-checkout-paypal,
+#adyen-express-checkout-applepay-offcanvas,
+#adyen-express-checkout-paywithgoogle-offcanvas,
+#adyen-express-checkout-paypal-offcanvas {
   margin-top: 10px;
 }
 
 #adyen-express-checkout-paywithgoogle button,
-#adyen-express-checkout-applepay button {
+#adyen-express-checkout-applepay button,
+#adyen-express-checkout-paywithgoogle-offcanvas button,
+#adyen-express-checkout-applepay-offcanvas button {
   width: 100%;
 }
 
@@ -185,6 +190,7 @@
 }
 
 #adyen-express-checkout-applepay apple-pay-button,
+#adyen-express-checkout-applepay-offcanvas apple-pay-button,
 #adyen-confirm-button apple-pay-button {
   --apple-pay-button-width: 100%;
   --apple-pay-button-height: 48px;

@@ -27,6 +27,7 @@ namespace Adyen\Shopware\Controller\StoreApi\ExpressCheckout;
 use Adyen\AdyenException;
 use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
+use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\ExpressCheckoutService;
 use Exception;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -78,6 +79,11 @@ class ExpressCheckoutController
         $formattedHandlerIdentifier = $request->request->get('formattedHandlerIdentifier') ?? '';
         $newAddress = $request->request->all()['newAddress'] ?? null;
         $newShipping = $request->request->all()['newShippingMethod'] ?? null;
+        $page = $request->request->get('page');
+
+        if (!in_array($page, ConfigurationService::EXPRESS_CHECKOUT_PAGES, true)) {
+            $page = null;
+        }
 
         if ($newAddress === null) {
             $newAddress = [];
@@ -94,7 +100,8 @@ class ExpressCheckoutController
                 $salesChannelContext,
                 $newAddress,
                 $newShipping,
-                $formattedHandlerIdentifier
+                $formattedHandlerIdentifier,
+                $page
             );
 
             if (array_key_exists('error', $config)) {

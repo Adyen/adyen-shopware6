@@ -1,5 +1,20 @@
-<div id="adyen-express-checkout">
-    <div id="adyen-express-checkout-options"
+{# adyenExpressCheckoutPage: storefront location of this block - product, cart or offcanvas #}
+{% set adyenExpressCheckoutPage = adyenExpressCheckoutPage ?? 'product' %}
+{# The off-canvas cart can be opened on a page that already renders express checkout, so its ids must differ #}
+{% set adyenExpressCheckoutIdSuffix = adyenExpressCheckoutPage == 'offcanvas' ? '-offcanvas' : '' %}
+<div id="adyen-express-checkout{{ adyenExpressCheckoutIdSuffix }}"
+     class="adyen-express-checkout adyen-express-checkout--{{ adyenExpressCheckoutPage|escape }}"
+     data-adyen-express-checkout
+     data-page="{{ adyenExpressCheckoutPage|escape }}"
+     data-locale="{{ adyenFrontendData.locale }}"
+     data-client-key="{{ adyenFrontendData.clientKey }}"
+     data-environment="{{ adyenFrontendData.environment }}"
+     data-adyen-web-script-url="{{ asset('bundles/adyenpaymentshopware6/js/adyen.js', 'asset') }}"
+     data-adyen-web-style-url="{{ asset('bundles/adyenpaymentshopware6/css/adyen.css', 'asset') }}"
+     {% if app.request.attributes.get('_cspNonce') %}data-csp-nonce="{{ app.request.attributes.get('_cspNonce') }}"{% endif %}
+>
+    <div class="adyen-express-checkout-options"
+         data-adyen-express-checkout-options
          data-payment-status-url="{{ adyenFrontendData.paymentStatusUrl }}"
          data-checkout-order-url="{{ adyenFrontendData.checkoutOrderUrl }}"
          data-checkout-order-express-url="{{ adyenFrontendData.checkoutOrderExpressUrl }}"
@@ -35,13 +50,12 @@
     {% set adyenExpressCheckoutPaymentTypes = ['applepay', 'googlepay', 'paywithgoogle', 'paypal'] %}
     {% for adyenPaymentMethodType in adyenExpressCheckoutPaymentTypes %}
         <div class="adyen-express-checkout-element"
-             id="adyen-express-checkout-{{ adyenPaymentMethodType|escape }}">
+             id="adyen-express-checkout-{{ adyenPaymentMethodType|escape }}{{ adyenExpressCheckoutIdSuffix }}">
             <input type="hidden" class="adyen-type" name="adyen-type"
                    value="{{ adyenPaymentMethodType|escape }}">
         </div>
     {% endfor %}
-    <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
-        var adyenExpressCheckoutOptions = document.querySelector('#adyen-express-checkout-options').dataset;
-    </script>
+    {% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-action-modal.html.twig' with {
+        adyenPaymentActionModalId: 'adyen-payment-action-modal' ~ adyenExpressCheckoutIdSuffix
+    } %}
 </div>
-{% sw_include '@AdyenPaymentShopware6/storefront/component/payment/payment-action-modal.html.twig' %}

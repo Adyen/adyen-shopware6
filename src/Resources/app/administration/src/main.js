@@ -22,6 +22,7 @@
 
 import './service/adyenService';
 import './component/adyen-config-check-button';
+import './component/adyen-express-checkout-pages';
 import './component/adyen-payment-capture';
 import './component/adyen-refund';
 import './component/adyen-notifications';
@@ -30,6 +31,7 @@ import './sw-order-detail-general-override/index';
 import './sw-order-detail-base-override/index';
 import './sw-order-user-card-override/index';
 import './sw-order-detail-details-override/index';
+import './sw-system-config-override/index';
 import './component/entity/sw-entity-single-select-override';
 
 import localeEnGb from './snippet/en_GB.json';

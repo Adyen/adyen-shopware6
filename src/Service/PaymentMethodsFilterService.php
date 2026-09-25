@@ -293,6 +293,7 @@ class PaymentMethodsFilterService
      *
      * @param Cart $cart
      * @param SalesChannelContext $salesChannelContext
+     * @param string|null $page Storefront page (product, cart or offcanvas); null checks only the enable settings
      *
      * @return PaymentMethodsResponse
      *
@@ -300,12 +301,12 @@ class PaymentMethodsFilterService
      */
     public function getAvailableExpressCheckoutPaymentMethods(
         Cart $cart,
-        SalesChannelContext $salesChannelContext
+        SalesChannelContext $salesChannelContext,
+        ?string $page = null
     ): PaymentMethodsResponse {
         $salesChannelId = $salesChannelContext->getSalesChannelId();
-        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled($salesChannelId);
-        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled($salesChannelId);
-        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled($salesChannelId);
+        list($googlePayAvailable, $payPalAvailable, $applePayAvailable) =
+            $this->getExpressCheckoutMethodsAvailability($salesChannelId, $page);
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
@@ -359,6 +360,80 @@ class PaymentMethodsFilterService
         $amount = $this->currencyUtil->sanitize($cart->getPrice()->getTotalPrice(), $currency);
         $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext, '', $amount)
             ->getPaymentMethods();
+
+        return $this->filterExpressCheckoutPaymentMethodsByType(
+            $paymentMethods ?? [],
+            $googlePayAvailable,
+            $payPalAvailable,
+            $applePayAvailable
+        );
+    }
+
+    /**
+     * Removes express checkout payment methods that are not enabled for the given storefront page.
+     *
+     * @param PaymentMethodsResponse $paymentMethodsResponse
+     * @param string $page Storefront page (product, cart or offcanvas)
+     * @param string|null $salesChannelId
+     *
+     * @return PaymentMethodsResponse
+     */
+    public function filterExpressCheckoutPaymentMethodsByPage(
+        PaymentMethodsResponse $paymentMethodsResponse,
+        string $page,
+        ?string $salesChannelId
+    ): PaymentMethodsResponse {
+        list($googlePayAvailable, $payPalAvailable, $applePayAvailable) =
+            $this->getExpressCheckoutMethodsAvailability($salesChannelId, $page);
+
+        return $this->filterExpressCheckoutPaymentMethodsByType(
+            $paymentMethodsResponse->getPaymentMethods() ?? [],
+            $googlePayAvailable,
+            $payPalAvailable,
+            $applePayAvailable
+        );
+    }
+
+    /**
+     * Returns whether Google Pay, PayPal and Apple Pay express checkout are enabled,
+     * and, when a page is given, selected for that page.
+     *
+     * @param string|null $salesChannelId
+     * @param string|null $page
+     *
+     * @return bool[]
+     */
+    public function getExpressCheckoutMethodsAvailability(?string $salesChannelId, ?string $page = null): array
+    {
+        if ($page === null) {
+            return [
+                $this->configurationService->isGooglePayExpressCheckoutEnabled($salesChannelId),
+                $this->configurationService->isPayPalExpressCheckoutEnabled($salesChannelId),
+                $this->configurationService->isApplePayExpressCheckoutEnabled($salesChannelId),
+            ];
+        }
+
+        return [
+            $this->configurationService->isGooglePayExpressCheckoutEnabledOnPage($page, $salesChannelId),
+            $this->configurationService->isPayPalExpressCheckoutEnabledOnPage($page, $salesChannelId),
+            $this->configurationService->isApplePayExpressCheckoutEnabledOnPage($page, $salesChannelId),
+        ];
+    }
+
+    /**
+     * @param array $paymentMethods
+     * @param bool $googlePayAvailable
+     * @param bool $payPalAvailable
+     * @param bool $applePayAvailable
+     *
+     * @return PaymentMethodsResponse
+     */
+    private function filterExpressCheckoutPaymentMethodsByType(
+        array $paymentMethods,
+        bool $googlePayAvailable,
+        bool $payPalAvailable,
+        bool $applePayAvailable
+    ): PaymentMethodsResponse {
         $allowedMethods = [];
         $googlePayAvailable ? $allowedMethods['paywithgoogle'] = true : false;
         $googlePayAvailable ? $allowedMethods['googlepay'] = true : false;

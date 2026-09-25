@@ -35,6 +35,23 @@ class ConfigurationService
 {
     const BUNDLE_NAME = 'AdyenPaymentShopware6';
 
+    public const EXPRESS_CHECKOUT_PAGE_PRODUCT = 'product';
+    public const EXPRESS_CHECKOUT_PAGE_CART = 'cart';
+    public const EXPRESS_CHECKOUT_PAGE_OFFCANVAS = 'offcanvas';
+    public const EXPRESS_CHECKOUT_PAGES = [
+        self::EXPRESS_CHECKOUT_PAGE_PRODUCT,
+        self::EXPRESS_CHECKOUT_PAGE_CART,
+        self::EXPRESS_CHECKOUT_PAGE_OFFCANVAS,
+    ];
+
+    /**
+     * Pages on which express checkout was rendered before the placement became configurable.
+     */
+    public const DEFAULT_EXPRESS_CHECKOUT_PAGES = [
+        self::EXPRESS_CHECKOUT_PAGE_PRODUCT,
+        self::EXPRESS_CHECKOUT_PAGE_CART,
+    ];
+
     /**
      * @var SystemConfigService
      */
@@ -763,5 +780,92 @@ class ConfigurationService
             self::BUNDLE_NAME . '.config.showVouchersSeparately',
             $salesChannelId
         );
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return string[]
+     */
+    public function getApplePayExpressCheckoutPages(?string $salesChannelId = null): array
+    {
+        return $this->getExpressCheckoutPages('applePayExpressCheckoutPages', $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return string[]
+     */
+    public function getGooglePayExpressCheckoutPages(?string $salesChannelId = null): array
+    {
+        return $this->getExpressCheckoutPages('googlePayExpressCheckoutPages', $salesChannelId);
+    }
+
+    /**
+     * @param string|null $salesChannelId
+     *
+     * @return string[]
+     */
+    public function getPayPalExpressCheckoutPages(?string $salesChannelId = null): array
+    {
+        return $this->getExpressCheckoutPages('payPalExpressCheckoutPages', $salesChannelId);
+    }
+
+    /**
+     * @param string $page
+     * @param string|null $salesChannelId
+     *
+     * @return bool
+     */
+    public function isApplePayExpressCheckoutEnabledOnPage(string $page, ?string $salesChannelId = null): bool
+    {
+        return $this->isApplePayExpressCheckoutEnabled($salesChannelId)
+            && in_array($page, $this->getApplePayExpressCheckoutPages($salesChannelId), true);
+    }
+
+    /**
+     * @param string $page
+     * @param string|null $salesChannelId
+     *
+     * @return bool
+     */
+    public function isGooglePayExpressCheckoutEnabledOnPage(string $page, ?string $salesChannelId = null): bool
+    {
+        return $this->isGooglePayExpressCheckoutEnabled($salesChannelId)
+            && in_array($page, $this->getGooglePayExpressCheckoutPages($salesChannelId), true);
+    }
+
+    /**
+     * @param string $page
+     * @param string|null $salesChannelId
+     *
+     * @return bool
+     */
+    public function isPayPalExpressCheckoutEnabledOnPage(string $page, ?string $salesChannelId = null): bool
+    {
+        return $this->isPayPalExpressCheckoutEnabled($salesChannelId)
+            && in_array($page, $this->getPayPalExpressCheckoutPages($salesChannelId), true);
+    }
+
+    /**
+     * Returns the storefront pages selected for an express checkout payment method.
+     * A setting that was never saved falls back to the pages express checkout was rendered on before
+     * the placement became configurable. An empty selection is a merchant decision and is returned as is.
+     *
+     * @param string $configKey
+     * @param string|null $salesChannelId
+     *
+     * @return string[]
+     */
+    private function getExpressCheckoutPages(string $configKey, ?string $salesChannelId): array
+    {
+        $pages = $this->systemConfigService->get(self::BUNDLE_NAME . '.config.' . $configKey, $salesChannelId);
+
+        if (!is_array($pages)) {
+            return self::DEFAULT_EXPRESS_CHECKOUT_PAGES;
+        }
+
+        return array_values(array_intersect($pages, self::EXPRESS_CHECKOUT_PAGES));
     }
 }

@@ -1,11 +1,11 @@
 {
   "main.js": {
-    "file": "assets/adyen-payment-shopware6-BIKNtqAG.js",
+    "file": "assets/adyen-payment-shopware6-C6ALMfX1.js",
     "name": "adyen-payment-shopware6",
     "src": "main.js",
     "isEntry": true,
     "css": [
-      "assets/adyen-payment-shopware6-CTP4hGMW.css"
+      "assets/adyen-payment-shopware6-Bu7W2Mdr.css"
     ]
   }
 }
