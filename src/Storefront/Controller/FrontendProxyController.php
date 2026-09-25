@@ -29,6 +29,7 @@ use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
 use Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
+use Adyen\Shopware\Exception\PaymentReversedException;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\PaypalPaymentService;
@@ -55,6 +56,7 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
+use Throwable;
 
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class FrontendProxyController extends StorefrontController
@@ -610,10 +612,10 @@ class FrontendProxyController extends StorefrontController
                     UrlGeneratorInterface::ABSOLUTE_URL
                 )
             ]);
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             $this->logger->error('Error during finalizing PayPal order. Reason: ' . $exception->getMessage());
 
-            return new JsonResponse(null, 400);
+            return $this->buildPaypalFinalizeErrorResponse($context->getToken(), $context, $exception);
         }
     }
 
@@ -693,11 +695,55 @@ class FrontendProxyController extends StorefrontController
                     UrlGeneratorInterface::ABSOLUTE_URL
                 )
             ]);
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             $this->logger->error('Error during finalizing PayPal express order. Reason: ' . $exception->getMessage());
 
-            return new JsonResponse(null, 400);
+            return $this->buildPaypalFinalizeErrorResponse($cartToken, $context, $exception);
         }
+    }
+
+    /**
+     * Sends the shopper back to the cart with the Shopware cart errors that prevented the order, the same way
+     * checkoutOrder() does. The shopper is told about the reversal only when it actually happened.
+     *
+     * @param string $cartToken
+     * @param SalesChannelContext $context
+     * @param Throwable $exception
+     *
+     * @return JsonResponse
+     */
+    private function buildPaypalFinalizeErrorResponse(
+        string $cartToken,
+        SalesChannelContext $context,
+        Throwable $exception
+    ): JsonResponse {
+        try {
+            $this->addCartErrors($this->cartService->getCart($cartToken, $context));
+        } catch (Throwable $exception) {
+            $this->logger->warning(
+                'Could not load cart errors after PayPal finalize failure. Reason: ' . $exception->getMessage()
+            );
+        }
+
+        $this->addFlash(
+            self::DANGER,
+            $this->trans(
+                $exception instanceof PaymentReversedException ?
+                    'adyen.paypalPaymentReversed' :
+                    'adyen.paypalOrderNotCompleted'
+            )
+        );
+
+        return new JsonResponse(
+            [
+                'url' => $this->generateUrl(
+                    'frontend.checkout.cart.page',
+                    [],
+                    UrlGeneratorInterface::ABSOLUTE_URL
+                )
+            ],
+            400
+        );
     }
 
     /**

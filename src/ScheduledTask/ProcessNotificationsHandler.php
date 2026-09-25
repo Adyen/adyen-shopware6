@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\ScheduledTask;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Entity\PaypalPaymentAttempt\PaypalPaymentAttemptEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory;
@@ -32,8 +33,10 @@ use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\PaymentResponseService;
+use Adyen\Shopware\Service\PaymentReversalService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
+use Adyen\Shopware\Service\Repository\PaypalPaymentAttemptRepository;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Notification;
 use Adyen\Webhook\PaymentStates;
@@ -113,6 +116,16 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private PaymentResponseService $paymentResponseService;
 
     /**
+     * @var PaypalPaymentAttemptRepository
+     */
+    private PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository;
+
+    /**
+     * @var PaymentReversalService
+     */
+    private PaymentReversalService $paymentReversalService;
+
+    /**
      * @var array Map Shopware transaction states to payment states in the webhook module.
      */
     const WEBHOOK_MODULE_STATE_MAPPING = [
@@ -136,6 +149,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param CaptureService $captureService
      * @param WebhookHandlerFactory $webhookHandlerFactory
      * @param PaymentResponseService $paymentResponseService
+     * @param PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository
+     * @param PaymentReversalService $paymentReversalService
      */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
@@ -147,7 +162,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         AdyenPaymentService $adyenPaymentService,
         CaptureService $captureService,
         WebhookHandlerFactory $webhookHandlerFactory,
-        PaymentResponseService $paymentResponseService
+        PaymentResponseService $paymentResponseService,
+        PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository,
+        PaymentReversalService $paymentReversalService
     ) {
         parent::__construct($scheduledTaskRepository, $logger);
         $this->notificationService = $notificationService;
@@ -157,6 +174,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->adyenPaymentService = $adyenPaymentService;
         $this->captureService = $captureService;
         $this->paymentResponseService = $paymentResponseService;
+        $this->paypalPaymentAttemptRepository = $paypalPaymentAttemptRepository;
+        $this->paymentReversalService = $paymentReversalService;
         self::$webhookHandlerFactory = $webhookHandlerFactory;
     }
 
@@ -435,6 +454,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         );
 
         if (!$order) {
+            $paypalPaymentAttempt = $this->paypalPaymentAttemptRepository->getByMerchantReference($merchantReference);
+            if ($paypalPaymentAttempt) {
+                $this->handlePaypalPaymentWithoutOrder($notification, $paypalPaymentAttempt, $logContext);
+                return null;
+            }
+
             $errorMessage = "Skipped: Order with order_number {$notification->getMerchantReference()} not found.";
             $this->logger->error($errorMessage, $logContext);
             $this->logNotificationFailure($notification, $errorMessage);
@@ -442,6 +467,78 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             return null;
         } else {
             return $order;
+        }
+    }
+
+    /**
+     * Webhook fallback for a PayPal payment whose Shopware order was never created, e.g. because the finalize
+     * request died before the in-process reversal could run. A successful AUTHORISATION waits for the grace
+     * period, then reverses the payment if the order is still missing.
+     *
+     * @param NotificationEntity $notification
+     * @param PaypalPaymentAttemptEntity $paypalPaymentAttempt
+     * @param array $logContext
+     *
+     * @return void
+     */
+    private function handlePaypalPaymentWithoutOrder(
+        NotificationEntity $notification,
+        PaypalPaymentAttemptEntity $paypalPaymentAttempt,
+        array $logContext
+    ): void {
+        $merchantReference = $paypalPaymentAttempt->getMerchantReference();
+        $logContext['merchantReference'] = $merchantReference;
+        $logContext['pspReference'] = $notification->getPspreference();
+
+        if ($paypalPaymentAttempt->isReversed() ||
+            $notification->getEventCode() !== EventCodes::AUTHORISATION ||
+            !$notification->isSuccess()) {
+            // Nothing to compensate, e.g. the reversal result or an AUTHORISATION for an already reversed payment.
+            $this->logger->info('Skipped: No order for PayPal payment attempt, no reversal needed.', $logContext + [
+                'attemptStatus' => $paypalPaymentAttempt->getStatus(),
+            ]);
+            $this->markAsDone($notification->getId(), $merchantReference);
+
+            return;
+        }
+
+        $gracePeriodEnd = $this->notificationService->getMissingOrderGracePeriodEnd($notification);
+        if ($gracePeriodEnd) {
+            // The checkout may still be creating the order.
+            $this->rescheduleNotification($notification->getId(), $merchantReference, $gracePeriodEnd);
+
+            return;
+        }
+
+        if (empty($notification->getPspreference())) {
+            $errorMessage = 'Skipped: Cannot reverse PayPal payment without an order, PSP reference is missing.';
+            $this->logger->critical($errorMessage, $logContext);
+            $this->logNotificationFailure($notification, $errorMessage);
+            $this->markAsDone($notification->getId(), $merchantReference);
+
+            return;
+        }
+
+        $reversalPspReference = $this->paymentReversalService->reverse(
+            $paypalPaymentAttempt->getSalesChannelId(),
+            $notification->getPspreference(),
+            $merchantReference,
+            $logContext + ['trigger' => 'webhook']
+        );
+
+        $this->paypalPaymentAttemptRepository->saveReversalOutcome($merchantReference, $reversalPspReference);
+
+        if ($reversalPspReference) {
+            $this->markAsDone($notification->getId(), $merchantReference);
+
+            return;
+        }
+
+        $this->logNotificationFailure($notification, 'Reversal of PayPal payment without an order failed.');
+        if ($notification->getErrorCount() < self::MAX_ERROR_COUNT) {
+            $this->rescheduleNotification($notification->getId(), $merchantReference);
+        } else {
+            $this->markAsDone($notification->getId(), $merchantReference);
         }
     }
 

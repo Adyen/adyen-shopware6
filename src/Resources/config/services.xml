@@ -39,6 +39,9 @@
         <service id="Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntityDefinition">
             <tag name="shopware.entity.definition" entity="adyen_payment"/>
         </service>
+        <service id="Adyen\Shopware\Entity\PaypalPaymentAttempt\PaypalPaymentAttemptEntityDefinition">
+            <tag name="shopware.entity.definition" entity="adyen_paypal_payment_attempt"/>
+        </service>
         <service id="Adyen\Shopware\Core\Checkout\Payment\PaymentMethod\PaymentMethodExtension">
             <tag name="shopware.entity.extension"/>
         </service>
@@ -123,6 +126,7 @@
                       id="Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRoute"/>
             <argument key="$handlePaymentMethodRoute" type="service"
                       id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
+            <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
         </service>
 
         <service id="Adyen\Shopware\Service\PaymentRequest\PaymentRequestService">

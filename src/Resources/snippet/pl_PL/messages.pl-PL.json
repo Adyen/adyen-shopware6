@@ -6,6 +6,8 @@
             "message": "Twoje zamówienie jest przetwarzane!"
         },
         "paymentMethodSelectionError": "Niestety wystąpił błąd podczas zapisywania wybranej metody płatności. Proszę wybrać inną metodę płatności.",
+        "paypalOrderNotCompleted": "Nie udało się zrealizować zamówienia.",
+        "paypalPaymentReversed": "Nie udało się zrealizować zamówienia. Płatność PayPal została wycofana.",
         "giftcard": {
             "addGiftcards": "Dodaj karty podarunkowe",
             "removeGiftcard": "Usuń kartę podarunkową",
