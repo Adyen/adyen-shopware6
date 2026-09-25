@@ -303,10 +303,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $page->getCart()->getPrice()->getTotalPrice()
         );
 
+        $expressCheckoutPage = $this->resolveCartPagePlacement($event);
         $expressCheckoutConfigurationAvailable = true;
         $expressCheckoutConfiguration = [];
         list($salesChannelId, $googlePayAvailable, $payPalAvailable, $applePayAvailable) =
-            $this->getPaymentMethodsAvailability($salesChannelContext);
+            $this->getPaymentMethodsAvailability($salesChannelContext, $expressCheckoutPage);
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
@@ -317,7 +318,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
                 '-1',
                 -1,
-                $salesChannelContext
+                $salesChannelContext,
+                [],
+                [],
+                '',
+                $expressCheckoutPage
             );
             if (array_key_exists('error', $expressCheckoutConfiguration)) {
                 $expressCheckoutConfigurationAvailable = false;
@@ -427,7 +432,10 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $expressCheckoutConfigurationAvailable = true;
         $expressCheckoutConfiguration = [];
         list($salesChannelId, $googlePayAvailable, $payPalAvailable, $applePayAvailable) =
-            $this->getPaymentMethodsAvailability($salesChannelContext);
+            $this->getPaymentMethodsAvailability(
+                $salesChannelContext,
+                ConfigurationService::EXPRESS_CHECKOUT_PAGE_PRODUCT
+            );
 
         // If express checkout feature is disabled, returns empty payment method response
         if (!$googlePayAvailable && !$payPalAvailable && !$applePayAvailable) {
@@ -438,7 +446,11 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
             $expressCheckoutConfiguration = $this->expressCheckoutService->getExpressCheckoutConfig(
                 $productId,
                 1,
-                $salesChannelContext
+                $salesChannelContext,
+                [],
+                [],
+                '',
+                ConfigurationService::EXPRESS_CHECKOUT_PAGE_PRODUCT
             );
             if (array_key_exists('error', $expressCheckoutConfiguration)) {
                 $expressCheckoutConfigurationAvailable = false;
@@ -773,14 +785,36 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
 
     /**
      * @param SalesChannelContext $salesChannelContext
+     * @param string|null $page Storefront page (product, cart or offcanvas); null checks only the enable settings
      * @return array
      */
-    public function getPaymentMethodsAvailability(SalesChannelContext $salesChannelContext): array
-    {
+    public function getPaymentMethodsAvailability(
+        SalesChannelContext $salesChannelContext,
+        ?string $page = null
+    ): array {
         $salesChannelId = $salesChannelContext->getSalesChannelId();
-        $googlePayAvailable = $this->configurationService->isGooglePayExpressCheckoutEnabled($salesChannelId);
-        $payPalAvailable = $this->configurationService->isPayPalExpressCheckoutEnabled($salesChannelId);
-        $applePayAvailable = $this->configurationService->isApplePayExpressCheckoutEnabled($salesChannelId);
+        list($googlePayAvailable, $payPalAvailable, $applePayAvailable) =
+            $this->paymentMethodsFilterService->getExpressCheckoutMethodsAvailability($salesChannelId, $page);
         return array($salesChannelId, $googlePayAvailable, $payPalAvailable, $applePayAvailable);
+    }
+
+    /**
+     * Resolves the express checkout placement of a page handled by onShoppingCartLoaded.
+     *
+     * @param PageLoadedEvent $event
+     *
+     * @return string|null
+     */
+    private function resolveCartPagePlacement(PageLoadedEvent $event): ?string
+    {
+        if ($event instanceof OffcanvasCartPageLoadedEvent) {
+            return ConfigurationService::EXPRESS_CHECKOUT_PAGE_OFFCANVAS;
+        }
+
+        if ($event instanceof CheckoutCartPageLoadedEvent) {
+            return ConfigurationService::EXPRESS_CHECKOUT_PAGE_CART;
+        }
+
+        return null;
     }
 }
