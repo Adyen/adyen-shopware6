@@ -40,6 +40,12 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class NotificationService
 {
+    /**
+     * How long a successful AUTHORISATION waits for its order before a missing order is treated as a failed
+     * order creation. Covers a checkout that is still in progress when the webhook arrives.
+     */
+    public const MISSING_ORDER_GRACE_PERIOD = 'PT30M';
+
     /** @var EntityRepository */
     protected EntityRepository $notificationRepository;
 
@@ -350,6 +356,22 @@ class NotificationService
         }
 
         return $scheduledProcessingTime;
+    }
+
+    /**
+     * Returns the time until which a missing order is still expected to be created for the notification,
+     * or null when the grace period is over.
+     *
+     * @param NotificationEntity $notification
+     *
+     * @return \DateTime|null
+     */
+    public function getMissingOrderGracePeriodEnd(NotificationEntity $notification): ?\DateTime
+    {
+        $gracePeriodEnd = \DateTime::createFromInterface($notification->getCreatedAt() ?? new \DateTime())
+            ->add(new \DateInterval(self::MISSING_ORDER_GRACE_PERIOD));
+
+        return $gracePeriodEnd > new \DateTime() ? $gracePeriodEnd : null;
     }
 
     /**
