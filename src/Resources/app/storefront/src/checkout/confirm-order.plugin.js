@@ -176,6 +176,12 @@ export default class ConfirmOrderPlugin extends Plugin {
             return;
         }
 
+        // Apple Pay can only be paid through its own button, the default submit has no payment details
+        if (this.selectedAdyenPaymentMethod === 'applepay') {
+            event.preventDefault();
+            return;
+        }
+
         this.restoreAdyenValidation();
 
         const form = DomAccess.querySelector(document, '#confirmOrderForm', false);
