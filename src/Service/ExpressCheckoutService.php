@@ -156,6 +156,7 @@ class ExpressCheckoutService
      * @param array $newAddress Optional new address details.
      * @param array $newShipping Optional new shipping method details.
      * @param string $formattedHandlerIdentifier
+     * @param string|null $page Storefront page (product, cart or offcanvas) the configuration is requested for.
      *
      * @return array The configuration for express checkout.
      *
@@ -167,7 +168,8 @@ class ExpressCheckoutService
         SalesChannelContext $salesChannelContext,
         array $newAddress = [],
         array $newShipping = [],
-        string $formattedHandlerIdentifier = ''
+        string $formattedHandlerIdentifier = '',
+        ?string $page = null
     ): array {
         try {
             $cartData = $this->createCart(
@@ -194,6 +196,13 @@ class ExpressCheckoutService
 
             // Available payment methods
             $paymentMethods = $cartData['paymentMethods'];
+            if ($page !== null) {
+                $paymentMethods = $this->paymentMethodsFilterService->filterExpressCheckoutPaymentMethodsByPage(
+                    $paymentMethods,
+                    $page,
+                    $salesChannelContext->getSalesChannelId()
+                );
+            }
 
             // Delete temporary cart for product
             if ($productId !== '-1') {
