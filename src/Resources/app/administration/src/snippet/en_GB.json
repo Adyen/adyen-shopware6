@@ -33,6 +33,13 @@
         "captureConfirm": "Capture payment for order",
         "captureSuccessful": "Capture request has been successfully sent",
         "pendingWebhook": "Order is pending webhook.",
-        "authorisedPayments": "Authorised Payments"
+        "authorisedPayments": "Authorised Payments",
+        "expressCheckoutPages": {
+            "product": "Product detail page",
+            "cart": "Full cart page",
+            "offcanvas": "Off-canvas cart",
+            "required": "Select at least one express checkout location.",
+            "saveError": "Select at least one express checkout location for each enabled express checkout payment method."
+        }
     }
 }
