@@ -33,6 +33,8 @@
             <argument type="service" id="Adyen\Shopware\Service\CaptureService"/>
             <argument type="service" id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
+            <argument type="service" id="Adyen\Shopware\Service\Repository\PaypalPaymentAttemptRepository"/>
+            <argument type="service" id="Adyen\Shopware\Service\PaymentReversalService"/>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
@@ -58,6 +60,16 @@
             <argument type="service" id="payment_method.repository"/>
             <argument type="service" id="media.repository"/>
             <argument>%shopware.media.enable_url_upload_feature%</argument>
+            <tag name="messenger.message_handler"/>
+            <call method="setLogger">
+                <argument key="$logger" type="service" id="monolog.logger.adyen_cron"/>
+            </call>
+        </service>
+        <service id="Adyen\Shopware\ScheduledTask\CleanupPaypalPaymentAttempts">
+            <tag name="shopware.scheduled.task"/>
+        </service>
+        <service id="Adyen\Shopware\ScheduledTask\CleanupPaypalPaymentAttemptsHandler" autowire="true">
+            <argument key="$scheduledTaskRepository" type="service" id="scheduled_task.repository"/>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_cron"/>

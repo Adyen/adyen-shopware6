@@ -6,6 +6,8 @@
             "message": "Ihre Bestellung wird bearbeitet!"
         },
         "paymentMethodSelectionError": "Leider ist beim Speichern der Auswahl der Zahlungsmethode ein Fehler aufgetreten. Bitte wählen Sie eine andere Zahlungsmethode.",
+        "paypalOrderNotCompleted": "Ihre Bestellung konnte nicht abgeschlossen werden.",
+        "paypalPaymentReversed": "Ihre Bestellung konnte nicht abgeschlossen werden. Ihre PayPal-Zahlung wurde rückgängig gemacht.",
         "giftcard": {
             "addGiftcards": "Geschenkkarten hinzufügen",
             "removeGiftcard": "Geschenkkarte entfernen",
