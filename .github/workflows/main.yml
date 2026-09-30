@@ -21,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify bundled Adyen Web SDK matches manifest
+        run: .github/workflows/scripts/verify-web-sdk.sh
+
       - name: Validate composer.json and composer.lock
         run: composer validate
 
