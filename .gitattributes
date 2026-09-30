@@ -1,0 +1,5 @@
+# Vendored Adyen Web SDK: keep bytes exactly as downloaded from the Adyen CDN.
+# Hashes are recorded in src/Resources/public/adyen-web-sdk.json and checked in CI.
+src/Resources/public/js/adyen.js* -text linguist-vendored
+src/Resources/public/css/adyen.css* -text linguist-vendored
+*.sh text eol=lf

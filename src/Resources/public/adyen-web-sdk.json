@@ -1,0 +1,8 @@
+{
+    "version": "6.27.1",
+    "source": "https://checkoutshopper-live.adyen.com/checkoutshopper/sdk/6.27.1/",
+    "files": {
+        "js/adyen.js": "sha384-O2YEtCpBJlpnqKVWU5zI/a29fYQ6f5oSFo3JGc6QEVZW++uaoWvAcgzwSjjVHaEI",
+        "css/adyen.css": "sha384-v4WMhZ5b9GzrmepuVnBZ/neEvwZd3kYkt1GNI4WDk9+YD06/ytw+Uzfg8QT7IQVl"
+    }
+}
