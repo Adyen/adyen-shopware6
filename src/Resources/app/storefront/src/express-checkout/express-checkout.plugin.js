@@ -479,9 +479,14 @@ export default class ExpressCheckoutPlugin extends Plugin {
             this._client.post(`${adyenExpressCheckoutOptions.paypalExpressOrderFinalizeUrl}`, JSON.stringify({
                 stateData: JSON.stringify(state.data), newAddress: this.newAddress
             }), function (paymentResponse) {
-                let response = JSON.parse(paymentResponse);
+                let response = null;
+                try {
+                    response = JSON.parse(paymentResponse);
+                } catch (e) {
+                    response = null;
+                }
 
-                if (response.redirectUrl) {
+                if (response && response.redirectUrl) {
                     window.location.href = response.redirectUrl;
 
                     return;
@@ -489,6 +494,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
                 if (actions.reject) {
                     actions.reject({});
+                }
+
+                if (response && response.url) {
+                    window.location.href = response.url;
+
+                    return;
                 }
 
                 window.location.reload();
