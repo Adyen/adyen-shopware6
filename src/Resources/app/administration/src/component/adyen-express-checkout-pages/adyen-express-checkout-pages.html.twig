@@ -1,0 +1,10 @@
+<div class="adyen-express-checkout-pages">
+    <sw-multi-select
+            v-if="isExpressCheckoutEnabled"
+            :options="pageOptions"
+            :value="value || []"
+            :disabled="disabled"
+            :error="pagesError"
+            @change="onPagesChanged"
+    />
+</div>
