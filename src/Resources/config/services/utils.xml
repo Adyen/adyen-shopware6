@@ -24,6 +24,10 @@
             <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
             <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
         </service>
+        <service id="Adyen\Shopware\Util\RivertyDeviceFingerprintParamsProvider">
+            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
+            <argument type="service" id="Adyen\Shopware\Service\ConfigurationService"/>
+        </service>
         <service id="Adyen\Shopware\Util\DataArrayValidator"/>
     </services>
 </container>

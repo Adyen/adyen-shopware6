@@ -1,29 +1,32 @@
 {
-    "adyen": {
-        "updateDetails": "Update payment details",
-        "loading": "Loading...",
-        "notification": {
-            "message": "Your order is being processed!"
-        },
-        "paymentMethodSelectionError": "Unfortunately, something went wrong saving the payment method selection. Please select a different payment method.",
-        "giftcard": {
-            "addGiftcards": "Add Giftcards",
-            "removeGiftcard": "Remove Giftcard",
-            "closeGiftcardSection": "Close Giftcard Section",
-            "remainingBalance": "Remaining giftcard balance",
-            "deductedAmount": "Deducted Amount",
-            "remainingAmount": "Remaining amount",
-            "discount": "Giftcard discount",
-            "chooseGiftcard": "Please select a giftcard..."
-        },
-        "billie": {
-            "companyName": "Company Name*",
-            "companyNamePlaceholder": "Enter your company name",
-            "companyNumber": "Company Registration Number",
-            "companyNumberPlaceholder": "Enter your registration number",
-            "requiredFields": "Fields marked with asterisks (*) are required.",
-            "companyNameRequired": "Company name is required.",
-            "companyNumberRequired": "Company number is required for billing addresses in Netherlands and Sweden."
-        }
+  "adyen": {
+    "updateDetails": "Update payment details",
+    "loading": "Loading...",
+    "notification": {
+      "message": "Your order is being processed!"
+    },
+    "paymentMethodSelectionError": "Unfortunately, something went wrong saving the payment method selection. Please select a different payment method.",
+    "giftcard": {
+      "addGiftcards": "Add Giftcards",
+      "removeGiftcard": "Remove Giftcard",
+      "closeGiftcardSection": "Close Giftcard Section",
+      "remainingBalance": "Remaining giftcard balance",
+      "deductedAmount": "Deducted Amount",
+      "remainingAmount": "Remaining amount",
+      "discount": "Giftcard discount",
+      "chooseGiftcard": "Please select a giftcard..."
+    },
+    "billie": {
+      "companyName": "Company Name*",
+      "companyNamePlaceholder": "Enter your company name",
+      "companyNumber": "Company Registration Number",
+      "companyNumberPlaceholder": "Enter your registration number",
+      "requiredFields": "Fields marked with asterisks (*) are required.",
+      "companyNameRequired": "Company name is required.",
+      "companyNumberRequired": "Company number is required for billing addresses in Netherlands and Sweden."
+    },
+    "riverty": {
+      "profileTrackingDisclaimer": "We use profile tracking technology to detect and recognise your device and to identify potential fraud attempts. By continuing with Riverty you consent to this check being carried out."
     }
+  }
 }

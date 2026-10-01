@@ -1,0 +1,31 @@
+{% if payment.formattedHandlerIdentifier in [
+        'handler_adyen_rivertypaymentmethodhandler',
+        'handler_adyen_sepadirectdebitrivertypaymentmethodhandler'
+    ] and adyenFrontendData.riverty is defined %}
+    <div class="adyen-riverty-profile-tracking-disclaimer">
+        {{ 'adyen.riverty.profileTrackingDisclaimer'|trans|sw_sanitize }}
+    </div>
+    {# The profile tracking tag is provided by Riverty and injects the Experian container script. #}
+    <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>
+        (function () {
+            const config = {
+                c: '{{ adyenFrontendData.riverty.shopId|escape('js') }}',
+                s: '{{ adyenFrontendData.riverty.sessionId|escape('js') }}',
+                u: window.location.pathname,
+                h: '{{ adyenFrontendData.riverty.subdomain|escape('js') }}',
+            };
+            window._itt = config;
+            // This is excluded from Sonar analysis because the script is provided by Riverty. //NOSONAR
+            const script = document.createElement('script');//NOSONAR
+            script.src = `https://${config.h}/container/${config.c}?page=${encodeURIComponent(config.u)}`;
+            script.async = true;
+            script.onload = function () { this.remove(); };
+            {# A nonce is not inherited by dynamically created scripts, it has to be set explicitly. #}
+            const nonce = '{{ app.request.attributes.get('_cspNonce')|escape('js') }}';
+            if (nonce) {
+                script.setAttribute('nonce', nonce);
+            }
+            (document.head || document.documentElement).appendChild(script);
+        })();
+    </script>
+{% endif %}

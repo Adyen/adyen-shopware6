@@ -189,7 +189,7 @@ export default class PaymentResources {
           countryCode: "NL",
           countryName: "Netherlands",
           stateCode: "NH",
-          phoneNumber: "0612345678",
+          phoneNumber: "+31689124321",
           dateOfBirth: "10071970",
           gender: "M",
         },

@@ -13,10 +13,9 @@ export class ResultPage extends SPRBasePage {
         return (await this.pageHeader.innerText());
     }
 
-    async waitForRedirection() {
-        await this.page.waitForNavigation({
-            url: / *\/checkout\/finish/,
-            timeout: 20000,
+    async waitForRedirection({ timeout = 20000 } = {}) {
+        await this.page.waitForURL(/\/checkout\/finish/, {
+            timeout,
         });
     }
 }
