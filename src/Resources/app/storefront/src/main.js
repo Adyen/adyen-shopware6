@@ -10,7 +10,7 @@ import AdyenSuccessAction from './finish/adyen-success-action.plugin';
 const PluginManager = window.PluginManager;
 PluginManager.register('CartPlugin', CartPlugin, '#adyen-giftcards-container');
 PluginManager.register('ConfirmOrderPlugin', ConfirmOrderPlugin, '#adyen-payment-checkout-mask');
-PluginManager.register('ExpressCheckoutPlugin', ExpressCheckoutPlugin, '#adyen-express-checkout');
+PluginManager.register('ExpressCheckoutPlugin', ExpressCheckoutPlugin, '[data-adyen-express-checkout]');
 PluginManager.register('PaymentMethodAvailabilityPlugin', PaymentMethodAvailabilityPlugin, '[data-adyen-availability-check]');
 PluginManager.register('AdyenGivingPlugin', AdyenGivingPlugin, '#adyen-giving-container');
 PluginManager.register('AdyenSuccessAction', AdyenSuccessAction, '#adyen-success-action-container');
