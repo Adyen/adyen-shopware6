@@ -322,10 +322,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 '-1',
                 -1,
                 $salesChannelContext,
-                [],
-                [],
-                '',
-                $expressCheckoutPage
+                page: $expressCheckoutPage
             );
             if (array_key_exists('error', $expressCheckoutConfiguration)) {
                 $expressCheckoutConfigurationAvailable = false;
@@ -451,10 +448,7 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
                 $productId,
                 1,
                 $salesChannelContext,
-                [],
-                [],
-                '',
-                ConfigurationService::EXPRESS_CHECKOUT_PAGE_PRODUCT
+                page: ConfigurationService::EXPRESS_CHECKOUT_PAGE_PRODUCT
             );
             if (array_key_exists('error', $expressCheckoutConfiguration)) {
                 $expressCheckoutConfigurationAvailable = false;

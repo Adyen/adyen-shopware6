@@ -28,8 +28,11 @@ use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Environment;
 use Adyen\HttpClient\ClientInterface;
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Entity\PaypalPaymentAttempt\PaypalPaymentAttemptEntity;
 use Adyen\Shopware\Exception\PaymentReversedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Models\NotificationProcessingResult;
 use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ExpressCheckoutService;
@@ -40,6 +43,7 @@ use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\PaypalPaymentAttemptRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
 use Adyen\Shopware\Test\Common\AdyenTestCase;
+use Adyen\Webhook\EventCodes;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use LogicException;
@@ -243,6 +247,152 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             ['details' => ['orderID' => 'PAYPAL-ORDER']],
             ['firstName' => 'Test']
         );
+    }
+
+    public function testNotificationWithoutOrderIsIgnoredWhenThereIsNoPaypalPaymentAttempt(): void
+    {
+        $this->paypalPaymentAttemptRepository->method('getByMerchantReference')->willReturn(null);
+        $this->paymentReversalService->expects($this->never())->method('reverse');
+
+        $this->assertNull($this->paypalPaymentService->handleNotificationWithoutOrder(
+            $this->createNotification(EventCodes::AUTHORISATION, true),
+            '10001'
+        ));
+    }
+
+    public function testSuccessfulAuthorisationWithinGracePeriodIsRescheduled(): void
+    {
+        $createdAt = new \DateTimeImmutable('-10 minutes');
+        $this->givenPaypalPaymentAttempt();
+        $this->paymentReversalService->expects($this->never())->method('reverse');
+
+        $result = $this->handleNotificationWithoutOrder(
+            $this->createNotification(EventCodes::AUTHORISATION, true, $createdAt)
+        );
+
+        $this->assertSame(NotificationProcessingResult::ACTION_RESCHEDULE, $result->getAction());
+        $this->assertEquals(
+            $createdAt->add(new \DateInterval(PaypalPaymentService::MISSING_ORDER_GRACE_PERIOD)),
+            $result->getScheduledProcessingTime()
+        );
+    }
+
+    public function testSuccessfulAuthorisationAfterGracePeriodReversesThePayment(): void
+    {
+        $this->givenPaypalPaymentAttempt();
+
+        $this->paymentReversalService->expects($this->once())
+            ->method('reverse')
+            ->with('sales-channel-1', 'PSP123', '10001', $this->anything())
+            ->willReturn('REVERSAL1');
+        $this->paypalPaymentAttemptRepository->expects($this->once())
+            ->method('saveReversalOutcome')
+            ->with('10001', 'REVERSAL1');
+
+        $result = $this->handleNotificationWithoutOrder($this->createNotification(EventCodes::AUTHORISATION, true));
+
+        $this->assertSame(NotificationProcessingResult::ACTION_DONE, $result->getAction());
+        $this->assertNull($result->getError());
+    }
+
+    public function testFailedReversalIsRetried(): void
+    {
+        $this->givenPaypalPaymentAttempt(PaypalPaymentAttemptEntity::STATUS_REVERSAL_FAILED);
+        $this->paymentReversalService->method('reverse')->willReturn(null);
+
+        $this->paypalPaymentAttemptRepository->expects($this->once())
+            ->method('saveReversalOutcome')
+            ->with('10001', null);
+
+        $result = $this->handleNotificationWithoutOrder($this->createNotification(EventCodes::AUTHORISATION, true));
+
+        $this->assertSame(NotificationProcessingResult::ACTION_RETRY, $result->getAction());
+        $this->assertNotNull($result->getError());
+    }
+
+    public function testMissingPspReferenceIsNotReversed(): void
+    {
+        $this->givenPaypalPaymentAttempt();
+        $notification = $this->createNotification(EventCodes::AUTHORISATION, true);
+        $notification->setPspreference('');
+
+        $this->paymentReversalService->expects($this->never())->method('reverse');
+        $this->logger->expects($this->once())->method('critical');
+
+        $result = $this->handleNotificationWithoutOrder($notification);
+
+        $this->assertSame(NotificationProcessingResult::ACTION_DONE, $result->getAction());
+        $this->assertNotNull($result->getError());
+    }
+
+    public function testAlreadyReversedAttemptIsNotReversedAgain(): void
+    {
+        $this->givenPaypalPaymentAttempt(PaypalPaymentAttemptEntity::STATUS_REVERSED);
+        $this->paymentReversalService->expects($this->never())->method('reverse');
+
+        $result = $this->handleNotificationWithoutOrder($this->createNotification(EventCodes::AUTHORISATION, true));
+
+        $this->assertSame(NotificationProcessingResult::ACTION_DONE, $result->getAction());
+    }
+
+    public function testReversalResultNotificationIsNotReversed(): void
+    {
+        $this->givenPaypalPaymentAttempt(PaypalPaymentAttemptEntity::STATUS_REVERSED);
+        $this->paymentReversalService->expects($this->never())->method('reverse');
+
+        $result = $this->handleNotificationWithoutOrder(
+            $this->createNotification(EventCodes::CANCEL_OR_REFUND, true)
+        );
+
+        $this->assertSame(NotificationProcessingResult::ACTION_DONE, $result->getAction());
+    }
+
+    public function testUnsuccessfulAuthorisationIsNotReversed(): void
+    {
+        $this->givenPaypalPaymentAttempt();
+        $this->paymentReversalService->expects($this->never())->method('reverse');
+
+        $result = $this->handleNotificationWithoutOrder($this->createNotification(EventCodes::AUTHORISATION, false));
+
+        $this->assertSame(NotificationProcessingResult::ACTION_DONE, $result->getAction());
+    }
+
+    private function handleNotificationWithoutOrder(NotificationEntity $notification): NotificationProcessingResult
+    {
+        $result = $this->paypalPaymentService->handleNotificationWithoutOrder($notification, '10001');
+        $this->assertNotNull($result);
+
+        return $result;
+    }
+
+    private function givenPaypalPaymentAttempt(string $status = PaypalPaymentAttemptEntity::STATUS_OPEN): void
+    {
+        $attempt = new PaypalPaymentAttemptEntity();
+        $attempt->setId('attempt-1');
+        $attempt->setMerchantReference('10001');
+        $attempt->setSalesChannelId('sales-channel-1');
+        $attempt->setStatus($status);
+
+        $this->paypalPaymentAttemptRepository->method('getByMerchantReference')
+            ->with('10001')
+            ->willReturn($attempt);
+    }
+
+    private function createNotification(
+        string $eventCode,
+        bool $success,
+        ?\DateTimeInterface $createdAt = null
+    ): NotificationEntity {
+        $notification = new NotificationEntity();
+        $notification->setId('notification-1');
+        $notification->setEventCode($eventCode);
+        $notification->setSuccess($success);
+        $notification->setPspreference('PSP123');
+        $notification->setMerchantReference('10001');
+        $notification->setErrorCount(0);
+        $notification->setCreatedAt($createdAt ?? new \DateTime('-1 hour'));
+
+        return $notification;
     }
 
     private function givenPaymentDetailsResponse(string $resultCode): void

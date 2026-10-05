@@ -188,8 +188,8 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo468($updateContext);
         }
 
-        if (\version_compare($currentVersion, '4.6.9', '<')) {
-            $this->updateTo469($updateContext);
+        if (\version_compare($currentVersion, '4.6.10', '<')) {
+            $this->updateTo4610($updateContext);
         }
     }
 
@@ -808,13 +808,13 @@ class AdyenPaymentShopware6 extends Plugin
     }
 
     /**
-     * Version 4.6.9 makes the express checkout placement configurable per payment method.
+     * Version 4.6.10 makes the express checkout placement configurable per payment method.
      *
      * @param UpdateContext $updateContext
      *
      * @return void
      */
-    private function updateTo469(UpdateContext $updateContext): void
+    private function updateTo4610(UpdateContext $updateContext): void
     {
         $this->initializeExpressCheckoutPages($updateContext->getContext());
     }
@@ -848,9 +848,9 @@ class AdyenPaymentShopware6 extends Plugin
         foreach ($scopes as $salesChannelId) {
             $scopeConfig = $systemConfigService->getDomain($configPrefix, $salesChannelId);
 
-            foreach (['applePay', 'googlePay', 'payPal'] as $method) {
-                $enabledKey = $configPrefix . $method . 'ExpressCheckoutEnabled';
-                $pagesKey = $configPrefix . $method . 'ExpressCheckoutPages';
+            foreach (ConfigurationService::EXPRESS_CHECKOUT_METHODS as $method) {
+                $enabledKey = $configPrefix . $method . ConfigurationService::EXPRESS_CHECKOUT_ENABLED_KEY_SUFFIX;
+                $pagesKey = $configPrefix . $method . ConfigurationService::EXPRESS_CHECKOUT_PAGES_KEY_SUFFIX;
 
                 // Keep the merchant's selection if the update already ran for this scope
                 if (isset($scopeConfig[$pagesKey])) {
