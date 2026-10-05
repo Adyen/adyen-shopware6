@@ -37,16 +37,10 @@ use Shopware\Core\Framework\Uuid\Uuid;
 class PaypalPaymentAttemptRepository
 {
     /**
-     * @var EntityRepository
-     */
-    private EntityRepository $repository;
-
-    /**
      * @param EntityRepository $repository
      */
-    public function __construct(EntityRepository $repository)
+    public function __construct(private readonly EntityRepository $repository)
     {
-        $this->repository = $repository;
     }
 
     /**

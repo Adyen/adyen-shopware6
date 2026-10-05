@@ -47,11 +47,6 @@ class CleanupPaypalPaymentAttemptsHandler extends ScheduledTaskHandler
     public const RETENTION_PERIOD = 'P30D';
 
     /**
-     * @var PaypalPaymentAttemptRepository
-     */
-    private PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository;
-
-    /**
      * @param EntityRepository $scheduledTaskRepository
      * @param LoggerInterface $logger
      * @param PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository
@@ -59,10 +54,9 @@ class CleanupPaypalPaymentAttemptsHandler extends ScheduledTaskHandler
     public function __construct(
         EntityRepository $scheduledTaskRepository,
         LoggerInterface $logger,
-        PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository
+        private readonly PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository
     ) {
         parent::__construct($scheduledTaskRepository, $logger);
-        $this->paypalPaymentAttemptRepository = $paypalPaymentAttemptRepository;
     }
 
     /**
@@ -82,7 +76,11 @@ class CleanupPaypalPaymentAttemptsHandler extends ScheduledTaskHandler
         $deleted = $this->paypalPaymentAttemptRepository->deleteCreatedBefore($createdBefore);
 
         if ($deleted > 0) {
-            $this->logger->info(sprintf('Removed %d PayPal payment attempts older than 30 days.', $deleted));
+            $this->logger->info(sprintf(
+                'Removed %d PayPal payment attempts created before %s.',
+                $deleted,
+                $createdBefore->format(\DateTimeInterface::ATOM)
+            ));
         }
     }
 }

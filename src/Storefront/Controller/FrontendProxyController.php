@@ -719,9 +719,9 @@ class FrontendProxyController extends StorefrontController
     ): JsonResponse {
         try {
             $this->addCartErrors($this->cartService->getCart($cartToken, $context));
-        } catch (Throwable $exception) {
+        } catch (Throwable $cartException) {
             $this->logger->warning(
-                'Could not load cart errors after PayPal finalize failure. Reason: ' . $exception->getMessage()
+                'Could not load cart errors after PayPal finalize failure. Reason: ' . $cartException->getMessage()
             );
         }
 

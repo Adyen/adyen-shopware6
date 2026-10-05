@@ -29,18 +29,21 @@ use Adyen\Model\Checkout\PaymentDetailsRequest;
 use Adyen\Model\Checkout\PaymentDetailsResponse;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Exception\PaymentReversedException;
 use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
+use Adyen\Shopware\Models\NotificationProcessingResult;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
 use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\PaypalPaymentAttemptRepository;
 use Adyen\Shopware\Service\Repository\SalesChannelRepository;
+use Adyen\Webhook\EventCodes;
 use Exception;
 use JsonException;
 use Psr\Log\LoggerInterface;
@@ -65,6 +68,12 @@ use Throwable;
  */
 readonly class PaypalPaymentService
 {
+    /**
+     * How long a successful AUTHORISATION waits for its order before a missing order is treated as a failed
+     * order creation. Covers a checkout that is still in progress when the webhook arrives.
+     */
+    public const MISSING_ORDER_GRACE_PERIOD = 'PT30M';
+
     /**
      * @param ClientService $clientService
      * @param NumberRangeValueGeneratorInterface $numberRangeValueGenerator
@@ -288,6 +297,70 @@ readonly class PaypalPaymentService
     }
 
     /**
+     * Webhook fallback for a PayPal payment whose Shopware order was never created, e.g. because the finalize
+     * request died before the in-process reversal could run. A successful AUTHORISATION waits for the grace
+     * period, then reverses the payment if the order is still missing.
+     *
+     * @param NotificationEntity $notification
+     * @param string $merchantReference
+     * @param array $logContext
+     *
+     * @return NotificationProcessingResult|null Null when the merchant reference is not a PayPal payment attempt
+     */
+    public function handleNotificationWithoutOrder(
+        NotificationEntity $notification,
+        string $merchantReference,
+        array $logContext = []
+    ): ?NotificationProcessingResult {
+        $paypalPaymentAttempt = $this->paypalPaymentAttemptRepository->getByMerchantReference($merchantReference);
+        if (!$paypalPaymentAttempt) {
+            return null;
+        }
+
+        $logContext['merchantReference'] = $merchantReference;
+        $logContext['pspReference'] = $notification->getPspreference();
+
+        if ($paypalPaymentAttempt->isReversed() ||
+            $notification->getEventCode() !== EventCodes::AUTHORISATION ||
+            !$notification->isSuccess()) {
+            // Nothing to compensate, e.g. the reversal result or an AUTHORISATION for an already reversed payment.
+            $this->logger->info('Skipped: No order for PayPal payment attempt, no reversal needed.', $logContext + [
+                'attemptStatus' => $paypalPaymentAttempt->getStatus(),
+            ]);
+
+            return NotificationProcessingResult::done();
+        }
+
+        $gracePeriodEnd = $this->getMissingOrderGracePeriodEnd($notification);
+        if ($gracePeriodEnd) {
+            // The checkout may still be creating the order.
+            return NotificationProcessingResult::reschedule($gracePeriodEnd);
+        }
+
+        if (empty($notification->getPspreference())) {
+            $errorMessage = 'Skipped: Cannot reverse PayPal payment without an order, PSP reference is missing.';
+            $this->logger->critical($errorMessage, $logContext);
+
+            return NotificationProcessingResult::done($errorMessage);
+        }
+
+        $reversalPspReference = $this->paymentReversalService->reverse(
+            $paypalPaymentAttempt->getSalesChannelId(),
+            $notification->getPspreference(),
+            $merchantReference,
+            $logContext + ['trigger' => 'webhook']
+        );
+
+        $this->paypalPaymentAttemptRepository->saveReversalOutcome($merchantReference, $reversalPspReference);
+
+        if ($reversalPspReference) {
+            return NotificationProcessingResult::done();
+        }
+
+        return NotificationProcessingResult::retry('Reversal of PayPal payment without an order failed.');
+    }
+
+    /**
      * Sends the PayPal payment to Adyen and records the attempt, because its Shopware order does not exist yet.
      * The record is what lets the webhook fallback reverse the payment if the order is never created.
      *
@@ -393,6 +466,22 @@ readonly class PaypalPaymentService
                 ['merchantReference' => $merchantReference, 'errorMessage' => $exception->getMessage()]
             );
         }
+    }
+
+    /**
+     * Returns the time until which a missing order is still expected to be created for the notification,
+     * or null when the grace period is over.
+     *
+     * @param NotificationEntity $notification
+     *
+     * @return \DateTime|null
+     */
+    private function getMissingOrderGracePeriodEnd(NotificationEntity $notification): ?\DateTime
+    {
+        $gracePeriodEnd = \DateTime::createFromInterface($notification->getCreatedAt() ?? new \DateTime())
+            ->add(new \DateInterval(self::MISSING_ORDER_GRACE_PERIOD));
+
+        return $gracePeriodEnd > new \DateTime() ? $gracePeriodEnd : null;
     }
 
     /**

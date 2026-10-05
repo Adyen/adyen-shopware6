@@ -35,9 +35,9 @@ class PaypalPaymentAttemptEntity extends Entity
 {
     use EntityIdTrait;
 
-    const STATUS_OPEN = 'open';
-    const STATUS_REVERSED = 'reversed';
-    const STATUS_REVERSAL_FAILED = 'reversal_failed';
+    public const STATUS_OPEN = 'open';
+    public const STATUS_REVERSED = 'reversed';
+    public const STATUS_REVERSAL_FAILED = 'reversal_failed';
 
     /**
      * @var string
