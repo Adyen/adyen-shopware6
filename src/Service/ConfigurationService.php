@@ -44,6 +44,21 @@ class ConfigurationService
         self::EXPRESS_CHECKOUT_PAGE_OFFCANVAS,
     ];
 
+    public const EXPRESS_CHECKOUT_METHOD_APPLE_PAY = 'applePay';
+    public const EXPRESS_CHECKOUT_METHOD_GOOGLE_PAY = 'googlePay';
+    public const EXPRESS_CHECKOUT_METHOD_PAYPAL = 'payPal';
+    public const EXPRESS_CHECKOUT_METHODS = [
+        self::EXPRESS_CHECKOUT_METHOD_APPLE_PAY,
+        self::EXPRESS_CHECKOUT_METHOD_GOOGLE_PAY,
+        self::EXPRESS_CHECKOUT_METHOD_PAYPAL,
+    ];
+
+    /**
+     * Suffixes of the per method express checkout config keys, e.g. "applePay" . EXPRESS_CHECKOUT_PAGES_KEY_SUFFIX.
+     */
+    public const EXPRESS_CHECKOUT_ENABLED_KEY_SUFFIX = 'ExpressCheckoutEnabled';
+    public const EXPRESS_CHECKOUT_PAGES_KEY_SUFFIX = 'ExpressCheckoutPages';
+
     /**
      * Pages on which express checkout was rendered before the placement became configurable.
      */
@@ -791,7 +806,7 @@ class ConfigurationService
      */
     public function getApplePayExpressCheckoutPages(?string $salesChannelId = null): array
     {
-        return $this->getExpressCheckoutPages('applePayExpressCheckoutPages', $salesChannelId);
+        return $this->getExpressCheckoutPages(self::EXPRESS_CHECKOUT_METHOD_APPLE_PAY, $salesChannelId);
     }
 
     /**
@@ -801,7 +816,7 @@ class ConfigurationService
      */
     public function getGooglePayExpressCheckoutPages(?string $salesChannelId = null): array
     {
-        return $this->getExpressCheckoutPages('googlePayExpressCheckoutPages', $salesChannelId);
+        return $this->getExpressCheckoutPages(self::EXPRESS_CHECKOUT_METHOD_GOOGLE_PAY, $salesChannelId);
     }
 
     /**
@@ -811,7 +826,7 @@ class ConfigurationService
      */
     public function getPayPalExpressCheckoutPages(?string $salesChannelId = null): array
     {
-        return $this->getExpressCheckoutPages('payPalExpressCheckoutPages', $salesChannelId);
+        return $this->getExpressCheckoutPages(self::EXPRESS_CHECKOUT_METHOD_PAYPAL, $salesChannelId);
     }
 
     /**
@@ -855,14 +870,17 @@ class ConfigurationService
      * A setting that was never saved falls back to the pages express checkout was rendered on before
      * the placement became configurable. An empty selection is a merchant decision and is returned as is.
      *
-     * @param string $configKey
+     * @param string $method One of EXPRESS_CHECKOUT_METHODS
      * @param string|null $salesChannelId
      *
      * @return string[]
      */
-    private function getExpressCheckoutPages(string $configKey, ?string $salesChannelId): array
+    private function getExpressCheckoutPages(string $method, ?string $salesChannelId): array
     {
-        $pages = $this->systemConfigService->get(self::BUNDLE_NAME . '.config.' . $configKey, $salesChannelId);
+        $pages = $this->systemConfigService->get(
+            self::BUNDLE_NAME . '.config.' . $method . self::EXPRESS_CHECKOUT_PAGES_KEY_SUFFIX,
+            $salesChannelId
+        );
 
         if (!is_array($pages)) {
             return self::DEFAULT_EXPRESS_CHECKOUT_PAGES;

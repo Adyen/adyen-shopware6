@@ -77,7 +77,11 @@ class CleanupPaypalPaymentAttemptsHandler extends ScheduledTaskHandler
         $deleted = $this->paypalPaymentAttemptRepository->deleteCreatedBefore($createdBefore);
 
         if ($deleted > 0) {
-            $this->logger->info(sprintf('Removed %d PayPal payment attempts older than 30 days.', $deleted));
+            $this->logger->info(sprintf(
+                'Removed %d PayPal payment attempts created before %s.',
+                $deleted,
+                $createdBefore->format(\DateTimeInterface::ATOM)
+            ));
         }
     }
 }

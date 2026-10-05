@@ -754,9 +754,9 @@ class AdyenPaymentShopware6 extends Plugin
         foreach ($scopes as $salesChannelId) {
             $scopeConfig = $systemConfigService->getDomain($configPrefix, $salesChannelId);
 
-            foreach (['applePay', 'googlePay', 'payPal'] as $method) {
-                $enabledKey = $configPrefix . $method . 'ExpressCheckoutEnabled';
-                $pagesKey = $configPrefix . $method . 'ExpressCheckoutPages';
+            foreach (ConfigurationService::EXPRESS_CHECKOUT_METHODS as $method) {
+                $enabledKey = $configPrefix . $method . ConfigurationService::EXPRESS_CHECKOUT_ENABLED_KEY_SUFFIX;
+                $pagesKey = $configPrefix . $method . ConfigurationService::EXPRESS_CHECKOUT_PAGES_KEY_SUFFIX;
 
                 // Keep the merchant's selection if the update already ran for this scope
                 if (isset($scopeConfig[$pagesKey])) {
