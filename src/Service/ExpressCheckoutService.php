@@ -778,7 +778,11 @@ class ExpressCheckoutService
             ->fetchAvailableShippingMethods($updatedSalesChannelContext, $cart);
 
         // Fetch shipping method
-        $shippingMethod = $this->resolveShippingMethod($shippingMethods, $newShipping);
+        $shippingMethod = $this->resolveShippingMethod(
+            $shippingMethods,
+            $newShipping,
+            $salesChannelContext->getShippingMethod()->getId()
+        );
 
         // Recreate context with selected shipping method
         $updatedSalesChannelContext = $this->createContext(
@@ -815,6 +819,7 @@ class ExpressCheckoutService
      *
      * @param ShippingMethodCollection $filteredMethods
      * @param array $newShipping Optional new shipping method details.
+     * @param string|null $contextShippingMethodId Shipping method currently selected in the sales channel context.
      *
      * @return ShippingMethodEntity The resolved shipping method.
      *
@@ -822,14 +827,19 @@ class ExpressCheckoutService
      */
     private function resolveShippingMethod(
         ShippingMethodCollection $filteredMethods,
-        array $newShipping
+        array $newShipping,
+        ?string $contextShippingMethodId = null
     ): ShippingMethodEntity {
         // Check if a specific shipping method ID is provided in the new shipping data
         $newShippingMethodId = $newShipping['id'] ?? null;
 
-        // Attempt to get the shipping method based on the ID or fallback to the first available method
-        $shippingMethod = $newShippingMethodId
-            ? $filteredMethods->get($newShippingMethodId) : $filteredMethods->first();
+        if ($newShippingMethodId) {
+            $shippingMethod = $filteredMethods->get($newShippingMethodId);
+        } else {
+            // Fallback to the method selected in the context (e.g. on the cart page), then to the first available one
+            $shippingMethod = ($contextShippingMethodId ? $filteredMethods->get($contextShippingMethodId) : null)
+                ?? $filteredMethods->first();
+        }
 
         // If no shipping method is resolved, throw an exception
         if (!$shippingMethod) {
