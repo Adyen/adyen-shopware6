@@ -87,8 +87,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
                             })
                         });
 
+                        const selectedShippingMethod = shippingMethodsArray.find(
+                            (shippingMethod) => shippingMethod['selected']
+                        ) || shippingMethodsArray[0];
+
                         paymentDataRequestUpdate.newShippingOptionParameters = {
-                            defaultSelectedOptionId: newShippingMethodsArray[0].id,
+                            defaultSelectedOptionId: selectedShippingMethod['id'],
                             shippingOptions: newShippingMethodsArray
                         };
 
