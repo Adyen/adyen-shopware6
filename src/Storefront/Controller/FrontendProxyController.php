@@ -245,6 +245,8 @@ class FrontendProxyController extends StorefrontController
                 return new JsonResponse(null, 401);
             }
 
+            $sessionPayload = $this->expressCheckoutController->snapshotContextPayload($salesChannelContext);
+
             $cartData = $this->expressCheckoutController->createCart(
                 $data,
                 $salesChannelContext
@@ -252,6 +254,13 @@ class FrontendProxyController extends StorefrontController
             $cart = $cartData['cart'];
             $updatedSalesChannelContext = $cartData['updatedSalesChannelContext'];
             $order = $this->cartOrderRoute->order($cart, $updatedSalesChannelContext, $data)->getOrder();
+
+            $this->expressCheckoutController->restoreSessionContext(
+                $salesChannelContext,
+                $updatedSalesChannelContext->getToken(),
+                $sessionPayload
+            );
+
             $this->requestStack->getSession()->set('adyenCustomerId', $cartData['customerId']);
             $this->requestStack->getSession()->set(
                 'adyenFormattedHandlerIdentifier',
