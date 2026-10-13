@@ -6,6 +6,8 @@
       "message": "Your order is being processed!"
     },
     "paymentMethodSelectionError": "Unfortunately, something went wrong saving the payment method selection. Please select a different payment method.",
+    "paypalOrderNotCompleted": "Your order could not be completed.",
+    "paypalPaymentReversed": "Your order could not be completed. Your PayPal payment has been reversed.",
     "giftcard": {
       "addGiftcards": "Add Giftcards",
       "removeGiftcard": "Remove Giftcard",
