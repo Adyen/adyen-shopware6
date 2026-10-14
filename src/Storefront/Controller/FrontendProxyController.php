@@ -578,13 +578,19 @@ class FrontendProxyController extends StorefrontController
         $cart = $this->cartService->getCart($context->getToken(), $context);
         $stateData = $request->get('stateData') ?? [];
 
-        return new JsonResponse(
-            $this->paypalPaymentService->createPayPalPaymentRequest(
-                $cart,
-                $context,
-                json_decode($stateData, true)
-            )
-        );
+        try {
+            return new JsonResponse(
+                $this->paypalPaymentService->createPayPalPaymentRequest(
+                    $cart,
+                    $context,
+                    json_decode($stateData, true)
+                )
+            );
+        } catch (ValidationException $exception) {
+            $this->logger->error('Error during creating PayPal order. Reason: ' . $exception->getMessage());
+
+            return new JsonResponse(null, 400);
+        }
     }
 
     #[Route(
