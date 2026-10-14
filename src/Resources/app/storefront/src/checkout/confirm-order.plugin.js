@@ -547,7 +547,26 @@ export default class ConfirmOrderPlugin extends Plugin {
             }
         };
 
-        if (this.selectedAdyenPaymentMethod === 'paypal') {
+        if (this.selectedAdyenPaymentMethod === 'paypal' && !!adyenCheckoutOptions.orderId) {
+            baseConfig.onSubmit = function (state, component) {
+                if (state.isValid) {
+                    let extraParams = {
+                        stateData: JSON.stringify(state.data)
+                    };
+                    let formData = FormSerializeUtil.serialize(this.confirmOrderForm);
+                    if ('responseHandler' in componentConfig) {
+                        this.responseHandler = componentConfig.responseHandler.bind(component, this);
+                    }
+                    this.confirmOrder(formData, extraParams);
+                } else {
+                    component.showValidation();
+                    if (this.adyenCheckout.options.environment === 'test') {
+                        console.log('Payment failed: ', state);
+                    }
+                }
+            }.bind(this);
+
+        } else if (this.selectedAdyenPaymentMethod === 'paypal') {
             baseConfig.onSubmit = function (state, component, actions) {
                 if (state.isValid) {
                     let formData = this._buildPayloadWithFormData(state.data);
