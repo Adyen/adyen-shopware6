@@ -30,6 +30,7 @@ use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Exception\ResolveCountryException;
+use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
@@ -115,6 +116,7 @@ readonly class PaypalPaymentService
 
         $order = $this->cartOrderRoute->order($cart, $context, $dataBag)->getOrder();
         $request->request->set('orderId', $order->getId());
+        $request->attributes->set(PaypalPaymentMethodHandler::PAYMENT_FINALIZED_ATTRIBUTE, true);
         $this->handlePaymentMethodRoute->load($request, $context);
 
         try {
@@ -258,9 +260,14 @@ readonly class PaypalPaymentService
      * @return array
      *
      * @throws AdyenException
+     * @throws ValidationException
      */
     public function createPayPalPaymentRequest(Cart $cart, SalesChannelContext $context, array $stateData = []): array
     {
+        if ($cart->getLineItems()->count() === 0 || $cart->getPrice()->getTotalPrice() <= 0) {
+            throw new ValidationException('PayPal payment cannot be created from an empty cart.');
+        }
+
         $paymentRequest = $this->paymentRequestService->buildPaymentRequestFromCart(
             salesChannelContext: $context,
             cart: $cart,
