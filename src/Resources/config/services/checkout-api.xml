@@ -58,5 +58,8 @@
             <argument type="service" id="Adyen\Shopware\Service\AdyenPaymentService"/>
             <argument type="service" id="Adyen\Shopware\Util\Idempotency"/>
         </service>
+        <service id="Adyen\Shopware\Service\PaymentReversalService" autowire="true">
+            <argument type="service" key="$logger" id="monolog.logger.adyen_generic"/>
+        </service>
     </services>
 </container>

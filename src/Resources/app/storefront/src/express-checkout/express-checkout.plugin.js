@@ -25,13 +25,28 @@ import HttpClient from 'src/service/http-client.service';
 import ElementLoadingIndicatorUtil from 'src/utility/loading-indicator/element-loading-indicator.util';
 import adyenConfiguration from '../configuration/adyen';
 
+const PAGE_PRODUCT = 'product';
+const PAGE_OFFCANVAS = 'offcanvas';
+
+// Shared by all instances, so that Adyen Web is injected only once when the page did not load it
+let adyenWebLoader = null;
+// Express checkout blocks rendered in the off-canvas cart, which is replaced and closed without a page reload
+let offcanvasInstances = [];
+let offcanvasCloseSubscribed = false;
+
 export default class ExpressCheckoutPlugin extends Plugin {
     init() {
         this._client = new HttpClient();
         this.paymentMethodInstance = null;
         this.responseHandler = this.handlePaymentAction;
 
-        this.userLoggedIn = adyenExpressCheckoutOptions.userLoggedIn === "true";
+        // Storefront location of this block: product, cart or offcanvas
+        this.page = this.el.dataset.page || PAGE_PRODUCT;
+        this.expressCheckoutOptions = this.el.querySelector('[data-adyen-express-checkout-options]').dataset;
+        this.mountedComponents = {};
+        this.actionModal = this.el.querySelector('[data-adyen-payment-action-modal]');
+
+        this.userLoggedIn = this.expressCheckoutOptions.userLoggedIn === "true";
         this.formattedHandlerIdentifier = '';
         this.newAddress = {};
         this.newShippingMethod = {};
@@ -41,7 +56,6 @@ export default class ExpressCheckoutPlugin extends Plugin {
         this.blockPayPalShippingOptionChange = false;
         this.stateData = {};
 
-        this.googlePayComponent = null;
         this.checkoutInstances = {};
         this.activePaymentType = null;
 
@@ -61,7 +75,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
                         extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
 
-                        const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
+                        const response = await this.fetchExpressCheckoutConfig(this.expressCheckoutOptions.expressCheckoutConfigUrl, extraData);
 
                         const shippingMethodsArray = response.shippingMethodsResponse;
                         const newShippingMethodsArray = [];
@@ -75,8 +89,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
                             )
                         });
 
+                        const selectedShippingMethod = shippingMethodsArray.find(
+                            (shippingMethod) => shippingMethod['selected']
+                        ) || shippingMethodsArray[0];
+
                         paymentDataRequestUpdate.newShippingOptionParameters = {
-                            defaultSelectedOptionId: newShippingMethodsArray[0].id,
+                            defaultSelectedOptionId: selectedShippingMethod['id'],
                             shippingOptions: newShippingMethodsArray
                         };
 
@@ -103,7 +121,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
                         extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.googlepay;
 
-                        const response = await this.fetchExpressCheckoutConfig(adyenExpressCheckoutOptions.expressCheckoutConfigUrl, extraData);
+                        const response = await this.fetchExpressCheckoutConfig(this.expressCheckoutOptions.expressCheckoutConfigUrl, extraData);
 
                         paymentDataRequestUpdate.newTransactionInfo = {
                             currencyCode: response.currency,
@@ -154,7 +172,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             googlepayButtonType,
             googlepayButtonColor,
             googlepayButtonSize
-        } = adyenExpressCheckoutOptions;
+        } = this.expressCheckoutOptions;
         const googlePayConfig = {
             ...(googlepayButtonType && {buttonType: googlepayButtonType}),
             ...(googlepayButtonColor && {buttonColor: googlepayButtonColor}),
@@ -211,7 +229,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
             paypalButtonInstallmentsMexico,
             paypalButtonInstallmentsBrazil,
             countryCode
-        } = adyenExpressCheckoutOptions;
+        } = this.expressCheckoutOptions;
         const paypalConfigStyle = {
             ...(paypalButtonColor && {color: paypalButtonColor}),
             ...(paypalButtonShape && {shape: paypalButtonShape}),
@@ -237,7 +255,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         const {
             applepayButtonType,
             applepayButtonColor,
-        } = adyenExpressCheckoutOptions;
+        } = this.expressCheckoutOptions;
         const applePayConfig = {
             ...(applepayButtonType && {buttonType: applepayButtonType}),
             ...(applepayButtonColor && {buttonColor: applepayButtonColor}),
@@ -272,31 +290,51 @@ export default class ExpressCheckoutPlugin extends Plugin {
             };
         }
 
-        this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
-            document.querySelector('.product-detail-quantity-input') ||
-            document.querySelector('#productDetailPageBuyProductForm input.quantity-selector-group-input');
+        // Only the product page buys the displayed product, every other location buys the complete cart
+        if (this.page === PAGE_PRODUCT) {
+            this.quantityInput = document.querySelector('.product-detail-quantity-select') ||
+                document.querySelector('.product-detail-quantity-input') ||
+                document.querySelector('#productDetailPageBuyProductForm input.quantity-selector-group-input');
 
-        this.listenOnQuantityChange();
+            this.listenOnQuantityChange();
+        }
+
+        if (this.page === PAGE_OFFCANVAS) {
+            this.registerOffcanvasInstance();
+        }
 
         this.mountExpressCheckoutComponents({
-            countryCode: adyenExpressCheckoutOptions.countryCode,
-            amount: adyenExpressCheckoutOptions.amount,
-            currency: adyenExpressCheckoutOptions.currency,
-            paymentMethodsResponse: JSON.parse(adyenExpressCheckoutOptions.paymentMethodsResponse)
+            countryCode: this.expressCheckoutOptions.countryCode,
+            amount: this.expressCheckoutOptions.amount,
+            currency: this.expressCheckoutOptions.currency,
+            paymentMethodsResponse: JSON.parse(this.expressCheckoutOptions.paymentMethodsResponse)
         });
 
     }
 
-    async fetchExpressCheckoutConfig(url, extraData = {}) {
-        const productMeta = document.querySelector('meta[itemprop="productID"]');
-        const productId = productMeta ? productMeta.content : '-1';
+    /**
+     * Product and quantity the express payment is made for. '-1' stands for the complete current cart.
+     */
+    getProductData() {
+        if (this.page !== PAGE_PRODUCT) {
+            return {productId: '-1', quantity: -1};
+        }
 
+        const productMeta = document.querySelector('meta[itemprop="productID"]');
+
+        return {
+            productId: productMeta ? productMeta.content : '-1',
+            quantity: this.quantityInput ? this.quantityInput.value : -1
+        };
+    }
+
+    async fetchExpressCheckoutConfig(url, extraData = {}) {
         return new Promise((resolve, reject) => {
             this._client.post(
                 url,
                 JSON.stringify({
-                    quantity: this.quantityInput ? this.quantityInput.value : -1,
-                    productId: productId,
+                    ...this.getProductData(),
+                    page: this.page,
                     ...extraData
                 }),
                 (response) => {
@@ -324,11 +362,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
     }
 
     mountExpressCheckoutComponents(data) {
-        if (!document.getElementById('adyen-express-checkout')) {
-            return;
-        }
-
-        let checkoutElements = document.getElementsByClassName("adyen-express-checkout-element");
+        let checkoutElements = this.el.getElementsByClassName("adyen-express-checkout-element");
         if (checkoutElements.length === 0) {
             return;
         }
@@ -344,7 +378,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
             if (availableTypes.includes(type)) {
                 this.initializeCheckoutComponent(data, type).then(function (checkoutInstance) {
                     this.mountElement(type, checkoutInstance, checkoutElements[i]);
-                }.bind(this));
+                }.bind(this)).catch((error) => {
+                    console.error('Adyen express checkout could not be initialized:', error);
+                });
             }
         }
     }
@@ -366,29 +402,27 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
 
         if ((paymentType === "paywithgoogle" || paymentType === "googlepay")
-            && (adyenExpressCheckoutOptions.googleMerchantId !== "" && adyenExpressCheckoutOptions.gatewayMerchantId !== "")) {
+            && (this.expressCheckoutOptions.googleMerchantId !== "" && this.expressCheckoutOptions.gatewayMerchantId !== "")) {
             paymentMethodConfig.configuration = {
-                merchantId: adyenExpressCheckoutOptions.googleMerchantId,
-                gatewayMerchantId: adyenExpressCheckoutOptions.gatewayMerchantId
+                merchantId: this.expressCheckoutOptions.googleMerchantId,
+                gatewayMerchantId: this.expressCheckoutOptions.gatewayMerchantId
             };
         }
 
-        if ((paymentType === "paywithgoogle" || paymentType === "googlepay") && this.googlePayComponent) {
-            this.googlePayComponent.unmount();
+        if (this.mountedComponents[paymentType]) {
+            this.mountedComponents[paymentType].unmount();
         }
 
-        const paymentMethodInstance = AdyenWeb.createComponent(paymentType, checkoutInstance, paymentMethodConfig);
-
-        if (paymentType === "paywithgoogle" || paymentType === "googlepay") {
-            this.googlePayComponent = paymentMethodInstance;
-        }
+        const paymentMethodInstance =
+            window.AdyenWeb.createComponent(paymentType, checkoutInstance, paymentMethodConfig);
+        this.mountedComponents[paymentType] = paymentMethodInstance;
 
         paymentMethodInstance.mount(mountElement);
     }
 
     async initializeCheckoutComponent(data, type) {
-        const {AdyenCheckout} = window.AdyenWeb;
-        const {locale, clientKey, environment} = adyenCheckoutConfiguration;
+        const {AdyenCheckout} = await this.loadAdyenWeb();
+        const {locale, clientKey, environment} = this.el.dataset;
 
         const baseConfig = {
             locale,
@@ -457,9 +491,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
     }
 
     getExpressRequestData(state = {}) {
-        const productMeta = document.querySelector('meta[itemprop="productID"]');
-        const productId = productMeta ? productMeta.content : '-1';
-        const quantity = this.quantityInput ? this.quantityInput.value : -1;
+        const {productId, quantity} = this.getProductData();
 
         return {
             productId: productId,
@@ -468,20 +500,25 @@ export default class ExpressCheckoutPlugin extends Plugin {
             newAddress: this.newAddress,
             newShippingMethod: this.newShippingMethod,
             email: this.email,
-            affiliateCode: adyenExpressCheckoutOptions.affiliateCode,
-            campaignCode: adyenExpressCheckoutOptions.campaignCode,
+            affiliateCode: this.expressCheckoutOptions.affiliateCode,
+            campaignCode: this.expressCheckoutOptions.campaignCode,
             stateData: JSON.stringify(state.data)
         };
     }
 
     paypalExpressOrderFinalize(state, actions) {
         try {
-            this._client.post(`${adyenExpressCheckoutOptions.paypalExpressOrderFinalizeUrl}`, JSON.stringify({
+            this._client.post(`${this.expressCheckoutOptions.paypalExpressOrderFinalizeUrl}`, JSON.stringify({
                 stateData: JSON.stringify(state.data), newAddress: this.newAddress
             }), function (paymentResponse) {
-                let response = JSON.parse(paymentResponse);
+                let response = null;
+                try {
+                    response = JSON.parse(paymentResponse);
+                } catch (e) {
+                    response = null;
+                }
 
-                if (response.redirectUrl) {
+                if (response && response.redirectUrl) {
                     window.location.href = response.redirectUrl;
 
                     return;
@@ -489,6 +526,12 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
                 if (actions.reject) {
                     actions.reject({});
+                }
+
+                if (response && response.url) {
+                    window.location.href = response.url;
+
+                    return;
                 }
 
                 window.location.reload();
@@ -504,7 +547,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
     createOrder(requestData, extraParams, actions) {
         try {
             this._client.post(
-                adyenExpressCheckoutOptions.checkoutOrderExpressUrl,
+                this.expressCheckoutOptions.checkoutOrderExpressUrl,
                 requestData,
                 this.afterCreateOrder.bind(this, extraParams, actions)
             );
@@ -533,7 +576,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         this.orderId = order.id;
         this.errorUrl = new URL(
-            location.origin + adyenExpressCheckoutOptions.paymentErrorUrl);
+            location.origin + this.expressCheckoutOptions.paymentErrorUrl);
         this.errorUrl.searchParams.set('orderId', this.orderId);
 
         let params = {
@@ -547,7 +590,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         try {
             this._client.post(
-                adyenExpressCheckoutOptions.paymentHandleExpressUrl,
+                this.expressCheckoutOptions.paymentHandleExpressUrl,
                 JSON.stringify(params),
                 this.afterPayOrder.bind(this, this.orderId, actions),
             );
@@ -577,7 +620,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         try {
             this._client.post(
-                `${adyenExpressCheckoutOptions.paymentStatusUrl}`,
+                `${this.expressCheckoutOptions.paymentStatusUrl}`,
                 JSON.stringify({'orderId': orderId}),
                 this.responseHandler.bind(this),
             );
@@ -605,12 +648,26 @@ export default class ExpressCheckoutPlugin extends Plugin {
                 // Use the correct checkout instance based on active payment type
                 const checkoutInstance = this.checkoutInstances[this.activePaymentType] || this.checkoutInstances[Object.keys(this.checkoutInstances)[0]];
 
+                // The modal belongs to this block. It is moved to the body, so that it is not clipped by the
+                // off-canvas cart and stays usable if the off-canvas content is replaced.
+                if (this.actionModal.parentNode !== document.body) {
+                    document.body.appendChild(this.actionModal);
+                }
+
                 checkoutInstance
                     .createFromAction(paymentResponse.action, actionModalConfiguration)
-                    .mount('[data-adyen-payment-action-container]');
+                    .mount(this.actionModal.querySelector('[data-adyen-payment-action-container]'));
                 const modalActionTypes = ['threeDS2', 'qrCode'];
                 if (modalActionTypes.includes(paymentResponse.action.type)) {
-                    this.showPaymentActionModal();
+                    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') {
+                        const adyenPaymentModal =
+                            new bootstrap.Modal(this.actionModal, {
+                                keyboard: false
+                            });
+                        adyenPaymentModal.show();
+                    } else if (window.jQuery && typeof $.fn.modal === 'function') {
+                        $(this.actionModal).modal({show: true});
+                    }
                 }
             }
         } catch (error) {
@@ -620,7 +677,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
     handleOnAdditionalDetails(state, component, actions) {
         this._client.post(
-            `${adyenExpressCheckoutOptions.paymentDetailsUrl}`,
+            `${this.expressCheckoutOptions.paymentDetailsUrl}`,
             JSON.stringify({
                 orderId: this.orderId,
                 stateData: JSON.stringify(state.data),
@@ -643,14 +700,14 @@ export default class ExpressCheckoutPlugin extends Plugin {
         if (this.quantityInput) {
             this.quantityInput.addEventListener('change', (event) => {
                 const newQuantity = event.target.value;
-                const productMeta = document.querySelector('meta[itemprop="productID"]');
-                const productId = productMeta ? productMeta.content : '-1';
+                const {productId} = this.getProductData();
 
                 this._client.post(
-                    adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
+                    this.expressCheckoutOptions.expressCheckoutConfigUrl,
                     JSON.stringify({
                         quantity: newQuantity,
-                        productId: productId
+                        productId: productId,
+                        page: this.page
                     }),
                     this.afterQuantityUpdated.bind(this)
                 );
@@ -689,7 +746,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         return new Promise((resolve, reject) => {
             this._client.post(
-                `${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
+                `${this.expressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`,
                 JSON.stringify(extraData),
                 function (response) {
                     try {
@@ -729,7 +786,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
         }
 
         return new Promise((resolve, reject) => {
-            this._client.post(`${adyenExpressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`, JSON.stringify(extraData), function (response) {
+            this._client.post(`${this.expressCheckoutOptions.expressCheckoutUpdatePaypalOrderUrl}`, JSON.stringify(extraData), function (response) {
                 try {
                     const responseObject = JSON.parse(response);
 
@@ -836,8 +893,9 @@ export default class ExpressCheckoutPlugin extends Plugin {
         let applePayShippingMethodUpdate = {};
 
         this._client.post(
-            adyenExpressCheckoutOptions.expressCheckoutConfigUrl,
+            this.expressCheckoutOptions.expressCheckoutConfigUrl,
             JSON.stringify({
+                page: this.page,
                 ...extraData
             }),
             function (response) {
@@ -905,10 +963,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
     getDataForApplePayCallbacks() {
         const extraData = {};
-
-        const productMeta = document.querySelector('meta[itemprop="productID"]');
-        const productId = productMeta ? productMeta.content : '-1';
-        const quantity = this.quantityInput ? this.quantityInput.value : -1;
+        const {productId, quantity} = this.getProductData();
 
         extraData.formattedHandlerIdentifier = adyenConfiguration.paymentMethodTypeHandlers.applepay;
         extraData.productId = productId;
@@ -920,7 +975,7 @@ export default class ExpressCheckoutPlugin extends Plugin {
     paypalExpressOrder(formData, actions) {
         try {
             this._client.post(
-                adyenExpressCheckoutOptions.paypalExpressOrderUrl,
+                this.expressCheckoutOptions.paypalExpressOrderUrl,
                 JSON.stringify(formData),
                 this.responseHandler.bind(this)
             );
@@ -929,6 +984,87 @@ export default class ExpressCheckoutPlugin extends Plugin {
             if (actions.reject) {
                 actions.reject({});
             }
+        }
+    }
+
+    /**
+     * Resolves Adyen Web. The off-canvas cart is injected without running its scripts, so on pages that do not
+     * render express checkout themselves the library is loaded here.
+     */
+    loadAdyenWeb() {
+        if (window.AdyenWeb) {
+            return Promise.resolve(window.AdyenWeb);
+        }
+
+        if (!adyenWebLoader) {
+            const {adyenWebScriptUrl, adyenWebStyleUrl, cspNonce} = this.el.dataset;
+
+            adyenWebLoader = new Promise((resolve, reject) => {
+                if (adyenWebStyleUrl && !document.querySelector(`link[href="${adyenWebStyleUrl}"]`)) {
+                    const style = document.createElement('link');
+                    style.rel = 'stylesheet';
+                    style.href = adyenWebStyleUrl;
+                    document.head.appendChild(style);
+                }
+
+                const script = document.createElement('script');
+                script.src = adyenWebScriptUrl;
+                if (cspNonce) {
+                    script.nonce = cspNonce;
+                }
+                script.onload = () => {
+                    window.AdyenWeb ? resolve(window.AdyenWeb) : reject(new Error('Adyen Web is not available.'));
+                };
+                script.onerror = () => {
+                    adyenWebLoader = null;
+                    reject(new Error('Adyen Web could not be loaded.'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        return adyenWebLoader;
+    }
+
+    /**
+     * The off-canvas cart replaces its content on every change and removes it on close, without a page reload.
+     * Mounted components of blocks that left the page are unmounted, so repeated opening does not accumulate them.
+     */
+    registerOffcanvasInstance() {
+        offcanvasInstances = offcanvasInstances.filter((instance) => {
+            if (instance.el.isConnected) {
+                return true;
+            }
+
+            instance.teardown();
+
+            return false;
+        });
+        offcanvasInstances.push(this);
+
+        if (!offcanvasCloseSubscribed && document.$emitter) {
+            offcanvasCloseSubscribed = true;
+            document.$emitter.subscribe('onCloseOffcanvas.adyenExpressCheckout', () => {
+                offcanvasInstances.forEach((instance) => instance.teardown());
+                offcanvasInstances = [];
+            });
+        }
+    }
+
+    teardown() {
+        Object.values(this.mountedComponents).forEach((component) => {
+            try {
+                component.unmount();
+            } catch (e) {
+                console.log(e);
+            }
+        });
+        this.mountedComponents = {};
+
+        // The action modal is moved to the body while a payment action is shown
+        const modalMovedToBody = this.actionModal && this.actionModal.parentNode === document.body;
+        if (modalMovedToBody && !this.actionModal.classList.contains('show')) {
+            this.actionModal.remove();
         }
     }
 }
