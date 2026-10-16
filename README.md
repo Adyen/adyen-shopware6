@@ -87,5 +87,27 @@ The `salesChannelId` parameter must be a valid sales channel ID of an active sal
 This module is using the Adyen APIs Library for PHP for all (API) connections to Adyen.
 <a href="https://github.com/Adyen/adyen-php-api-library" target="_blank">This library can be found here</a>
 
+## Adyen Web SDK
+The storefront serves a bundled copy of the Adyen Web SDK (`adyen.js`, `adyen.css` and their source maps) from `src/Resources/public/`.
+The version and SHA-384 hashes of the bundled files are recorded in `src/Resources/public/adyen-web-sdk.json`, and CI fails if a committed file does not match.
+
+To update the SDK, never edit or copy the files by hand. Run the script from the repository root:
+```bash
+.github/workflows/scripts/update-web-sdk.sh <version>
+```
+Optionally pass `--expect-js sha384-...` and `--expect-css sha384-...` to fail if the downloaded files do not match known hashes.
+Commit the four SDK files together with the updated manifest.
+
+## Building the plugin ZIP
+Run the build script from the repository root:
+```bash
+.github/workflows/scripts/prepare-release-asset.sh          # release ZIP from the last commit
+.github/workflows/scripts/prepare-release-asset.sh 5.3.9    # release ZIP from a tag or branch
+.github/workflows/scripts/prepare-release-asset.sh --dev    # dev ZIP from the working tree
+```
+A release build creates `AdyenPaymentShopware6.zip` from committed files only, so uncommitted changes and IDE folders are never included.
+A dev build creates `AdyenPaymentShopware6-dev.zip` with uncommitted changes and new files under `src/`, for local testing only.
+Both builds install `vendor/` from the committed `composer.lock` and fail if the shipped Adyen packages differ from it.
+
 ## License
 MIT license. For more information, see the [LICENSE file](LICENSE).
