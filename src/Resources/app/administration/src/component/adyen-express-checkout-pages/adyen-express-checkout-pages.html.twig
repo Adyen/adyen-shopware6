@@ -1,0 +1,11 @@
+{# inheritAttrs is off, so the renderer class that gives form fields their spacing is set here #}
+<div class="adyen-express-checkout-pages sw-form-field-renderer">
+    <sw-multi-select
+            v-if="isExpressCheckoutEnabled"
+            :options="pageOptions"
+            :value="value || []"
+            :disabled="disabled"
+            :error="pagesError"
+            @update:value="onPagesChanged"
+    />
+</div>

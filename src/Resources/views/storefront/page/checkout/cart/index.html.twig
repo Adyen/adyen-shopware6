@@ -10,7 +10,7 @@
     {{ parent() }}
     {% if adyenFrontendData.expressCheckoutConfigurationAvailable %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
-        {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' with { adyenExpressCheckoutPage: 'cart' } %}
     {% endif %}
 {% endblock %}
 

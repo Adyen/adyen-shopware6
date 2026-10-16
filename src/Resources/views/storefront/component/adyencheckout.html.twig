@@ -7,7 +7,7 @@
              data-merchant-account="{{ adyenFrontendData.merchantAccount }}"
              data-country-code="{{ adyenFrontendData.countryCode }}"
         ></div>
-        {# Load checkout web component (Corresponding version number can be found on release notes.) #}
+        {# Load checkout web component. Version and SHA-384 hashes are recorded in Resources/public/adyen-web-sdk.json. #}
         <link rel="stylesheet" href="{{ asset('bundles/adyenpaymentshopware6/css/adyen.css', 'asset') }}">
         <script type="text/javascript" src="{{ asset('bundles/adyenpaymentshopware6/js/adyen.js', 'asset') }}"></script>
         <script {% if app.request.attributes.get('_cspNonce') %} nonce="{{ app.request.attributes.get('_cspNonce') }}" {% endif %}>

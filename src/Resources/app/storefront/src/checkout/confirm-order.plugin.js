@@ -77,7 +77,9 @@ export default class ConfirmOrderPlugin extends Plugin {
             } else {
                 this.checkoutMainContent.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
             }
-        }.bind(this));
+        }.bind(this)).catch(function (error) {
+            console.error('Adyen checkout initialization failed.', error);
+        });
         if (adyenCheckoutOptions.payInFullWithGiftcard > 0) {
             if (parseInt(adyenCheckoutOptions.giftcardDiscount, 10)) {
                 this.appendGiftcardSummary();
@@ -336,9 +338,14 @@ export default class ConfirmOrderPlugin extends Plugin {
                 `${adyenCheckoutOptions.paypalOrderFinalizeUrl}`,
                 JSON.stringify(this._buildPayloadWithFormData(state.data)),
                 function (paymentResponse) {
-                    let response = JSON.parse(paymentResponse);
+                    let response = null;
+                    try {
+                        response = JSON.parse(paymentResponse);
+                    } catch (e) {
+                        response = null;
+                    }
 
-                    if (response.redirectUrl) {
+                    if (response && response.redirectUrl) {
                         window.location.href = response.redirectUrl;
 
                         return;
@@ -346,6 +353,12 @@ export default class ConfirmOrderPlugin extends Plugin {
 
                     if (actions.reject) {
                         actions.reject({});
+                    }
+
+                    if (response && response.url) {
+                        window.location.href = response.url;
+
+                        return;
                     }
 
                     window.location.reload();
