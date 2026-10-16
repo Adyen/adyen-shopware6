@@ -77,7 +77,9 @@ export default class ConfirmOrderPlugin extends Plugin {
             } else {
                 this.checkoutMainContent.addEventListener('click', this.onConfirmOrderSubmit.bind(this));
             }
-        }.bind(this));
+        }.bind(this)).catch(function (error) {
+            console.error('Adyen checkout initialization failed.', error);
+        });
         if (adyenCheckoutOptions.payInFullWithGiftcard > 0) {
             if (parseInt(adyenCheckoutOptions.giftcardDiscount, 10)) {
                 this.appendGiftcardSummary();
