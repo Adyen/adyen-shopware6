@@ -5,6 +5,6 @@
     {{ parent() }}
     {% if buyable and adyenFrontendData.expressCheckoutConfigurationAvailable %}
         {% sw_include '@AdyenPaymentShopware6/storefront/component/adyencheckout.html.twig' %}
-        {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' %}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' with { adyenExpressCheckoutPage: 'product' } %}
     {% endif %}
 {% endblock %}

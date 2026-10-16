@@ -11,3 +11,12 @@
         <div class="clearfix"></div>
     {% endif %}
 {% endblock %}
+
+{% block component_offcanvas_cart_actions_checkout %}
+    {{ parent() }}
+
+    {% if adyenFrontendData and adyenFrontendData.expressCheckoutConfigurationAvailable %}
+        {# Scripts do not run in the dynamically loaded off-canvas, the plugin loads Adyen Web itself when needed #}
+        {% sw_include '@AdyenPaymentShopware6/storefront/component/checkout/expresscheckout.html.twig' with { adyenExpressCheckoutPage: 'offcanvas' } %}
+    {% endif %}
+{% endblock %}

@@ -27,11 +27,13 @@ namespace Adyen\Shopware\ScheduledTask;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Models\NotificationProcessingResult;
 use Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\NotificationService;
 use Adyen\Shopware\Service\PaymentResponseService;
+use Adyen\Shopware\Service\PaypalPaymentService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Webhook\Exception\InvalidDataException;
@@ -113,6 +115,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private PaymentResponseService $paymentResponseService;
 
     /**
+     * @var PaypalPaymentService
+     */
+    private PaypalPaymentService $paypalPaymentService;
+
+    /**
      * @var array Map Shopware transaction states to payment states in the webhook module.
      */
     const WEBHOOK_MODULE_STATE_MAPPING = [
@@ -136,6 +143,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param CaptureService $captureService
      * @param WebhookHandlerFactory $webhookHandlerFactory
      * @param PaymentResponseService $paymentResponseService
+     * @param PaypalPaymentService $paypalPaymentService
      */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
@@ -147,7 +155,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         AdyenPaymentService $adyenPaymentService,
         CaptureService $captureService,
         WebhookHandlerFactory $webhookHandlerFactory,
-        PaymentResponseService $paymentResponseService
+        PaymentResponseService $paymentResponseService,
+        PaypalPaymentService $paypalPaymentService
     ) {
         parent::__construct($scheduledTaskRepository, $logger);
         $this->notificationService = $notificationService;
@@ -157,6 +166,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->adyenPaymentService = $adyenPaymentService;
         $this->captureService = $captureService;
         $this->paymentResponseService = $paymentResponseService;
+        $this->paypalPaymentService = $paypalPaymentService;
         self::$webhookHandlerFactory = $webhookHandlerFactory;
     }
 
@@ -435,6 +445,16 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         );
 
         if (!$order) {
+            $processingResult = $this->paypalPaymentService->handleNotificationWithoutOrder(
+                $notification,
+                $merchantReference,
+                $logContext
+            );
+            if ($processingResult) {
+                $this->applyProcessingResult($notification, $processingResult);
+                return null;
+            }
+
             $errorMessage = "Skipped: Order with order_number {$notification->getMerchantReference()} not found.";
             $this->logger->error($errorMessage, $logContext);
             $this->logNotificationFailure($notification, $errorMessage);
@@ -443,6 +463,39 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         } else {
             return $order;
         }
+    }
+
+    /**
+     * @param NotificationEntity $notification
+     * @param NotificationProcessingResult $processingResult
+     *
+     * @return void
+     */
+    private function applyProcessingResult(
+        NotificationEntity $notification,
+        NotificationProcessingResult $processingResult
+    ): void {
+        if ($processingResult->getError() !== null) {
+            $this->logNotificationFailure($notification, $processingResult->getError());
+        }
+
+        switch ($processingResult->getAction()) {
+            case NotificationProcessingResult::ACTION_RESCHEDULE:
+                $this->rescheduleNotification(
+                    $notification->getId(),
+                    $notification->getMerchantReference(),
+                    $processingResult->getScheduledProcessingTime()
+                );
+                return;
+            case NotificationProcessingResult::ACTION_RETRY:
+                if ($notification->getErrorCount() < self::MAX_ERROR_COUNT) {
+                    $this->rescheduleNotification($notification->getId(), $notification->getMerchantReference());
+                    return;
+                }
+                break;
+        }
+
+        $this->markAsDone($notification->getId(), $notification->getMerchantReference());
     }
 
     /**
