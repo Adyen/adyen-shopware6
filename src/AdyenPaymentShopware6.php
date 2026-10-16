@@ -188,8 +188,8 @@ class AdyenPaymentShopware6 extends Plugin
             $this->updateTo468($updateContext);
         }
 
-        if (\version_compare($currentVersion, '4.6.10', '<')) {
-            $this->updateTo4610($updateContext);
+        if (\version_compare($currentVersion, '4.7.0', '<')) {
+            $this->updateTo470($updateContext);
         }
     }
 
@@ -808,13 +808,13 @@ class AdyenPaymentShopware6 extends Plugin
     }
 
     /**
-     * Version 4.6.10 makes the express checkout placement configurable per payment method.
+     * Version 4.7.0 makes the express checkout placement configurable per payment method.
      *
      * @param UpdateContext $updateContext
      *
      * @return void
      */
-    private function updateTo4610(UpdateContext $updateContext): void
+    private function updateTo470(UpdateContext $updateContext): void
     {
         $this->initializeExpressCheckoutPages($updateContext->getContext());
     }
