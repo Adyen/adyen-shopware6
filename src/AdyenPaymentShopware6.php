@@ -30,6 +30,7 @@ use Adyen\Shopware\Entity\Notification\NotificationEntityDefinition;
 use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntityDefinition;
 use Adyen\Shopware\Entity\PaymentResponse\PaymentResponseEntityDefinition;
 use Adyen\Shopware\Entity\PaymentStateData\PaymentStateDataEntityDefinition;
+use Adyen\Shopware\Entity\PaypalPaymentAttempt\PaypalPaymentAttemptEntityDefinition;
 use Adyen\Shopware\Entity\Refund\RefundEntityDefinition;
 use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
 use Adyen\Shopware\Handlers\KlarnaPayOverTimePaymentMethodHandler;
@@ -49,6 +50,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class AdyenPaymentShopware6 extends Plugin
 {
@@ -65,6 +67,8 @@ class AdyenPaymentShopware6 extends Plugin
         foreach (PaymentMethods\PaymentMethods::PAYMENT_METHODS as $paymentMethod) {
             $this->addPaymentMethod(new $paymentMethod(), $installContext->getContext());
         }
+
+        $this->initializeExpressCheckoutPages($installContext->getContext());
     }
 
     /**
@@ -182,6 +186,10 @@ class AdyenPaymentShopware6 extends Plugin
 
         if (\version_compare($currentVersion, '4.6.8', '<')) {
             $this->updateTo468($updateContext);
+        }
+
+        if (\version_compare($currentVersion, '4.7.0', '<')) {
+            $this->updateTo470($updateContext);
         }
     }
 
@@ -373,7 +381,8 @@ class AdyenPaymentShopware6 extends Plugin
             PaymentResponseEntityDefinition::ENTITY_NAME,
             AdyenPaymentEntityDefinition::ENTITY_NAME,
             PaymentCaptureEntityDefinition::ENTITY_NAME,
-            RefundEntityDefinition::ENTITY_NAME
+            RefundEntityDefinition::ENTITY_NAME,
+            PaypalPaymentAttemptEntityDefinition::ENTITY_NAME
         ];
         $connection = $this->container->get(Connection::class);
         foreach ($tables as $table) {
@@ -795,6 +804,69 @@ class AdyenPaymentShopware6 extends Plugin
         foreach ($paymentMethods as $method) {
             $this->addPaymentMethod($method, $updateContext->getContext());
             $this->setPaymentMethodIsActive(true, $updateContext->getContext(), $method);
+        }
+    }
+
+    /**
+     * Version 4.7.0 makes the express checkout placement configurable per payment method.
+     *
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
+    private function updateTo470(UpdateContext $updateContext): void
+    {
+        $this->initializeExpressCheckoutPages($updateContext->getContext());
+    }
+
+    /**
+     * Stores the express checkout placement each method effectively had, so the storefront does not change on update:
+     * an enabled method gets the product and cart pages, a disabled one gets no page. The off-canvas cart
+     * is never selected here, it is always an explicit merchant choice.
+     *
+     * The enable setting is sales channel scoped, so the placement is written for the default scope and for
+     * every sales channel with its own enable value. Other sales channels keep inheriting both settings.
+     * On a fresh installation every method is disabled, so the default scope gets no page.
+     *
+     * @param Context $context
+     *
+     * @return void
+     */
+    private function initializeExpressCheckoutPages(Context $context): void
+    {
+        /** @var SystemConfigService $systemConfigService */
+        $systemConfigService = $this->container->get(SystemConfigService::class);
+        /** @var EntityRepository $salesChannelRepository */
+        $salesChannelRepository = $this->container->get('sales_channel.repository');
+
+        $salesChannelIds = $salesChannelRepository
+            ->searchIds(new Criteria(), $context)
+            ->getIds();
+        $scopes = array_merge([null], $salesChannelIds);
+        $configPrefix = ConfigurationService::BUNDLE_NAME . '.config.';
+
+        foreach ($scopes as $salesChannelId) {
+            $scopeConfig = $systemConfigService->getDomain($configPrefix, $salesChannelId);
+
+            foreach (ConfigurationService::EXPRESS_CHECKOUT_METHODS as $method) {
+                $enabledKey = $configPrefix . $method . ConfigurationService::EXPRESS_CHECKOUT_ENABLED_KEY_SUFFIX;
+                $pagesKey = $configPrefix . $method . ConfigurationService::EXPRESS_CHECKOUT_PAGES_KEY_SUFFIX;
+
+                // Keep the merchant's selection if the update already ran for this scope
+                if (isset($scopeConfig[$pagesKey])) {
+                    continue;
+                }
+
+                // Sales channels without their own enable value inherit the placement from the default scope
+                if ($salesChannelId !== null && !isset($scopeConfig[$enabledKey])) {
+                    continue;
+                }
+
+                $pages = !empty($scopeConfig[$enabledKey])
+                    ? ConfigurationService::DEFAULT_EXPRESS_CHECKOUT_PAGES
+                    : [];
+                $systemConfigService->set($pagesKey, $pages, $salesChannelId);
+            }
         }
     }
 
