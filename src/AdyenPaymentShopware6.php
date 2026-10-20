@@ -202,6 +202,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.22.0', '<')) {
             $this->updateTo3220($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.22.1', '<')) {
+            $this->updateTo3221($updateContext);
+        }
     }
 
     public function postUpdate(UpdateContext $updateContext): void
@@ -704,15 +708,6 @@ class AdyenPaymentShopware6 extends Plugin
         }
     }
 
-    private function safeCopyAsset($source, $destination): bool
-    {
-        try {
-            return copy($source, $destination);
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
     /**
      * Version 3.22.0 makes the express checkout placement configurable per payment method.
      *
@@ -723,6 +718,22 @@ class AdyenPaymentShopware6 extends Plugin
     private function updateTo3220(UpdateContext $updateContext): void
     {
         $this->initializeExpressCheckoutPages($updateContext->getContext());
+    }
+
+    private function updateTo3221(UpdateContext $updateContext): void
+    {
+        // Version 3.22.1 removes Amazon Pay
+        $paymentMethodHandler = 'Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler';
+        $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
+    }
+
+    private function safeCopyAsset($source, $destination): bool
+    {
+        try {
+            return copy($source, $destination);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**

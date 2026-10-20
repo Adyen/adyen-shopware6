@@ -26,6 +26,15 @@ namespace Adyen\Shopware\PaymentMethods;
 
 class PaymentMethods
 {
+    /**
+     * Handler identifiers of payment methods removed from the plugin
+     */
+    const DEPRECATED_PAYMENT_METHOD_HANDLERS = [
+        'Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler',
+        'Adyen\Shopware\Handlers\DotpayPaymentMethodHandler',
+        'Adyen\Shopware\Handlers\SavvyGiftCardPaymentMethodHandler',
+    ];
+
     const PAYMENT_METHODS = [
         CardsPaymentMethod::class,
         IdealPaymentMethod::class,
@@ -43,7 +52,6 @@ class PaymentMethods
         GooglePayPaymentMethod::class,
         BancontactCardPaymentMethod::class,
         BancontactMobilePaymentMethod::class,
-        AmazonPayPaymentMethod::class,
         TwintPaymentMethod::class,
         EpsPaymentMethod::class,
         SwishPaymentMethod::class,

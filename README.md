@@ -38,7 +38,6 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Affirm
  - AfterPay invoice
  - Alipay , Alipay HK
- - Amazon Pay
  - Apple Pay
  - Bancontact
  - Blik

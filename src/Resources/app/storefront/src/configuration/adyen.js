@@ -116,28 +116,6 @@ export default {
                 }
             }
         },
-        'amazonpay': {
-            extra: {
-                productType: 'PayAndShip',
-                checkoutMode: 'ProcessOrder',
-                returnUrl: location.href
-            },
-            prePayRedirect: true,
-            sessionKey: 'amazonCheckoutSessionId',
-            onClick: function (resolve, reject, self) {
-                if (!self.confirmOrderForm.checkValidity()) {
-                    reject();
-                    return false;
-                } else {
-                    resolve();
-                    return true;
-                }
-            },
-            onError: (error, component) => {
-                console.log(error);
-                component.setStatus('ready');
-            }
-        },
     },
     paymentMethodTypeHandlers: {
         'scheme': 'handler_adyen_cardspaymentmethodhandler',
@@ -156,7 +134,6 @@ export default {
         'googlepay': 'handler_adyen_googlepaypaymentmethodhandler',
         'bcmc': 'handler_adyen_bancontactcardpaymentmethodhandler',
         'bcmc_mobile': 'handler_adyen_bancontactmobilepaymentmethodhandler',
-        'amazonpay': 'handler_adyen_amazonpaypaymentmethodhandler',
         'twint': 'handler_adyen_twintpaymentmethodhandler',
         'eps': 'handler_adyen_epspaymentmethodhandler',
         'swish': 'handler_adyen_swishpaymentmethodhandler',
