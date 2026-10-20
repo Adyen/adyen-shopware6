@@ -36,6 +36,7 @@ use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
@@ -196,6 +197,11 @@ class CaptureService
      */
     public function isManualCapture($handlerIdentifier, ?string $salesChannelId = null): bool
     {
+        // Deprecated payment methods have no handler class anymore, so manual capture is not supported
+        if (in_array($handlerIdentifier, PaymentMethods::DEPRECATED_PAYMENT_METHOD_HANDLERS, true)) {
+            return false;
+        }
+
         if ($handlerIdentifier::$isOpenInvoice) {
             // Open invoice payment methods are manual capture unless the merchant account is
             // authorised for auto capture.

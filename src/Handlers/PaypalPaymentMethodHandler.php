@@ -36,6 +36,15 @@ class PaypalPaymentMethodHandler extends AbstractPaymentMethodHandler
     public static bool $supportsPartialCapture = true;
 
     /**
+     * Request attribute set when the PayPal payment has already been made from the cart and the order is created
+     * afterwards, so pay() must not make another /payments call.
+     */
+    public const PAYMENT_FINALIZED_ATTRIBUTE = 'adyenPaypalPaymentFinalized';
+
+    /**
+     * Pays an existing order (e.g. on the order edit page) like any other payment method. When the payment
+     * has already been made from the cart, it only redirects to the return URL.
+     *
      * @param AsyncPaymentTransactionStruct $transaction
      * @param RequestDataBag $dataBag
      * @param SalesChannelContext $salesChannelContext
@@ -47,7 +56,12 @@ class PaypalPaymentMethodHandler extends AbstractPaymentMethodHandler
         RequestDataBag $dataBag,
         SalesChannelContext $salesChannelContext
     ): RedirectResponse {
-        return new RedirectResponse($transaction->getReturnUrl());
+        $currentRequest = $this->requestStack->getCurrentRequest();
+        if ($currentRequest && $currentRequest->attributes->getBoolean(self::PAYMENT_FINALIZED_ATTRIBUTE)) {
+            return new RedirectResponse($transaction->getReturnUrl());
+        }
+
+        return parent::pay($transaction, $dataBag, $salesChannelContext);
     }
 
     /**
