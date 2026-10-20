@@ -191,6 +191,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '4.7.0', '<')) {
             $this->updateTo470($updateContext);
         }
+
+        if (\version_compare($currentVersion, '4.7.1', '<')) {
+            $this->updateTo471($updateContext);
+        }
     }
 
     /**
@@ -868,6 +872,13 @@ class AdyenPaymentShopware6 extends Plugin
                 $systemConfigService->set($pagesKey, $pages, $salesChannelId);
             }
         }
+    }
+
+    private function updateTo471(UpdateContext $updateContext): void
+    {
+        // Version 4.7.1 removes Amazon Pay
+        $paymentMethodHandler = 'Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler';
+        $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
     }
 
     /**
