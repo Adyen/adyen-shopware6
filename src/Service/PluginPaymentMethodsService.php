@@ -23,6 +23,7 @@
 
 namespace Adyen\Shopware\Service;
 
+use Adyen\Shopware\PaymentMethods\PaymentMethods;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -87,9 +88,16 @@ class PluginPaymentMethodsService
         $pluginPaymentMethods = $this->getPluginPaymentMethods();
 
         foreach ($pluginPaymentMethods as $pluginPaymentMethod) {
-            if ($pluginPaymentMethod->getHandlerIdentifier()::getPaymentMethodCode() === 'giftcard' &&
-                $pluginPaymentMethod->getHandlerIdentifier()::getBrand() === $paymentMethod) {
-                return $pluginPaymentMethod->getHandlerIdentifier();
+            $handlerIdentifier = $pluginPaymentMethod->getHandlerIdentifier();
+
+            // Deprecated payment methods have no handler class anymore
+            if (in_array($handlerIdentifier, PaymentMethods::DEPRECATED_PAYMENT_METHOD_HANDLERS, true)) {
+                continue;
+            }
+
+            if ($handlerIdentifier::getPaymentMethodCode() === 'giftcard' &&
+                $handlerIdentifier::getBrand() === $paymentMethod) {
+                return $handlerIdentifier;
             }
         }
 
