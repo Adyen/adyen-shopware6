@@ -374,6 +374,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $order->getId(),
                 self::WEBHOOK_TRANSACTION_STATES
             );
+
+            if (!is_null($orderTransaction) &&
+                $this->belongsToAnotherPaymentAttempt($orderTransaction, $notification)) {
+                $orderTransaction = null;
+            }
         }
 
         // Skip if orderTransaction not found (non-Adyen)
@@ -389,6 +394,37 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         } else {
             return $orderTransaction;
         }
+    }
+
+    /**
+     * A failed AUTHORISATION notification belongs to another payment attempt if the transaction already has
+     * a different PSP reference, or if the transaction was created after the notification was received.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     *
+     * @return bool
+     */
+    private function belongsToAnotherPaymentAttempt(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification
+    ): bool {
+        if ($notification->getEventCode() !== EventCodes::AUTHORISATION || $notification->isSuccess()) {
+            return false;
+        }
+
+        $originalPspReference =
+            $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] ?? null;
+        if (!empty($originalPspReference) && $originalPspReference !== $notification->getPspreference()) {
+            return true;
+        }
+
+        $transactionCreatedAt = $orderTransaction->getCreatedAt();
+        $notificationCreatedAt = $notification->getCreatedAt();
+
+        return !is_null($transactionCreatedAt) &&
+            !is_null($notificationCreatedAt) &&
+            $transactionCreatedAt > $notificationCreatedAt;
     }
 
     /**
