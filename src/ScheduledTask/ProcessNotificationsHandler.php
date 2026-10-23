@@ -218,6 +218,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     continue;
                 }
 
+                if ($currentTransactionState === PaymentStates::STATE_FAILED &&
+                    $notification->getEventCode() === EventCodes::AUTHORISATION &&
+                    $notification->isSuccess()) {
+                    $currentTransactionState = PaymentStates::STATE_IN_PROGRESS;
+                }
+
                 $processor = $this->createProcessor($notification, $currentTransactionState);
                 if (is_null($processor)) {
                     continue;
