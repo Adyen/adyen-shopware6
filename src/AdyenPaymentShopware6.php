@@ -195,6 +195,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '5.4.1', '<')) {
             $this->updateTo541($updateContext);
         }
+
+        if (\version_compare($currentVersion, '5.5.0', '<')) {
+            $this->updateTo550($updateContext);
+        }
     }
 
     /**
@@ -205,7 +209,7 @@ class AdyenPaymentShopware6 extends Plugin
     public function postUpdate(UpdateContext $updateContext): void
     {
         $currentVersion = $updateContext->getCurrentPluginVersion();
-        if (\version_compare($currentVersion, '4.2.0', '<')) {
+        if (\version_compare($currentVersion, '5.5.0', '<')) {
             $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
             $handler->getHandler()->run();
         }
@@ -896,6 +900,25 @@ class AdyenPaymentShopware6 extends Plugin
         // Version 5.4.1 removes Amazon Pay
         $paymentMethodHandler = 'Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler';
         $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
+    }
+
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
+    private function updateTo550(UpdateContext $updateContext): void
+    {
+        // Version 5.5.0 introduces the Afterpay and Cash App Afterpay payment methods
+        $paymentMethods = [
+            new PaymentMethods\AfterpayTouchPaymentMethod(),
+            new PaymentMethods\AfterpayTouchUsPaymentMethod(),
+        ];
+
+        foreach ($paymentMethods as $method) {
+            $this->addPaymentMethod($method, $updateContext->getContext());
+            $this->setPaymentMethodIsActive(true, $updateContext->getContext(), $method);
+        }
     }
 
     /**
