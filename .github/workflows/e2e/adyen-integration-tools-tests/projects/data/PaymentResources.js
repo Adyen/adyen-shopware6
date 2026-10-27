@@ -275,6 +275,50 @@ export default class PaymentResources {
         },
       },
     },
+    // TODO: fill phoneNumber and password of an Afterpay sandbox shopper account (Australia).
+    // Create it on https://portal.sandbox.afterpay.com/ (SMS code 111111) and add a test card with CVV 000
+    afterpayTouch: {
+      approved: {
+        au: {
+          email: "guestaustralian@adyen.com",
+          firstName: "Test",
+          lastName: "Accepted",
+          street: "100 George Street",
+          houseNumber: "100",
+          city: "Sydney",
+          postCode: "2000",
+          phoneNumber: "",
+          dateOfBirth: "1990-01-01",
+          gender: "M",
+          stateOrProvince: "NSW",
+          countryCode: "AU",
+          countryName: "Australia",
+          password: ""
+        },
+      },
+    },
+    // TODO: fill phoneNumber and password of an Afterpay sandbox shopper account (US).
+    // Create it on https://portal.sandbox.afterpay.com/ (SMS code 111111) and add a test card with CVV 000
+    cashAppAfterpay: {
+      approved: {
+        us: {
+          email: "guestamerican@adyen.com",
+          firstName: "Test",
+          lastName: "Accepted",
+          street: "100 Main Street",
+          houseNumber: "100",
+          city: "New York",
+          postCode: "10001",
+          phoneNumber: "",
+          dateOfBirth: "1990-01-01",
+          gender: "M",
+          stateOrProvince: "NY",
+          countryCode: "US",
+          countryName: "USA",
+          password: ""
+        },
+      },
+    },
     iDeal: {
       nl: {
         email: "guest@adyen.com",
