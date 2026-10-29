@@ -39,7 +39,6 @@ use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 use Adyen\Shopware\Models\NotificationProcessingResult;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
-use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
 use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\PaypalPaymentAttemptRepository;
@@ -272,8 +271,16 @@ class PaypalPaymentService
         $oldContext = $context;
         $customerID = null;
 
-        if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
-            $context = $this->expressCheckoutService->getSalesChannelContext($cartToken, $context->getSalesChannelId());
+        // Express checkout from the product page uses its own cart token: the context persisted with that token
+        // carries the customer, payment and shipping method the shopper was charged for (see
+        // createPayPalExpressPaymentRequest()). Language and domain of the request are applied, its currency is used
+        // when none is persisted with the token.
+        if ($context->getToken() !== $cartToken) {
+            $context = $this->expressCheckoutService->getSalesChannelContext(
+                $cartToken,
+                $context->getSalesChannelId(),
+                $context
+            );
         }
 
         $cart = $this->cartService->getCart($cartToken, $context);
@@ -315,12 +322,9 @@ class PaypalPaymentService
         SalesChannelContext $updatedContext,
         array $stateData = []
     ): array {
-        if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
-            $this->expressCheckoutService->changeContext(
-                $updatedContext->getCustomerId(),
-                $updatedContext
-            );
-        }
+        // Persist customer, payment and shipping method with the cart token, so finalizing can rebuild the context
+        // the shopper is charged for regardless of the storefront session.
+        $this->expressCheckoutService->changeContext($updatedContext->getCustomerId(), $updatedContext);
 
         /** @var Cart $cart */
         $cart = $cartData['cart'];
