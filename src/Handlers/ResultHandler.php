@@ -28,9 +28,12 @@ namespace Adyen\Shopware\Handlers;
 use Adyen\Model\Checkout\PaymentDetailsRequest;
 use Adyen\Shopware\Util\DataArrayValidator;
 use Adyen\Shopware\Exception\PaymentCancelledException;
+use Adyen\Shopware\Exception\PaymentDetailsCallFailedException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Service\PaymentDetailsService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -44,6 +47,13 @@ class ResultHandler
     const MD = 'MD';
     const REDIRECT_RESULT = 'redirectResult';
     const PAYLOAD = 'payload';
+
+    /**
+     * Custom field set on an order transaction when the /payments/details call failed on the shopper's return.
+     * Shopware then fails the transaction, although the payment outcome is unknown, so a successful
+     * AUTHORISATION webhook may still settle it.
+     */
+    const PAYMENT_DETAILS_CALL_FAILED = 'adyenPaymentDetailsCallFailed';
 
     /**
      * @var PaymentResponseService $paymentResponseService
@@ -163,10 +173,16 @@ class ResultHandler
 
             $paymentDetailRequest = new PaymentDetailsRequest(['details' => $details]);
 
-            $result = $this->paymentDetailsService->getPaymentDetails(
-                $paymentDetailRequest,
-                $orderTransaction
-            );
+            try {
+                $result = $this->paymentDetailsService->getPaymentDetails(
+                    $paymentDetailRequest,
+                    $orderTransaction
+                );
+            } catch (PaymentDetailsCallFailedException $exception) {
+                $this->markPaymentDetailsCallFailed($orderTransaction, $salesChannelContext->getContext());
+
+                throw $exception;
+            }
         }
 
         // Process the result and handle the transaction
@@ -175,5 +191,40 @@ class ResultHandler
             $salesChannelContext,
             [$result]
         );
+    }
+
+    /**
+     * A failure to store the marker must not replace the payment exception thrown to the shopper.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     *
+     * @return void
+     */
+    private function markPaymentDetailsCallFailed(OrderTransactionEntity $orderTransaction, Context $context): void
+    {
+        $customFields = array_merge(
+            $orderTransaction->getCustomFields() ?? [],
+            [self::PAYMENT_DETAILS_CALL_FAILED => true]
+        );
+
+        try {
+            $context->scope(
+                Context::SYSTEM_SCOPE,
+                function (Context $context) use ($orderTransaction, $customFields) {
+                    $this->orderTransactionRepository->update([
+                        [
+                            'id' => $orderTransaction->getId(),
+                            'customFields' => $customFields,
+                        ]
+                    ], $context);
+                }
+            );
+        } catch (\Throwable $exception) {
+            $this->logger->error(
+                'Unable to mark the order transaction after the /payments/details call failed.',
+                ['orderTransactionId' => $orderTransaction->getId(), 'errorMessage' => $exception->getMessage()]
+            );
+        }
     }
 }
