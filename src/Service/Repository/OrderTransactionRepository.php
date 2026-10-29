@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Service\Repository;
 
 use Adyen\Shopware\Service\ConfigurationService;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -90,6 +91,36 @@ class OrderTransactionRepository
             $criteria,
             $context ? $context->getContext() : Context::createDefaultContext()
         )->first();
+    }
+
+    /**
+     * @param string $orderId
+     * @param array $states
+     *
+     * @return OrderTransactionCollection Newest transaction first.
+     */
+    public function getAdyenOrderTransactionsByStates(string $orderId, array $states): OrderTransactionCollection
+    {
+        $criteria = new Criteria();
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addAssociation('order');
+        $criteria->addAssociation('order.currency');
+        $criteria->addAssociation('paymentMethod');
+        $criteria->addAssociation('paymentMethod.plugin');
+        $criteria->addFilter(new EqualsFilter('order.id', $orderId));
+        $criteria->addFilter(
+            new EqualsAnyFilter('stateMachineState.technicalName', $states)
+        );
+        $criteria->addFilter(
+            new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME)
+        );
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
+
+        /** @var OrderTransactionCollection $transactions */
+        $transactions = $this->orderTransactionRepository->search($criteria, Context::createDefaultContext())
+            ->getEntities();
+
+        return $transactions;
     }
 
     /**
