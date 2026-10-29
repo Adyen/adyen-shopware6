@@ -202,8 +202,16 @@ readonly class PaypalPaymentService
         // Captured before the order is placed
         $sessionPayload = $this->expressCheckoutService->snapshotContextPayload($oldContext);
 
+        // Express checkout from the product page uses its own cart token: the context persisted with that token
+        // carries the customer, payment and shipping method the shopper was charged for (see
+        // createPayPalExpressPaymentRequest()). Language and domain of the request are applied, its currency is used
+        // when none is persisted with the token.
         if ($context->getToken() !== $cartToken) {
-            $context = $this->expressCheckoutService->getSalesChannelContext($cartToken, $context->getSalesChannelId());
+            $context = $this->expressCheckoutService->getSalesChannelContext(
+                $cartToken,
+                $context->getSalesChannelId(),
+                $context
+            );
         }
 
         $cart = $this->cartService->getCart($cartToken, $context);
