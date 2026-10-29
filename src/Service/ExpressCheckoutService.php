@@ -134,15 +134,24 @@ class ExpressCheckoutService
     /**
      * @param string $token
      * @param string $salesChannelId
+     * @param SalesChannelContext|null $requestContext When given, its language and domain are applied to the rebuilt
+     *                                                 context and its currency is used when none is persisted with
+     *                                                 the token.
      *
      * @return SalesChannelContext
      */
-    public function getSalesChannelContext(string $token, string $salesChannelId): SalesChannelContext
-    {
+    public function getSalesChannelContext(
+        string $token,
+        string $salesChannelId,
+        ?SalesChannelContext $requestContext = null
+    ): SalesChannelContext {
         return $this->salesChannelContextService->get(
             new SalesChannelContextServiceParameters(
                 $salesChannelId,
-                $token
+                $token,
+                $requestContext ? $requestContext->getContext()->getLanguageId() : null,
+                $requestContext ? $requestContext->getCurrency()->getId() : null,
+                $requestContext ? $requestContext->getDomainId() : null
             )
         );
     }
@@ -409,13 +418,7 @@ class ExpressCheckoutService
                 $salesChannelContext->getPaymentMethod(),
             );
 
-            $this->contextPersister->save(
-                $salesChannelContext->getToken(),
-                [
-                    SalesChannelContextService::PAYMENT_METHOD_ID => $salesChannelContext->getPaymentMethod()->getId()
-                ],
-                $salesChannelContext->getSalesChannel()->getId()
-            );
+            $this->persistContext($salesChannelContext);
 
             return $salesChannelContext;
         }
@@ -434,14 +437,7 @@ class ExpressCheckoutService
             $customer
         );
 
-        $this->contextPersister->save(
-            $salesChannelContext->getToken(),
-            [
-                SalesChannelContextService::CUSTOMER_ID => $customerId,
-                SalesChannelContextService::PAYMENT_METHOD_ID => $salesChannelContext->getPaymentMethod()->getId()
-            ],
-            $salesChannelContext->getSalesChannel()->getId()
-        );
+        $this->persistContext($salesChannelContext, $customerId);
 
         return $salesChannelContext;
     }
@@ -466,6 +462,17 @@ class ExpressCheckoutService
         array $newAddress = [],
         array $newShipping = []
     ): PaypalUpdateOrderResponse {
+        // Express checkout from the product page uses its own cart token: the shipping method is resolved against
+        // the context persisted with that token, so a method selected in an earlier update stays the fallback
+        // instead of the storefront session's method.
+        if ($salesChannelContext->getToken() !== $cartToken) {
+            $salesChannelContext = $this->getSalesChannelContext(
+                $cartToken,
+                $salesChannelContext->getSalesChannel()->getId(),
+                $salesChannelContext
+            );
+        }
+
         $cartData = $this->createCart(
             '-1',
             -1,
@@ -517,8 +524,10 @@ class ExpressCheckoutService
 
         if (!empty($newShipping)) {
             $this->cartService->recalculate($cart, $cartData['updatedSalesChannelContext']);
-            $this->setShippingInContext($cartData['updatedSalesChannelContext']);
         }
+
+        // A changed address can change the resolved shipping method as well, so it is persisted on every update
+        $this->setShippingInContext($cartData['updatedSalesChannelContext']);
 
         return $utilityApiService
             ->updatesOrderForPaypalExpressCheckout($paypalUpdateOrderRequest);
@@ -999,11 +1008,34 @@ class ExpressCheckoutService
      */
     private function setShippingInContext(SalesChannelContext $salesChannelContext): void
     {
+        $this->persistContext($salesChannelContext);
+    }
+
+    /**
+     * Persists what a context rebuilt from the token (e.g. when the PayPal express order is finalized) must carry:
+     * the customer, the payment method and the shipping method the shopper was charged for. Without the shipping
+     * method the rebuilt context falls back to the sales channel default, which may be blocked for the delivery
+     * country. The customer_id column is not written: Shopware resolves a customer's own session row through it.
+     *
+     * @param SalesChannelContext $salesChannelContext
+     * @param string|null $customerId
+     *
+     * @return void
+     */
+    private function persistContext(SalesChannelContext $salesChannelContext, ?string $customerId = null): void
+    {
+        $payload = [
+            SalesChannelContextService::PAYMENT_METHOD_ID => $salesChannelContext->getPaymentMethod()->getId(),
+            SalesChannelContextService::SHIPPING_METHOD_ID => $salesChannelContext->getShippingMethod()->getId(),
+        ];
+
+        if ($customerId !== null) {
+            $payload[SalesChannelContextService::CUSTOMER_ID] = $customerId;
+        }
+
         $this->contextPersister->save(
             $salesChannelContext->getToken(),
-            [
-                SalesChannelContextService::SHIPPING_METHOD_ID => $salesChannelContext->getShippingMethod()->getId()
-            ],
+            $payload,
             $salesChannelContext->getSalesChannel()->getId()
         );
     }
