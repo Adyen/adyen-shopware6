@@ -27,6 +27,7 @@ namespace Adyen\Shopware\ScheduledTask;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Handlers\ResultHandler;
 use Adyen\Shopware\Models\NotificationProcessingResult;
 use Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory;
 use Adyen\Shopware\Service\AdyenPaymentService;
@@ -44,6 +45,7 @@ use Adyen\Webhook\EventCodes;
 use Adyen\Webhook\Processor\ProcessorInterface;
 use Psr\Log\LoggerAwareTrait;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
@@ -114,6 +116,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     private PaypalPaymentService $paypalPaymentService;
 
     /**
+     * @var OrderTransactionStateHandler
+     */
+    private OrderTransactionStateHandler $orderTransactionStateHandler;
+
+    /**
      * @var array Map Shopware transaction states to payment states in the webhook module.
      */
     const WEBHOOK_MODULE_STATE_MAPPING = [
@@ -137,6 +144,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param WebhookHandlerFactory $webhookHandlerFactory
      * @param PaymentResponseService $paymentResponseService
      * @param PaypalPaymentService $paypalPaymentService
+     * @param OrderTransactionStateHandler $orderTransactionStateHandler
      */
     public function __construct(
         EntityRepository $scheduledTaskRepository,
@@ -148,7 +156,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         CaptureService $captureService,
         WebhookHandlerFactory $webhookHandlerFactory,
         PaymentResponseService $paymentResponseService,
-        PaypalPaymentService $paypalPaymentService
+        PaypalPaymentService $paypalPaymentService,
+        OrderTransactionStateHandler $orderTransactionStateHandler
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->notificationService = $notificationService;
@@ -159,6 +168,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $this->captureService = $captureService;
         $this->paymentResponseService = $paymentResponseService;
         $this->paypalPaymentService = $paypalPaymentService;
+        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         self::$webhookHandlerFactory = $webhookHandlerFactory;
     }
 
@@ -204,46 +214,75 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     continue;
                 }
 
+                $isRecoverable = $this->isRecoverableFailedTransaction($orderTransaction, $notification);
+                if ($isRecoverable && !$this->isLatestOrderTransaction($order, $orderTransaction)) {
+                    $errorMessage = 'Skipped: Payment was authorised for a failed transaction that a newer ' .
+                        'transaction of the order has replaced. Check whether the payment has to be refunded.';
+                    $this->logger->warning($errorMessage, $logContext);
+                    $this->logNotificationFailure($notification, $errorMessage);
+                    $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+                    continue;
+                }
+
                 $customFields = $orderTransaction->getCustomFields();
+                $customFieldsChanged = false;
 
                 if (empty($customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE])) {
                     $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] =
                         $notification->getOriginalReference();
+                    $customFieldsChanged = true;
+                }
+
+                // The marker is cleared, so the transaction is reopened only once.
+                if ($isRecoverable) {
+                    $customFields[ResultHandler::PAYMENT_DETAILS_CALL_FAILED] = null;
+                    $customFieldsChanged = true;
+                }
+
+                if ($customFieldsChanged) {
                     $orderTransaction->setCustomFields($customFields);
                     $this->orderTransactionRepository->updateCustomFields($orderTransaction);
                 }
 
-                $currentTransactionState = $this->getCurrentTransactionState($orderTransaction, $notification);
-                if (is_null($currentTransactionState)) {
+                $originalTransactionState = $this->getCurrentTransactionState($orderTransaction, $notification);
+                if (is_null($originalTransactionState)) {
                     continue;
                 }
 
-                if ($currentTransactionState === PaymentStates::STATE_FAILED &&
-                    $notification->getEventCode() === EventCodes::AUTHORISATION &&
-                    $notification->isSuccess()) {
-                    $currentTransactionState = PaymentStates::STATE_IN_PROGRESS;
+                $currentTransactionState = $isRecoverable ?
+                    PaymentStates::STATE_IN_PROGRESS :
+                    $originalTransactionState;
+
+                try {
+                    if ($isRecoverable) {
+                        $this->reopenFailedTransaction($orderTransaction, $context, $logContext);
+                    }
+
+                    $processor = $this->createProcessor($notification, $currentTransactionState);
+                    if (is_null($processor)) {
+                        continue;
+                    }
+
+                    $state = $processor->process();
+
+                    $this->logger->info('Processed ' . $notification->getEventCode() . ' notification.', [
+                        'eventCode' => $notification->getEventCode(),
+                        'originalState' => $originalTransactionState,
+                        'newState' => $state
+                    ]);
+
+                    $webhookHandler->handleWebhook(
+                        $orderTransaction,
+                        $notification,
+                        $state,
+                        $currentTransactionState,
+                        $context
+                    );
+                } finally {
+                    if ($isRecoverable) {
+                        $this->restoreUnsettledTransaction($orderTransaction, $context, $logContext);
+                    }
                 }
-
-                $processor = $this->createProcessor($notification, $currentTransactionState);
-                if (is_null($processor)) {
-                    continue;
-                }
-
-                $state = $processor->process();
-
-                $this->logger->info('Processed ' . $notification->getEventCode() . ' notification.', [
-                    'eventCode' => $notification->getEventCode(),
-                    'originalState' => $currentTransactionState,
-                    'newState' => $state
-                ]);
-
-                $webhookHandler->handleWebhook(
-                    $orderTransaction,
-                    $notification,
-                    $state,
-                    $currentTransactionState,
-                    $context
-                );
             } catch (CaptureException $exception) {
                 $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
                 $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
@@ -387,6 +426,15 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             }
         }
 
+        if (is_null($orderTransaction) && $this->canSettleFailedTransaction($notification)) {
+            $orderTransaction = $this->orderTransactionRepository
+                ->getAdyenOrderTransactionsByStates($order->getId(), [OrderTransactionStates::STATE_FAILED])
+                ->filter(fn (OrderTransactionEntity $transaction) => $this->hasPaymentDetailsCallFailedMarker(
+                    $transaction
+                ))
+                ->first();
+        }
+
         // Skip if orderTransaction not found (non-Adyen)
         if (is_null($orderTransaction)) {
             $errorMessage = sprintf(
@@ -400,6 +448,155 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         } else {
             return $orderTransaction;
         }
+    }
+
+    /**
+     * A failed transaction can be settled by a successful AUTHORISATION or ORDER_CLOSED notification only if
+     * it failed because the /payments/details call failed, not because the payment was refused or cancelled.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     *
+     * @return bool
+     */
+    private function isRecoverableFailedTransaction(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification
+    ): bool {
+        $stateMachineState = $orderTransaction->getStateMachineState();
+
+        return $stateMachineState
+            && $stateMachineState->getTechnicalName() === OrderTransactionStates::STATE_FAILED
+            && $this->canSettleFailedTransaction($notification)
+            && $this->hasPaymentDetailsCallFailedMarker($orderTransaction);
+    }
+
+    /**
+     * @param NotificationEntity $notification
+     *
+     * @return bool
+     */
+    private function canSettleFailedTransaction(NotificationEntity $notification): bool
+    {
+        return $notification->isSuccess() && in_array(
+            $notification->getEventCode(),
+            [EventCodes::AUTHORISATION, EventCodes::ORDER_CLOSED],
+            true
+        );
+    }
+
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     *
+     * @return bool
+     */
+    private function hasPaymentDetailsCallFailedMarker(OrderTransactionEntity $orderTransaction): bool
+    {
+        return !empty($orderTransaction->getCustomFields()[ResultHandler::PAYMENT_DETAILS_CALL_FAILED]);
+    }
+
+    /**
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
+     *
+     * @return bool
+     */
+    private function isLatestOrderTransaction(OrderEntity $order, OrderTransactionEntity $orderTransaction): bool
+    {
+        $createdAt = $orderTransaction->getCreatedAt();
+        if (is_null($order->getTransactions()) || is_null($createdAt)) {
+            return true;
+        }
+
+        foreach ($order->getTransactions() as $transaction) {
+            if ($transaction->getId() !== $orderTransaction->getId() &&
+                !is_null($transaction->getCreatedAt()) &&
+                $transaction->getCreatedAt() > $createdAt) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Moves the failed transaction back to in progress, so the notification is processed as for a transaction
+     * whose /payments/details call succeeded.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @param array $logContext
+     *
+     * @return void
+     */
+    private function reopenFailedTransaction(
+        OrderTransactionEntity $orderTransaction,
+        Context $context,
+        array $logContext
+    ): void {
+        $this->logger->info(
+            'Reopening a transaction that failed because the /payments/details call failed.',
+            $logContext
+        );
+        $this->orderTransactionStateHandler->process(
+            $orderTransaction->getId(),
+            $this->createContextWithoutFlows($context)
+        );
+    }
+
+    /**
+     * Fails a reopened transaction again and restores its marker if the notification did not settle it, e.g. the
+     * amount did not match, it was one part of a split payment, or processing threw. A later notification for the
+     * same payment can then still settle it.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param Context $context
+     * @param array $logContext
+     *
+     * @return void
+     */
+    private function restoreUnsettledTransaction(
+        OrderTransactionEntity $orderTransaction,
+        Context $context,
+        array $logContext
+    ): void {
+        $transaction = $this->orderTransactionRepository->getWithId($orderTransaction->getId());
+        if (is_null($transaction) || is_null($transaction->getStateMachineState())) {
+            return;
+        }
+
+        $state = $transaction->getStateMachineState()->getTechnicalName();
+
+        if ($state === OrderTransactionStates::STATE_IN_PROGRESS) {
+            $this->logger->info('Reopened transaction was not settled. Setting it back to failed.', $logContext);
+            $this->orderTransactionStateHandler->fail(
+                $transaction->getId(),
+                $this->createContextWithoutFlows($context)
+            );
+        } elseif ($state !== OrderTransactionStates::STATE_FAILED) {
+            return;
+        }
+
+        $customFields = $transaction->getCustomFields() ?? [];
+        $customFields[ResultHandler::PAYMENT_DETAILS_CALL_FAILED] = true;
+        $transaction->setCustomFields($customFields);
+        $this->orderTransactionRepository->updateCustomFields($transaction);
+    }
+
+    /**
+     * Reopening and failing again are technical transitions, so they must not trigger flows such as the
+     * "payment failed" mail. A copy is used, so the state does not stay on the context shared by all notifications.
+     *
+     * @param Context $context
+     *
+     * @return Context
+     */
+    private function createContextWithoutFlows(Context $context): Context
+    {
+        $contextWithoutFlows = clone $context;
+        $contextWithoutFlows->addState(Context::SKIP_TRIGGER_FLOW);
+
+        return $contextWithoutFlows;
     }
 
     /**

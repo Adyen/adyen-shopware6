@@ -35,7 +35,6 @@ use Adyen\Shopware\Util\Currency;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
 
 class AuthorisationWebhookHandler implements WebhookHandlerInterface
@@ -151,13 +150,6 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                     'Manual capture required. Setting payment to `authorised` state.',
                     ['notification' => $notification->getVars()]
                 );
-
-                $stateMachineState = $orderTransaction->getStateMachineState();
-                if ($stateMachineState &&
-                    $stateMachineState->getTechnicalName() === OrderTransactionStates::STATE_FAILED) {
-                    $this->orderTransactionStateHandler->process($orderTransaction->getId(), $context);
-                }
-
                 $this->orderTransactionStateHandler->authorize($orderTransaction->getId(), $context);
 
                 if ($this->captureService->requiresCaptureOnShipment(
