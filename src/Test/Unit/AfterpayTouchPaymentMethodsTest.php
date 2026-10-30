@@ -78,4 +78,24 @@ class AfterpayTouchPaymentMethodsTest extends AdyenTestCase
         $this->assertContains(AfterpayTouchPaymentMethod::class, PaymentMethods::PAYMENT_METHODS);
         $this->assertContains(AfterpayTouchUsPaymentMethod::class, PaymentMethods::PAYMENT_METHODS);
     }
+
+    public function testRegisteredPaymentMethodsHaveUniqueCodes()
+    {
+        $gatewayCodes = [];
+        $paymentMethodCodes = [];
+
+        foreach (PaymentMethods::PAYMENT_METHODS as $paymentMethodClass) {
+            $paymentMethod = new $paymentMethodClass();
+            $handler = $paymentMethod->getPaymentHandler();
+
+            $this->assertTrue(class_exists($handler), $handler . ' does not exist');
+
+            $gatewayCodes[] = $paymentMethod->getGatewayCode();
+            $paymentMethodCodes[] = $handler::getPaymentMethodCode();
+        }
+
+        // Unique gateway codes keep the technical names apart, unique codes keep /paymentMethods matching exact
+        $this->assertSame($gatewayCodes, array_unique($gatewayCodes));
+        $this->assertSame($paymentMethodCodes, array_unique($paymentMethodCodes));
+    }
 }

@@ -10,6 +10,11 @@ export default class PaymentResources {
   payPalUserName = process.env.PAYPAL_USERNAME;
   payPalPassword = process.env.PAYPAL_PASSWORD;
 
+  afterpayAuEmail = process.env.AFTERPAY_AU_EMAIL;
+  afterpayAuPassword = process.env.AFTERPAY_AU_PASSWORD;
+  afterpayUsEmail = process.env.AFTERPAY_US_EMAIL;
+  afterpayUsPassword = process.env.AFTERPAY_US_PASSWORD;
+
   klarnaApprovedNLDateOfBirth = "10-07-1970";
 
   afterPayApprovedNLGender = "M";
@@ -275,47 +280,43 @@ export default class PaymentResources {
         },
       },
     },
-    // TODO: fill phoneNumber and password of an Afterpay sandbox shopper account (Australia).
-    // Create it on https://portal.sandbox.afterpay.com/ (SMS code 111111) and add a test card with CVV 000
+    // Afterpay sandbox shopper (Australia) from https://portal.sandbox.afterpay.com/, login from AFTERPAY_AU_EMAIL / _PASSWORD
     afterpayTouch: {
       approved: {
         au: {
-          email: "guestaustralian@adyen.com",
+          email: this.afterpayAuEmail,
           firstName: "Test",
           lastName: "Accepted",
           street: "100 George Street",
           houseNumber: "100",
           city: "Sydney",
           postCode: "2000",
-          phoneNumber: "",
           dateOfBirth: "1990-01-01",
           gender: "M",
           stateOrProvince: "NSW",
           countryCode: "AU",
           countryName: "Australia",
-          password: ""
+          password: this.afterpayAuPassword
         },
       },
     },
-    // TODO: fill phoneNumber and password of an Afterpay sandbox shopper account (US).
-    // Create it on https://portal.sandbox.afterpay.com/ (SMS code 111111) and add a test card with CVV 000
+    // Afterpay sandbox shopper (US) from https://portal.sandbox.afterpay.com/, login from AFTERPAY_US_EMAIL / _PASSWORD
     cashAppAfterpay: {
       approved: {
         us: {
-          email: "guestamerican@adyen.com",
+          email: this.afterpayUsEmail,
           firstName: "Test",
           lastName: "Accepted",
           street: "100 Main Street",
           houseNumber: "100",
           city: "New York",
           postCode: "10001",
-          phoneNumber: "",
           dateOfBirth: "1990-01-01",
           gender: "M",
           stateOrProvince: "NY",
           countryCode: "US",
-          countryName: "USA",
-          password: ""
+          countryName: "United States of America",
+          password: this.afterpayUsPassword
         },
       },
     },
