@@ -14,29 +14,42 @@ class Migration1793272392AddIndexAdyenPaymentResponse extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        // Skip if any index already starts with order_transaction_id (e.g. one added manually by the merchant)
-        $indexExists = (int)$connection->fetchOne(<<<SQL
-            SELECT COUNT(*)
-            FROM information_schema.STATISTICS
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = 'adyen_payment_response'
-              AND COLUMN_NAME = 'order_transaction_id'
-              AND SEQ_IN_INDEX = 1;
+        if (!$this->paymentResponseIndexExists($connection, 'idx.adyen_payment_response.order_transaction_id')) {
+            $connection->executeStatement(<<<SQL
+                CREATE INDEX `idx.adyen_payment_response.order_transaction_id`
+                    ON `adyen_payment_response` (`order_transaction_id`, `created_at`)
+                    ALGORITHM=INPLACE LOCK=NONE;
 SQL
-        );
-
-        if ($indexExists > 0) {
-            return;
+            );
         }
 
-        $connection->executeStatement(<<<SQL
-            CREATE INDEX `idx.adyen_payment_response.order_transaction_id`
-                ON `adyen_payment_response` (`order_transaction_id`, `created_at`);
+        // Redundant, pspreference is already indexed by UQ_ADYEN_PAYMENT_RESPONSE_PSPREFERENCE.
+        // Dropped here and not in updateDestructive(), because plugin destructive migrations do not run on plugin
+        // update, and running them manually would also execute Migration1603384890::updateDestructive().
+        if ($this->paymentResponseIndexExists($connection, 'ADYEN_PAYMENT_RESPONSE_PSPREFERENCE')
+            && $this->paymentResponseIndexExists($connection, 'UQ_ADYEN_PAYMENT_RESPONSE_PSPREFERENCE')) {
+            $connection->executeStatement(<<<SQL
+                DROP INDEX `ADYEN_PAYMENT_RESPONSE_PSPREFERENCE` ON `adyen_payment_response`;
 SQL
-        );
+            );
+        }
     }
 
     public function updateDestructive(Connection $connection): void
     {
+    }
+
+    private function paymentResponseIndexExists(Connection $connection, string $indexName): bool
+    {
+        return (int)$connection->fetchOne(
+            <<<SQL
+            SELECT COUNT(*)
+            FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'adyen_payment_response'
+              AND INDEX_NAME = :indexName;
+SQL,
+            ['indexName' => $indexName]
+        ) > 0;
     }
 }
