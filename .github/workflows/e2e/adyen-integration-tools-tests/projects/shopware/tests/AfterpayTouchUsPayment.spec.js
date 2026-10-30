@@ -1,5 +1,5 @@
 import { test } from "@playwright/test";
-import { AfterpayPaymentPage } from "../../common/redirect/AfterpayPaymentPage.js";
+import { ClearPayPaymentPage } from "../../common/redirect/ClearPayPaymentPage.js";
 import PaymentResources from "../../data/PaymentResources.js";
 import {
     doPrePaymentChecks,
@@ -32,5 +32,5 @@ export async function payViaCashAppAfterpay(page){
     await paymentDetailPage.selectCashAppAfterpay();
     await paymentDetailPage.submitOrder();
 
-    await new AfterpayPaymentPage(page).continueAfterpayPayment(americanUser);
+    await new ClearPayPaymentPage(page).continueClearPayPayment(americanUser);
 }
