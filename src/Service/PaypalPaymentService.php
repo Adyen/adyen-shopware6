@@ -283,7 +283,6 @@ class PaypalPaymentService
             );
         }
 
-        $cart = $this->cartService->getCart($cartToken, $context);
         if (!empty($newAddress)) {
             $context = $this->expressCheckoutService->createCustomerAndUpdateContext(
                 $context,
@@ -293,6 +292,13 @@ class PaypalPaymentService
 
             $customerID = $context->getCustomer()->getId();
         }
+
+        // The cart is loaded only once the context carries the guest customer, and without the cart cached while
+        // the context was rebuilt: the checkout gateway copies the errors of the cart given to the order route into
+        // the order. A cart calculated against the context without the customer's address (sales channel default
+        // country) could carry a shipping method error that blocks the order although the method is valid for the
+        // delivery country.
+        $cart = $this->cartService->getCart($cartToken, $context, false);
 
         try {
             return $this->finalizePaypalPayment($context, $cart, $request, $dataBag, $stateData);
