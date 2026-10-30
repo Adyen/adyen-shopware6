@@ -760,14 +760,16 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
     // Callback for PayPal payment method
     onShopperDetails({authorizedEvent, billingAddress, deliveryAddress}, actions) {
+        const nameParts = (deliveryAddress.firstName ?? '').split(" ");
+
         this.newAddress = {
-            firstName: deliveryAddress.firstName.split(" ")[0],
-            lastName: deliveryAddress.firstName.split(" ")[1],
+            firstName: nameParts[0] ?? '',
+            lastName: nameParts[1] ?? '',
             street: deliveryAddress.street,
             postalCode: deliveryAddress.postalCode,
             city: deliveryAddress.city,
             countryCode: deliveryAddress.country,
-            phoneNumber: authorizedEvent.payer.phone.phone_number.national_number,
+            phoneNumber: authorizedEvent.payer?.phone?.phone_number?.national_number ?? '',
             email: authorizedEvent.payer.email_address
         }
 
