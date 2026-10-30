@@ -59,6 +59,7 @@ use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\Kernel;
 use Shopware\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -115,7 +116,8 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             $this->orderRepository,
             $this->paymentReversalService,
             $this->paypalPaymentAttemptRepository,
-            $this->logger
+            $this->logger,
+            Kernel::SHOPWARE_FALLBACK_VERSION
         );
     }
 
@@ -278,7 +280,7 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         $cart = $this->createCart();
         $this->cartService->expects($this->once())
             ->method('getCart')
-            ->with('cart-token', $context, false)
+            ->with(...$this->uncachedGetCartArguments('cart-token', $context))
             ->willReturn($cart);
 
         $this->cartOrderRoute->expects($this->once())
@@ -326,10 +328,10 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             ->with($persistedContext, 'cart-token', $newAddress)
             ->willReturn($guestContext);
 
-        $cart = new Cart('cart-token');
+        $cart = $this->createCart();
         $this->cartService->expects($this->once())
             ->method('getCart')
-            ->with('cart-token', $guestContext, false)
+            ->with(...$this->uncachedGetCartArguments('cart-token', $guestContext))
             ->willReturn($cart);
 
         $this->cartOrderRoute->expects($this->once())
@@ -525,6 +527,18 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         return $constructor->getNumberOfParameters() > 1 ?
             new Cart('adyen', 'cart-token') :
             new Cart('cart-token');
+    }
+
+    /**
+     * Shopware 6.4 takes the cart name before the caching flag of CartService::getCart(), 6.5 the caching flag only.
+     * The service is given the version of the installed Shopware, so that the mocked cart service has the matching
+     * signature.
+     */
+    private function uncachedGetCartArguments(string $token, MockObject $context): array
+    {
+        return str_starts_with(Kernel::SHOPWARE_FALLBACK_VERSION, '6.4') ?
+            [$token, $context, CartService::SALES_CHANNEL, false] :
+            [$token, $context, false];
     }
 
     private function createSalesChannelContext(): MockObject

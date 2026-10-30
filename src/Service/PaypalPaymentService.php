@@ -121,6 +121,9 @@ class PaypalPaymentService
     /** @var LoggerInterface $logger */
     private LoggerInterface $logger;
 
+    /** @var string $shopwareVersion */
+    private string $shopwareVersion;
+
     /**
      * @param ClientService $clientService
      * @param NumberRangeValueGeneratorInterface $numberRangeValueGenerator
@@ -136,6 +139,7 @@ class PaypalPaymentService
      * @param PaymentReversalService $paymentReversalService
      * @param PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository
      * @param LoggerInterface $logger
+     * @param string $shopwareVersion
      */
     public function __construct( // NOSONAR
         ClientService $clientService,
@@ -151,7 +155,8 @@ class PaypalPaymentService
         OrderRepository $orderRepository,
         PaymentReversalService $paymentReversalService,
         PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        string $shopwareVersion
     ) {
         $this->clientService = $clientService;
         $this->numberRangeValueGenerator = $numberRangeValueGenerator;
@@ -167,6 +172,7 @@ class PaypalPaymentService
         $this->paymentReversalService = $paymentReversalService;
         $this->paypalPaymentAttemptRepository = $paypalPaymentAttemptRepository;
         $this->logger = $logger;
+        $this->shopwareVersion = $shopwareVersion;
     }
 
     /**
@@ -298,7 +304,7 @@ class PaypalPaymentService
         // the order. A cart calculated against the context without the customer's address (sales channel default
         // country) could carry a shipping method error that blocks the order although the method is valid for the
         // delivery country.
-        $cart = $this->cartService->getCart($cartToken, $context, false);
+        $cart = $this->loadUncachedCart($cartToken, $context);
 
         try {
             return $this->finalizePaypalPayment($context, $cart, $request, $dataBag, $stateData);
@@ -599,5 +605,24 @@ class PaypalPaymentService
         return new PaymentsApi(
             $this->clientService->getClient($context->getSalesChannelId())
         );
+    }
+
+    /**
+     * Loads the cart of the token calculated against the given context, ignoring the cart cached by the cart service.
+     * Shopware 6.4 takes the cart name before the caching flag of CartService::getCart(), 6.5 takes the caching flag
+     * as the third argument.
+     *
+     * @param string $cartToken
+     * @param SalesChannelContext $context
+     *
+     * @return Cart
+     */
+    private function loadUncachedCart(string $cartToken, SalesChannelContext $context): Cart
+    {
+        if (str_starts_with($this->shopwareVersion, '6.4')) {
+            return $this->cartService->getCart($cartToken, $context, CartService::SALES_CHANNEL, false);
+        }
+
+        return $this->cartService->getCart($cartToken, $context, false);
     }
 }
