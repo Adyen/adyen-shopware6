@@ -270,7 +270,7 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         $cart = new Cart('cart-token');
         $this->cartService->expects($this->once())
             ->method('getCart')
-            ->with('cart-token', $context)
+            ->with('cart-token', $context, false)
             ->willReturn($cart);
 
         $this->cartOrderRoute->expects($this->once())
@@ -285,6 +285,57 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             new RequestDataBag(),
             ['details' => ['orderID' => 'PAYPAL-ORDER']],
             []
+        );
+
+        $this->assertSame('order-1', $orderId);
+    }
+
+    public function testExpressCheckoutLoadsTheCartWithTheGuestCustomerContext(): void
+    {
+        $this->givenPaymentDetailsResponse('Authorised');
+        $order = $this->createThrowAwayOrder('order-1', 10);
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $order->setTransactions(new OrderTransactionCollection([$transaction]));
+
+        // Guest express checkout from the product page: the context persisted with the cart token has no customer
+        // and the sales channel default country. The cart has to be loaded with the context that carries the guest
+        // customer created from the PayPal address, otherwise its errors (e.g. a shipping method blocked for the
+        // default country) are carried over into the order and block it.
+        $sessionContext = $this->createSalesChannelContext();
+        $sessionContext->method('getToken')->willReturn('session-token');
+
+        $persistedContext = $this->createSalesChannelContext();
+        $this->expressCheckoutService->method('getSalesChannelContext')->willReturn($persistedContext);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer-1');
+        $guestContext = $this->createSalesChannelContext();
+        $guestContext->method('getCustomer')->willReturn($customer);
+        $newAddress = ['firstName' => 'Test', 'countryCode' => 'AT'];
+        $this->expressCheckoutService->expects($this->once())
+            ->method('createCustomerAndUpdateContext')
+            ->with($persistedContext, 'cart-token', $newAddress)
+            ->willReturn($guestContext);
+
+        $cart = new Cart('cart-token');
+        $this->cartService->expects($this->once())
+            ->method('getCart')
+            ->with('cart-token', $guestContext, false)
+            ->willReturn($cart);
+
+        $this->cartOrderRoute->expects($this->once())
+            ->method('order')
+            ->with($cart, $guestContext)
+            ->willReturn(new CartOrderRouteResponse($order));
+
+        $orderId = $this->paypalPaymentService->finalizeExpressPaypalPayment(
+            'cart-token',
+            $sessionContext,
+            new Request(),
+            new RequestDataBag(),
+            ['details' => ['orderID' => 'PAYPAL-ORDER']],
+            $newAddress
         );
 
         $this->assertSame('order-1', $orderId);
