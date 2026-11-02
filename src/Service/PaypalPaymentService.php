@@ -335,8 +335,13 @@ class PaypalPaymentService
         array $stateData = []
     ): array {
         // Persist customer, payment and shipping method with the cart token, so finalizing can rebuild the context
-        // the shopper is charged for regardless of the storefront session.
-        $this->expressCheckoutService->changeContext($updatedContext->getCustomerId(), $updatedContext);
+        // the shopper is charged for regardless of the storefront session. Only the shopper's own session row
+        // (express checkout from the cart page) takes the customer binding, never the temporary cart token.
+        $this->expressCheckoutService->changeContext(
+            $updatedContext->getCustomerId(),
+            $updatedContext,
+            $context->getToken() === $updatedContext->getToken()
+        );
 
         /** @var Cart $cart */
         $cart = $cartData['cart'];
