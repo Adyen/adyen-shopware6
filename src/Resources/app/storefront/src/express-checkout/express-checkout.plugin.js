@@ -812,13 +812,13 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
         this.newAddress = {
             firstName: nameParts[0] || '',
-            lastName: nameParts[1] || '',
+            lastName: nameParts.slice(1).join(' '),
             street: deliveryAddress.street,
             postalCode: deliveryAddress.postalCode,
             city: deliveryAddress.city,
             countryCode: deliveryAddress.country,
             phoneNumber: payerPhone && payerPhone.national_number ? payerPhone.national_number : '',
-            email: authorizedEvent.payer.email_address
+            email: authorizedEvent.payer && authorizedEvent.payer.email_address ? authorizedEvent.payer.email_address : ''
         }
 
         actions.resolve();
