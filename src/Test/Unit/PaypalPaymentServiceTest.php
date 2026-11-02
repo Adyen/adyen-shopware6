@@ -278,6 +278,11 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             ->with($cart, $context)
             ->willReturn(new CartOrderRouteResponse($order));
 
+        // The express row is addressed by the cart token the order was placed with
+        $this->expressCheckoutService->expects($this->once())
+            ->method('restoreSessionContext')
+            ->with($sessionContext, 'cart-token', $this->anything());
+
         $orderId = $this->paypalPaymentService->finalizeExpressPaypalPayment(
             'cart-token',
             $sessionContext,

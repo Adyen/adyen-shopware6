@@ -242,7 +242,7 @@ readonly class PaypalPaymentService
             } else {
                 $this->expressCheckoutService->restoreSessionContext(
                     $oldContext,
-                    $context->getToken(),
+                    $cartToken,
                     $sessionPayload
                 );
             }

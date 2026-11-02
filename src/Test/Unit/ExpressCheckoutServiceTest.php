@@ -31,6 +31,7 @@ use Adyen\Shopware\Service\Repository\ExpressCheckoutRepository;
 use Adyen\Shopware\Test\Common\AdyenTestCase;
 use Adyen\Shopware\Util\Currency;
 use PHPUnit\Framework\MockObject\MockObject;
+use RuntimeException;
 use Shopware\Core\Checkout\Cart\AbstractCartPersister;
 use Shopware\Core\Checkout\Cart\Order\OrderConverter;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
@@ -52,6 +53,7 @@ class ExpressCheckoutServiceTest extends AdyenTestCase
 {
     private MockObject $contextPersister;
     private MockObject $expressCheckoutRepository;
+    private MockObject $salesChannelContextService;
     private ExpressCheckoutService $expressCheckoutService;
 
     protected function setUp(): void
@@ -60,6 +62,7 @@ class ExpressCheckoutServiceTest extends AdyenTestCase
 
         $this->contextPersister = $this->getSimpleMock(SalesChannelContextPersister::class);
         $this->expressCheckoutRepository = $this->getSimpleMock(ExpressCheckoutRepository::class);
+        $this->salesChannelContextService = $this->createMock(SalesChannelContextServiceInterface::class);
 
         $this->expressCheckoutService = new ExpressCheckoutService(
             $this->getSimpleMock(CartService::class),
@@ -70,7 +73,7 @@ class ExpressCheckoutServiceTest extends AdyenTestCase
             $this->contextPersister,
             $this->getSimpleMock(EntityRepository::class),
             $this->getSimpleMock(OrderConverter::class),
-            $this->createMock(SalesChannelContextServiceInterface::class),
+            $this->salesChannelContextService,
             $this->getSimpleMock(AbstractCartPersister::class)
         );
     }
@@ -89,10 +92,35 @@ class ExpressCheckoutServiceTest extends AdyenTestCase
                     SalesChannelContextService::PAYMENT_METHOD_ID => 'paypal',
                     SalesChannelContextService::SHIPPING_METHOD_ID => 'express',
                 ],
-                'sales-channel-1'
+                'sales-channel-1',
+                null
             );
 
         $this->expressCheckoutService->changeContext(null, $context);
+    }
+
+    public function testContextPersistedWithTheTokenIsReturned(): void
+    {
+        $persistedContext = $this->createSalesChannelContext();
+        $this->salesChannelContextService->method('get')->willReturn($persistedContext);
+
+        $this->assertSame(
+            $persistedContext,
+            $this->expressCheckoutService->getSalesChannelContext('cart-token', 'sales-channel-1')
+        );
+    }
+
+    public function testExpiredContextIsRejected(): void
+    {
+        // Once the persisted row has expired Shopware builds a context with the sales channel defaults under a
+        // fresh token. Nothing may be persisted or ordered with it in place of the express checkout context.
+        $expiredContext = $this->getSimpleMock(SalesChannelContext::class);
+        $expiredContext->method('getToken')->willReturn('fresh-token');
+        $this->salesChannelContextService->method('get')->willReturn($expiredContext);
+
+        $this->expectException(RuntimeException::class);
+
+        $this->expressCheckoutService->getSalesChannelContext('cart-token', 'sales-channel-1');
     }
 
     public function testCustomerIsPersistedWithTheShippingMethod(): void
