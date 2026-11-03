@@ -38,6 +38,7 @@ use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Shopware\Test\Common\AdyenTestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 
 class ProcessNotificationsHandlerProcessingResultTest extends AdyenTestCase
@@ -68,7 +69,8 @@ class ProcessNotificationsHandlerProcessingResultTest extends AdyenTestCase
             $this->getSimpleMock(CaptureService::class),
             $this->getSimpleMock(WebhookHandlerFactory::class),
             $this->getSimpleMock(PaymentResponseService::class),
-            $this->getSimpleMock(PaypalPaymentService::class)
+            $this->getSimpleMock(PaypalPaymentService::class),
+            $this->getSimpleMock(OrderTransactionStateHandler::class)
         );
         $this->handler->setLogger($this->createMock(LoggerInterface::class));
     }
