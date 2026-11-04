@@ -115,11 +115,7 @@ class WebhookHandlerFactory
                 );
                 break;
             case EventCodes::REFUND:
-                $handler = new RefundWebhookHandler(
-                    self::$refundService,
-                    self::$adyenPaymentService,
-                    self::$logger
-                );
+                $handler = new RefundWebhookHandler(self::$refundService);
                 break;
             case EventCodes::REFUND_FAILED:
                 $handler = new RefundFailedWebhookHandler(

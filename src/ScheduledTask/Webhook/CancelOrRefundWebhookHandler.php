@@ -29,6 +29,7 @@ use Adyen\Shopware\Entity\Refund\RefundEntity;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Util\Currency;
 use Adyen\Webhook\PaymentStates;
+use Adyen\Webhook\Processor\CancelOrRefundProcessor;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
@@ -83,10 +84,20 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
             }
 
             $this->handleCancelWebhook($orderTransactionEntity, $this->orderTransactionStateHandler, $state, $context);
+        } elseif ($notificationEntity->isSuccess()
+            && $currentTransactionState === PaymentStates::STATE_REFUNDED
+            && $this->isRefund($notificationEntity)
+        ) {
+            // The order transaction was already set to refunded, e.g. outside the plugin, before Adyen reported
+            // the refund. The refund is stored as successful and the state is not changed.
+            $this->refundService->handleSuccessfulRefundNotification(
+                $orderTransactionEntity->getOrder(),
+                $notificationEntity
+            );
         } else {
             // If CANCEL event fails (ie. success=false), transaction is unchanged.
             // WH processor returns STATE_PAID for unsuccessful REFUND notifications.
-            if ($state === PaymentStates::STATE_PAID) {
+            if (!$notificationEntity->isSuccess() && $state === PaymentStates::STATE_PAID) {
                 $this->handleFailedRefundNotification($orderTransactionEntity, $notificationEntity);
             }
         }
@@ -116,16 +127,33 @@ class CancelOrRefundWebhookHandler implements WebhookHandlerInterface
             throw new \Exception('The refunded amount is greater than the transaction amount.');
         }
 
-        $this->refundService->handleRefundNotification(
+        $this->refundService->handleSuccessfulRefundNotification(
             $orderTransactionEntity->getOrder(),
-            $notificationEntity,
-            RefundEntity::STATUS_SUCCESS
+            $notificationEntity
         );
+
         $transitionState = $refundedAmount < $transactionAmount
             ? OrderTransactionStates::STATE_PARTIALLY_REFUNDED
             : OrderTransactionStates::STATE_REFUNDED;
 
         $this->refundService->doRefund($orderTransactionEntity, $transitionState, $context);
+    }
+
+    /**
+     * A CANCEL_OR_REFUND notification is either a cancellation or a refund, depending on whether the payment
+     * was captured. Adyen reports which of them was done in the modification.action additional data.
+     *
+     * @param NotificationEntity $notificationEntity
+     *
+     * @return bool
+     */
+    private function isRefund(NotificationEntity $notificationEntity): bool
+    {
+        $additionalData = json_decode($notificationEntity->getAdditionalData() ?? '', true);
+
+        return is_array($additionalData)
+            && ($additionalData[CancelOrRefundProcessor::MODIFICATION_ACTION] ?? null)
+            === CancelOrRefundProcessor::REFUND;
     }
 
     /**
