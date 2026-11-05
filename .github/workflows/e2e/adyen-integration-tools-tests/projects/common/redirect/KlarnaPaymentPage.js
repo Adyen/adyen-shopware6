@@ -24,10 +24,8 @@ export default class KlarnaPaymentPage {
       '#offers-selector-pay-now-selector-dialog'
     );
     this.cardRadioOption = this.payNowSelectorDialog
-      .locator(
-        'label[data-fs-offer-type*="CARD" i] [role="radio"], ' +
-          '[role="radio"][id*="card" i]'
-      )
+      .locator('[role="radio"]')
+      .filter({ has: page.locator('img[alt="Visa"], img[alt="Mastercard"]') })
       .first();
     this.payNowSelectorContinueButton = page.getByTestId(
       'offers-selector-pay-now-selector-continue-button'
@@ -55,10 +53,20 @@ export default class KlarnaPaymentPage {
     await this.genericInputField.fill('111111');
 
     if (paynow) {
-      await this.offersSelectorDialog.waitFor({ state: 'visible' });
-      await this.selectRadioIfNeeded(this.payNowOfferOption);
-      await this.offersSelectorContinueButton.click();
-      await this.payNowSelectorDialog.waitFor({ state: 'visible' });
+      await this.offersSelectorDialog
+        .or(this.payNowSelectorDialog)
+        .first()
+        .waitFor({ state: 'visible' });
+
+      // When the only offer is already preselected Klarna opens the pay-now
+      // selector straight away, on top of the offers dialog; the offers
+      // "continue" button is then covered and must not be clicked.
+      if (!(await this.payNowSelectorDialog.isVisible())) {
+        await this.selectRadioIfNeeded(this.payNowOfferOption);
+        await this.offersSelectorContinueButton.click();
+        await this.payNowSelectorDialog.waitFor({ state: 'visible' });
+      }
+
       await this.selectRadioIfNeeded(this.cardRadioOption);
       await this.payNowSelectorContinueButton.click();
     }
@@ -67,8 +75,26 @@ export default class KlarnaPaymentPage {
     await this.confirmAndPayButton.click();
 
     if (threeDsChallenge) {
-      await this.threeDsSubmitButton.click();
+      await this.submitThreeDsChallengeIfPresent();
     }
+  }
+
+  /**
+   * Klarna does not always challenge the test card anymore; submit the
+   * challenge when it shows up, otherwise let the redirect back to the shop
+   * complete on its own.
+   */
+  async submitThreeDsChallengeIfPresent() {
+    try {
+      await this.threeDsSubmitButton.waitFor({
+        state: 'visible',
+        timeout: 15000,
+      });
+    } catch {
+      return;
+    }
+
+    await this.threeDsSubmitButton.click();
   }
 
   /**
