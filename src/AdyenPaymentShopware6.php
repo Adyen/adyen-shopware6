@@ -43,6 +43,7 @@ use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
+use Shopware\Core\Framework\Plugin\PluginLifecycleService;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -51,6 +52,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Console\CommandLoader\CommandLoaderInterface;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\NullOutput;
 
 class AdyenPaymentShopware6 extends Plugin
 {
@@ -215,6 +219,8 @@ class AdyenPaymentShopware6 extends Plugin
             $handler = $this->container->get("Adyen\Shopware\Service\FetchLogosService");
             $handler->getHandler()->run();
         }
+
+        $this->recompileThemesBelowShopware65($updateContext);
     }
 
     private function addPaymentMethod(PaymentMethods\PaymentMethodInterface $paymentMethod, Context $context): void
@@ -725,6 +731,38 @@ class AdyenPaymentShopware6 extends Plugin
         // Version 3.22.1 removes Amazon Pay
         $paymentMethodHandler = 'Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler';
         $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
+    }
+
+    /**
+     * Below Shopware 6.5 the themes are compiled on PluginPreUpdateEvent, before update() copies the storefront
+     * build for that version, so the compiled theme would contain the 6.5 build shipped in the plugin package.
+     * The themes are compiled again here, after the correct build is in place.
+     *
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
+    private function recompileThemesBelowShopware65(UpdateContext $updateContext): void
+    {
+        if (\version_compare($updateContext->getCurrentShopwareVersion(), '6.5.0.0', '>=')
+            || !$this->isActive()
+            || $updateContext->getContext()->hasState(PluginLifecycleService::STATE_SKIP_ASSET_BUILDING)
+        ) {
+            return;
+        }
+
+        try {
+            // The theme services are private, the console command loader is the public entry point to them
+            /** @var CommandLoaderInterface $commandLoader */
+            $commandLoader = $this->container->get('console.command_loader');
+            if (!$commandLoader->has('theme:compile')) {
+                return;
+            }
+
+            $commandLoader->get('theme:compile')->run(new ArrayInput([]), new NullOutput());
+        } catch (\Throwable $e) {
+            // The update itself succeeded, the themes can still be compiled with `bin/console theme:compile`
+        }
     }
 
     private function safeCopyAsset($source, $destination): bool

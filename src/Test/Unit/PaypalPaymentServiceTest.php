@@ -59,6 +59,7 @@ use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
+use Shopware\Core\Kernel;
 use Shopware\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -115,7 +116,8 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             $this->orderRepository,
             $this->paymentReversalService,
             $this->paypalPaymentAttemptRepository,
-            $this->logger
+            $this->logger,
+            Kernel::SHOPWARE_FALLBACK_VERSION
         );
     }
 
@@ -226,8 +228,10 @@ class PaypalPaymentServiceTest extends AdyenTestCase
 
         $paymentMethod = new PaymentMethodEntity();
         $paymentMethod->setName(PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME);
+        // Express checkout from the cart page: the cart token is the session token, so the session context is used
         $oldContext = $this->createSalesChannelContext();
         $oldContext->method('getPaymentMethod')->willReturn($paymentMethod);
+        $oldContext->method('getToken')->willReturn('cart-token');
 
         $customer = new CustomerEntity();
         $customer->setId('customer-1');
@@ -237,6 +241,7 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         $this->cartService->method('getCart')->willReturn($this->createCart());
         $this->expressCheckoutService->method('createCustomerAndUpdateContext')->willReturn($guestContext);
 
+        $this->expressCheckoutService->expects($this->never())->method('getSalesChannelContext');
         $this->expressCheckoutService->expects($this->once())
             ->method('changeContext')
             ->with('customer-1', $oldContext);
@@ -251,6 +256,99 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             ['details' => ['orderID' => 'PAYPAL-ORDER']],
             ['firstName' => 'Test']
         );
+    }
+
+    public function testExpressCheckoutUsesTheContextPersistedWithTheCartToken(): void
+    {
+        $this->givenPaymentDetailsResponse('Authorised');
+        $order = $this->createThrowAwayOrder('order-1', 10);
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $order->setTransactions(new OrderTransactionCollection([$transaction]));
+
+        // Express checkout from the product page: the cart token differs from the storefront session token, so the
+        // order is placed with the context persisted for the cart token, whatever the session uses
+        $sessionContext = $this->createSalesChannelContext();
+        $sessionContext->method('getToken')->willReturn('session-token');
+
+        $context = $this->createSalesChannelContext();
+        $this->expressCheckoutService->expects($this->once())
+            ->method('getSalesChannelContext')
+            ->with('cart-token', 'sales-channel-1', $sessionContext)
+            ->willReturn($context);
+
+        $cart = $this->createCart();
+        $this->cartService->expects($this->once())
+            ->method('getCart')
+            ->with(...$this->uncachedGetCartArguments('cart-token', $context))
+            ->willReturn($cart);
+
+        $this->cartOrderRoute->expects($this->once())
+            ->method('order')
+            ->with($cart, $context)
+            ->willReturn(new CartOrderRouteResponse($order));
+
+        $orderId = $this->paypalPaymentService->finalizeExpressPaypalPayment(
+            'cart-token',
+            $sessionContext,
+            new Request(),
+            new RequestDataBag(),
+            ['details' => ['orderID' => 'PAYPAL-ORDER']],
+            []
+        );
+
+        $this->assertSame('order-1', $orderId);
+    }
+
+    public function testExpressCheckoutLoadsTheCartWithTheGuestCustomerContext(): void
+    {
+        $this->givenPaymentDetailsResponse('Authorised');
+        $order = $this->createThrowAwayOrder('order-1', 10);
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $order->setTransactions(new OrderTransactionCollection([$transaction]));
+
+        // Guest express checkout from the product page: the context persisted with the cart token has no customer
+        // and the sales channel default country. The cart has to be loaded with the context that carries the guest
+        // customer created from the PayPal address, otherwise its errors (e.g. a shipping method blocked for the
+        // default country) are carried over into the order and block it.
+        $sessionContext = $this->createSalesChannelContext();
+        $sessionContext->method('getToken')->willReturn('session-token');
+
+        $persistedContext = $this->createSalesChannelContext();
+        $this->expressCheckoutService->method('getSalesChannelContext')->willReturn($persistedContext);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer-1');
+        $guestContext = $this->createSalesChannelContext();
+        $guestContext->method('getCustomer')->willReturn($customer);
+        $newAddress = ['firstName' => 'Test', 'countryCode' => 'AT'];
+        $this->expressCheckoutService->expects($this->once())
+            ->method('createCustomerAndUpdateContext')
+            ->with($persistedContext, 'cart-token', $newAddress)
+            ->willReturn($guestContext);
+
+        $cart = $this->createCart();
+        $this->cartService->expects($this->once())
+            ->method('getCart')
+            ->with(...$this->uncachedGetCartArguments('cart-token', $guestContext))
+            ->willReturn($cart);
+
+        $this->cartOrderRoute->expects($this->once())
+            ->method('order')
+            ->with($cart, $guestContext)
+            ->willReturn(new CartOrderRouteResponse($order));
+
+        $orderId = $this->paypalPaymentService->finalizeExpressPaypalPayment(
+            'cart-token',
+            $sessionContext,
+            new Request(),
+            new RequestDataBag(),
+            ['details' => ['orderID' => 'PAYPAL-ORDER']],
+            $newAddress
+        );
+
+        $this->assertSame('order-1', $orderId);
     }
 
     public function testNotificationWithoutOrderIsIgnoredWhenThereIsNoPaypalPaymentAttempt(): void
@@ -429,6 +527,18 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         return $constructor->getNumberOfParameters() > 1 ?
             new Cart('adyen', 'cart-token') :
             new Cart('cart-token');
+    }
+
+    /**
+     * Shopware 6.4 takes the cart name before the caching flag of CartService::getCart(), 6.5 the caching flag only.
+     * The service is given the version of the installed Shopware, so that the mocked cart service has the matching
+     * signature.
+     */
+    private function uncachedGetCartArguments(string $token, MockObject $context): array
+    {
+        return str_starts_with(Kernel::SHOPWARE_FALLBACK_VERSION, '6.4') ?
+            [$token, $context, CartService::SALES_CHANNEL, false] :
+            [$token, $context, false];
     }
 
     private function createSalesChannelContext(): MockObject

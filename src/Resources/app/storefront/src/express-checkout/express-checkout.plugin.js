@@ -805,15 +805,20 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
     // Callback for PayPal payment method
     onShopperDetails({authorizedEvent, billingAddress, deliveryAddress}, actions) {
+        // Optional chaining and nullish coalescing are not supported by the Shopware 6.4 storefront build
+        const nameParts = (deliveryAddress.firstName || '').split(" ");
+        const payerPhone = authorizedEvent.payer && authorizedEvent.payer.phone ?
+            authorizedEvent.payer.phone.phone_number : null;
+
         this.newAddress = {
-            firstName: deliveryAddress.firstName.split(" ")[0],
-            lastName: deliveryAddress.firstName.split(" ")[1],
+            firstName: nameParts[0] || '',
+            lastName: nameParts.slice(1).join(' '),
             street: deliveryAddress.street,
             postalCode: deliveryAddress.postalCode,
             city: deliveryAddress.city,
             countryCode: deliveryAddress.country,
-            phoneNumber: authorizedEvent.payer.phone.phone_number.national_number,
-            email: authorizedEvent.payer.email_address
+            phoneNumber: payerPhone && payerPhone.national_number ? payerPhone.national_number : '',
+            email: authorizedEvent.payer && authorizedEvent.payer.email_address ? authorizedEvent.payer.email_address : ''
         }
 
         actions.resolve();
