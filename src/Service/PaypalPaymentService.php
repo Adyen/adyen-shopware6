@@ -202,11 +202,18 @@ readonly class PaypalPaymentService
         // Captured before the order is placed
         $sessionPayload = $this->expressCheckoutService->snapshotContextPayload($oldContext);
 
+        // Express checkout from the product page uses its own cart token: the context persisted with that token
+        // carries the customer, payment and shipping method the shopper was charged for (see
+        // createPayPalExpressPaymentRequest()). Language and domain of the request are applied, its currency is used
+        // when none is persisted with the token.
         if ($context->getToken() !== $cartToken) {
-            $context = $this->expressCheckoutService->getSalesChannelContext($cartToken, $context->getSalesChannelId());
+            $context = $this->expressCheckoutService->getSalesChannelContext(
+                $cartToken,
+                $context->getSalesChannelId(),
+                $context
+            );
         }
 
-        $cart = $this->cartService->getCart($cartToken, $context);
         if (!empty($newAddress)) {
             $context = $this->expressCheckoutService->createCustomerAndUpdateContext(
                 $context,
@@ -216,6 +223,13 @@ readonly class PaypalPaymentService
 
             $customerID = $context->getCustomer()->getId();
         }
+
+        // The cart is loaded only once the context carries the guest customer, and without the cart cached while
+        // the context was rebuilt: the checkout gateway copies the errors of the cart given to the order route into
+        // the order. A cart calculated against the context without the customer's address (sales channel default
+        // country) could carry a shipping method error that blocks the order although the method is valid for the
+        // delivery country.
+        $cart = $this->cartService->getCart($cartToken, $context, false);
 
         try {
             return $this->finalizePaypalPayment($context, $cart, $request, $dataBag, $stateData);
@@ -228,7 +242,7 @@ readonly class PaypalPaymentService
             } else {
                 $this->expressCheckoutService->restoreSessionContext(
                     $oldContext,
-                    $context->getToken(),
+                    $cartToken,
                     $sessionPayload
                 );
             }

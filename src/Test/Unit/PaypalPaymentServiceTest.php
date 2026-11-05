@@ -53,6 +53,7 @@ use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRouteResponse;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Checkout\Payment\SalesChannel\AbstractHandlePaymentMethodRoute;
@@ -217,8 +218,10 @@ class PaypalPaymentServiceTest extends AdyenTestCase
 
         $paymentMethod = new PaymentMethodEntity();
         $paymentMethod->setName(PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME);
+        // Express checkout from the cart page: the cart token is the session token, so the session context is used
         $oldContext = $this->createSalesChannelContext();
         $oldContext->method('getPaymentMethod')->willReturn($paymentMethod);
+        $oldContext->method('getToken')->willReturn('cart-token');
 
         $customer = new CustomerEntity();
         $customer->setId('customer-1');
@@ -228,6 +231,7 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         $this->cartService->method('getCart')->willReturn(new Cart('cart-token'));
         $this->expressCheckoutService->method('createCustomerAndUpdateContext')->willReturn($guestContext);
 
+        $this->expressCheckoutService->expects($this->never())->method('getSalesChannelContext');
         $this->expressCheckoutService->expects($this->once())
             ->method('changeContext')
             ->with('customer-1', $oldContext);
@@ -242,6 +246,104 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             ['details' => ['orderID' => 'PAYPAL-ORDER']],
             ['firstName' => 'Test']
         );
+    }
+
+    public function testExpressCheckoutUsesTheContextPersistedWithTheCartToken(): void
+    {
+        $this->givenPaymentDetailsResponse('Authorised');
+        $order = $this->createThrowAwayOrder('order-1', 10);
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $order->setTransactions(new OrderTransactionCollection([$transaction]));
+
+        // Express checkout from the product page: the cart token differs from the storefront session token, so the
+        // order is placed with the context persisted for the cart token, whatever the session uses
+        $sessionContext = $this->createSalesChannelContext();
+        $sessionContext->method('getToken')->willReturn('session-token');
+
+        $context = $this->createSalesChannelContext();
+        $this->expressCheckoutService->expects($this->once())
+            ->method('getSalesChannelContext')
+            ->with('cart-token', 'sales-channel-1', $sessionContext)
+            ->willReturn($context);
+
+        $cart = new Cart('cart-token');
+        $this->cartService->expects($this->once())
+            ->method('getCart')
+            ->with('cart-token', $context, false)
+            ->willReturn($cart);
+
+        $this->cartOrderRoute->expects($this->once())
+            ->method('order')
+            ->with($cart, $context)
+            ->willReturn(new CartOrderRouteResponse($order));
+
+        // The express row is addressed by the cart token the order was placed with
+        $this->expressCheckoutService->expects($this->once())
+            ->method('restoreSessionContext')
+            ->with($sessionContext, 'cart-token', $this->anything());
+
+        $orderId = $this->paypalPaymentService->finalizeExpressPaypalPayment(
+            'cart-token',
+            $sessionContext,
+            new Request(),
+            new RequestDataBag(),
+            ['details' => ['orderID' => 'PAYPAL-ORDER']],
+            []
+        );
+
+        $this->assertSame('order-1', $orderId);
+    }
+
+    public function testExpressCheckoutLoadsTheCartWithTheGuestCustomerContext(): void
+    {
+        $this->givenPaymentDetailsResponse('Authorised');
+        $order = $this->createThrowAwayOrder('order-1', 10);
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $order->setTransactions(new OrderTransactionCollection([$transaction]));
+
+        // Guest express checkout from the product page: the context persisted with the cart token has no customer
+        // and the sales channel default country. The cart has to be loaded with the context that carries the guest
+        // customer created from the PayPal address, otherwise its errors (e.g. a shipping method blocked for the
+        // default country) are carried over into the order and block it.
+        $sessionContext = $this->createSalesChannelContext();
+        $sessionContext->method('getToken')->willReturn('session-token');
+
+        $persistedContext = $this->createSalesChannelContext();
+        $this->expressCheckoutService->method('getSalesChannelContext')->willReturn($persistedContext);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer-1');
+        $guestContext = $this->createSalesChannelContext();
+        $guestContext->method('getCustomer')->willReturn($customer);
+        $newAddress = ['firstName' => 'Test', 'countryCode' => 'AT'];
+        $this->expressCheckoutService->expects($this->once())
+            ->method('createCustomerAndUpdateContext')
+            ->with($persistedContext, 'cart-token', $newAddress)
+            ->willReturn($guestContext);
+
+        $cart = new Cart('cart-token');
+        $this->cartService->expects($this->once())
+            ->method('getCart')
+            ->with('cart-token', $guestContext, false)
+            ->willReturn($cart);
+
+        $this->cartOrderRoute->expects($this->once())
+            ->method('order')
+            ->with($cart, $guestContext)
+            ->willReturn(new CartOrderRouteResponse($order));
+
+        $orderId = $this->paypalPaymentService->finalizeExpressPaypalPayment(
+            'cart-token',
+            $sessionContext,
+            new Request(),
+            new RequestDataBag(),
+            ['details' => ['orderID' => 'PAYPAL-ORDER']],
+            $newAddress
+        );
+
+        $this->assertSame('order-1', $orderId);
     }
 
     public function testNotificationWithoutOrderIsIgnoredWhenThereIsNoPaypalPaymentAttempt(): void

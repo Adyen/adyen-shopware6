@@ -570,10 +570,8 @@ class PaymentSubscriber extends StorefrontSubscriber implements EventSubscriberI
         $page->setPaymentMethods($filteredPaymentMethods);
         $paymentMethodsArray = $this->paymentMethodsService->getPaymentMethodsArray($paymentMethodsResponse);
 
-        $paymentMethods = $this->paymentMethodsService->getPaymentMethods($salesChannelContext);
-
         $giftcards = $this->paymentMethodsFilterService->filterAdyenPaymentMethodsByType(
-            $paymentMethods->getPaymentMethods() ?? [],
+            $paymentMethodsResponse->getPaymentMethods() ?? [],
             'giftcard'
         );
 
