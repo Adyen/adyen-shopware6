@@ -27,6 +27,7 @@ use Adyen\AdyenException;
 use Adyen\Model\Checkout\PaymentDetailsRequest;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Service\Checkout\PaymentsApi;
+use Adyen\Shopware\Exception\PaymentDetailsCallFailedException;
 use Adyen\Shopware\Exception\PaymentFailedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandlerResult;
@@ -72,6 +73,7 @@ class PaymentDetailsService
      * @param OrderTransactionEntity $orderTransaction
      * @return PaymentResponseHandlerResult
      * @throws PaymentFailedException
+     * @throws PaymentDetailsCallFailedException
      */
     public function getPaymentDetails(
         PaymentDetailsRequest $requestData,
@@ -88,7 +90,7 @@ class PaymentDetailsService
             return $this->paymentResponseHandler->handlePaymentResponse($paymentDetailsResponse, $orderTransaction);
         } catch (AdyenException $exception) {
             $this->logger->error($exception->getMessage());
-            throw new PaymentFailedException($exception->getMessage());
+            throw new PaymentDetailsCallFailedException($exception->getMessage());
         }
     }
 }

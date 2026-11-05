@@ -133,6 +133,7 @@
             <argument key="$handlePaymentMethodRoute" type="service"
                       id="Shopware\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute"/>
             <argument key="$logger" type="service" id="monolog.logger.adyen_generic"/>
+            <argument key="$shopwareVersion">%kernel.shopware_version%</argument>
         </service>
 
         <service id="Adyen\Shopware\Service\PaymentRequest\PaymentRequestService">

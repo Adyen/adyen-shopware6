@@ -34,6 +34,8 @@
             <argument type="service" id="Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory"/>
             <argument type="service" id="Adyen\Shopware\Service\PaymentResponseService"/>
             <argument type="service" id="Adyen\Shopware\Service\PaypalPaymentService"/>
+            <argument type="service"
+                      id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <tag name="messenger.message_handler"/>
             <call method="setLogger">
                 <argument key="$logger" type="service" id="monolog.logger.adyen_notification"/>
