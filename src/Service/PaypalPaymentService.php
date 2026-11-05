@@ -39,7 +39,6 @@ use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 use Adyen\Shopware\Models\NotificationProcessingResult;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
-use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
 use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\PaypalPaymentAttemptRepository;
@@ -122,6 +121,9 @@ class PaypalPaymentService
     /** @var LoggerInterface $logger */
     private LoggerInterface $logger;
 
+    /** @var string $shopwareVersion */
+    private string $shopwareVersion;
+
     /**
      * @param ClientService $clientService
      * @param NumberRangeValueGeneratorInterface $numberRangeValueGenerator
@@ -137,6 +139,7 @@ class PaypalPaymentService
      * @param PaymentReversalService $paymentReversalService
      * @param PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository
      * @param LoggerInterface $logger
+     * @param string $shopwareVersion
      */
     public function __construct( // NOSONAR
         ClientService $clientService,
@@ -152,7 +155,8 @@ class PaypalPaymentService
         OrderRepository $orderRepository,
         PaymentReversalService $paymentReversalService,
         PaypalPaymentAttemptRepository $paypalPaymentAttemptRepository,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        string $shopwareVersion
     ) {
         $this->clientService = $clientService;
         $this->numberRangeValueGenerator = $numberRangeValueGenerator;
@@ -168,6 +172,7 @@ class PaypalPaymentService
         $this->paymentReversalService = $paymentReversalService;
         $this->paypalPaymentAttemptRepository = $paypalPaymentAttemptRepository;
         $this->logger = $logger;
+        $this->shopwareVersion = $shopwareVersion;
     }
 
     /**
@@ -272,11 +277,18 @@ class PaypalPaymentService
         $oldContext = $context;
         $customerID = null;
 
-        if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
-            $context = $this->expressCheckoutService->getSalesChannelContext($cartToken, $context->getSalesChannelId());
+        // Express checkout from the product page uses its own cart token: the context persisted with that token
+        // carries the customer, payment and shipping method the shopper was charged for (see
+        // createPayPalExpressPaymentRequest()). Language and domain of the request are applied, its currency is used
+        // when none is persisted with the token.
+        if ($context->getToken() !== $cartToken) {
+            $context = $this->expressCheckoutService->getSalesChannelContext(
+                $cartToken,
+                $context->getSalesChannelId(),
+                $context
+            );
         }
 
-        $cart = $this->cartService->getCart($cartToken, $context);
         if (!empty($newAddress)) {
             $context = $this->expressCheckoutService->createCustomerAndUpdateContext(
                 $context,
@@ -286,6 +298,13 @@ class PaypalPaymentService
 
             $customerID = $context->getCustomer()->getId();
         }
+
+        // The cart is loaded only once the context carries the guest customer, and without the cart cached while
+        // the context was rebuilt: the checkout gateway copies the errors of the cart given to the order route into
+        // the order. A cart calculated against the context without the customer's address (sales channel default
+        // country) could carry a shipping method error that blocks the order although the method is valid for the
+        // delivery country.
+        $cart = $this->loadUncachedCart($cartToken, $context);
 
         try {
             return $this->finalizePaypalPayment($context, $cart, $request, $dataBag, $stateData);
@@ -315,12 +334,14 @@ class PaypalPaymentService
         SalesChannelContext $updatedContext,
         array $stateData = []
     ): array {
-        if ($context->getPaymentMethod()->getName() !== PaypalPaymentMethod::PAYPAL_PAYMENT_METHOD_NAME) {
-            $this->expressCheckoutService->changeContext(
-                $updatedContext->getCustomerId(),
-                $updatedContext
-            );
-        }
+        // Persist customer, payment and shipping method with the cart token, so finalizing can rebuild the context
+        // the shopper is charged for regardless of the storefront session. Only the shopper's own session row
+        // (express checkout from the cart page) takes the customer binding, never the temporary cart token.
+        $this->expressCheckoutService->changeContext(
+            $updatedContext->getCustomerId(),
+            $updatedContext,
+            $context->getToken() === $updatedContext->getToken()
+        );
 
         /** @var Cart $cart */
         $cart = $cartData['cart'];
@@ -589,5 +610,24 @@ class PaypalPaymentService
         return new PaymentsApi(
             $this->clientService->getClient($context->getSalesChannelId())
         );
+    }
+
+    /**
+     * Loads the cart of the token calculated against the given context, ignoring the cart cached by the cart service.
+     * Shopware 6.4 takes the cart name before the caching flag of CartService::getCart(), 6.5 takes the caching flag
+     * as the third argument.
+     *
+     * @param string $cartToken
+     * @param SalesChannelContext $context
+     *
+     * @return Cart
+     */
+    private function loadUncachedCart(string $cartToken, SalesChannelContext $context): Cart
+    {
+        if (str_starts_with($this->shopwareVersion, '6.4')) {
+            return $this->cartService->getCart($cartToken, $context, CartService::SALES_CHANNEL, false);
+        }
+
+        return $this->cartService->getCart($cartToken, $context, false);
     }
 }
