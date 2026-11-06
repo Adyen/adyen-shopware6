@@ -152,6 +152,12 @@ readonly class PaypalPaymentService
         try {
             if ($order->getTransactions() &&
                 $order->getTransactions()->first()) {
+                // /payments was sent before the order existed, so the capture configuration is stored now (Q7).
+                $this->paymentRequestService->storeCaptureConfiguration(
+                    $order->getTransactions()->first(),
+                    PaypalPaymentMethodHandler::class,
+                    $context->getSalesChannelId()
+                );
                 $this->paymentResponseHandler
                     ->handlePaymentResponse($paymentDetailsResponse, $order->getTransactions()->first());
                 $this->paymentResponseHandler

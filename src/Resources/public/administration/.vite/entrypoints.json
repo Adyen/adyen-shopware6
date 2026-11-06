@@ -3,11 +3,11 @@
   "entryPoints": {
     "adyen-payment-shopware6": {
       "css": [
-        "/bundles/adyenpaymentshopware6/administration/assets/adyen-payment-shopware6-Bu7W2Mdr.css"
+        "/bundles/adyenpaymentshopware6/administration/assets/adyen-payment-shopware6-DzCFTOew.css"
       ],
       "dynamic": [],
       "js": [
-        "/bundles/adyenpaymentshopware6/administration/assets/adyen-payment-shopware6-C6ALMfX1.js"
+        "/bundles/adyenpaymentshopware6/administration/assets/adyen-payment-shopware6-BHWyOrc8.js"
       ],
       "legacy": false,
       "preload": []

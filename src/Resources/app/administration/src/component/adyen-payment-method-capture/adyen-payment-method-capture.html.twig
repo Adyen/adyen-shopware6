@@ -1,0 +1,111 @@
+{% block adyen_payment_method_capture %}
+<mt-card
+    v-if="supported"
+    class="adyen-payment-method-capture"
+    position-identifier="adyen-payment-method-capture"
+    :title="$tc('adyen.captureConfiguration.title')"
+    :is-loading="isLoading"
+>
+    {% block adyen_payment_method_capture_sales_channel %}
+    <sw-sales-channel-switch
+        class="adyen-payment-method-capture__sales-channel"
+        :label="$tc('adyen.captureConfiguration.salesChannel')"
+        @change-sales-channel-id="onSalesChannelChanged"
+    />
+    {% endblock %}
+
+    <template v-if="scope">
+        {% block adyen_payment_method_capture_mode %}
+        <sw-inherit-wrapper
+            class="adyen-payment-method-capture__mode"
+            :value="modeValue"
+            :inherited-value="scope.inherited.mode"
+            :has-parent="isSalesChannel"
+            :label="$tc('adyen.captureConfiguration.captureLabel')"
+            :help-text="$tc('adyen.captureConfiguration.captureHelpText')"
+            @update:value="updateField('mode', $event)"
+        >
+            <template #content="props">
+                <sw-single-select
+                    :value="props.currentValue"
+                    :options="modeOptions"
+                    :disabled="props.isInherited"
+                    @update:value="props.updateCurrentValue"
+                />
+            </template>
+        </sw-inherit-wrapper>
+
+        <p class="adyen-payment-method-capture__applied">
+            {{ appliedText }}
+        </p>
+        {% endblock %}
+
+        {% block adyen_payment_method_capture_delay_days %}
+        <sw-inherit-wrapper
+            v-if="currentMode === 'delayed'"
+            class="adyen-payment-method-capture__delay-days"
+            :value="scope.values.delayDays"
+            :inherited-value="scope.inherited.delayDays"
+            :has-parent="true"
+            :label="$tc('adyen.captureConfiguration.delayDaysLabel')"
+            :help-text="$tc('adyen.captureConfiguration.delayDaysHelpText')"
+            @update:value="updateField('delayDays', $event)"
+        >
+            <template #content="props">
+                <mt-number-field
+                    number-type="int"
+                    :model-value="props.currentValue"
+                    :disabled="props.isInherited"
+                    :placeholder="getPlaceholder('delayDays')"
+                    :help-text="$tc('adyen.captureConfiguration.delayDaysHint')"
+                    @update:model-value="props.updateCurrentValue"
+                />
+            </template>
+        </sw-inherit-wrapper>
+        {% endblock %}
+
+        {% block adyen_payment_method_capture_on_shipment %}
+        <template v-if="currentMode === 'on_shipment'">
+            <sw-inherit-wrapper
+                class="adyen-payment-method-capture__order-state"
+                :value="scope.values.orderState"
+                :inherited-value="scope.inherited.orderState"
+                :has-parent="true"
+                :label="$tc('adyen.captureConfiguration.orderStateLabel')"
+                :help-text="$tc('adyen.captureConfiguration.orderStateHelpText')"
+                @update:value="updateField('orderState', $event)"
+            >
+                <template #content="props">
+                    <sw-entity-single-select-override
+                        entity="state_machine_state"
+                        :value="props.currentValue"
+                        :disabled="props.isInherited"
+                        @update:value="props.updateCurrentValue"
+                    />
+                </template>
+            </sw-inherit-wrapper>
+
+            <sw-inherit-wrapper
+                class="adyen-payment-method-capture__retry-interval"
+                :value="scope.values.retryInterval"
+                :inherited-value="scope.inherited.retryInterval"
+                :has-parent="true"
+                :label="$tc('adyen.captureConfiguration.retryIntervalLabel')"
+                :help-text="$tc('adyen.captureConfiguration.retryIntervalHelpText')"
+                @update:value="updateField('retryInterval', $event)"
+            >
+                <template #content="props">
+                    <mt-number-field
+                        number-type="int"
+                        :model-value="props.currentValue"
+                        :disabled="props.isInherited"
+                        :placeholder="getPlaceholder('retryInterval')"
+                        @update:model-value="props.updateCurrentValue"
+                    />
+                </template>
+            </sw-inherit-wrapper>
+        </template>
+        {% endblock %}
+    </template>
+</mt-card>
+{% endblock %}

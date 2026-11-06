@@ -27,6 +27,7 @@ namespace Adyen\Shopware\Handlers;
 
 use Adyen\AdyenException;
 
+use Adyen\Shopware\Models\Capture\CaptureConfiguration;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
@@ -200,6 +201,11 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
     private ?int $remainingAmount = null;
 
     /**
+     * @var CaptureConfiguration|null $captureConfiguration Capture configuration of the payment being processed.
+     */
+    private ?CaptureConfiguration $captureConfiguration = null;
+
+    /**
      * @var EntityRepository $orderRepository
      */
     private EntityRepository $orderRepository;
@@ -353,6 +359,13 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
 
         $this->paymentsApiService = new PaymentsApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannelId())
+        );
+
+        // Resolved and stored once per payment; every /payments request of it (gift cards included) uses it.
+        $this->captureConfiguration = $this->paymentRequestService->storeCaptureConfiguration(
+            $orderTransaction,
+            static::class,
+            $salesChannelContext->getSalesChannelId()
         );
 
         $countStateData = 0;
@@ -650,7 +663,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
                 shopperInteraction: static::class === OneClickPaymentMethodHandler::class
                     ? PaymentRequestService::SHOPPER_INTERACTION_CONTAUTH
                     : PaymentRequestService::SHOPPER_INTERACTION_ECOMMERCE,
-                paymentMethodHandler: static::class
+                paymentMethodHandler: static::class,
+                captureConfiguration: $this->captureConfiguration
             );
         } catch (PaymentException $exception) {
             $this->logger->error($exception->getMessage());

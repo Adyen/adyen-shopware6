@@ -30,7 +30,7 @@ use Adyen\Model\Checkout\PaymentDetailsResponse;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
-use Adyen\Shopware\Service\CaptureService;
+use Adyen\Shopware\Service\CaptureConfigurationResolver;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository as AdyenOrderTransactionRepository;
 use Psr\Log\LoggerInterface;
@@ -93,16 +93,16 @@ class PaymentResponseHandler
     private ConfigurationService $configurationService;
 
     /**
-     * @var CaptureService
+     * @var CaptureConfigurationResolver
      */
-    private CaptureService $captureService;
+    private CaptureConfigurationResolver $captureConfigurationResolver;
 
     /**
      * @param LoggerInterface $logger
      * @param PaymentResponseService $paymentResponseService
      * @param OrderTransactionStateHandler $transactionStateHandler
      * @param EntityRepository $orderTransactionRepository
-     * @param CaptureService $captureService
+     * @param CaptureConfigurationResolver $captureConfigurationResolver
      * @param ConfigurationService $configurationService
      * @param AdyenOrderTransactionRepository $adyenOrderTransactionRepository
      */
@@ -111,7 +111,7 @@ class PaymentResponseHandler
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
         EntityRepository $orderTransactionRepository,
-        CaptureService $captureService,
+        CaptureConfigurationResolver $captureConfigurationResolver,
         ConfigurationService $configurationService,
         AdyenOrderTransactionRepository $adyenOrderTransactionRepository
     ) {
@@ -119,7 +119,7 @@ class PaymentResponseHandler
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->orderTransactionRepository = $orderTransactionRepository;
-        $this->captureService = $captureService;
+        $this->captureConfigurationResolver = $captureConfigurationResolver;
         $this->configurationService = $configurationService;
         $this->adyenOrderTransactionRepository = $adyenOrderTransactionRepository;
     }
@@ -248,10 +248,10 @@ class PaymentResponseHandler
         }
 
         $stateTechnicalName = $stateMachineState->getTechnicalName();
-        $requiresManualCapture = $this->captureService->isManualCapture(
-            $transaction->getPaymentMethod()?->getHandlerIdentifier(),
+        $requiresManualCapture = $this->captureConfigurationResolver->resolveForTransaction(
+            $transaction,
             $salesChannelContext->getSalesChannelId()
-        );
+        )->isDeferredCapture();
 
         // Get already stored transaction custom fields
         $storedTransactionCustomFields = $transaction->getCustomFields() ?: [];

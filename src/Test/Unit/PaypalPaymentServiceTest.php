@@ -32,6 +32,9 @@ use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaypalPaymentAttempt\PaypalPaymentAttemptEntity;
 use Adyen\Shopware\Exception\PaymentReversedException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
+use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
+use Adyen\Shopware\Models\Capture\CaptureConfiguration;
+use Adyen\Shopware\Models\Capture\CaptureMode;
 use Adyen\Shopware\Models\NotificationProcessingResult;
 use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
 use Adyen\Shopware\Service\ClientService;
@@ -73,6 +76,7 @@ class PaypalPaymentServiceTest extends AdyenTestCase
     private MockObject $expressCheckoutService;
     private MockObject $cartService;
     private MockObject $logger;
+    private MockObject $paymentRequestService;
     private PaypalPaymentService $paypalPaymentService;
 
     protected function setUp(): void
@@ -95,6 +99,9 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         $this->expressCheckoutService = $this->getSimpleMock(ExpressCheckoutService::class);
         $this->cartService = $this->getSimpleMock(CartService::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->paymentRequestService = $this->getSimpleMock(PaymentRequestService::class);
+        $this->paymentRequestService->method('storeCaptureConfiguration')
+            ->willReturn(CaptureConfiguration::automatic());
 
         $this->paypalPaymentService = new PaypalPaymentService(
             $clientService,
@@ -105,7 +112,7 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             $this->getSimpleMock(AbstractHandlePaymentMethodRoute::class),
             $this->expressCheckoutService,
             $this->cartService,
-            $this->getSimpleMock(PaymentRequestService::class),
+            $this->paymentRequestService,
             $this->orderRepository,
             $this->paymentReversalService,
             $this->paypalPaymentAttemptRepository,
@@ -208,6 +215,23 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         $this->paypalPaymentAttemptRepository->expects($this->once())
             ->method('deleteByMerchantReference')
             ->with('10001');
+
+        $this->assertSame('order-1', $this->finalize());
+    }
+
+    public function testCaptureConfigurationIsStoredOnTheCreatedOrderTransaction(): void
+    {
+        $this->givenPaymentDetailsResponse('Authorised');
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $order = $this->createThrowAwayOrder('order-1', 10);
+        $order->setTransactions(new OrderTransactionCollection([$transaction]));
+        $this->cartOrderRoute->method('order')->willReturn(new CartOrderRouteResponse($order));
+
+        $this->paymentRequestService->expects($this->once())
+            ->method('storeCaptureConfiguration')
+            ->with($transaction, PaypalPaymentMethodHandler::class, 'sales-channel-1')
+            ->willReturn(new CaptureConfiguration(CaptureMode::MANUAL));
 
         $this->assertSame('order-1', $this->finalize());
     }

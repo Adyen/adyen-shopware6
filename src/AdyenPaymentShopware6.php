@@ -34,6 +34,7 @@ use Adyen\Shopware\Entity\PaypalPaymentAttempt\PaypalPaymentAttemptEntityDefinit
 use Adyen\Shopware\Entity\Refund\RefundEntityDefinition;
 use Adyen\Shopware\Handlers\KlarnaDebitRiskPaymentMethodHandler;
 use Adyen\Shopware\Handlers\KlarnaPayOverTimePaymentMethodHandler;
+use Adyen\Shopware\Service\CaptureConfigurationMigrator;
 use Adyen\Shopware\Service\ConfigurationService;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\Plugin;
@@ -47,6 +48,9 @@ use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\PrefixFilter;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
@@ -69,6 +73,10 @@ class AdyenPaymentShopware6 extends Plugin
         }
 
         $this->initializeExpressCheckoutPages($installContext->getContext());
+
+        // After the payment methods exist: sets the capture defaults, or migrates settings kept from an earlier
+        // installation.
+        $this->getCaptureConfigurationMigrator()->migrate();
     }
 
     /**
@@ -195,6 +203,22 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '5.4.1', '<')) {
             $this->updateTo541($updateContext);
         }
+
+        // Always the last step, after every step that creates payment methods. Runs only once per shop.
+        $this->getCaptureConfigurationMigrator()->migrate();
+    }
+
+    /**
+     * Built here instead of taken from the container: update() runs with the container of the previous version.
+     *
+     * @return CaptureConfigurationMigrator
+     */
+    private function getCaptureConfigurationMigrator(): CaptureConfigurationMigrator
+    {
+        return new CaptureConfigurationMigrator(
+            $this->container->get(Connection::class),
+            $this->container->get(SystemConfigService::class)
+        );
     }
 
     /**
@@ -275,7 +299,9 @@ class AdyenPaymentShopware6 extends Plugin
             return;
         }
 
+        $newPaymentMethodId = Uuid::randomHex();
         $paymentData = [
+            'id' => $newPaymentMethodId,
             'handlerIdentifier' => $paymentMethod->getPaymentHandler(),
             'name' => $paymentMethod->getName(),
             'description' => $paymentMethod->getDescription(),
@@ -285,6 +311,11 @@ class AdyenPaymentShopware6 extends Plugin
         ];
 
         $paymentRepository->create([$paymentData], $context);
+
+        // A new open invoice method keeps the open invoice default (manual capture), spec §9.4.
+        if (CaptureConfigurationMigrator::isOpenInvoiceHandler($paymentMethod->getPaymentHandler())) {
+            $this->getCaptureConfigurationMigrator()->applyNewOpenInvoiceDefault($newPaymentMethodId);
+        }
     }
 
     /**
@@ -370,7 +401,10 @@ class AdyenPaymentShopware6 extends Plugin
         $systemConfigRepository = $this->container->get('system_config.repository');
         $criteria = (new Criteria())
             ->addFilter(
-                new ContainsFilter('configurationKey', ConfigurationService::BUNDLE_NAME . '.config')
+                new OrFilter([
+                    new ContainsFilter('configurationKey', ConfigurationService::BUNDLE_NAME . '.config'),
+                    new PrefixFilter('configurationKey', ConfigurationService::CAPTURE_CONFIGURATION_PREFIX),
+                ])
             );
         $idSearchResult = $systemConfigRepository->searchIds($criteria, Context::createDefaultContext());
 

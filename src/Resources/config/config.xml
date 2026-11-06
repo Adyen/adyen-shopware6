@@ -119,40 +119,53 @@
     </card>
     <card>
         <title>Capture Settings</title>
-        <input-field type="bool">
-            <name>manualCaptureEnabled</name>
-            <label>Manual Capture</label>
+        <input-field type="single-select">
+            <name>captureMode</name>
+            <label>Capture</label>
             <helpText>
-                Enable this option if you want to perform the capture of funds manually later. This configuration won’t affect the capture mode of open invoice payment methods (Klarna, Afterpay Touch, Ratepay, FacilyPay/Oney, Affirm, Clearpay, Zip and PayBright).
+                Defines the default capture behavior for Adyen payment methods. Individual payment methods can override this setting in their payment method configuration. Immediate: Adyen captures the payment immediately; a capture delay configured in the Adyen Customer Area does not apply. Auto capture for open invoice payment methods (Klarna, Afterpay, Ratepay, Riverty, Oney, Affirm, Clearpay, Billie and PayBright) has to be enabled by Adyen support.
             </helpText>
+            <options>
+                <option>
+                    <id>immediate</id>
+                    <name>Immediate</name>
+                </option>
+                <option>
+                    <id>delayed</id>
+                    <name>Delayed</name>
+                </option>
+                <option>
+                    <id>manual</id>
+                    <name>Manual</name>
+                </option>
+                <option>
+                    <id>on_shipment</id>
+                    <name>Capture on shipment</name>
+                </option>
+            </options>
+            <defaultValue>immediate</defaultValue>
         </input-field>
-        <input-field type="bool">
-            <name>autoCaptureOpenInvoice</name>
-            <label>Use auto capture for open invoice payments</label>
+        <input-field type="int">
+            <name>captureDelayDays</name>
+            <label>Capture delay (days)</label>
             <helpText>
-                Applicable for Klarna, Afterpay Touch, Ratepay, FacilyPay/Oney, Affirm, Clearpay, Zip and PayBright. By default, open invoice methods are set to manual capture. For auto capture, please contact support@adyen.com. After the approval, you can enable this option.
+                Defines the number of days after which Adyen automatically captures the payment. Enter a value between 1 and 7 days.
             </helpText>
-        </input-field>
-        <input-field type="bool">
-            <name>captureOnShipmentEnabled</name>
-            <label>Capture on shipment for open invoice payments</label>
-            <helpText>
-                A capture request will be sent to Adyen whenever you make a shipment for an open invoice payment.
-            </helpText>
+            <defaultValue>1</defaultValue>
         </input-field>
         <component name="sw-entity-single-select-override">
             <name>orderState</name>
             <entity>state_machine_state</entity>
             <label>Order shipping state for triggering capture</label>
             <helpText>
-                This is the order shipping status that needs to be fulfilled in order to make a capture request to Adyen for open invoice payments.
+                Defines the order shipping state that must be reached before the plugin sends the capture request.
             </helpText>
         </component>
         <input-field type="int">
             <name>rescheduleTime</name>
-            <label>Capture delay for shipment</label>
+            <label>Capture retry interval (seconds)</label>
             <helpText>
-                This is the time to wait before trying the next capture in seconds if the shipping state is set and not fulfilled.
+                Defines how long the plugin waits before retrying the capture when the configured shipping state has not yet been reached.
             </helpText>
             <defaultValue>43200</defaultValue>
         </input-field>
