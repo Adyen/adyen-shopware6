@@ -34,6 +34,17 @@ class ConfigurationService
 {
     const BUNDLE_NAME = 'AdyenPaymentShopware6';
 
+    /**
+     * Prefix of the per payment method capture configuration keys:
+     * AdyenPaymentShopware6.captureConfiguration.<paymentMethodId>.<field>
+     * The keys are outside the plugin configuration domain, so the plugin configuration page never saves them.
+     */
+    public const CAPTURE_CONFIGURATION_PREFIX = self::BUNDLE_NAME . '.captureConfiguration.';
+    public const CAPTURE_CONFIGURATION_FIELD_MODE = 'mode';
+    public const CAPTURE_CONFIGURATION_FIELD_DELAY_DAYS = 'delayDays';
+    public const CAPTURE_CONFIGURATION_FIELD_ORDER_STATE = 'orderState';
+    public const CAPTURE_CONFIGURATION_FIELD_RETRY_INTERVAL = 'retryInterval';
+
     public const EXPRESS_CHECKOUT_PAGE_PRODUCT = 'product';
     public const EXPRESS_CHECKOUT_PAGE_CART = 'cart';
     public const EXPRESS_CHECKOUT_PAGE_OFFCANVAS = 'offcanvas';
@@ -261,42 +272,6 @@ class ConfigurationService
      *
      * @return array|bool|float|int|string|null
      */
-    public function isManualCaptureActive(?string $salesChannelId = null): float|array|bool|int|string|null
-    {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.manualCaptureEnabled', $salesChannelId);
-    }
-
-    /**
-     * Merchant account should be authorised in order to use auto capture for open invoices.
-     * This can be done via reaching out to Adyen support.
-     *
-     * @param string|null $salesChannelId
-     *
-     * @return array|bool|float|int|string|null
-     */
-    public function isAutoCaptureActiveForOpenInvoices(?string $salesChannelId = null): float|array|bool|int|string|null
-    {
-        return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.autoCaptureOpenInvoice', $salesChannelId);
-    }
-
-    /**
-     * @param string|null $salesChannelId
-     *
-     * @return array|bool|float|int|string|null
-     */
-    public function isCaptureOnShipmentEnabled(?string $salesChannelId = null): float|array|bool|int|string|null
-    {
-        return $this->systemConfigService->get(
-            self::BUNDLE_NAME . '.config.captureOnShipmentEnabled',
-            $salesChannelId
-        );
-    }
-
-    /**
-     * @param string|null $salesChannelId
-     *
-     * @return array|bool|float|int|string|null
-     */
     public function getRescheduleTime(?string $salesChannelId = null): float|array|bool|int|string|null
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.rescheduleTime', $salesChannelId);
@@ -310,6 +285,65 @@ class ConfigurationService
     public function getOrderState(?string $salesChannelId = null): float|array|bool|int|string|null
     {
         return $this->systemConfigService->get(self::BUNDLE_NAME . '.config.orderState', $salesChannelId);
+    }
+
+    /**
+     * Global capture mode (see CaptureMode).
+     *
+     * @param string|null $salesChannelId
+     *
+     * @return string|null
+     */
+    public function getCaptureMode(?string $salesChannelId = null): ?string
+    {
+        $value = $this->systemConfigService->get(self::BUNDLE_NAME . '.config.captureMode', $salesChannelId);
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * Global capture delay in days, used by the delayed capture mode.
+     *
+     * @param string|null $salesChannelId
+     *
+     * @return int|null
+     */
+    public function getCaptureDelayDays(?string $salesChannelId = null): ?int
+    {
+        $value = $this->systemConfigService->get(self::BUNDLE_NAME . '.config.captureDelayDays', $salesChannelId);
+
+        return is_numeric($value) ? (int)$value : null;
+    }
+
+    /**
+     * Capture configuration value of one payment method.
+     *
+     * @param string $paymentMethodId
+     * @param string $field One of the CAPTURE_CONFIGURATION_FIELD_* constants.
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getPaymentMethodCaptureValue(
+        string $paymentMethodId,
+        string $field,
+        ?string $salesChannelId = null
+    ): mixed {
+        return $this->systemConfigService->get(
+            self::getPaymentMethodCaptureKey($paymentMethodId, $field),
+            $salesChannelId
+        );
+    }
+
+    /**
+     * @param string $paymentMethodId
+     * @param string $field One of the CAPTURE_CONFIGURATION_FIELD_* constants.
+     *
+     * @return string
+     */
+    public static function getPaymentMethodCaptureKey(string $paymentMethodId, string $field): string
+    {
+        return self::CAPTURE_CONFIGURATION_PREFIX . $paymentMethodId . '.' . $field;
     }
 
     /**
