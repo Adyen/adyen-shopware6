@@ -84,6 +84,29 @@ class ApiClient extends ApiService {
             });
     }
 
+    getCaptureConfiguration(paymentMethodId, salesChannelId) {
+        return this.httpClient
+            .get(this.getApiBasePath() + '/payment-methods/' + paymentMethodId + '/capture-configuration', {
+                headers: this.getBasicHeaders({}),
+                params: { salesChannelId: salesChannelId ?? '' }
+            })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            });
+    }
+
+    saveCaptureConfiguration(paymentMethodId, salesChannelId, values) {
+        return this.httpClient
+            .post(
+                this.getApiBasePath() + '/payment-methods/' + paymentMethodId + '/capture-configuration',
+                { salesChannelId, values },
+                { headers: this.getBasicHeaders({}) }
+            )
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            });
+    }
+
     isManualCaptureEnabled(orderId) {
         const headers = this.getBasicHeaders({});
 

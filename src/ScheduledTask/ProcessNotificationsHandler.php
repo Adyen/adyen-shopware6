@@ -183,6 +183,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $notifications = $this->notificationService->getScheduledUnprocessedNotifications();
 
         foreach ($notifications->getElements() as $notification) {
+            // Reset per notification, the catch blocks below use them.
+            $logContext = [];
+            $order = null;
+            $orderTransaction = null;
+
             try {
                 /** @var NotificationEntity $notification */
                 $logContext = ['eventCode' => $notification->getEventCode()];
@@ -258,7 +263,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                         $this->reopenFailedTransaction($orderTransaction, $context, $logContext);
                     }
 
-                    $processor = $this->createProcessor($notification, $currentTransactionState);
+                    $processor = $this->createProcessor(
+                        $notification,
+                        $currentTransactionState,
+                        $orderTransaction,
+                        $order->getSalesChannelId()
+                    );
                     if (is_null($processor)) {
                         continue;
                     }
@@ -284,8 +294,20 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     }
                 }
             } catch (CaptureException $exception) {
+                if (CaptureService::REASON_NOTHING_TO_CAPTURE === $exception->reason) {
+                    // Captured manually in the meantime, or cancelled: there is nothing left to do.
+                    $this->logger->info($exception->getMessage(), $logContext);
+                    $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+
+                    continue;
+                }
+
                 $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
-                $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime();
+                $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime(
+                    $orderTransaction !== null && $order !== null
+                        ? $this->captureService->getCaptureConfiguration($orderTransaction, $order->getSalesChannelId())
+                        : null
+                );
                 if (CaptureService::REASON_DELIVERY_STATE_MISMATCH === $exception->reason ||
                     CaptureService::REASON_WAITING_AUTH_WEBHOOK === $exception->reason) {
                     $this->rescheduleNotification(
@@ -333,11 +355,16 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     /**
      * @param NotificationEntity $notification
      * @param string $currentTransactionState
+     * @param OrderTransactionEntity $orderTransaction
+     * @param string|null $salesChannelId
+     *
      * @return ProcessorInterface|null
      */
     private function createProcessor(
         NotificationEntity $notification,
-        string $currentTransactionState
+        string $currentTransactionState,
+        OrderTransactionEntity $orderTransaction,
+        ?string $salesChannelId
     ): ?ProcessorInterface {
         try {
             $notificationItem = Notification::createItem([
@@ -345,10 +372,10 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 'success' => $notification->isSuccess()
             ]);
 
-            $isManual = (bool) $this->captureService->isManualCaptureActive();
-            $isOnShipment = (bool) $this->captureService->isCaptureOnShipmentEnabled();
-
-            $isAutoCapture = !($isManual || $isOnShipment);
+            // The capture mode of this payment, not the global one.
+            $isAutoCapture = !$this->captureService
+                ->getCaptureConfiguration($orderTransaction, $salesChannelId)
+                ->isDeferredCapture();
 
             return ProcessorFactory::create(
                 $notificationItem,

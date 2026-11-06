@@ -36,7 +36,7 @@ use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
-use Adyen\Shopware\PaymentMethods\PaymentMethods;
+use Adyen\Shopware\Models\Capture\CaptureConfiguration;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
@@ -56,6 +56,10 @@ class CaptureService
 
     const REASON_DELIVERY_STATE_MISMATCH = 'DELIVERY_STATE_MISMATCH';
     const REASON_WAITING_AUTH_WEBHOOK = 'WAITING_AUTH_WEBHOOK';
+    /**
+     * The order has no authorized Adyen transaction.
+     */
+    const REASON_NOTHING_TO_CAPTURE = 'NOTHING_TO_CAPTURE';
 
     private OrderRepository $orderRepository;
     private OrderTransactionRepository $orderTransactionRepository;
@@ -63,14 +67,28 @@ class CaptureService
     private ConfigurationService $configurationService;
     private ClientService $clientService;
     private AdyenPaymentService $adyenPaymentService;
+    /**
+     * @var CaptureConfigurationResolver $captureConfigurationResolver
+     */
+    private CaptureConfigurationResolver $captureConfigurationResolver;
 
+    /**
+     * @param OrderRepository $orderRepository
+     * @param OrderTransactionRepository $orderTransactionRepository
+     * @param AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository
+     * @param ConfigurationService $configurationService
+     * @param ClientService $clientService
+     * @param AdyenPaymentService $adyenPaymentService
+     * @param CaptureConfigurationResolver $captureConfigurationResolver
+     */
     public function __construct(
         OrderRepository $orderRepository,
         OrderTransactionRepository $orderTransactionRepository,
         AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository,
         ConfigurationService $configurationService,
         ClientService $clientService,
-        AdyenPaymentService $adyenPaymentService
+        AdyenPaymentService $adyenPaymentService,
+        CaptureConfigurationResolver $captureConfigurationResolver
     ) {
         $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
@@ -78,14 +96,32 @@ class CaptureService
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
         $this->adyenPaymentService = $adyenPaymentService;
+        $this->captureConfigurationResolver = $captureConfigurationResolver;
     }
 
     /**
-     * Send capture request for open invoice payments
+     * Sends the capture request for the authorised Adyen transaction of the order. Used by capture on shipment
+     * (webhooks) and by the manual capture from the administration.
+     *
+     * @param string $orderNumber
+     * @param int|string|null $captureAmount Amount in minor units. Webhooks pass the notification amount, a nullable
+     *     string.
+     * @param Context $context
+     * @param bool $skipDeliveryCheck True for the manual capture from the administration, which is allowed before
+     *     the configured delivery state is reached.
+     *
+     * @return array
+     *
      * @throws CaptureException
      */
-    public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context)
-    {
+    public function doCapture(
+        string $orderNumber,
+        $captureAmount,
+        Context $context,
+        bool $skipDeliveryCheck = false
+    ): array {
+        $captureAmount = (int)$captureAmount;
+
         $order = $this->orderRepository->getOrderByOrderNumber(
             $orderNumber,
             $context,
@@ -102,14 +138,20 @@ class CaptureService
             ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
 
         if (!$orderTransaction) {
-            $error = 'Unable to find original authorized transaction.';
-            $this->logger->error($error, ['orderNumber' => $order->getOrderNumber()]);
-            throw new CaptureException($error);
+            $message = 'Unable to find original authorized transaction.';
+            $this->logger->info($message, ['orderNumber' => $order->getOrderNumber()]);
+            $exception = new CaptureException($message);
+            $exception->reason = self::REASON_NOTHING_TO_CAPTURE;
+
+            throw $exception;
         }
 
-        $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+        $captureConfiguration = $this->captureConfigurationResolver->resolveForTransaction(
+            $orderTransaction,
+            $order->getSalesChannelId()
+        );
 
-        if ($this->isManualCapture($paymentMethodHandler, $order->getSalesChannelId())) {
+        if ($captureConfiguration->isDeferredCapture()) {
             $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
 
             $customFields = $orderTransaction->getCustomFields();
@@ -129,8 +171,8 @@ class CaptureService
 
             $results = [];
             foreach ($deliveries as $delivery) {
-                if ($this->requiresCaptureOnShipment($paymentMethodHandler, $order->getSalesChannelId()) &&
-                    $delivery->getStateMachineState()->getId() !== $this->configurationService->getOrderState()) {
+                if (!$skipDeliveryCheck && $captureConfiguration->isCaptureOnShipment() &&
+                    $delivery->getStateMachineState()->getId() !== $captureConfiguration->getOrderStateId()) {
                     $exception = new CaptureException('Order delivery status does not match configuration');
                     $exception->reason = self::REASON_DELIVERY_STATE_MISMATCH;
 
@@ -160,7 +202,7 @@ class CaptureService
                         $response->getPspReference(),
                         PaymentCaptureEntity::SOURCE_SHOPWARE,
                         PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
-                        intval($captureAmount),
+                        $captureAmount,
                         $context
                     );
                 }
@@ -175,11 +217,20 @@ class CaptureService
         }
     }
 
-    public function getRescheduleNotificationTime(): \DateTime
+    /**
+     * @param CaptureConfiguration|null $captureConfiguration The retry interval of the payment; the global retry
+     *     interval if not given.
+     *
+     * @return \DateTime
+     */
+    public function getRescheduleNotificationTime(?CaptureConfiguration $captureConfiguration = null): \DateTime
     {
         $dateTime = new \DateTime();
         try {
-            $rescheduleTime = $this->configurationService->getRescheduleTime();
+            $retryIntervalSeconds = $captureConfiguration !== null
+                ? $captureConfiguration->getRetryIntervalSeconds()
+                : null;
+            $rescheduleTime = $retryIntervalSeconds ?? $this->configurationService->getRescheduleTime();
             if (is_int($rescheduleTime)) {
                 $dateTime->add(new \DateInterval('PT' . $rescheduleTime . 'S'));
             }
@@ -190,39 +241,19 @@ class CaptureService
     }
 
     /**
-     * @param $handlerIdentifier
+     * Capture configuration of a payment: the one stored when the payment was created, or the current configuration
+     * for transactions created before it was stored (spec §5).
+     *
+     * @param OrderTransactionEntity $orderTransaction
      * @param string|null $salesChannelId
      *
-     * @return bool
+     * @return CaptureConfiguration
      */
-    public function isManualCapture($handlerIdentifier, ?string $salesChannelId = null): bool
-    {
-        // Deprecated payment methods have no handler class anymore, so manual capture is not supported
-        if (in_array($handlerIdentifier, PaymentMethods::DEPRECATED_PAYMENT_METHOD_HANDLERS, true)) {
-            return false;
-        }
-
-        if ($handlerIdentifier::$isOpenInvoice) {
-            // Open invoice payment methods are manual capture unless the merchant account is
-            // authorised for auto capture.
-            return !$this->configurationService->isAutoCaptureActiveForOpenInvoices($salesChannelId);
-        }
-
-        return $handlerIdentifier::$supportsManualCapture &&
-            (bool)$this->configurationService->isManualCaptureActive($salesChannelId);
-    }
-
-    /**
-     * @param $handlerIdentifier
-     * @param $salesChannelId
-     *
-     * @return bool
-     */
-    public function requiresCaptureOnShipment($handlerIdentifier, $salesChannelId): bool
-    {
-        // Only open invoice payments can be captured on shipment.
-        return $this->configurationService->isCaptureOnShipmentEnabled($salesChannelId) &&
-            $handlerIdentifier::$isOpenInvoice;
+    public function getCaptureConfiguration(
+        OrderTransactionEntity $orderTransaction,
+        ?string $salesChannelId
+    ): CaptureConfiguration {
+        return $this->captureConfigurationResolver->resolveForTransaction($orderTransaction, $salesChannelId);
     }
 
     public function saveCaptureRequest(
@@ -443,23 +474,5 @@ class CaptureService
         }
 
         return $totalCapturedAmount;
-    }
-
-    /**
-     * @param string|null $salesChannelId
-     * @return array|bool|float|int|string|null
-     */
-    public function isManualCaptureActive(string $salesChannelId = null)
-    {
-        return $this->configurationService->isManualCaptureActive($salesChannelId);
-    }
-
-    /**
-     * @param string|null $salesChannelId
-     * @return array|bool|float|int|string|null
-     */
-    public function isCaptureOnShipmentEnabled(string $salesChannelId = null)
-    {
-        return $this->configurationService->isCaptureOnShipmentEnabled($salesChannelId);
     }
 }

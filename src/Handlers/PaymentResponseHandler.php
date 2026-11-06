@@ -30,7 +30,7 @@ use Adyen\Model\Checkout\PaymentDetailsResponse;
 use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Exception\PaymentCancelledException;
 use Adyen\Shopware\Exception\PaymentFailedException;
-use Adyen\Shopware\Service\CaptureService;
+use Adyen\Shopware\Service\CaptureConfigurationResolver;
 use Adyen\Shopware\Service\ConfigurationService;
 use Psr\Log\LoggerInterface;
 use Adyen\Shopware\Service\PaymentResponseService;
@@ -81,16 +81,16 @@ class PaymentResponseHandler
     private ConfigurationService $configurationService;
 
     /**
-     * @var CaptureService
+     * @var CaptureConfigurationResolver
      */
-    private CaptureService $captureService;
+    private CaptureConfigurationResolver $captureConfigurationResolver;
 
     /**
      * @param LoggerInterface $logger
      * @param PaymentResponseService $paymentResponseService
      * @param OrderTransactionStateHandler $transactionStateHandler
      * @param $orderTransactionRepository
-     * @param CaptureService $captureService
+     * @param CaptureConfigurationResolver $captureConfigurationResolver
      * @param ConfigurationService $configurationService
      */
     public function __construct(
@@ -98,14 +98,14 @@ class PaymentResponseHandler
         PaymentResponseService $paymentResponseService,
         OrderTransactionStateHandler $transactionStateHandler,
         $orderTransactionRepository,
-        CaptureService $captureService,
+        CaptureConfigurationResolver $captureConfigurationResolver,
         ConfigurationService $configurationService
     ) {
         $this->logger = $logger;
         $this->paymentResponseService = $paymentResponseService;
         $this->transactionStateHandler = $transactionStateHandler;
         $this->orderTransactionRepository = $orderTransactionRepository;
-        $this->captureService = $captureService;
+        $this->captureConfigurationResolver = $captureConfigurationResolver;
         $this->configurationService = $configurationService;
     }
 
@@ -226,10 +226,10 @@ class PaymentResponseHandler
         $orderTransactionId = $transaction->getOrderTransaction()->getId();
         $context = $salesChannelContext->getContext();
         $stateTechnicalName = $transaction->getOrderTransaction()->getStateMachineState()->getTechnicalName();
-        $requiresManualCapture = $this->captureService->isManualCapture(
-            $transaction->getOrderTransaction()->getPaymentMethod()->getHandlerIdentifier(),
-            $salesChannelContext->getSalesChannelId()
-        );
+        $requiresManualCapture = $this->captureConfigurationResolver->resolveForTransaction(
+            $transaction->getOrderTransaction(),
+            $salesChannelContext->getSalesChannel()->getId()
+        )->isDeferredCapture();
 
         // Get already stored transaction custom fields
         $storedTransactionCustomFields = $transaction->getOrderTransaction()->getCustomFields() ?: [];

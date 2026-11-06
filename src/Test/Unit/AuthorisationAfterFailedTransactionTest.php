@@ -31,6 +31,8 @@ use Adyen\Shopware\Handlers\ResultHandler;
 use Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler;
 use Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Models\Capture\CaptureConfiguration;
+use Adyen\Shopware\Models\Capture\CaptureMode;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
@@ -313,10 +315,9 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
             });
 
         $captureService = $this->getSimpleMock(CaptureService::class);
-        $captureService->method('isManualCaptureActive')->willReturn($scenario->manualCapture);
-        $captureService->method('isCaptureOnShipmentEnabled')->willReturn(false);
-        $captureService->method('isManualCapture')->willReturn($scenario->manualCapture);
-        $captureService->method('requiresCaptureOnShipment')->willReturn(false);
+        $captureService->method('getCaptureConfiguration')->willReturn(
+            new CaptureConfiguration($scenario->manualCapture ? CaptureMode::MANUAL : CaptureMode::IMMEDIATE)
+        );
 
         $pluginPaymentMethods = $this->getSimpleMock(PluginPaymentMethodsService::class);
         $pluginPaymentMethods->method('getGiftcardHandlerIdentifierFromTxVariant')->willReturn(null);
