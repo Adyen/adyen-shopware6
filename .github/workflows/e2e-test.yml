@@ -67,6 +67,10 @@ jobs:
           SHOPWARE_BASE_URL: ${{secrets.SHOPWARE_BASE_URL}}
           PAYPAL_USERNAME: ${{secrets.PLAYWRIGHT_PAYPAL_USERNAME}}
           PAYPAL_PASSWORD: ${{secrets.PLAYWRIGHT_PAYPAL_PASSWORD}}
+          AFTERPAY_AU_EMAIL: ${{secrets.PLAYWRIGHT_AFTERPAY_AU_EMAIL}}
+          AFTERPAY_AU_PASSWORD: ${{secrets.PLAYWRIGHT_AFTERPAY_AU_PASSWORD}}
+          AFTERPAY_US_EMAIL: ${{secrets.PLAYWRIGHT_AFTERPAY_US_EMAIL}}
+          AFTERPAY_US_PASSWORD: ${{secrets.PLAYWRIGHT_AFTERPAY_US_PASSWORD}}
 
       - name: Archive test result artifacts
         if: always()

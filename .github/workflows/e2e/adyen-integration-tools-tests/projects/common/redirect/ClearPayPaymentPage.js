@@ -15,19 +15,20 @@ export class ClearPayPaymentPage {
     this.typeDelay = 50;
   }
 
-  async continueClearPayPayment() {
-    const italianUser =  new PaymentResources().guestUser.clearPay.approved.it
-
+  // Also used for Afterpay: it takes the email from the order, so a user without phoneNumber skips that step
+  async continueClearPayPayment(user = new PaymentResources().guestUser.clearPay.approved.it) {
     await this.page.waitForLoadState();
     
-    await this.numberEmailInput.waitFor({
-      state: "visible",
-      timeout: 10000,
-    });
-    await this.numberEmailInput.click();
-    await this.numberEmailInput.fill("");
-    await this.numberEmailInput.type(italianUser.phoneNumber, { delay: this.typeDelay });
-    await this.loginButton.click();
+    if (user.phoneNumber) {
+      await this.numberEmailInput.waitFor({
+        state: "visible",
+        timeout: 10000,
+      });
+      await this.numberEmailInput.click();
+      await this.numberEmailInput.fill("");
+      await this.numberEmailInput.type(user.phoneNumber, { delay: this.typeDelay });
+      await this.loginButton.click();
+    }
 
     await this.passwordInput.waitFor({
       state: "visible",
@@ -35,7 +36,7 @@ export class ClearPayPaymentPage {
     });
     await this.passwordInput.click();
     await this.passwordInput.fill("");
-    await this.passwordInput.type(italianUser.password, { delay:this.typeDelay });
+    await this.passwordInput.type(user.password, { delay:this.typeDelay });
     await this.continueButton.click();
 
     await this.confirmButton.waitFor({
