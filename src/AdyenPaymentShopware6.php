@@ -210,6 +210,10 @@ class AdyenPaymentShopware6 extends Plugin
         if (\version_compare($currentVersion, '3.22.1', '<')) {
             $this->updateTo3221($updateContext);
         }
+
+        if (\version_compare($currentVersion, '3.23.0', '<')) {
+            $this->updateTo3230($updateContext);
+        }
     }
 
     public function postUpdate(UpdateContext $updateContext): void
@@ -731,6 +735,25 @@ class AdyenPaymentShopware6 extends Plugin
         // Version 3.22.1 removes Amazon Pay
         $paymentMethodHandler = 'Adyen\Shopware\Handlers\AmazonPayPaymentMethodHandler';
         $this->deactivateAndRemovePaymentMethod($updateContext, $paymentMethodHandler);
+    }
+
+    /**
+     * @param UpdateContext $updateContext
+     *
+     * @return void
+     */
+    private function updateTo3230(UpdateContext $updateContext): void
+    {
+        // Version 3.23.0 introduces the Afterpay and Cash App Afterpay payment methods
+        $paymentMethods = [
+            new PaymentMethods\AfterpayTouchPaymentMethod(),
+            new PaymentMethods\AfterpayTouchUsPaymentMethod(),
+        ];
+
+        foreach ($paymentMethods as $method) {
+            $this->addPaymentMethod($method, $updateContext->getContext());
+            $this->setPaymentMethodIsActive(true, $updateContext->getContext(), $method);
+        }
     }
 
     /**
