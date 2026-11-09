@@ -27,11 +27,10 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
-use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\RefundService;
 use Adyen\Shopware\Util\Currency;
+use Adyen\Webhook\PaymentStates;
 use Exception;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Framework\Context;
@@ -44,28 +43,11 @@ class RefundWebhookHandler implements WebhookHandlerInterface
     private RefundService $refundService;
 
     /**
-     * @var AdyenPaymentService
-     */
-    private AdyenPaymentService $adyenPaymentService;
-
-    /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
      * @param RefundService $refundService
-     * @param AdyenPaymentService $adyenPaymentService
-     * @param LoggerInterface $logger
      */
-    public function __construct(
-        RefundService $refundService,
-        AdyenPaymentService $adyenPaymentService,
-        LoggerInterface $logger
-    ) {
+    public function __construct(RefundService $refundService)
+    {
         $this->refundService = $refundService;
-        $this->adyenPaymentService = $adyenPaymentService;
-        $this->logger = $logger;
     }
 
     /**
@@ -88,6 +70,13 @@ class RefundWebhookHandler implements WebhookHandlerInterface
     ): void {
         if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
             $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
+        } elseif ($notificationEntity->isSuccess() && $currentTransactionState === PaymentStates::STATE_REFUNDED) {
+            // The order transaction was already set to refunded, e.g. outside the plugin, before Adyen reported
+            // the refund. The refund is stored as successful and the state is not changed.
+            $this->refundService->handleSuccessfulRefundNotification(
+                $orderTransactionEntity->getOrder(),
+                $notificationEntity
+            );
         } else {
             $this->handleFailedNotification($orderTransactionEntity, $notificationEntity);
         }
@@ -120,38 +109,11 @@ class RefundWebhookHandler implements WebhookHandlerInterface
             throw new AdyenException('The refunded amount is greater than the transaction amount.');
         }
 
-        $this->refundService->handleRefundNotification(
+        if (!$this->refundService->handleSuccessfulRefundNotification(
             $orderTransactionEntity->getOrder(),
-            $notificationEntity,
-            RefundEntity::STATUS_SUCCESS
-        );
-
-        try {
-            $adyenPayment = $this->adyenPaymentService->getAdyenPayment(
-                $notificationEntity->getOriginalReference()
-            );
-
-            if ($adyenPayment === null) {
-                $this->logger->warning(
-                    'Adyen payment entity not found for the given notification.',
-                    [
-                        'originalReference' => $notificationEntity->getOriginalReference(),
-                        'notificationVars' => $notificationEntity->getVars()
-                    ]
-                );
-
-                return;
-            }
-
-            $this->adyenPaymentService->updateTotalRefundedAmount(
-                $adyenPayment,
-                (int)$notificationEntity->getAmountValue()
-            );
-        } catch (Exception $e) {
-            $this->logger->error(
-                'Adyen payment entity could not be updated for the given notification!',
-                ['notification' => $notificationEntity->getVars()]
-            );
+            $notificationEntity
+        )) {
+            return;
         }
 
         $transitionState = $refundedAmount < $transactionAmount
