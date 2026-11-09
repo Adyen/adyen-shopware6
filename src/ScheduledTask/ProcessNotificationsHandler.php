@@ -355,9 +355,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         string $currentTransactionState
     ): ?ProcessorInterface {
         try {
+            // The additional data is needed for CANCEL_OR_REFUND, it tells whether a cancellation or a refund was done
+            $additionalData = json_decode($notification->getAdditionalData() ?? '', true);
             $notificationItem = Notification::createItem([
                 'eventCode' => $notification->getEventCode(),
-                'success' => $notification->isSuccess()
+                'success' => $notification->isSuccess(),
+                'additionalData' => is_array($additionalData) ? $additionalData : []
             ]);
 
             $isManual = (bool)$this->captureService->isManualCaptureActive();
