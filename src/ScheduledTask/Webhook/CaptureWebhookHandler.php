@@ -27,6 +27,7 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Service\CaptureService;
+use Adyen\Webhook\PaymentStates;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
@@ -34,6 +35,15 @@ use Shopware\Core\Framework\Context;
 
 class CaptureWebhookHandler implements WebhookHandlerInterface
 {
+    /**
+     * Webhook module states of the order transaction from which a failed capture fails the transaction.
+     */
+    private const FAILABLE_STATES = [
+        PaymentStates::STATE_NEW,
+        PaymentStates::STATE_IN_PROGRESS,
+        PaymentStates::STATE_PENDING,
+    ];
+
     /**
      * @var LoggerInterface
      */
@@ -80,10 +90,23 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
         string $currentTransactionState,
         Context $context
     ): void {
-        if ($notificationEntity->isSuccess() && $state !== $currentTransactionState) {
+        if (!$notificationEntity->isSuccess()) {
+            $this->handleFailedNotification(
+                $orderTransactionEntity,
+                $notificationEntity,
+                $currentTransactionState,
+                $context
+            );
+        } elseif ($state !== $currentTransactionState) {
             $this->handleSuccessfulNotification($orderTransactionEntity, $notificationEntity, $context);
         } else {
-            $this->handleFailedNotification($orderTransactionEntity, $notificationEntity, $context);
+            // The order transaction is already in the state of the capture, e.g. it was set to paid outside the plugin
+            $this->captureService->handleCaptureNotification(
+                $orderTransactionEntity,
+                $notificationEntity,
+                PaymentCaptureEntity::STATUS_SUCCESS,
+                $context
+            );
         }
     }
 
@@ -130,6 +153,7 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
     /**
      * @param OrderTransactionEntity $orderTransactionEntity
      * @param NotificationEntity $notificationEntity
+     * @param string $currentTransactionState
      * @param Context $context
      *
      * @return void
@@ -137,9 +161,14 @@ class CaptureWebhookHandler implements WebhookHandlerInterface
     private function handleFailedNotification(
         OrderTransactionEntity $orderTransactionEntity,
         NotificationEntity $notificationEntity,
+        string $currentTransactionState,
         Context $context
     ): void {
-        $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
+        // A failed capture does not change a transaction that is already paid or refunded,
+        // Shopware only allows the fail transition before the payment is captured.
+        if (in_array($currentTransactionState, self::FAILABLE_STATES, true)) {
+            $this->orderTransactionStateHandler->fail($orderTransactionEntity->getId(), $context);
+        }
 
         $this->captureService->handleCaptureNotification(
             $orderTransactionEntity,

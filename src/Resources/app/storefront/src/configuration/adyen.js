@@ -191,6 +191,8 @@ export default {
         'ebanking_FI': 'handler_adyen_onlinebankingfinlandpaymentmethodhandler',
         'onlineBanking_PL': 'handler_adyen_onlinebankingpolandpaymentmethodhandler',
         'riverty': 'handler_adyen_rivertypaymentmethodhandler',
-        'sepadirectdebit_riverty': 'handler_adyen_sepadirectdebitrivertypaymentmethodhandler'
+        'sepadirectdebit_riverty': 'handler_adyen_sepadirectdebitrivertypaymentmethodhandler',
+        'afterpaytouch': 'handler_adyen_afterpaytouchpaymentmethodhandler',
+        'afterpaytouch_US': 'handler_adyen_afterpaytouchuspaymentmethodhandler'
     }
 }
