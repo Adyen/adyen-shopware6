@@ -36,12 +36,14 @@ The plugin integrates card component (Secured Fields) using Adyen Checkout for a
  - Stored card payment methods (One click payment methods)
  - Express checkout (with GooglePay, ApplePay, and PayPal methods)
  - Affirm
+ - Afterpay (AU, NZ, CA)
  - AfterPay invoice
  - Alipay , Alipay HK
  - Apple Pay
  - Bancontact
  - Blik
  - Billie
+ - Cash App Afterpay (US)
  - Clearpay
  - Electronic Payment Service (EPS)
  - Gift cards
