@@ -55,7 +55,8 @@ class OrderTransactionRepository
     /**
      * @param string $orderId
      * @param array $states
-     * @param SalesChannelContext|null $context
+     * @param SalesChannelContext|null $context Limits the search to the sales channel and customer of the context.
+     *
      * @return OrderTransactionEntity|null
      */
     public function getFirstAdyenOrderTransactionByStates(
@@ -63,32 +64,18 @@ class OrderTransactionRepository
         array $states,
         SalesChannelContext $context = null
     ): ?OrderTransactionEntity {
-        $criteria = new Criteria();
-        $criteria->addAssociation('stateMachineState');
-        $criteria->addAssociation('order');
-        $criteria->addAssociation('order.currency');
-        $criteria->addAssociation('paymentMethod');
-        $criteria->addAssociation('paymentMethod.plugin');
-        $criteria->addFilter(new EqualsFilter('order.id', $orderId));
+        $criteria = $this->createAdyenTransactionsByStatesCriteria($orderId, $states);
 
         if ($context) {
             $criteria->addFilter(new EqualsFilter('order.salesChannelId', $context->getSalesChannelId()));
             $criteria->addFilter(new EqualsFilter('order.orderCustomer.customerId', $context->getCustomerId()));
         }
 
-        $criteria->addFilter(
-            new EqualsAnyFilter('stateMachineState.technicalName', $states)
-        );
-        $criteria->addFilter(
-            new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME)
-        );
-
         $criteria->setLimit(1);
-        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
         return $this->repository->search(
             $criteria,
-            $context ? $context->getContext(): Context::createDefaultContext()
+            $context ? $context->getContext() : Context::createDefaultContext()
         )->first();
     }
 
@@ -100,6 +87,25 @@ class OrderTransactionRepository
      */
     public function getAdyenOrderTransactionsByStates(string $orderId, array $states): OrderTransactionCollection
     {
+        /** @var OrderTransactionCollection $transactions */
+        $transactions = $this->repository->search(
+            $this->createAdyenTransactionsByStatesCriteria($orderId, $states),
+            Context::createDefaultContext()
+        )->getEntities();
+
+        return $transactions;
+    }
+
+    /**
+     * Adyen transactions of the order in one of the given states, newest first.
+     *
+     * @param string $orderId
+     * @param array $states
+     *
+     * @return Criteria
+     */
+    private function createAdyenTransactionsByStatesCriteria(string $orderId, array $states): Criteria
+    {
         $criteria = new Criteria();
         $criteria->addAssociation('stateMachineState');
         $criteria->addAssociation('order');
@@ -107,19 +113,11 @@ class OrderTransactionRepository
         $criteria->addAssociation('paymentMethod');
         $criteria->addAssociation('paymentMethod.plugin');
         $criteria->addFilter(new EqualsFilter('order.id', $orderId));
-        $criteria->addFilter(
-            new EqualsAnyFilter('stateMachineState.technicalName', $states)
-        );
-        $criteria->addFilter(
-            new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME)
-        );
+        $criteria->addFilter(new EqualsAnyFilter('stateMachineState.technicalName', $states));
+        $criteria->addFilter(new EqualsFilter('paymentMethod.plugin.name', ConfigurationService::BUNDLE_NAME));
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
-        /** @var OrderTransactionCollection $transactions */
-        $transactions = $this->repository->search($criteria, Context::createDefaultContext())
-            ->getEntities();
-
-        return $transactions;
+        return $criteria;
     }
 
     /**

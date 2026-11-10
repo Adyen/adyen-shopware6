@@ -269,6 +269,38 @@ class CaptureConfigurationResolverTest extends AdyenTestCase
         self::assertSame(4, $this->resolve(null)->getDelayDays());
     }
 
+    /**
+     * Review finding 6: values saved through the API or system:config:set are not validated by the admin, and Adyen
+     * rejects a capture delay above 7 days.
+     */
+    public function testDelayAboveTheMaximumIsLimitedToTheMaximum(): void
+    {
+        $this->setGlobal('captureMode', 'delayed');
+        $this->setGlobal('captureDelayDays', 30);
+
+        self::assertSame(7, $this->resolve(null)->getDelayDays());
+        self::assertSame(168, $this->resolve(null)->getCaptureDelayHours());
+
+        $this->setGlobal('captureDelayDays', '7');
+        self::assertSame(7, $this->resolve(null)->getDelayDays());
+
+        $this->setPaymentMethod('mode', 'delayed');
+        $this->setPaymentMethod('delayDays', '12');
+        self::assertSame(7, $this->resolve(null)->getDelayDays());
+
+        $this->setPaymentMethod('delayDays', 1);
+        self::assertSame(1, $this->resolve(null)->getDelayDays());
+    }
+
+    public function testDelayBelowTheMinimumFallsBackToTheGlobalDelay(): void
+    {
+        $this->setGlobal('captureDelayDays', 2);
+        $this->setPaymentMethod('mode', 'delayed');
+        $this->setPaymentMethod('delayDays', -5);
+
+        self::assertSame(2, $this->resolve(null)->getDelayDays());
+    }
+
     public function testResolveByHandlerLooksUpThePaymentMethodOnce(): void
     {
         $this->setPaymentMethod('mode', 'manual');
@@ -325,6 +357,137 @@ class CaptureConfigurationResolverTest extends AdyenTestCase
         self::assertSame(CaptureMode::IMMEDIATE, $this->resolver->resolveForTransaction($transaction, null)->getMode());
     }
 
+    /**
+     * Review finding 4: a card payment authorised with auto capture before the upgrade, whose AUTHORISATION webhook
+     * is processed after the merchant switched cards to manual, was already captured by Adyen.
+     */
+    public function testTransactionCreatedBeforeTheMigrationKeepsTheOldAutomaticCapture(): void
+    {
+        $this->givenMigration(['mode' => 'immediate']);
+        $this->setGlobal('captureMode', 'manual');
+        $this->setPaymentMethod('mode', 'manual');
+
+        $transaction = $this->createTransaction(CardsPaymentMethodHandler::class, [], '-1 day');
+
+        self::assertEquals(
+            CaptureConfiguration::automatic(),
+            $this->resolver->resolveForTransaction($transaction, null)
+        );
+    }
+
+    public function testTransactionCreatedBeforeTheMigrationKeepsTheOldManualCapture(): void
+    {
+        $this->givenMigration(['mode' => 'manual']);
+        $this->setGlobal('captureMode', 'immediate');
+
+        $transaction = $this->createTransaction(CardsPaymentMethodHandler::class, [], '-1 day');
+
+        self::assertEquals(
+            new CaptureConfiguration(CaptureMode::MANUAL),
+            $this->resolver->resolveForTransaction($transaction, null)
+        );
+    }
+
+    public function testOldManualCaptureOnlyAppliedToMethodsThatSupportIt(): void
+    {
+        $this->givenMigration(['mode' => 'manual']);
+
+        $transaction = $this->createTransaction(IdealPaymentMethodHandler::class, [], '-1 day');
+
+        self::assertEquals(
+            CaptureConfiguration::automatic(),
+            $this->resolver->resolveForTransaction($transaction, null)
+        );
+    }
+
+    public function testOldOpenInvoiceCaptureOnShipmentUsesTheOldGlobalStateAndInterval(): void
+    {
+        $this->givenMigration([
+            'mode' => 'immediate',
+            'openInvoiceMode' => 'on_shipment',
+            'orderState' => self::STATE_SHIPPED,
+            'retryInterval' => 600,
+        ]);
+        // Changed by the merchant after the migration.
+        $this->setGlobal('orderState', self::STATE_DELIVERED);
+        $this->setPaymentMethod('mode', 'immediate');
+
+        $transaction = $this->createTransaction(KlarnaPayLaterPaymentMethodHandler::class, [], '-1 day');
+
+        self::assertEquals(
+            new CaptureConfiguration(CaptureMode::ON_SHIPMENT, null, self::STATE_SHIPPED, 600),
+            $this->resolver->resolveForTransaction($transaction, null)
+        );
+    }
+
+    public function testOldOpenInvoiceAutoCaptureAndDefault(): void
+    {
+        $transaction = $this->createTransaction(KlarnaPayLaterPaymentMethodHandler::class, [], '-1 day');
+
+        $this->givenMigration(['mode' => 'manual', 'openInvoiceMode' => 'immediate']);
+        self::assertEquals(
+            CaptureConfiguration::automatic(),
+            $this->resolver->resolveForTransaction($transaction, null)
+        );
+
+        // Open invoice payment methods were manual capture unless auto capture was enabled.
+        $this->config = [];
+        $this->givenMigration(['mode' => 'immediate']);
+        self::assertEquals(
+            new CaptureConfiguration(CaptureMode::MANUAL),
+            $this->resolver->resolveForTransaction($transaction, null)
+        );
+    }
+
+    public function testOldCaptureBehaviorOfTheSalesChannelIsUsed(): void
+    {
+        $this->givenMigration(['mode' => 'immediate']);
+        $this->config[self::SALES_CHANNEL_B][ConfigurationService::CAPTURE_LEGACY_PREFIX . 'mode'] = 'manual';
+
+        $transaction = $this->createTransaction(CardsPaymentMethodHandler::class, [], '-1 day');
+
+        self::assertSame(
+            CaptureMode::MANUAL,
+            $this->resolver->resolveForTransaction($transaction, self::SALES_CHANNEL_B)->getMode()
+        );
+        self::assertSame(CaptureMode::IMMEDIATE, $this->resolver->resolveForTransaction($transaction, null)->getMode());
+    }
+
+    public function testTransactionCreatedAfterTheMigrationWithoutSnapshotUsesTheCurrentConfiguration(): void
+    {
+        $this->givenMigration(['mode' => 'immediate'], '-1 day');
+        $this->setPaymentMethod('mode', 'manual');
+
+        $transaction = $this->createTransaction(CardsPaymentMethodHandler::class, [], '-1 hour');
+
+        self::assertSame(CaptureMode::MANUAL, $this->resolver->resolveForTransaction($transaction, null)->getMode());
+    }
+
+    public function testSnapshotIsPreferredOverTheOldCaptureBehavior(): void
+    {
+        $this->givenMigration(['mode' => 'immediate']);
+        $snapshot = new CaptureConfiguration(CaptureMode::DELAYED, 2);
+
+        $transaction = $this->createTransaction(
+            CardsPaymentMethodHandler::class,
+            [CaptureConfigurationResolver::CUSTOM_FIELD_KEY => $snapshot->toArray()],
+            '-1 day'
+        );
+
+        self::assertEquals($snapshot, $this->resolver->resolveForTransaction($transaction, null));
+    }
+
+    public function testInvalidMigrationTimeIsIgnored(): void
+    {
+        $this->givenMigration(['mode' => 'immediate']);
+        $this->config['all'][ConfigurationService::CAPTURE_LEGACY_PREFIX . 'migratedAt'] = 'not a date';
+        $this->setPaymentMethod('mode', 'manual');
+
+        $transaction = $this->createTransaction(CardsPaymentMethodHandler::class, [], '-1 day');
+
+        self::assertSame(CaptureMode::MANUAL, $this->resolver->resolveForTransaction($transaction, null)->getMode());
+    }
+
     public function testResolveForTransactionLoadsTheHandlerWhenThePaymentMethodIsNotLoaded(): void
     {
         $this->setPaymentMethod('mode', 'manual');
@@ -341,6 +504,17 @@ class CaptureConfigurationResolverTest extends AdyenTestCase
         $transaction->setPaymentMethodId(self::PAYMENT_METHOD_ID);
 
         self::assertSame(CaptureMode::MANUAL, $this->resolver->resolveForTransaction($transaction, null)->getMode());
+    }
+
+    /**
+     * Old capture behavior as stored by the migration, which ran at $migratedAt.
+     */
+    private function givenMigration(array $legacyValues, string $migratedAt = 'now'): void
+    {
+        $legacyValues['migratedAt'] = (new \DateTimeImmutable($migratedAt))->format(\DATE_ATOM);
+        foreach ($legacyValues as $field => $value) {
+            $this->config['all'][ConfigurationService::CAPTURE_LEGACY_PREFIX . $field] = $value;
+        }
     }
 
     private function setGlobal(string $field, $value, ?string $salesChannelId = null): void
@@ -364,8 +538,11 @@ class CaptureConfigurationResolverTest extends AdyenTestCase
         return $this->resolve($salesChannelId)->getMode();
     }
 
-    private function createTransaction(string $handlerIdentifier, array $customFields): OrderTransactionEntity
-    {
+    private function createTransaction(
+        string $handlerIdentifier,
+        array $customFields,
+        ?string $createdAt = null
+    ): OrderTransactionEntity {
         $paymentMethod = new PaymentMethodEntity();
         $paymentMethod->setId(self::PAYMENT_METHOD_ID);
         $paymentMethod->setHandlerIdentifier($handlerIdentifier);
@@ -375,6 +552,9 @@ class CaptureConfigurationResolverTest extends AdyenTestCase
         $transaction->setPaymentMethodId(self::PAYMENT_METHOD_ID);
         $transaction->setPaymentMethod($paymentMethod);
         $transaction->setCustomFields($customFields);
+        if ($createdAt !== null) {
+            $transaction->setCreatedAt(new \DateTimeImmutable($createdAt));
+        }
 
         return $transaction;
     }

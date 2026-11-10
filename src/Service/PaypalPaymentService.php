@@ -37,6 +37,7 @@ use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
+use Adyen\Shopware\Models\Capture\CaptureConfiguration;
 use Adyen\Shopware\Models\NotificationProcessingResult;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
@@ -199,6 +200,8 @@ class PaypalPaymentService
             ->paymentsDetails(new PaymentDetailsRequest($stateData));
 
         $merchantReference = (string)$paymentDetailsResponse->getMerchantReference();
+        // Read before the attempt is removed below.
+        $captureConfiguration = $this->getSentCaptureConfiguration($merchantReference);
 
         try {
             $cart->addExtension(OrderConverter::ORIGINAL_ORDER_NUMBER, new IdStruct($merchantReference));
@@ -223,7 +226,8 @@ class PaypalPaymentService
             $this->paymentRequestService->storeCaptureConfiguration(
                 $order->getTransactions()->first(),
                 PaypalPaymentMethodHandler::class,
-                $context->getSalesChannelId()
+                $context->getSalesChannelId(),
+                $captureConfiguration
             );
             $this->paymentResponseHandler
                 ->handlePaymentResponse($paymentDetailsResponse, $order->getTransactions()->first());
@@ -357,6 +361,9 @@ class PaypalPaymentService
             return $this->createPayPalPaymentRequest($cart, $updatedContext, $stateData);
         }
 
+        $captureConfiguration = $this->paymentRequestService->resolvePaypalCaptureConfiguration(
+            $context->getSalesChannelId()
+        );
         $paymentRequest = $this->paymentRequestService->buildPaymentRequestFromCart(
             $context,
             $cart,
@@ -364,10 +371,11 @@ class PaypalPaymentService
             $this->generateNextOrderNumberForContext($context),
             PaypalPaymentMethodHandler::getPaymentMethodCode(),
             $stateData,
-            false
+            false,
+            $captureConfiguration
         );
 
-        return $this->executePaypalPayment($context, $paymentRequest)->toArray();
+        return $this->executePaypalPayment($context, $paymentRequest, $captureConfiguration)->toArray();
     }
 
     /**
@@ -387,6 +395,9 @@ class PaypalPaymentService
             throw new ValidationException('PayPal payment cannot be created from an empty cart.');
         }
 
+        $captureConfiguration = $this->paymentRequestService->resolvePaypalCaptureConfiguration(
+            $context->getSalesChannelId()
+        );
         $paymentRequest = $this->paymentRequestService->buildPaymentRequestFromCart(
             $context,
             $cart,
@@ -394,10 +405,11 @@ class PaypalPaymentService
             $this->generateNextOrderNumberForContext($context),
             PaypalPaymentMethodHandler::getPaymentMethodCode(),
             $stateData,
-            true
+            true,
+            $captureConfiguration
         );
 
-        return $this->executePaypalPayment($context, $paymentRequest)->toArray();
+        return $this->executePaypalPayment($context, $paymentRequest, $captureConfiguration)->toArray();
     }
 
     /**
@@ -470,6 +482,8 @@ class PaypalPaymentService
      *
      * @param SalesChannelContext $context
      * @param IntegrationPaymentRequest $paymentRequest
+     * @param CaptureConfiguration $captureConfiguration Sent with the request. Stored on the attempt, so the order
+     *     transaction gets the same configuration when the order is created.
      *
      * @return PaymentResponse
      *
@@ -477,14 +491,16 @@ class PaypalPaymentService
      */
     private function executePaypalPayment(
         SalesChannelContext $context,
-        IntegrationPaymentRequest $paymentRequest
+        IntegrationPaymentRequest $paymentRequest,
+        CaptureConfiguration $captureConfiguration
     ): PaymentResponse {
         $response = $this->paymentRequestService->executePayment($context, $paymentRequest);
 
         $this->paypalPaymentAttemptRepository->create(
             (string)$paymentRequest->getReference(),
             $context->getSalesChannelId(),
-            $response->getPspReference()
+            $response->getPspReference(),
+            $captureConfiguration->toArray()
         );
 
         return $response;
@@ -550,6 +566,32 @@ class PaypalPaymentService
         }
 
         return $reversed;
+    }
+
+    /**
+     * The capture configuration that was sent with the /payments request of the attempt.
+     *
+     * @param string $merchantReference
+     *
+     * @return CaptureConfiguration|null Null if it was not stored, e.g. for an attempt created before the update.
+     *     The configuration is then resolved again, as before.
+     */
+    private function getSentCaptureConfiguration(string $merchantReference): ?CaptureConfiguration
+    {
+        try {
+            $paypalPaymentAttempt = $this->paypalPaymentAttemptRepository->getByMerchantReference($merchantReference);
+        } catch (Throwable $exception) {
+            $this->logger->warning(
+                'Could not read the capture configuration of the PayPal payment attempt.',
+                ['merchantReference' => $merchantReference, 'exception' => $exception->getMessage()]
+            );
+
+            return null;
+        }
+
+        return CaptureConfiguration::fromArray(
+            $paypalPaymentAttempt === null ? null : $paypalPaymentAttempt->getCaptureConfiguration()
+        );
     }
 
     /**

@@ -123,7 +123,7 @@
             <name>captureMode</name>
             <label>Capture</label>
             <helpText>
-                Defines the default capture behavior for Adyen payment methods. Individual payment methods can override this setting in their payment method configuration. Immediate: Adyen captures the payment immediately; a capture delay configured in the Adyen Customer Area does not apply. Auto capture for open invoice payment methods (Klarna, Afterpay, Ratepay, Riverty, Oney, Affirm, Clearpay, Billie and PayBright) has to be enabled by Adyen support.
+                Defines the default capture behavior for Adyen payment methods. Individual payment methods can override this setting in their payment method configuration. Immediate: the plugin does not request a capture delay, so Adyen captures the payment according to the capture delay configured in the Adyen Customer Area (immediately by default). Open invoice payment methods are captured immediately. Auto capture for open invoice payment methods (Klarna, Afterpay, Ratepay, Riverty, Oney, Affirm, Clearpay, Billie and PayBright) has to be enabled by Adyen support.
             </helpText>
             <options>
                 <option>

@@ -248,6 +248,53 @@ class CaptureConfigurationMigratorTest extends AdyenTestCase
         }
     }
 
+    /**
+     * Transactions created before the migration have no stored capture configuration. They keep the old behavior,
+     * so the migration stores it separately from the configuration the merchant can change.
+     */
+    public function testOldCaptureBehaviorIsStoredForOlderTransactions(): void
+    {
+        $this->givenConfig([
+            'manualCaptureEnabled' => true,
+            'autoCaptureOpenInvoice' => false,
+            'captureOnShipmentEnabled' => true,
+            'orderState' => 'state-shipped',
+            'rescheduleTime' => 600,
+        ]);
+
+        $this->migrator->migrate();
+
+        self::assertSame('manual', $this->legacy('mode'));
+        self::assertSame('on_shipment', $this->legacy('openInvoiceMode'));
+        self::assertSame('state-shipped', $this->legacy('orderState'));
+        self::assertSame(600, $this->legacy('retryInterval'));
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DATE_ATOM, (string)$this->legacy('migratedAt')));
+    }
+
+    public function testOldCaptureBehaviorOfASalesChannelIsStoredInItsScope(): void
+    {
+        $this->givenConfig(['manualCaptureEnabled' => false, 'autoCaptureOpenInvoice' => true]);
+        $this->givenConfig(['manualCaptureEnabled' => true], self::SALES_CHANNEL_B);
+
+        $this->migrator->migrate();
+
+        self::assertSame('immediate', $this->legacy('mode'));
+        self::assertSame('immediate', $this->legacy('openInvoiceMode'));
+        self::assertSame('manual', $this->legacy('mode', self::SALES_CHANNEL_B));
+        // Not set in sales channel B, so it inherits the global value.
+        self::assertNull($this->legacy('openInvoiceMode', self::SALES_CHANNEL_B));
+    }
+
+    public function testOldCaptureBehaviorOfAShopThatNeverSavedTheCaptureSettings(): void
+    {
+        $this->migrator->migrate();
+
+        self::assertSame('immediate', $this->legacy('mode'));
+        self::assertSame('manual', $this->legacy('openInvoiceMode'));
+        self::assertSame(self::SHIPPED_STATE, $this->legacy('orderState'));
+        self::assertSame(43200, $this->legacy('retryInterval'));
+    }
+
     public function testSecondRunChangesNothing(): void
     {
         $this->givenConfig(['manualCaptureEnabled' => true]);
@@ -305,6 +352,11 @@ class CaptureConfigurationMigratorTest extends AdyenTestCase
     private function config(string $key, ?string $salesChannelId = null)
     {
         return $this->store[$salesChannelId ?? ''][self::CONFIG . $key] ?? null;
+    }
+
+    private function legacy(string $field, ?string $salesChannelId = null)
+    {
+        return $this->store[$salesChannelId ?? ''][self::PM . 'legacy.' . $field] ?? null;
     }
 
     private function paymentMethod(string $paymentMethodId, string $field, ?string $salesChannelId = null)

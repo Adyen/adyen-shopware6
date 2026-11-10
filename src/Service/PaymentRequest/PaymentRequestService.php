@@ -39,6 +39,7 @@ use Adyen\Service\Checkout\PaymentsApi;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 use Adyen\Shopware\Models\Capture\CaptureConfiguration;
+use Adyen\Shopware\Models\Capture\CaptureMode;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Shopware\PaymentMethods\RatepayDirectdebitPaymentMethod;
 use Adyen\Shopware\PaymentMethods\RatepayPaymentMethod;
@@ -190,15 +191,18 @@ class PaymentRequestService
      * @param OrderTransactionEntity $orderTransaction
      * @param string $paymentMethodHandler
      * @param string|null $salesChannelId
+     * @param CaptureConfiguration|null $captureConfiguration The configuration that was already sent with the
+     *     /payments request, if it was sent before the order existed (PayPal). Resolved now if not given.
      *
      * @return CaptureConfiguration
      */
     public function storeCaptureConfiguration(
         OrderTransactionEntity $orderTransaction,
         string $paymentMethodHandler,
-        ?string $salesChannelId
+        ?string $salesChannelId,
+        ?CaptureConfiguration $captureConfiguration = null
     ): CaptureConfiguration {
-        $captureConfiguration = $this->captureConfigurationResolver->resolve(
+        $captureConfiguration ??= $this->captureConfigurationResolver->resolve(
             $paymentMethodHandler,
             $orderTransaction->getPaymentMethodId(),
             $salesChannelId
@@ -212,6 +216,21 @@ class PaymentRequestService
         $this->orderTransactionRepository->updateCustomFields($orderTransaction);
 
         return $captureConfiguration;
+    }
+
+    /**
+     * Capture configuration of a PayPal payment whose request is built from the cart, before the order exists.
+     *
+     * @param string|null $salesChannelId
+     *
+     * @return CaptureConfiguration
+     */
+    public function resolvePaypalCaptureConfiguration(?string $salesChannelId): CaptureConfiguration
+    {
+        return $this->captureConfigurationResolver->resolveByHandler(
+            PaypalPaymentMethodHandler::class,
+            $salesChannelId
+        );
     }
 
     /**
@@ -328,7 +347,8 @@ class PaymentRequestService
                 $paymentMethodHandler,
                 $salesChannelContext->getSalesChannel()->getId()
             ),
-            $this->captureConfigurationResolver->supportsCaptureConfiguration($paymentMethodHandler)
+            $this->captureConfigurationResolver->supportsCaptureConfiguration($paymentMethodHandler),
+            $isOpenInvoice
         );
         $paymentRequest->setChannel('Web');
 
@@ -353,6 +373,7 @@ class PaymentRequestService
      * @param string $paymentMethodCode
      * @param array $stateData
      * @param bool $includeShipping
+     * @param CaptureConfiguration|null $captureConfiguration Resolved for PayPal if not given.
      *
      * @return IntegrationPaymentRequest
      */
@@ -363,7 +384,8 @@ class PaymentRequestService
         string $orderReference,
         string $paymentMethodCode,
         array $stateData = [],
-        bool $includeShipping = true
+        bool $includeShipping = true,
+        ?CaptureConfiguration $captureConfiguration = null
     ): IntegrationPaymentRequest {
         $paymentRequest = new IntegrationPaymentRequest($stateData);
 
@@ -409,10 +431,8 @@ class PaymentRequestService
         // Only PayPal (regular checkout and express) builds its request from the cart.
         $this->setAdditionalRequestData(
             $paymentRequest,
-            $this->captureConfigurationResolver->resolveByHandler(
-                PaypalPaymentMethodHandler::class,
-                $salesChannelContext->getSalesChannel()->getId()
-            ),
+            $captureConfiguration
+                ?? $this->resolvePaypalCaptureConfiguration($salesChannelContext->getSalesChannel()->getId()),
             $this->captureConfigurationResolver->supportsCaptureConfiguration(PaypalPaymentMethodHandler::class)
         );
         $paymentRequest->setChannel('Web');
@@ -475,21 +495,28 @@ class PaymentRequestService
      * @param CaptureConfiguration $captureConfiguration
      * @param bool $supportsCaptureConfiguration False for payment methods without manual capture support: nothing
      *     capture related is sent for them, as before.
+     * @param bool $isOpenInvoice
      *
      * @return void
      */
     protected function setAdditionalRequestData(
         IntegrationPaymentRequest $paymentRequest,
         CaptureConfiguration $captureConfiguration,
-        bool $supportsCaptureConfiguration
+        bool $supportsCaptureConfiguration,
+        bool $isOpenInvoice = false
     ): void {
         $additionalData = ['allow3DS2' => true];
 
         if ($captureConfiguration->isManualCapture()) {
             $additionalData['manualCapture'] = true;
-        } elseif ($supportsCaptureConfiguration && $captureConfiguration->getCaptureDelayHours() !== null) {
-            // 0 for immediate capture, the configured delay for delayed capture.
-            $paymentRequest->setCaptureDelayHours($captureConfiguration->getCaptureDelayHours());
+        } elseif ($captureConfiguration->getMode() === CaptureMode::DELAYED) {
+            if ($supportsCaptureConfiguration && $captureConfiguration->getCaptureDelayHours() !== null) {
+                $paymentRequest->setCaptureDelayHours($captureConfiguration->getCaptureDelayHours());
+            }
+        } elseif ($isOpenInvoice) {
+            // Immediate capture is requested only for open invoice methods, as before. Other methods follow the
+            // capture delay set in the Adyen Customer Area, which a request value would override.
+            $paymentRequest->setCaptureDelayHours(0);
         }
 
         $paymentRequest->setAdditionalData($additionalData);
