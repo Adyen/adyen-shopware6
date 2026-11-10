@@ -28,6 +28,8 @@ export class PaymentDetailsPage extends SPRBasePage {
         this.idealWrapper = this.paymentDetailsList.locator("#adyen-payment-checkout-mask");
         this.idealSelector = this.paymentDetailsList.locator("img[alt='iDeal']");
         this.clearPaySelector = this.paymentDetailsList.locator("img[alt='Clearpay']");
+        this.afterpaySelector = this.paymentDetailsList.locator("img[alt='Afterpay']");
+        this.cashAppAfterpaySelector = this.paymentDetailsList.locator("img[alt='Cash App Afterpay']");
         this.klarnaPayNowSelector = this.paymentDetailsList.locator("img[alt='Klarna Pay Now']");
         this.klarnaPayLaterSelector = this.paymentDetailsList.locator("img[alt='Klarna Pay Later']");
         this.klarnaPayOverTimeSelector = this.paymentDetailsList.locator("img[alt='Klarna Pay Over Time']");
@@ -110,6 +112,14 @@ export class PaymentDetailsPage extends SPRBasePage {
 
     async selectClearPay(){
         await this.getPaymentMethodReady(this.clearPaySelector);
+    }
+
+    async selectAfterpay(){
+        await this.getPaymentMethodReady(this.afterpaySelector);
+    }
+
+    async selectCashAppAfterpay(){
+        await this.getPaymentMethodReady(this.cashAppAfterpaySelector);
     }
 
     async selectKlarnaPayNow(){
