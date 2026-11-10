@@ -144,7 +144,7 @@ class CaptureConfigurationResolver
         // The payment method has its own mode: its own parameters, otherwise the global ones.
         return new CaptureConfiguration(
             $paymentMethodMode,
-            ConfigValue::toPositiveInt($this->getPaymentMethodValue(
+            self::toDelayDays($this->getPaymentMethodValue(
                 $paymentMethodId,
                 ConfigurationService::CAPTURE_CONFIGURATION_FIELD_DELAY_DAYS,
                 $salesChannelId
@@ -184,7 +184,8 @@ class CaptureConfigurationResolver
     }
 
     /**
-     * The configuration stored when the payment was created; the current configuration for older transactions.
+     * The configuration stored when the payment was created. A transaction created before the capture configuration
+     * existed has none and keeps the capture behavior of the plugin version it was created with.
      *
      * @param OrderTransactionEntity $transaction
      * @param string|null $salesChannelId
@@ -204,7 +205,61 @@ class CaptureConfigurationResolver
         $handlerIdentifier = $transaction->getPaymentMethod()?->getHandlerIdentifier()
             ?? $this->getHandlerIdentifierByPaymentMethodId($paymentMethodId);
 
+        if ($this->isCreatedBeforeMigration($transaction, $salesChannelId)) {
+            return $this->resolveLegacy($handlerIdentifier, $salesChannelId);
+        }
+
         return $this->resolve($handlerIdentifier, $paymentMethodId, $salesChannelId);
+    }
+
+    /**
+     * Capture behavior of the plugin version before the capture configuration, as stored by the migration. The same
+     * decisions as the old CaptureService::isManualCapture() and requiresCaptureOnShipment().
+     *
+     * @param string|null $handlerIdentifier
+     * @param string|null $salesChannelId
+     *
+     * @return CaptureConfiguration
+     */
+    public function resolveLegacy(?string $handlerIdentifier, ?string $salesChannelId): CaptureConfiguration
+    {
+        if (!self::isAdyenHandler($handlerIdentifier)) {
+            return CaptureConfiguration::automatic();
+        }
+
+        /** @var class-string<AbstractPaymentMethodHandler> $handlerIdentifier */
+        if ($handlerIdentifier::$isOpenInvoice) {
+            // Open invoice payment methods were manual capture unless auto capture was enabled.
+            $mode = CaptureMode::tryFromConfig($this->configurationService->getLegacyCaptureValue(
+                ConfigurationService::CAPTURE_LEGACY_FIELD_OPEN_INVOICE_MODE,
+                $salesChannelId
+            )) ?? CaptureMode::MANUAL;
+
+            if ($mode !== CaptureMode::ON_SHIPMENT) {
+                return new CaptureConfiguration($mode);
+            }
+
+            // The old code read the delivery state and the retry interval only globally.
+            return new CaptureConfiguration(
+                CaptureMode::ON_SHIPMENT,
+                null,
+                ConfigValue::toNonEmptyString($this->configurationService->getLegacyCaptureValue(
+                    ConfigurationService::CAPTURE_LEGACY_FIELD_ORDER_STATE
+                )),
+                ConfigValue::toPositiveInt($this->configurationService->getLegacyCaptureValue(
+                    ConfigurationService::CAPTURE_LEGACY_FIELD_RETRY_INTERVAL
+                ))
+            );
+        }
+
+        $mode = CaptureMode::tryFromConfig($this->configurationService->getLegacyCaptureValue(
+            ConfigurationService::CAPTURE_LEGACY_FIELD_MODE,
+            $salesChannelId
+        ));
+
+        return $handlerIdentifier::$supportsManualCapture && $mode === CaptureMode::MANUAL
+            ? new CaptureConfiguration(CaptureMode::MANUAL)
+            : CaptureConfiguration::automatic();
     }
 
     /**
@@ -215,6 +270,32 @@ class CaptureConfigurationResolver
     public function getSnapshot(OrderTransactionEntity $transaction): ?CaptureConfiguration
     {
         return CaptureConfiguration::fromArray($transaction->getCustomFields()[self::CUSTOM_FIELD_KEY] ?? null);
+    }
+
+    /**
+     * @param OrderTransactionEntity $transaction
+     * @param string|null $salesChannelId
+     *
+     * @return bool False if the shop never had the old capture settings (no migration time stored), or if the
+     *     creation time is unknown.
+     */
+    private function isCreatedBeforeMigration(OrderTransactionEntity $transaction, ?string $salesChannelId): bool
+    {
+        $migratedAt = ConfigValue::toNonEmptyString($this->configurationService->getLegacyCaptureValue(
+            ConfigurationService::CAPTURE_LEGACY_FIELD_MIGRATED_AT,
+            $salesChannelId
+        ));
+        $createdAt = $transaction->getCreatedAt();
+
+        if ($migratedAt === null || $createdAt === null) {
+            return false;
+        }
+
+        try {
+            return $createdAt < new \DateTimeImmutable($migratedAt);
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     /**
@@ -259,7 +340,22 @@ class CaptureConfigurationResolver
      */
     private function getGlobalDelayDays(?string $salesChannelId): ?int
     {
-        return ConfigValue::toPositiveInt($this->configurationService->getCaptureDelayDays($salesChannelId));
+        return self::toDelayDays($this->configurationService->getCaptureDelayDays($salesChannelId));
+    }
+
+    /**
+     * The admin validates the delay, but a value saved through the API or system:config:set is not validated.
+     * A delay above the maximum is limited to it, because Adyen rejects the payment with a longer capture delay.
+     *
+     * @param mixed $value
+     *
+     * @return int|null Null for a value that is not a positive whole number.
+     */
+    private static function toDelayDays(mixed $value): ?int
+    {
+        $delayDays = ConfigValue::toPositiveInt($value);
+
+        return $delayDays === null ? null : min($delayDays, CaptureConfigurationService::MAX_DELAY_DAYS);
     }
 
     /**

@@ -65,6 +65,11 @@ class PaypalPaymentAttemptEntity extends Entity
     protected ?string $reversalPspReference = null;
 
     /**
+     * @var array|null Capture configuration sent with the /payments request, see CaptureConfiguration::toArray().
+     */
+    protected ?array $captureConfiguration = null;
+
+    /**
      * @return string
      */
     public function getMerchantReference(): string
@@ -134,6 +139,22 @@ class PaypalPaymentAttemptEntity extends Entity
     public function getReversalPspReference(): ?string
     {
         return $this->reversalPspReference;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getCaptureConfiguration(): ?array
+    {
+        return $this->captureConfiguration;
+    }
+
+    /**
+     * @param array|null $captureConfiguration
+     */
+    public function setCaptureConfiguration(?array $captureConfiguration): void
+    {
+        $this->captureConfiguration = $captureConfiguration;
     }
 
     /**

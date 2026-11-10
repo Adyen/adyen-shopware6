@@ -25,6 +25,7 @@
 namespace Adyen\Shopware\Test\Unit;
 
 use Adyen\Shopware\Handlers\CardsPaymentMethodHandler;
+use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 use Adyen\Shopware\Models\Capture\CaptureConfiguration;
 use Adyen\Shopware\Models\Capture\CaptureMode;
 use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
@@ -107,6 +108,46 @@ class PaymentRequestServiceTest extends AdyenTestCase
         );
     }
 
+    public function testStoreCaptureConfigurationStoresTheGivenConfigurationWithoutResolvingIt(): void
+    {
+        // E.g. the configuration sent with a PayPal /payments request before the order existed.
+        $configuration = new CaptureConfiguration(CaptureMode::MANUAL);
+
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $transaction->setPaymentMethodId('pm-paypal');
+
+        $this->captureConfigurationResolver->expects(self::never())->method('resolve');
+        $this->orderTransactionRepository->expects(self::once())->method('updateCustomFields')->with($transaction);
+
+        $result = $this->paymentRequestService->storeCaptureConfiguration(
+            $transaction,
+            PaypalPaymentMethodHandler::class,
+            'sales-channel-1',
+            $configuration
+        );
+
+        self::assertSame($configuration, $result);
+        self::assertSame(
+            [CaptureConfigurationResolver::CUSTOM_FIELD_KEY => $configuration->toArray()],
+            $transaction->getCustomFields()
+        );
+    }
+
+    public function testResolvePaypalCaptureConfigurationUsesThePaypalHandler(): void
+    {
+        $configuration = new CaptureConfiguration(CaptureMode::DELAYED, 2);
+        $this->captureConfigurationResolver->expects(self::once())
+            ->method('resolveByHandler')
+            ->with(PaypalPaymentMethodHandler::class, 'sales-channel-1')
+            ->willReturn($configuration);
+
+        self::assertSame(
+            $configuration,
+            $this->paymentRequestService->resolvePaypalCaptureConfiguration('sales-channel-1')
+        );
+    }
+
     public function testStoreCaptureConfigurationWithoutExistingCustomFields(): void
     {
         $transaction = new OrderTransactionEntity();
@@ -130,13 +171,19 @@ class PaymentRequestServiceTest extends AdyenTestCase
     public function testCaptureFieldsOfTheRequest(
         CaptureConfiguration $configuration,
         bool $supportsCaptureConfiguration,
+        bool $isOpenInvoice,
         ?bool $expectedManualCapture,
         ?int $expectedCaptureDelayHours
     ): void {
         $request = new IntegrationPaymentRequest();
 
-        (new ReflectionMethod(PaymentRequestService::class, 'setAdditionalRequestData'))
-            ->invoke($this->paymentRequestService, $request, $configuration, $supportsCaptureConfiguration);
+        (new ReflectionMethod(PaymentRequestService::class, 'setAdditionalRequestData'))->invoke(
+            $this->paymentRequestService,
+            $request,
+            $configuration,
+            $supportsCaptureConfiguration,
+            $isOpenInvoice
+        );
 
         $additionalData = $request->getAdditionalData();
         self::assertTrue($additionalData['allow3DS2']);
@@ -147,12 +194,23 @@ class PaymentRequestServiceTest extends AdyenTestCase
     public static function captureRequestFields(): array
     {
         return [
-            'immediate' => [new CaptureConfiguration(CaptureMode::IMMEDIATE), true, null, 0],
-            'delayed 3 days' => [new CaptureConfiguration(CaptureMode::DELAYED, 3), true, null, 72],
-            'delayed without days' => [new CaptureConfiguration(CaptureMode::DELAYED), true, null, null],
-            'manual' => [new CaptureConfiguration(CaptureMode::MANUAL), true, true, null],
-            'on shipment' => [new CaptureConfiguration(CaptureMode::ON_SHIPMENT, null, 'id', 60), true, true, null],
-            'method without manual capture support' => [CaptureConfiguration::automatic(), false, null, null],
+            // The capture delay of the Adyen Customer Area applies, so no delay is sent.
+            'immediate' => [new CaptureConfiguration(CaptureMode::IMMEDIATE), true, false, null, null],
+            'immediate open invoice' => [new CaptureConfiguration(CaptureMode::IMMEDIATE), true, true, null, 0],
+            'delayed 3 days' => [new CaptureConfiguration(CaptureMode::DELAYED, 3), true, false, null, 72],
+            'delayed 3 days open invoice' => [new CaptureConfiguration(CaptureMode::DELAYED, 3), true, true, null, 72],
+            'delayed without days' => [new CaptureConfiguration(CaptureMode::DELAYED), true, false, null, null],
+            'manual' => [new CaptureConfiguration(CaptureMode::MANUAL), true, false, true, null],
+            'manual open invoice' => [new CaptureConfiguration(CaptureMode::MANUAL), true, true, true, null],
+            'on shipment' => [
+                new CaptureConfiguration(CaptureMode::ON_SHIPMENT, null, 'id', 60),
+                true,
+                false,
+                true,
+                null,
+            ],
+            'method without manual capture support' => [CaptureConfiguration::automatic(), false, false, null, null],
+            'open invoice without manual capture support' => [CaptureConfiguration::automatic(), false, true, null, 0],
         ];
     }
 }

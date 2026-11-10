@@ -24,6 +24,7 @@
 
 namespace Adyen\Shopware\Test\Unit;
 
+use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Models\Capture\CaptureConfiguration;
 use Adyen\Shopware\Models\Capture\CaptureMode;
@@ -69,17 +70,29 @@ class ProcessNotificationsHandlerCaptureTest extends AdyenTestCase
      */
     private array $notificationState = [];
 
+    /**
+     * @var array<int, array{string, string, bool}> Every state change: notification id, property, value.
+     */
+    private array $stateChanges = [];
+
+    /**
+     * @var NotificationEntity[] Notifications returned for processing.
+     */
+    private array $notifications = [];
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->notificationService = $this->getSimpleMock(NotificationService::class);
-        $this->notificationService->method('getScheduledUnprocessedNotifications')->willReturn(
-            new EntityCollection([$this->createCaptureNotification(EventCodes::AUTHORISATION)])
+        $this->notifications = [$this->createCaptureNotification(EventCodes::AUTHORISATION)];
+        $this->notificationService->method('getScheduledUnprocessedNotifications')->willReturnCallback(
+            fn () => new EntityCollection($this->notifications)
         );
         $this->notificationService->method('changeNotificationState')
             ->willReturnCallback(function (string $id, string $property, bool $state): void {
                 $this->notificationState[$property] = $state;
+                $this->stateChanges[] = [$id, $property, $state];
             });
 
         $orderTransaction = $this->createOrderTransaction(OrderTransactionStates::STATE_IN_PROGRESS);
@@ -168,6 +181,60 @@ class ProcessNotificationsHandlerCaptureTest extends AdyenTestCase
         $this->handler->run();
 
         self::assertArrayNotHasKey('done', $this->notificationState);
+    }
+
+    /**
+     * Review finding 5: the retry interval is read in the catch block, so an exception there must not stop the
+     * processing of the remaining notifications.
+     */
+    public function testDeliveryStateMismatchIsRescheduledWhenTheRetryIntervalCannotBeRead(): void
+    {
+        $second = $this->createCaptureNotification(EventCodes::AUTHORISATION);
+        $second->setId('notification-2');
+        $this->notifications[] = $second;
+
+        $configuration = new CaptureConfiguration(CaptureMode::ON_SHIPMENT, null, 'state-shipped', 600);
+        $calls = 0;
+        // The processor and the webhook handler read the configuration first (calls 1 and 2); reading it again for
+        // the retry interval of the first notification fails (call 3).
+        $this->captureService->method('getCaptureConfiguration')->willReturnCallback(
+            function () use (&$calls, $configuration): CaptureConfiguration {
+                if (++$calls === 3) {
+                    throw new \RuntimeException('Database is not reachable.');
+                }
+
+                return $configuration;
+            }
+        );
+        $this->givenCaptureFails(CaptureService::REASON_DELIVERY_STATE_MISMATCH);
+
+        $scheduled = [];
+        $this->notificationService->method('setNotificationSchedule')
+            ->willReturnCallback(function (string $id, \DateTime $time) use (&$scheduled): void {
+                $scheduled[$id] = $time;
+            });
+        $this->notificationService->expects(self::never())->method('saveError');
+
+        $this->handler->run();
+
+        // Both notifications were rescheduled, the first one with the default interval of 12 hours.
+        self::assertSame(['notification-1', 'notification-2'], array_keys($scheduled));
+        $delay = $scheduled['notification-1']->getTimestamp() - time();
+        self::assertGreaterThan(43200 - 60, $delay);
+        self::assertLessThanOrEqual(43200, $delay);
+        self::assertContains(['notification-1', 'processing', false], $this->stateChanges);
+        self::assertContains(['notification-2', 'processing', false], $this->stateChanges);
+    }
+
+    public function testCaptureErrorDoesNotReadTheRetryInterval(): void
+    {
+        $this->givenCaptureConfiguration(new CaptureConfiguration(CaptureMode::ON_SHIPMENT, null, 'state-shipped', 60));
+        $this->givenCaptureFails('');
+
+        $this->captureService->expects(self::never())->method('getRescheduleNotificationTime');
+        $this->notificationService->expects(self::once())->method('saveError');
+
+        $this->handler->run();
     }
 
     public function testNothingToCaptureFinishesTheNotificationWithoutAnError(): void

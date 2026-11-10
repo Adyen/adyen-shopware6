@@ -57,9 +57,21 @@ class CaptureService
     const REASON_DELIVERY_STATE_MISMATCH = 'DELIVERY_STATE_MISMATCH';
     const REASON_WAITING_AUTH_WEBHOOK = 'WAITING_AUTH_WEBHOOK';
     /**
-     * The order has no authorized Adyen transaction.
+     * The order has no authorized Adyen transaction, because the payment was already captured or cancelled.
      */
     const REASON_NOTHING_TO_CAPTURE = 'NOTHING_TO_CAPTURE';
+
+    /**
+     * States of a transaction that was already captured (also partially or refunded afterwards) or cancelled, so
+     * there is nothing left to capture.
+     */
+    private const NOTHING_TO_CAPTURE_STATES = [
+        OrderTransactionStates::STATE_PAID,
+        OrderTransactionStates::STATE_PARTIALLY_PAID,
+        OrderTransactionStates::STATE_REFUNDED,
+        OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
+        OrderTransactionStates::STATE_CANCELLED,
+    ];
 
     /**
      * @var OrderRepository $orderRepository
@@ -165,9 +177,22 @@ class CaptureService
 
         if (!$orderTransaction) {
             $message = 'Unable to find original authorized transaction.';
-            $this->logger->info($message, ['orderNumber' => $order->getOrderNumber()]);
             $exception = new CaptureException($message);
-            $exception->reason = self::REASON_NOTHING_TO_CAPTURE;
+
+            if ($this->orderTransactionRepository
+                ->getAdyenOrderTransactionsByStates($order->getId(), self::NOTHING_TO_CAPTURE_STATES)
+                ->count() > 0
+            ) {
+                // Captured manually in the meantime, or cancelled.
+                $this->logger->info(
+                    $message . ' The payment was already captured or cancelled, there is nothing to capture.',
+                    ['orderNumber' => $order->getOrderNumber()]
+                );
+                $exception->reason = self::REASON_NOTHING_TO_CAPTURE;
+            } else {
+                // The transaction was not found for another reason, so the capture is retried.
+                $this->logger->error($message, ['orderNumber' => $order->getOrderNumber()]);
+            }
 
             throw $exception;
         }

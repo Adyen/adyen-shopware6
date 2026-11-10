@@ -72,6 +72,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     public const MAX_ERROR_COUNT = 3;
 
     /**
+     * Capture retry interval used when the configured one cannot be read, the same as the old default.
+     */
+    private const DEFAULT_CAPTURE_RETRY_SECONDS = 43200;
+
+    /**
      * @var NotificationService
      */
     private NotificationService $notificationService;
@@ -274,7 +279,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
                 try {
                     if ($isRecoverable) {
-                        $this->reopenFailedTransaction($orderTransaction, $context, $logContext);
+                        $orderTransaction = $this->reopenFailedTransaction($orderTransaction, $context, $logContext);
                     }
 
                     $processor = $this->createProcessor(
@@ -317,17 +322,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 }
 
                 $this->logger->warning($exception->getMessage(), ['code' => $exception->getCode()]);
-                $scheduledProcessingTime = $this->captureService->getRescheduleNotificationTime(
-                    $orderTransaction !== null && $order !== null
-                        ? $this->captureService->getCaptureConfiguration($orderTransaction, $order->getSalesChannelId())
-                        : null
-                );
                 if (CaptureService::REASON_DELIVERY_STATE_MISMATCH === $exception->reason ||
                     CaptureService::REASON_WAITING_AUTH_WEBHOOK === $exception->reason) {
                     $this->rescheduleNotification(
                         $notification->getId(),
                         $notification->getMerchantReference(),
-                        $scheduledProcessingTime
+                        $this->getCaptureRetryTime($orderTransaction, $order, $logContext)
                     );
                 } else {
                     $this->logNotificationFailure($notification, $exception->getMessage());
@@ -566,13 +566,14 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param Context $context
      * @param array $logContext
      *
-     * @return void
+     * @return OrderTransactionEntity The reloaded transaction. The state handler changes only the database, so the
+     *     given entity would still be failed, and the webhook handlers decide by its state.
      */
     private function reopenFailedTransaction(
         OrderTransactionEntity $orderTransaction,
         Context $context,
         array $logContext
-    ): void {
+    ): OrderTransactionEntity {
         $this->logger->info(
             'Reopening a transaction that failed because the /payments/details call failed.',
             $logContext
@@ -581,6 +582,8 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $orderTransaction->getId(),
             $this->createContextWithoutFlows($context)
         );
+
+        return $this->orderTransactionRepository->getWithId($orderTransaction->getId()) ?? $orderTransaction;
     }
 
     /**
@@ -616,6 +619,37 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $customFields[ResultHandler::PAYMENT_DETAILS_CALL_FAILED] = true;
         $transaction->setCustomFields($customFields);
         $this->orderTransactionRepository->updateCustomFields($transaction);
+    }
+
+    /**
+     * Next capture attempt, after the retry interval of the payment's capture configuration. Called from the catch
+     * block, so it must never throw: an exception there would stop the processing of all remaining notifications.
+     *
+     * @param OrderTransactionEntity|null $orderTransaction
+     * @param OrderEntity|null $order
+     * @param array $logContext
+     *
+     * @return \DateTime
+     */
+    private function getCaptureRetryTime(
+        ?OrderTransactionEntity $orderTransaction,
+        ?OrderEntity $order,
+        array $logContext
+    ): \DateTime {
+        try {
+            return $this->captureService->getRescheduleNotificationTime(
+                $orderTransaction !== null && $order !== null
+                    ? $this->captureService->getCaptureConfiguration($orderTransaction, $order->getSalesChannelId())
+                    : null
+            );
+        } catch (\Throwable $exception) {
+            $this->logger->warning(
+                'Could not read the capture retry interval, the default interval is used.',
+                $logContext + ['errorMessage' => $exception->getMessage()]
+            );
+
+            return (new \DateTime())->add(new \DateInterval('PT' . self::DEFAULT_CAPTURE_RETRY_SECONDS . 'S'));
+        }
     }
 
     /**
