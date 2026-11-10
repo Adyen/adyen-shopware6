@@ -40,12 +40,15 @@ use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
 use Adyen\Shopware\Test\Common\AdyenTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -102,17 +105,72 @@ class CaptureServiceTest extends AdyenTestCase
         $this->transaction->setCustomFields([PaymentResponseHandler::ORIGINAL_PSP_REFERENCE => 'PSP123']);
     }
 
-    public function testNoAuthorisedTransactionMeansNothingToCapture(): void
+    #[DataProvider('settledStates')]
+    public function testAlreadyCapturedOrCancelledPaymentMeansNothingToCapture(string $state): void
     {
         $this->orderTransactionRepository->method('getFirstAdyenOrderTransactionByStates')->willReturn(null);
+        $this->orderTransactionRepository->method('getAdyenOrderTransactionsByStates')
+            ->willReturnCallback(function (string $orderId, array $states) use ($state): OrderTransactionCollection {
+                return new OrderTransactionCollection(in_array($state, $states, true) ? [$this->transaction] : []);
+            });
         $this->httpClient->expects(self::never())->method('requestHttp');
 
+        $exception = $this->captureFails();
+
+        self::assertSame(CaptureService::REASON_NOTHING_TO_CAPTURE, $exception->reason);
+    }
+
+    public static function settledStates(): array
+    {
+        return [
+            'paid' => [OrderTransactionStates::STATE_PAID],
+            'partially paid' => [OrderTransactionStates::STATE_PARTIALLY_PAID],
+            'refunded' => [OrderTransactionStates::STATE_REFUNDED],
+            'partially refunded' => [OrderTransactionStates::STATE_PARTIALLY_REFUNDED],
+            'cancelled' => [OrderTransactionStates::STATE_CANCELLED],
+        ];
+    }
+
+    /**
+     * Review finding 7: if the authorised transaction is not found for another reason (e.g. a versioned order or a
+     * plugin filter mismatch), the capture must fail and be retried instead of being skipped silently.
+     */
+    public function testMissingTransactionThatWasNotCapturedIsRetried(): void
+    {
+        $this->orderTransactionRepository->method('getFirstAdyenOrderTransactionByStates')->willReturn(null);
+        $this->orderTransactionRepository->method('getAdyenOrderTransactionsByStates')
+            ->willReturn(new OrderTransactionCollection());
+        $this->httpClient->expects(self::never())->method('requestHttp');
+
+        $exception = $this->captureFails();
+
+        self::assertNull($exception->reason);
+        self::assertSame('Unable to find original authorized transaction.', $exception->getMessage());
+    }
+
+    public function testFailedTransactionIsNotTreatedAsCaptured(): void
+    {
+        $this->orderTransactionRepository->method('getFirstAdyenOrderTransactionByStates')->willReturn(null);
+        $this->orderTransactionRepository->expects(self::once())
+            ->method('getAdyenOrderTransactionsByStates')
+            ->with(
+                self::anything(),
+                self::logicalNot(self::containsIdentical(OrderTransactionStates::STATE_FAILED))
+            )
+            ->willReturn(new OrderTransactionCollection());
+
+        self::assertNull($this->captureFails()->reason);
+    }
+
+    private function captureFails(): CaptureException
+    {
         try {
             $this->captureService->doCapture('10001', 1999, Context::createDefaultContext());
-            self::fail('CaptureException was not thrown.');
         } catch (CaptureException $exception) {
-            self::assertSame(CaptureService::REASON_NOTHING_TO_CAPTURE, $exception->reason);
+            return $exception;
         }
+
+        self::fail('CaptureException was not thrown.');
     }
 
     public function testCaptureOnShipmentWaitsForTheConfiguredDeliveryState(): void

@@ -45,6 +45,18 @@ class ConfigurationService
     public const CAPTURE_CONFIGURATION_FIELD_ORDER_STATE = 'orderState';
     public const CAPTURE_CONFIGURATION_FIELD_RETRY_INTERVAL = 'retryInterval';
 
+    /**
+     * Capture behavior of the plugin version before the capture configuration, written once by the migration:
+     * AdyenPaymentShopware6.captureConfiguration.legacy.<field>
+     * It applies to the transactions created before the migration, which have no stored capture configuration.
+     */
+    public const CAPTURE_LEGACY_PREFIX = self::CAPTURE_CONFIGURATION_PREFIX . 'legacy.';
+    public const CAPTURE_LEGACY_FIELD_MODE = 'mode';
+    public const CAPTURE_LEGACY_FIELD_OPEN_INVOICE_MODE = 'openInvoiceMode';
+    public const CAPTURE_LEGACY_FIELD_ORDER_STATE = 'orderState';
+    public const CAPTURE_LEGACY_FIELD_RETRY_INTERVAL = 'retryInterval';
+    public const CAPTURE_LEGACY_FIELD_MIGRATED_AT = 'migratedAt';
+
     public const EXPRESS_CHECKOUT_PAGE_PRODUCT = 'product';
     public const EXPRESS_CHECKOUT_PAGE_CART = 'cart';
     public const EXPRESS_CHECKOUT_PAGE_OFFCANVAS = 'offcanvas';
@@ -333,6 +345,19 @@ class ConfigurationService
             self::getPaymentMethodCaptureKey($paymentMethodId, $field),
             $salesChannelId
         );
+    }
+
+    /**
+     * Capture behavior of the plugin version before the capture configuration.
+     *
+     * @param string $field One of the CAPTURE_LEGACY_FIELD_* constants.
+     * @param string|null $salesChannelId
+     *
+     * @return mixed
+     */
+    public function getLegacyCaptureValue(string $field, ?string $salesChannelId = null): mixed
+    {
+        return $this->systemConfigService->get(self::CAPTURE_LEGACY_PREFIX . $field, $salesChannelId);
     }
 
     /**

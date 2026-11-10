@@ -147,6 +147,8 @@ class CaptureConfigurationMigrator
                     $ownValues,
                     $globalValues
                 ) ? CaptureMode::MANUAL->value : CaptureMode::IMMEDIATE->value;
+                $values[self::getLegacyKey(ConfigurationService::CAPTURE_LEGACY_FIELD_MODE)] =
+                    $values[self::CONFIG_PREFIX . 'captureMode'];
             }
 
             if ($isGlobal
@@ -154,6 +156,8 @@ class CaptureConfigurationMigrator
                 || $this->hasOwnValue($ownValues, self::OLD_CAPTURE_ON_SHIPMENT)
             ) {
                 $mode = $this->getOpenInvoiceMode($ownValues, $globalValues);
+                $values[self::getLegacyKey(ConfigurationService::CAPTURE_LEGACY_FIELD_OPEN_INVOICE_MODE)] =
+                    $mode->value;
 
                 foreach ($openInvoicePaymentMethodIds as $paymentMethodId) {
                     $values += $this->getPaymentMethodValues(
@@ -185,7 +189,25 @@ class CaptureConfigurationMigrator
             }
         }
 
+        // The old code read the delivery state and the retry interval only globally.
+        $this->systemConfigService->setMultiple([
+            self::getLegacyKey(ConfigurationService::CAPTURE_LEGACY_FIELD_ORDER_STATE) => $globalOrderState,
+            self::getLegacyKey(ConfigurationService::CAPTURE_LEGACY_FIELD_RETRY_INTERVAL) => $globalRescheduleTime,
+            self::getLegacyKey(ConfigurationService::CAPTURE_LEGACY_FIELD_MIGRATED_AT) =>
+                (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(\DATE_ATOM),
+        ]);
+
         $this->systemConfigService->set(self::MIGRATED_KEY, true);
+    }
+
+    /**
+     * @param string $field One of the ConfigurationService::CAPTURE_LEGACY_FIELD_* constants.
+     *
+     * @return string
+     */
+    private static function getLegacyKey(string $field): string
+    {
+        return ConfigurationService::CAPTURE_LEGACY_PREFIX . $field;
     }
 
     /**

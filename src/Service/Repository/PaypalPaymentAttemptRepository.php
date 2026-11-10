@@ -53,11 +53,16 @@ class PaypalPaymentAttemptRepository
      * @param string $merchantReference
      * @param string $salesChannelId
      * @param string|null $pspReference
+     * @param array|null $captureConfiguration Sent with the /payments request, see CaptureConfiguration::toArray().
      *
      * @return void
      */
-    public function create(string $merchantReference, string $salesChannelId, ?string $pspReference): void
-    {
+    public function create(
+        string $merchantReference,
+        string $salesChannelId,
+        ?string $pspReference,
+        ?array $captureConfiguration = null
+    ): void {
         $this->repository->create(
             [
                 [
@@ -66,6 +71,7 @@ class PaypalPaymentAttemptRepository
                     'salesChannelId' => $salesChannelId,
                     'pspReference' => $pspReference,
                     'status' => PaypalPaymentAttemptEntity::STATUS_OPEN,
+                    'captureConfiguration' => $captureConfiguration,
                 ]
             ],
             Context::createDefaultContext()

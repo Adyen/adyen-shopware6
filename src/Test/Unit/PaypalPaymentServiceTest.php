@@ -28,6 +28,7 @@ use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Environment;
 use Adyen\HttpClient\ClientInterface;
+use Adyen\Model\Checkout\PaymentResponse;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\PaypalPaymentAttempt\PaypalPaymentAttemptEntity;
 use Adyen\Shopware\Exception\PaymentReversedException;
@@ -36,6 +37,7 @@ use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 use Adyen\Shopware\Models\Capture\CaptureConfiguration;
 use Adyen\Shopware\Models\Capture\CaptureMode;
 use Adyen\Shopware\Models\NotificationProcessingResult;
+use Adyen\Shopware\Models\PaymentRequest as IntegrationPaymentRequest;
 use Adyen\Shopware\PaymentMethods\PaypalPaymentMethod;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ExpressCheckoutService;
@@ -51,6 +53,10 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use LogicException;
 use Shopware\Core\Checkout\Cart\Cart;
+use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartOrderRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartOrderRouteResponse;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
@@ -232,12 +238,96 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         $order->setTransactions(new OrderTransactionCollection([$transaction]));
         $this->cartOrderRoute->method('order')->willReturn(new CartOrderRouteResponse($order));
 
+        // No attempt with a stored configuration, e.g. created before the update: it is resolved again.
         $this->paymentRequestService->expects($this->once())
             ->method('storeCaptureConfiguration')
-            ->with($transaction, PaypalPaymentMethodHandler::class, 'sales-channel-1')
+            ->with($transaction, PaypalPaymentMethodHandler::class, 'sales-channel-1', null)
             ->willReturn(new CaptureConfiguration(CaptureMode::MANUAL));
 
         $this->assertSame('order-1', $this->finalize());
+    }
+
+    public function testCaptureConfigurationSentWithThePaymentRequestIsStoredOnTheOrderTransaction(): void
+    {
+        $this->givenPaymentDetailsResponse('Authorised');
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $order = $this->createThrowAwayOrder('order-1', 10);
+        $order->setTransactions(new OrderTransactionCollection([$transaction]));
+        $this->cartOrderRoute->method('order')->willReturn(new CartOrderRouteResponse($order));
+        // Manual when /payments was sent, although the configuration may have changed since.
+        $this->givenPaypalPaymentAttempt(
+            PaypalPaymentAttemptEntity::STATUS_OPEN,
+            (new CaptureConfiguration(CaptureMode::MANUAL))->toArray()
+        );
+
+        $this->paymentRequestService->expects($this->once())
+            ->method('storeCaptureConfiguration')
+            ->with(
+                $transaction,
+                PaypalPaymentMethodHandler::class,
+                'sales-channel-1',
+                $this->callback(
+                    fn (?CaptureConfiguration $configuration) => $configuration?->mode === CaptureMode::MANUAL
+                )
+            )
+            ->willReturn(new CaptureConfiguration(CaptureMode::MANUAL));
+
+        $this->assertSame('order-1', $this->finalize());
+    }
+
+    public function testCaptureConfigurationIsResolvedAgainWhenTheAttemptCannotBeRead(): void
+    {
+        $this->givenPaymentDetailsResponse('Authorised');
+        $transaction = new OrderTransactionEntity();
+        $transaction->setId('transaction-1');
+        $order = $this->createThrowAwayOrder('order-1', 10);
+        $order->setTransactions(new OrderTransactionCollection([$transaction]));
+        $this->cartOrderRoute->method('order')->willReturn(new CartOrderRouteResponse($order));
+        $this->paypalPaymentAttemptRepository->method('getByMerchantReference')
+            ->willThrowException(new \RuntimeException('Database error'));
+
+        $this->paymentRequestService->expects($this->once())
+            ->method('storeCaptureConfiguration')
+            ->with($transaction, PaypalPaymentMethodHandler::class, 'sales-channel-1', null)
+            ->willReturn(CaptureConfiguration::automatic());
+
+        $this->assertSame('order-1', $this->finalize());
+    }
+
+    public function testPaymentRequestSendsAndStoresTheSameCaptureConfiguration(): void
+    {
+        $captureConfiguration = new CaptureConfiguration(CaptureMode::DELAYED, 3);
+        $paymentRequest = new IntegrationPaymentRequest();
+        $paymentRequest->setReference('10001');
+        $this->paymentRequestService->method('resolvePaypalCaptureConfiguration')
+            ->with('sales-channel-1')
+            ->willReturn($captureConfiguration);
+        $this->paymentRequestService->expects($this->once())
+            ->method('buildPaymentRequestFromCart')
+            ->with(
+                $this->anything(),
+                $this->anything(),
+                $this->anything(),
+                $this->anything(),
+                $this->anything(),
+                $this->anything(),
+                true,
+                $this->identicalTo($captureConfiguration)
+            )
+            ->willReturn($paymentRequest);
+        $response = new PaymentResponse();
+        $response->setPspReference('PSP123');
+        $this->paymentRequestService->method('executePayment')->willReturn($response);
+
+        $this->paypalPaymentAttemptRepository->expects($this->once())
+            ->method('create')
+            ->with('10001', 'sales-channel-1', 'PSP123', $captureConfiguration->toArray());
+
+        $this->paypalPaymentService->createPayPalPaymentRequest(
+            $this->createCart(),
+            $this->createSalesChannelContext()
+        );
     }
 
     public function testExpressCheckoutRestoresTheContextWhenFinalizeFails(): void
@@ -485,13 +575,16 @@ class PaypalPaymentServiceTest extends AdyenTestCase
         return $result;
     }
 
-    private function givenPaypalPaymentAttempt(string $status = PaypalPaymentAttemptEntity::STATUS_OPEN): void
-    {
+    private function givenPaypalPaymentAttempt(
+        string $status = PaypalPaymentAttemptEntity::STATUS_OPEN,
+        ?array $captureConfiguration = null
+    ): void {
         $attempt = new PaypalPaymentAttemptEntity();
         $attempt->setId('attempt-1');
         $attempt->setMerchantReference('10001');
         $attempt->setSalesChannelId('sales-channel-1');
         $attempt->setStatus($status);
+        $attempt->setCaptureConfiguration($captureConfiguration);
 
         $this->paypalPaymentAttemptRepository->method('getByMerchantReference')
             ->with('10001')
@@ -533,6 +626,22 @@ class PaypalPaymentServiceTest extends AdyenTestCase
             new RequestDataBag(),
             ['details' => ['orderID' => 'PAYPAL-ORDER']]
         );
+    }
+
+    private function createCart(): Cart
+    {
+        $cart = new Cart('cart-token');
+        $cart->add(new LineItem('line-item-1', LineItem::PRODUCT_LINE_ITEM_TYPE));
+        $cart->setPrice(new CartPrice(
+            10.0,
+            10.0,
+            10.0,
+            new CalculatedTaxCollection(),
+            new TaxRuleCollection(),
+            CartPrice::TAX_STATE_GROSS
+        ));
+
+        return $cart;
     }
 
     private function createSalesChannelContext(): MockObject

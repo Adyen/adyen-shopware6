@@ -69,9 +69,17 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
     private ?bool $done = null;
     private array $errors = [];
     private array $transitions = [];
+    private array $captures = [];
     private array $savedCustomFields = [];
     /** @var OrderTransactionEntity[] */
     private array $transactions = [];
+    /**
+     * State and custom fields as stored in the database. Like the real OrderTransactionStateHandler, a transition
+     * changes only the database, never an entity that was loaded before.
+     *
+     * @var array<string, array{state: string, customFields: array}>
+     */
+    private array $database = [];
 
     protected function setUp(): void
     {
@@ -88,7 +96,7 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
             $this->stateHandler->method($transition)
                 ->willReturnCallback(function (string $id) use ($transition, $targetState) {
                     $this->transitions[] = $transition . ':' . $id;
-                    $this->transactions[$id]->getStateMachineState()->setTechnicalName($targetState);
+                    $this->database[$id]['state'] = $targetState;
                 });
         }
 
@@ -130,7 +138,48 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
     {
         $this->runScenario(OrderTransactionStates::STATE_FAILED, [
             'paymentDetailsCallFailed' => true,
-            'manualCapture' => true,
+            'captureMode' => CaptureMode::MANUAL,
+        ]);
+
+        $this->assertSame(['process:tx-1', 'authorize:tx-1'], $this->transitions);
+        $this->assertSame([], $this->captures);
+        $this->assertSame([], $this->errors);
+        $this->assertTrue($this->done);
+    }
+
+    public function testDelayedCaptureAuthorisesATransactionFailedByThePaymentDetailsCall(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'paymentDetailsCallFailed' => true,
+            'captureMode' => CaptureMode::DELAYED,
+        ]);
+
+        $this->assertSame(['process:tx-1', 'authorize:tx-1'], $this->transitions);
+        $this->assertSame([], $this->captures);
+        $this->assertSame([], $this->errors);
+        $this->assertTrue($this->done);
+    }
+
+    public function testCaptureOnShipmentAuthorisesAndCapturesATransactionFailedByThePaymentDetailsCall(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'paymentDetailsCallFailed' => true,
+            'captureMode' => CaptureMode::ON_SHIPMENT,
+        ]);
+
+        $this->assertSame(['process:tx-1', 'authorize:tx-1'], $this->transitions);
+        $this->assertSame(['10001:1000'], $this->captures);
+        $this->assertSame([], $this->errors);
+        $this->assertTrue($this->done);
+    }
+
+    public function testManualCaptureOrderClosedAuthorisesASplitPaymentFailedByThePaymentDetailsCall(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'paymentDetailsCallFailed' => true,
+            'eventCode' => 'ORDER_CLOSED',
+            'storedPspReference' => false,
+            'captureMode' => CaptureMode::MANUAL,
         ]);
 
         $this->assertSame(['process:tx-1', 'authorize:tx-1'], $this->transitions);
@@ -241,7 +290,7 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
             'success' => true,
             'paymentDetailsCallFailed' => false,
             'storedPspReference' => true,
-            'manualCapture' => false,
+            'captureMode' => CaptureMode::IMMEDIATE,
             'newerTransactionState' => null,
             'amountValue' => '1000',
         ], $options);
@@ -279,6 +328,7 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
         $transaction->setCustomFields($customFields);
 
         $this->transactions = ['tx-1' => $transaction];
+        $this->database = ['tx-1' => ['state' => $scenario->state, 'customFields' => $customFields]];
         if (!is_null($scenario->newerTransactionState)) {
             $this->transactions['tx-2'] = $this->createTransaction(
                 'tx-2',
@@ -286,6 +336,7 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
                 new \DateTimeImmutable(),
                 $order
             );
+            $this->database['tx-2'] = ['state' => $scenario->newerTransactionState, 'customFields' => []];
         }
         $order->setTransactions(new OrderTransactionCollection($this->transactions));
 
@@ -303,7 +354,7 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
 
         $transactionRepository = $this->getSimpleMock(OrderTransactionRepository::class);
         $transactionRepository->method('getWithId')
-            ->willReturnCallback(fn (string $id) => $this->transactions[$id] ?? null);
+            ->willReturnCallback(fn (string $id) => $this->loadTransaction($id));
         $transactionRepository->method('getFirstAdyenOrderTransactionByStates')
             ->willReturnCallback(fn (string $orderId, array $states) => $this->getByStates($states)->first());
         $transactionRepository->method('getAdyenOrderTransactionsByStates')
@@ -311,12 +362,19 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
         $transactionRepository->method('updateCustomFields')
             ->willReturnCallback(function (OrderTransactionEntity $updated) {
                 $this->savedCustomFields[] = $updated->getCustomFields();
+                $this->database[$updated->getId()]['customFields'] = $updated->getCustomFields();
             });
 
         $captureService = $this->getSimpleMock(CaptureService::class);
         $captureService->method('getCaptureConfiguration')->willReturn(
-            new CaptureConfiguration($scenario->manualCapture ? CaptureMode::MANUAL : CaptureMode::IMMEDIATE)
+            new CaptureConfiguration($scenario->captureMode, $scenario->captureMode === CaptureMode::DELAYED ? 3 : null)
         );
+        $captureService->method('doCapture')
+            ->willReturnCallback(function (string $orderNumber, int|string|null $amount) {
+                $this->captures[] = $orderNumber . ':' . $amount;
+
+                return [];
+            });
 
         $pluginPaymentMethods = $this->getSimpleMock(PluginPaymentMethodsService::class);
         $pluginPaymentMethods->method('getGiftcardHandlerIdentifierFromTxVariant')->willReturn(null);
@@ -358,22 +416,41 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
      */
     private function getByStates(array $states): OrderTransactionCollection
     {
-        $transactions = array_filter(
-            array_reverse($this->transactions),
-            fn (OrderTransactionEntity $transaction) => in_array(
-                $transaction->getStateMachineState()->getTechnicalName(),
-                $states,
-                true
-            )
-        );
+        $transactions = [];
+        foreach (array_reverse(array_keys($this->transactions)) as $id) {
+            if (in_array($this->database[$id]['state'], $states, true)) {
+                $transactions[$id] = $this->loadTransaction($id);
+            }
+        }
 
         return new OrderTransactionCollection($transactions);
+    }
+
+    /**
+     * A fresh entity with the state and custom fields currently stored in the database.
+     */
+    private function loadTransaction(string $id): ?OrderTransactionEntity
+    {
+        if (!isset($this->transactions[$id])) {
+            return null;
+        }
+
+        $stored = $this->transactions[$id];
+        $transaction = $this->createTransaction(
+            $id,
+            $this->database[$id]['state'],
+            $stored->getCreatedAt(),
+            $stored->getOrder()
+        );
+        $transaction->setCustomFields($this->database[$id]['customFields']);
+
+        return $transaction;
     }
 
     private function createTransaction(
         string $id,
         string $technicalName,
-        \DateTimeImmutable $createdAt,
+        \DateTimeInterface $createdAt,
         OrderEntity $order
     ): OrderTransactionEntity {
         $state = new StateMachineStateEntity();

@@ -28,6 +28,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
@@ -59,6 +60,7 @@ class PaypalPaymentAttemptEntityDefinition extends EntityDefinition
             new StringField('psp_reference', 'pspReference'),
             (new StringField('status', 'status'))->addFlags(new Required()),
             new StringField('reversal_psp_reference', 'reversalPspReference'),
+            new JsonField('capture_configuration', 'captureConfiguration'),
         ]);
     }
 }
