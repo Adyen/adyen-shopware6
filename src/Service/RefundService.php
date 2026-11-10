@@ -65,6 +65,17 @@ class RefundService
     ];
 
     /**
+     * States of an order transaction a refund is stored for. Refunded is included, because the transaction state
+     * can be changed outside the plugin (e.g. manually or by an ERP) before Adyen reports the refund.
+     */
+    const REFUND_TRANSACTION_STATES = [
+        OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
+        OrderTransactionStates::STATE_PAID,
+        OrderTransactionStates::STATE_PARTIALLY_PAID,
+        OrderTransactionStates::STATE_REFUNDED,
+    ];
+
+    /**
      * @var LoggerInterface
      */
     private LoggerInterface $logger;
@@ -282,7 +293,7 @@ class RefundService
 
                     $orderTransaction = $this->getAdyenOrderTransactionForRefund(
                         $order,
-                        RefundService::REFUNDABLE_STATES
+                        RefundService::REFUND_TRANSACTION_STATES
                     );
                     $adyenRefund = $this->adyenRefundRepository->getRefundForOrderByPspReference(
                         $orderTransaction->getId(),
@@ -295,7 +306,8 @@ class RefundService
                             $response->getPspReference(),
                             RefundEntity::SOURCE_SHOPWARE,
                             RefundEntity::STATUS_PENDING_WEBHOOK,
-                            $request->getAmount()->getValue()
+                            $request->getAmount()->getValue(),
+                            RefundService::REFUND_TRANSACTION_STATES
                         );
                     }
                 } catch (AdyenException $e) {
@@ -318,14 +330,16 @@ class RefundService
      * @param NotificationEntity $notification
      * @param string $newStatus
      *
+     * @return bool True if the refund was not stored with the new status before
+     *
      * @throws AdyenException
      */
-    public function handleRefundNotification(OrderEntity $order, NotificationEntity $notification, string $newStatus)
-    {
-        $statesToSearch = self::REFUNDABLE_STATES;
-        // This is included for edge cases where an already processed refund, failed (REFUND_FAILED notification)
-        $statesToSearch[] = OrderTransactionStates::STATE_REFUNDED;
-        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, $statesToSearch);
+    public function handleRefundNotification(
+        OrderEntity $order,
+        NotificationEntity $notification,
+        string $newStatus
+    ): bool {
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUND_TRANSACTION_STATES);
 
         $adyenRefund = $this->adyenRefundRepository
             ->getRefundForOrderByPspReference($orderTransaction->getId(), $notification->getPspreference());
@@ -336,11 +350,43 @@ class RefundService
                 $notification->getPspreference(),
                 RefundEntity::SOURCE_ADYEN,
                 $newStatus,
-                intval($notification->getAmountValue())
+                intval($notification->getAmountValue()),
+                self::REFUND_TRANSACTION_STATES
             );
-        } else {
-            $this->updateAdyenRefundStatus($adyenRefund, $newStatus);
+
+            return true;
         }
+
+        if ($adyenRefund->getStatus() === $newStatus) {
+            return false;
+        }
+
+        $this->updateAdyenRefundStatus($adyenRefund, $newStatus);
+
+        return true;
+    }
+
+    /**
+     * Stores the refund of a successful refund notification and adds its amount to the total refunded amount.
+     * The amount is added only once, also when the same notification is processed again.
+     *
+     * @param OrderEntity $order
+     * @param NotificationEntity $notification
+     *
+     * @return bool False if the Adyen payment of the notification was not found
+     *
+     * @throws AdyenException
+     */
+    public function handleSuccessfulRefundNotification(OrderEntity $order, NotificationEntity $notification): bool
+    {
+        $isRefundStored = $this->handleRefundNotification($order, $notification, RefundEntity::STATUS_SUCCESS);
+
+        // A refund that was already stored as successful is already included in the total refunded amount
+        if (!$isRefundStored) {
+            return true;
+        }
+
+        return $this->updateTotalRefundedAmount($notification);
     }
 
     /**
@@ -349,6 +395,7 @@ class RefundService
      * @param string $source
      * @param string $status
      * @param int $refundAmount
+     * @param array $states States of the order transaction the refund is stored for
      *
      * @throws AdyenException
      */
@@ -357,9 +404,10 @@ class RefundService
         string $pspReference,
         string $source,
         string $status,
-        int $refundAmount
+        int $refundAmount,
+        array $states = self::REFUNDABLE_STATES
     ): void {
-        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, self::REFUNDABLE_STATES);
+        $orderTransaction = $this->getAdyenOrderTransactionForRefund($order, $states);
 
         $this->adyenRefundRepository->getRepository()->create([
             [
@@ -370,6 +418,44 @@ class RefundService
                 'amount' => $refundAmount
             ]
         ], Context::createDefaultContext());
+    }
+
+    /**
+     * Adds the refunded amount of a successful refund notification to the total refunded amount of its Adyen payment
+     *
+     * @param NotificationEntity $notification
+     *
+     * @return bool False if the Adyen payment of the notification was not found
+     */
+    public function updateTotalRefundedAmount(NotificationEntity $notification): bool
+    {
+        try {
+            $adyenPayment = $this->adyenPaymentService->getAdyenPayment($notification->getOriginalReference());
+
+            if ($adyenPayment === null) {
+                $this->logger->warning(
+                    'Adyen payment entity not found for the given notification.',
+                    [
+                        'originalReference' => $notification->getOriginalReference(),
+                        'notificationVars' => $notification->getVars()
+                    ]
+                );
+
+                return false;
+            }
+
+            $this->adyenPaymentService->updateTotalRefundedAmount(
+                $adyenPayment,
+                (int)$notification->getAmountValue()
+            );
+        } catch (\Exception $e) {
+            $this->logger->error(
+                'Adyen payment entity could not be updated for the given notification!',
+                ['notification' => $notification->getVars()]
+            );
+        }
+
+        return true;
     }
 
     /**

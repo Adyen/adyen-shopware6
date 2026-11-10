@@ -10,6 +10,11 @@ export default class PaymentResources {
   payPalUserName = process.env.PAYPAL_USERNAME;
   payPalPassword = process.env.PAYPAL_PASSWORD;
 
+  afterpayAuEmail = process.env.AFTERPAY_AU_EMAIL;
+  afterpayAuPassword = process.env.AFTERPAY_AU_PASSWORD;
+  afterpayUsEmail = process.env.AFTERPAY_US_EMAIL;
+  afterpayUsPassword = process.env.AFTERPAY_US_PASSWORD;
+
   klarnaApprovedNLDateOfBirth = "10-07-1970";
 
   afterPayApprovedNLGender = "M";
@@ -272,6 +277,46 @@ export default class PaymentResources {
           countryCode: "IT",
           countryName: "Italy",
           password: "Abc1234567!"
+        },
+      },
+    },
+    // Afterpay sandbox shopper (Australia) from https://portal.sandbox.afterpay.com/, login from AFTERPAY_AU_EMAIL / _PASSWORD
+    afterpayTouch: {
+      approved: {
+        au: {
+          email: this.afterpayAuEmail,
+          firstName: "Test",
+          lastName: "Accepted",
+          street: "100 George Street",
+          houseNumber: "100",
+          city: "Sydney",
+          postCode: "2000",
+          dateOfBirth: "1990-01-01",
+          gender: "M",
+          stateOrProvince: "NSW",
+          countryCode: "AU",
+          countryName: "Australia",
+          password: this.afterpayAuPassword
+        },
+      },
+    },
+    // Afterpay sandbox shopper (US) from https://portal.sandbox.afterpay.com/, login from AFTERPAY_US_EMAIL / _PASSWORD
+    cashAppAfterpay: {
+      approved: {
+        us: {
+          email: this.afterpayUsEmail,
+          firstName: "Test",
+          lastName: "Accepted",
+          street: "100 Main Street",
+          houseNumber: "100",
+          city: "New York",
+          postCode: "10001",
+          dateOfBirth: "1990-01-01",
+          gender: "M",
+          stateOrProvince: "NY",
+          countryCode: "US",
+          countryName: "United States of America",
+          password: this.afterpayUsPassword
         },
       },
     },

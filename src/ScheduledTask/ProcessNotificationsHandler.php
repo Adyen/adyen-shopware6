@@ -378,9 +378,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         ?string $salesChannelId
     ): ?ProcessorInterface {
         try {
+            // The additional data is needed for CANCEL_OR_REFUND, it tells whether a cancellation or a refund was done
+            $additionalData = json_decode($notification->getAdditionalData() ?? '', true);
             $notificationItem = Notification::createItem([
                 'eventCode' => $notification->getEventCode(),
-                'success' => $notification->isSuccess()
+                'success' => $notification->isSuccess(),
+                'additionalData' => is_array($additionalData) ? $additionalData : []
             ]);
 
             // The capture mode of this payment, not the global one.
