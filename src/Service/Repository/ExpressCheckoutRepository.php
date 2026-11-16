@@ -377,6 +377,8 @@ class ExpressCheckoutRepository
         $criteria = new Criteria();
         $criteria->addAssociation('defaultBillingAddress.country');
         $criteria->addAssociation('defaultBillingAddress.countryState');
+        $criteria->addAssociation('defaultShippingAddress.country');
+        $criteria->addAssociation('defaultShippingAddress.countryState');
         $criteria->addFilter(new EqualsFilter('id', $customerId));
 
         $customer = $this->customerRepository->search($criteria, $salesChannelContext->getContext())->first();

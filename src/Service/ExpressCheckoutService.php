@@ -998,6 +998,10 @@ class ExpressCheckoutService
         ?CustomerEntity $customer = null,
         ?ShippingMethodEntity $shippingMethod = null
     ): SalesChannelContext {
+        if ($customer !== null) {
+            $this->ensureActiveAddresses($customer);
+        }
+
         return new SalesChannelContext(
             $salesChannelContext->getContext(),
             $token,
@@ -1015,6 +1019,31 @@ class ExpressCheckoutService
             $salesChannelContext->getLanguageInfo(),
             $salesChannelContext->getAreaRuleIds()
         );
+    }
+
+    /**
+     * Shopware only sets the active addresses of a customer when it builds the sales channel context itself.
+     * Customers loaded from the repository for an express checkout context have none, and the cart address
+     * validator rejects the order of a customer without active addresses.
+     *
+     * @param CustomerEntity $customer
+     *
+     * @return void
+     */
+    private function ensureActiveAddresses(CustomerEntity $customer): void
+    {
+        $billingAddress = $customer->getActiveBillingAddress() ?? $customer->getDefaultBillingAddress();
+        $shippingAddress = $customer->getActiveShippingAddress()
+            ?? $customer->getDefaultShippingAddress()
+            ?? $billingAddress;
+
+        if ($billingAddress !== null && $customer->getActiveBillingAddress() === null) {
+            $customer->setActiveBillingAddress($billingAddress);
+        }
+
+        if ($shippingAddress !== null && $customer->getActiveShippingAddress() === null) {
+            $customer->setActiveShippingAddress($shippingAddress);
+        }
     }
 
     /**
