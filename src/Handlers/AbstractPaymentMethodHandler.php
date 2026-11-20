@@ -650,7 +650,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
                 shopperInteraction: static::class === OneClickPaymentMethodHandler::class
                     ? PaymentRequestService::SHOPPER_INTERACTION_CONTAUTH
                     : PaymentRequestService::SHOPPER_INTERACTION_ECOMMERCE,
-                paymentMethodHandler: static::class
+                paymentMethodHandler: static::class,
+                orderTransactionId: $transactionId
             );
         } catch (PaymentException $exception) {
             $this->logger->error($exception->getMessage());
