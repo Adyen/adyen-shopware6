@@ -144,7 +144,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
             $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
         }
 
-        if ($this->isPartialPayment($notification)) {
+        if (self::isPartialPayment($notification)) {
             return;
         }
 
@@ -184,7 +184,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      *
      * @return bool
      */
-    private function isPartialPayment(NotificationEntity $notification): bool
+    public static function isPartialPayment(NotificationEntity $notification): bool
     {
         $additionalData = json_decode($notification->getAdditionalData() ?? '');
         $merchantOrderReference = $additionalData->merchantOrderReference ?? null;
