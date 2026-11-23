@@ -27,9 +27,11 @@ use Adyen\Client;
 use Adyen\Service\Checkout;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
+use Adyen\Shopware\Exception\CaptureConfigurationValidationException;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Provider\AdyenPluginProvider;
 use Adyen\Shopware\Service\AdyenPaymentService;
+use Adyen\Shopware\Service\CaptureConfigurationService;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
@@ -95,6 +97,7 @@ class AdminController
 
     /** @var AdyenPluginProvider */
     private AdyenPluginProvider $pluginProvider;
+    private CaptureConfigurationService $captureConfigurationService;
 
     /**
      * AdminController constructor.
@@ -126,7 +129,8 @@ class AdminController
         ConfigurationService $configurationService,
         AdyenPaymentService $adyenPaymentService,
         OrderTransactionRepository $orderTransactionRepository,
-        AdyenPluginProvider $pluginProvider
+        AdyenPluginProvider $pluginProvider,
+        CaptureConfigurationService $captureConfigurationService
     ) {
         $this->logger = $logger;
         $this->orderRepository = $orderRepository;
@@ -141,6 +145,62 @@ class AdminController
         $this->adyenPaymentService = $adyenPaymentService;
         $this->orderTransactionRepository = $orderTransactionRepository;
         $this->pluginProvider = $pluginProvider;
+        $this->captureConfigurationService = $captureConfigurationService;
+    }
+
+    /**
+     * Capture configuration of a payment method for one scope (spec §10.3).
+     */
+    #[Route(
+        '/api/adyen/payment-methods/{paymentMethodId}/capture-configuration',
+        name: 'api.adyen_payment_method_capture_configuration.get',
+        defaults: ['_acl' => ['payment.viewer']],
+        methods: ['GET']
+    )]
+    public function getCaptureConfiguration(string $paymentMethodId, Request $request, Context $context): JsonResponse
+    {
+        return new JsonResponse($this->captureConfigurationService->getForAdmin(
+            $paymentMethodId,
+            $this->toSalesChannelId($request->query->get('salesChannelId')),
+            $context
+        ));
+    }
+
+    #[Route(
+        '/api/adyen/payment-methods/{paymentMethodId}/capture-configuration',
+        name: 'api.adyen_payment_method_capture_configuration.post',
+        defaults: ['_acl' => ['payment.editor']],
+        methods: ['POST']
+    )]
+    public function saveCaptureConfiguration(
+        string $paymentMethodId,
+        Request $request,
+        Context $context
+    ): JsonResponse {
+        try {
+            $this->captureConfigurationService->save(
+                $paymentMethodId,
+                $this->toSalesChannelId($request->request->get('salesChannelId')),
+                (array)$request->request->all('values'),
+                $context
+            );
+        } catch (CaptureConfigurationValidationException $exception) {
+            return new JsonResponse(['success' => false, 'message' => $exception->getMessage()], 400);
+        }
+
+        return new JsonResponse(['success' => true]);
+    }
+
+    /**
+     * @param mixed $salesChannelId The salesChannelId request parameter.
+     *
+     * @return string|null Null for All Sales Channels.
+     */
+    private function toSalesChannelId(mixed $salesChannelId): ?string
+    {
+        return is_string($salesChannelId) && $salesChannelId !== '' && $salesChannelId !== 'null'
+            ? $salesChannelId
+            : null;
     }
 
     /**
@@ -221,7 +281,7 @@ class AdminController
 
         try {
             $results = $this->captureService
-                ->doOpenInvoiceCapture($order->getOrderNumber(), $amountInMinorUnit, $context);
+                ->doCapture($order->getOrderNumber(), $amountInMinorUnit, $context, skipDeliveryCheck: true);
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
 
@@ -271,10 +331,10 @@ class AdminController
         if (isset($orderTransaction)) {
             $isFullAmountAuthorised = $this->adyenPaymentService->isFullAmountAuthorized($orderTransaction);
             $isRequiredAmountCaptured = $this->captureService->isRequiredAmountCaptured($orderTransaction);
-            $isPaymentMethodSupportsManualCapture = $this->captureService->isManualCapture(
-                $orderTransaction->getPaymentMethod()->getHandlerIdentifier(),
+            $isPaymentMethodSupportsManualCapture = $this->captureService->getCaptureConfiguration(
+                $orderTransaction,
                 $orderTransaction->getOrder()->getSalesChannelId()
-            );
+            )->isDeferredCapture();
 
             if ($isPaymentMethodSupportsManualCapture && $isFullAmountAuthorised && !$isRequiredAmountCaptured) {
                 $isCaptureAllowed = true;
@@ -306,13 +366,11 @@ class AdminController
                 return new JsonResponse(false);
             }
 
-            $paymentMethodHandlerIdentifier = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
-
             return new JsonResponse(
-                $this->captureService->isManualCapture(
-                    $paymentMethodHandlerIdentifier,
+                $this->captureService->getCaptureConfiguration(
+                    $orderTransaction,
                     $orderTransaction->getOrder()->getSalesChannelId()
-                )
+                )->isDeferredCapture()
             );
         } catch (Throwable $t) {
             return new JsonResponse(false);
