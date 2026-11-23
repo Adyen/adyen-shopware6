@@ -36,7 +36,7 @@ use Adyen\Shopware\Entity\PaymentCapture\PaymentCaptureEntity;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\AbstractPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
-use Adyen\Shopware\PaymentMethods\PaymentMethods;
+use Adyen\Shopware\Models\Capture\CaptureConfiguration;
 use Adyen\Shopware\Service\Repository\AdyenPaymentCaptureRepository;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
@@ -56,6 +56,22 @@ class CaptureService
 
     const REASON_DELIVERY_STATE_MISMATCH = 'DELIVERY_STATE_MISMATCH';
     const REASON_WAITING_AUTH_WEBHOOK = 'WAITING_AUTH_WEBHOOK';
+    /**
+     * The order has no authorized Adyen transaction, because the payment was already captured or cancelled.
+     */
+    const REASON_NOTHING_TO_CAPTURE = 'NOTHING_TO_CAPTURE';
+
+    /**
+     * States of a transaction that was already captured (also partially or refunded afterwards) or cancelled, so
+     * there is nothing left to capture.
+     */
+    private const NOTHING_TO_CAPTURE_STATES = [
+        OrderTransactionStates::STATE_PAID,
+        OrderTransactionStates::STATE_PARTIALLY_PAID,
+        OrderTransactionStates::STATE_REFUNDED,
+        OrderTransactionStates::STATE_PARTIALLY_REFUNDED,
+        OrderTransactionStates::STATE_CANCELLED,
+    ];
 
     private OrderRepository $orderRepository;
     private OrderTransactionRepository $orderTransactionRepository;
@@ -63,6 +79,10 @@ class CaptureService
     private ConfigurationService $configurationService;
     private ClientService $clientService;
     private AdyenPaymentService $adyenPaymentService;
+    /**
+     * @var CaptureConfigurationResolver $captureConfigurationResolver
+     */
+    private CaptureConfigurationResolver $captureConfigurationResolver;
 
     /**
      * @param OrderRepository $orderRepository
@@ -71,6 +91,7 @@ class CaptureService
      * @param ConfigurationService $configurationService
      * @param ClientService $clientService
      * @param AdyenPaymentService $adyenPaymentService
+     * @param CaptureConfigurationResolver $captureConfigurationResolver
      */
     public function __construct(
         OrderRepository $orderRepository,
@@ -78,7 +99,8 @@ class CaptureService
         AdyenPaymentCaptureRepository $adyenPaymentCaptureRepository,
         ConfigurationService $configurationService,
         ClientService $clientService,
-        AdyenPaymentService $adyenPaymentService
+        AdyenPaymentService $adyenPaymentService,
+        CaptureConfigurationResolver $captureConfigurationResolver
     ) {
         $this->orderRepository = $orderRepository;
         $this->orderTransactionRepository = $orderTransactionRepository;
@@ -86,15 +108,32 @@ class CaptureService
         $this->configurationService = $configurationService;
         $this->clientService = $clientService;
         $this->adyenPaymentService = $adyenPaymentService;
+        $this->captureConfigurationResolver = $captureConfigurationResolver;
     }
 
     /**
-     * Send capture request for open invoice payments
+     * Sends the capture request for the authorised Adyen transaction of the order. Used by capture on shipment
+     * (webhooks) and by the manual capture from the administration.
+     *
+     * @param string $orderNumber
+     * @param int|string|null $captureAmount Amount in minor units. Webhooks pass the notification amount, a nullable
+     *     string.
+     * @param Context $context
+     * @param bool $skipDeliveryCheck True for the manual capture from the administration, which is allowed before
+     *     the configured delivery state is reached.
+     *
+     * @return array
      *
      * @throws CaptureException
      */
-    public function doOpenInvoiceCapture(string $orderNumber, $captureAmount, Context $context): array
-    {
+    public function doCapture(
+        string $orderNumber,
+        int|string|null $captureAmount,
+        Context $context,
+        bool $skipDeliveryCheck = false
+    ): array {
+        $captureAmount = (int)$captureAmount;
+
         $order = $this->orderRepository->getOrderByOrderNumber(
             $orderNumber,
             $context,
@@ -118,14 +157,33 @@ class CaptureService
             ->getFirstAdyenOrderTransactionByStates($order->getId(), [OrderTransactionStates::STATE_AUTHORIZED]);
 
         if (!$orderTransaction) {
-            $error = 'Unable to find original authorized transaction.';
-            $this->logger->error($error, ['orderNumber' => $order->getOrderNumber()]);
-            throw new CaptureException($error);
+            $message = 'Unable to find original authorized transaction.';
+            $exception = new CaptureException($message);
+
+            if ($this->orderTransactionRepository
+                ->getAdyenOrderTransactionsByStates($order->getId(), self::NOTHING_TO_CAPTURE_STATES)
+                ->count() > 0
+            ) {
+                // Captured manually in the meantime, or cancelled.
+                $this->logger->info(
+                    $message . ' The payment was already captured or cancelled, there is nothing to capture.',
+                    ['orderNumber' => $order->getOrderNumber()]
+                );
+                $exception->reason = self::REASON_NOTHING_TO_CAPTURE;
+            } else {
+                // The transaction was not found for another reason, so the capture is retried.
+                $this->logger->error($message, ['orderNumber' => $order->getOrderNumber()]);
+            }
+
+            throw $exception;
         }
 
-        $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
+        $captureConfiguration = $this->captureConfigurationResolver->resolveForTransaction(
+            $orderTransaction,
+            $order->getSalesChannelId()
+        );
 
-        if ($this->isManualCapture($paymentMethodHandler, $order->getSalesChannelId())) {
+        if ($captureConfiguration->isDeferredCapture()) {
             $this->logger->info('Capture for order_number ' . $orderNumber . ' start.');
 
             $customFields = $orderTransaction->getCustomFields();
@@ -145,8 +203,8 @@ class CaptureService
 
             $results = [];
             foreach ($deliveries as $delivery) {
-                if ($this->requiresCaptureOnShipment($paymentMethodHandler, $order->getSalesChannelId()) &&
-                    $delivery->getStateMachineState()->getId() !== $this->configurationService->getOrderState()) {
+                if (!$skipDeliveryCheck && $captureConfiguration->isCaptureOnShipment() &&
+                    $delivery->getStateMachineState()->getId() !== $captureConfiguration->orderStateId) {
                     $exception = new CaptureException('Order delivery status does not match configuration');
                     $exception->reason = self::REASON_DELIVERY_STATE_MISMATCH;
 
@@ -176,7 +234,7 @@ class CaptureService
                         $response->getPspReference(),
                         PaymentCaptureEntity::SOURCE_SHOPWARE,
                         PaymentCaptureEntity::STATUS_PENDING_WEBHOOK,
-                        intval($captureAmount),
+                        $captureAmount,
                         $context
                     );
                 }
@@ -192,13 +250,17 @@ class CaptureService
     }
 
     /**
+     * @param CaptureConfiguration|null $captureConfiguration The retry interval of the payment; the global retry
+     *     interval if not given.
+     *
      * @return \DateTime
      */
-    public function getRescheduleNotificationTime(): \DateTime
+    public function getRescheduleNotificationTime(?CaptureConfiguration $captureConfiguration = null): \DateTime
     {
         $dateTime = new \DateTime();
         try {
-            $rescheduleTime = $this->configurationService->getRescheduleTime();
+            $rescheduleTime = $captureConfiguration->retryIntervalSeconds
+                ?? $this->configurationService->getRescheduleTime();
             if (is_int($rescheduleTime)) {
                 $dateTime->add(new \DateInterval('PT' . $rescheduleTime . 'S'));
             }
@@ -209,39 +271,19 @@ class CaptureService
     }
 
     /**
-     * @param $handlerIdentifier
+     * Capture configuration of a payment: the one stored when the payment was created, or the current configuration
+     * for transactions created before it was stored (spec §5).
+     *
+     * @param OrderTransactionEntity $orderTransaction
      * @param string|null $salesChannelId
      *
-     * @return bool
+     * @return CaptureConfiguration
      */
-    public function isManualCapture($handlerIdentifier, ?string $salesChannelId = null): bool
-    {
-        // Deprecated payment methods have no handler class anymore, so manual capture is not supported
-        if (in_array($handlerIdentifier, PaymentMethods::DEPRECATED_PAYMENT_METHOD_HANDLERS, true)) {
-            return false;
-        }
-
-        if ($handlerIdentifier::$isOpenInvoice) {
-            // Open invoice payment methods are manual capture unless the merchant account is
-            // authorised for auto capture.
-            return !$this->configurationService->isAutoCaptureActiveForOpenInvoices($salesChannelId);
-        }
-
-        return $handlerIdentifier::$supportsManualCapture &&
-            (bool)$this->configurationService->isManualCaptureActive($salesChannelId);
-    }
-
-    /**
-     * @param $handlerIdentifier
-     * @param $salesChannelId
-     *
-     * @return bool
-     */
-    public function requiresCaptureOnShipment($handlerIdentifier, $salesChannelId): bool
-    {
-        // Only open invoice payments can be captured on shipment.
-        return $this->configurationService->isCaptureOnShipmentEnabled($salesChannelId) &&
-            $handlerIdentifier::$isOpenInvoice;
+    public function getCaptureConfiguration(
+        OrderTransactionEntity $orderTransaction,
+        ?string $salesChannelId
+    ): CaptureConfiguration {
+        return $this->captureConfigurationResolver->resolveForTransaction($orderTransaction, $salesChannelId);
     }
 
     /**
@@ -510,25 +552,5 @@ class CaptureService
         }
 
         return $totalCapturedAmount;
-    }
-
-    /**
-     * @param string|null $salesChannelId
-     *
-     * @return array|bool|float|int|string|null
-     */
-    public function isManualCaptureActive(string $salesChannelId = null): float|array|bool|int|string|null
-    {
-        return $this->configurationService->isManualCaptureActive($salesChannelId);
-    }
-
-    /**
-     * @param string|null $salesChannelId
-     *
-     * @return array|bool|float|int|string|null
-     */
-    public function isCaptureOnShipmentEnabled(string $salesChannelId = null): float|array|bool|int|string|null
-    {
-        return $this->configurationService->isCaptureOnShipmentEnabled($salesChannelId);
     }
 }
