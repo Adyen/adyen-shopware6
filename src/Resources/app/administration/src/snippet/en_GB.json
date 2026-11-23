@@ -40,6 +40,32 @@
             "offcanvas": "Off-canvas cart",
             "required": "Select at least one express checkout location.",
             "saveError": "Select at least one express checkout location for each enabled express checkout payment method."
+        },
+        "captureConfiguration": {
+            "title": "Adyen - Capture Settings",
+            "salesChannel": "Sales Channel",
+            "captureLabel": "Capture",
+            "captureHelpText": "Capture behavior of this payment method. Use global configuration follows the Capture setting of the Adyen plugin configuration.",
+            "modeGlobal": "Use global configuration",
+            "modeImmediate": "Immediate",
+            "modeDelayed": "Delayed",
+            "modeManual": "Manual",
+            "modeOnShipment": "Capture on shipment",
+            "appliedGlobal": "Currently applied: {mode} (global configuration)",
+            "appliedOwn": "Currently applied: {mode}",
+            "delayDaysLabel": "Capture delay (days)",
+            "delayDaysHelpText": "Defines the number of days after which Adyen automatically captures the payment.",
+            "delayDaysHint": "Enter a value between 1 and 7 days.",
+            "orderStateLabel": "Order shipping state for triggering capture",
+            "orderStateHelpText": "Defines the order shipping state that must be reached before the plugin sends the capture request.",
+            "retryIntervalLabel": "Capture retry interval (seconds)",
+            "retryIntervalHelpText": "Defines how long the plugin waits before retrying the capture when the configured shipping state has not yet been reached.",
+            "saveError": "The capture settings could not be saved."
+        },
+        "captureSettings": {
+            "delayDaysError": "Capture delay (days) must be a whole number between 1 and 7 when Delayed capture is selected.",
+            "orderStateError": "Select an order shipping state for triggering capture when Capture on shipment is selected.",
+            "rescheduleTimeError": "Capture retry interval (seconds) must be a whole number of at least 1 when Capture on shipment is selected."
         }
     }
 }
