@@ -567,7 +567,8 @@ abstract class AbstractPaymentMethodHandler implements AsynchronousPaymentHandle
                     ? PaymentRequestService::SHOPPER_INTERACTION_CONTAUTH
                     : PaymentRequestService::SHOPPER_INTERACTION_ECOMMERCE,
                 static::class,
-                $this->captureConfiguration
+                $this->captureConfiguration,
+                $transaction->getOrderTransaction()->getId()
             );
         } catch (AsyncPaymentProcessException $exception) {
             $this->logger->error($exception->getMessage());

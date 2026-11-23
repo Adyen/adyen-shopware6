@@ -303,7 +303,7 @@ class AdminController
 
         try {
             $results = $this->captureService
-                ->doCapture($order->getOrderNumber(), $amountInMinorUnit, $context, true);
+                ->doCapture($order->getOrderNumber(), $amountInMinorUnit, $context, true, $orderId);
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
 

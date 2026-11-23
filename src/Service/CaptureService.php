@@ -121,6 +121,8 @@ class CaptureService
      * @param Context $context
      * @param bool $skipDeliveryCheck True for the manual capture from the administration, which is allowed before
      *     the configured delivery state is reached.
+     * @param string|null $orderId The order is loaded by its ID if given, as sales channels with their own number
+     *     ranges can have orders with the same order number.
      *
      * @return array
      *
@@ -130,15 +132,15 @@ class CaptureService
         string $orderNumber,
         $captureAmount,
         Context $context,
-        bool $skipDeliveryCheck = false
+        bool $skipDeliveryCheck = false,
+        ?string $orderId = null
     ): array {
         $captureAmount = (int)$captureAmount;
 
-        $order = $this->orderRepository->getOrderByOrderNumber(
-            $orderNumber,
-            $context,
-            ['transactions', 'currency', 'lineItems', 'deliveries', 'deliveries.shippingMethod']
-        );
+        $associations = ['transactions', 'currency', 'lineItems', 'deliveries', 'deliveries.shippingMethod'];
+        $order = is_null($orderId)
+            ? $this->orderRepository->getOrderByOrderNumber($orderNumber, $context, $associations)
+            : $this->orderRepository->getOrder($orderId, $context, $associations);
 
         if (is_null($order)) {
             throw new CaptureException(

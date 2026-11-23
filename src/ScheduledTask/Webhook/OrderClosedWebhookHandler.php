@@ -137,7 +137,9 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
                     $this->captureService->doCapture(
                         $merchantReference,
                         $requiredCaptureAmount,
-                        $context
+                        $context,
+                        false,
+                        $orderTransactionEntity->getOrderId()
                     );
                 } else {
                     $exception = new CaptureException(

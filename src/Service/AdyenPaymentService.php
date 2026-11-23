@@ -131,6 +131,27 @@ class AdyenPaymentService
             ->first();
     }
 
+    /**
+     * Whether the payment with the PSP reference is one of the payments of the order transaction, e.g. a partial
+     * payment of an Adyen order.
+     *
+     * @param string $pspreference
+     * @param string $orderTransactionId
+     *
+     * @return bool
+     */
+    public function isPaymentOfOrderTransaction(string $pspreference, string $orderTransactionId): bool
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('pspreference', $pspreference))
+            ->addFilter(new EqualsFilter('orderTransactionId', $orderTransactionId))
+            ->setLimit(1);
+
+        return $this->adyenPaymentRepository->getRepository()
+            ->searchIds($criteria, Context::createDefaultContext())
+            ->getTotal() > 0;
+    }
+
     public function isFullAmountAuthorized(OrderTransactionEntity $orderTransactionEntity): bool
     {
         $amountSum = 0;
