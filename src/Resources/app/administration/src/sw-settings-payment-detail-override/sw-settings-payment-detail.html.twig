@@ -1,0 +1,9 @@
+{% block sw_settings_payment_detail_top_rule %}
+<adyen-payment-method-capture
+    v-if="paymentMethod && isAdyenPaymentMethod"
+    ref="adyenCaptureConfiguration"
+    :payment-method-id="paymentMethod.id"
+/>
+
+{% parent %}
+{% endblock %}
