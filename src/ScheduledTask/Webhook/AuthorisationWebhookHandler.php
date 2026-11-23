@@ -27,6 +27,7 @@ namespace Adyen\Shopware\ScheduledTask\Webhook;
 use Adyen\AdyenException;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Exception\CaptureException;
+use Adyen\Shopware\Models\Capture\CaptureConfiguration;
 use Adyen\Shopware\Service\CaptureService;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -39,6 +40,8 @@ use Shopware\Core\Framework\Context;
 
 class AuthorisationWebhookHandler implements WebhookHandlerInterface
 {
+    use AuthorizableWebhookHandlerTrait;
+
     /** @var LoggerInterface */
     private $logger;
 
@@ -118,18 +121,19 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         NotificationEntity $notification,
         Context $context
     ): void {
-        $paymentMethodHandler = $this->pluginPaymentMethodsService->getGiftcardHandlerIdentifierFromTxVariant(
+        $giftcardHandler = $this->pluginPaymentMethodsService->getGiftcardHandlerIdentifierFromTxVariant(
             $notification->getPaymentMethod()
         );
 
-        if (is_null($paymentMethodHandler)) {
-            $paymentMethodHandler = $orderTransaction->getPaymentMethod()->getHandlerIdentifier();
-        }
-
-        $isManualCapture = $this->captureService->isManualCapture(
-            $paymentMethodHandler,
-            $orderTransaction->getOrder()->getSalesChannelId()
-        );
+        // A gift card of a partial payment is always captured automatically and stored as auto capture, as before.
+        // Every other notification uses the capture configuration of the payment (spec §2, §5).
+        $captureConfiguration = is_null($giftcardHandler)
+            ? $this->captureService->getCaptureConfiguration(
+                $orderTransaction,
+                $orderTransaction->getOrder()->getSalesChannelId()
+            )
+            : CaptureConfiguration::automatic();
+        $isDeferredCapture = $captureConfiguration->isDeferredCapture();
         $currencyUtil = new Currency();
         $totalPrice = $orderTransaction->getAmount()->getTotalPrice();
         $isoCode = $orderTransaction->getOrder()->getCurrency()->getIsoCode();
@@ -137,7 +141,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
 
         $adyenPayment = $this->adyenPaymentService->getAdyenPayment($notification->getPspreference());
         if (is_null($adyenPayment)) {
-            $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isManualCapture);
+            $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isDeferredCapture);
         }
 
         if ($this->isPartialPayment($notification)) {
@@ -145,29 +149,29 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
         }
 
         if ($transactionAmount === intval($notification->getAmountValue())) {
-            if ($isManualCapture) {
-                $this->logger->info(
-                    'Manual capture required. Setting payment to `authorised` state.',
-                    ['notification' => $notification->getVars()]
-                );
-                $this->orderTransactionStateHandler->authorize($orderTransaction->getId(), $context);
-
-                if ($this->captureService->requiresCaptureOnShipment(
-                    $paymentMethodHandler,
-                    $orderTransaction->getOrder()->getSalesChannelId()
+            if ($isDeferredCapture) {
+                if (!$this->authorizeForCapture(
+                    $orderTransaction,
+                    $this->orderTransactionStateHandler,
+                    $this->logger,
+                    $context
                 )) {
+                    return;
+                }
+
+                if ($captureConfiguration->isCaptureOnShipment()) {
                     $this->logger->info(
-                        'Attempting capture for open invoice payment.',
+                        'Attempting capture on shipment.',
                         ['notification' => $notification->getVars()]
                     );
-                    $this->captureService->doOpenInvoiceCapture(
+                    $this->captureService->doCapture(
                         $notification->getMerchantReference(),
                         $notification->getAmountValue(),
                         $context
                     );
                 }
             } else {
-                    $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
+                $this->orderTransactionStateHandler->paid($orderTransaction->getId(), $context);
             }
         }
     }
