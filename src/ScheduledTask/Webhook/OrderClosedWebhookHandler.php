@@ -36,6 +36,8 @@ use Shopware\Core\Framework\Context;
 
 class OrderClosedWebhookHandler implements WebhookHandlerInterface
 {
+    use AuthorizableWebhookHandlerTrait;
+
     /**
      * @var AdyenPaymentService
      */
@@ -102,20 +104,22 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
         NotificationEntity $notificationEntity,
         Context $context
     ): void {
-        $paymentMethodHandler = $orderTransactionEntity->getPaymentMethod()->getHandlerIdentifier();
-        if ($this->captureService->isManualCapture(
-            $paymentMethodHandler,
+        $captureConfiguration = $this->captureService->getCaptureConfiguration(
+            $orderTransactionEntity,
             $orderTransactionEntity->getOrder()->getSalesChannelId()
-        )) {
-            $this->logger->info(
-                'Manual capture required. Setting payment to `authorised` state.',
-                ['notification' => $notificationEntity->getVars()]
-            );
+        );
 
-            $this->orderTransactionStateHandler->authorize($orderTransactionEntity->getId(), $context);
-            $salesChannelId = $orderTransactionEntity->getOrder()->getSalesChannelId();
+        if ($captureConfiguration->isDeferredCapture()) {
+            if (!$this->authorizeForCapture(
+                $orderTransactionEntity,
+                $this->orderTransactionStateHandler,
+                $this->logger,
+                $context
+            )) {
+                return;
+            }
 
-            if ($this->captureService->requiresCaptureOnShipment($paymentMethodHandler, $salesChannelId)) {
+            if ($captureConfiguration->isCaptureOnShipment()) {
                 if ($this->adyenPaymentService->isFullAmountAuthorized($orderTransactionEntity)) {
                     $merchantReference = $this->adyenPaymentService->getMerchantReferenceFromOrderReference(
                         $notificationEntity->getMerchantReference()
@@ -126,11 +130,11 @@ class OrderClosedWebhookHandler implements WebhookHandlerInterface
                     );
 
                     $this->logger->info(
-                        'Attempting capture for open invoice payment.',
+                        'Attempting capture on shipment.',
                         ['notification' => $notificationEntity->getVars()]
                     );
 
-                    $this->captureService->doOpenInvoiceCapture(
+                    $this->captureService->doCapture(
                         $merchantReference,
                         $requiredCaptureAmount,
                         $context
