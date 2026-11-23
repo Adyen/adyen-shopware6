@@ -35,7 +35,9 @@ class CaptureConfigurationTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new CaptureConfiguration(CaptureMode::GLOBAL);
+        $configuration = new CaptureConfiguration(CaptureMode::GLOBAL);
+
+        self::fail('The global mode was accepted as mode ' . $configuration->toArray()['mode']);
     }
 
     public function testParametersThatDoNotBelongToTheModeAreDiscarded(): void
