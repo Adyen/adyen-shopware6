@@ -20,6 +20,13 @@ const GLOBAL = 'global';
 const CAPTURE_MODES = ['immediate', 'delayed', 'manual', 'on_shipment'];
 
 /**
+ * Whether the capture mode defers to the capture configuration of the plugin configuration page.
+ */
+function isGlobalMode(mode) {
+    return mode === GLOBAL;
+}
+
+/**
  * "Adyen - Capture Settings" card on the payment method detail page (spec §10.2).
  *
  * Works like the plugin configuration page: one Sales Channel switch, and in a sales channel every field can
@@ -89,11 +96,11 @@ Component.register('adyen-payment-method-capture', {
         },
 
         appliedMode() {
-            return this.currentMode === GLOBAL ? this.scope?.globalMode : this.currentMode;
+            return isGlobalMode(this.currentMode) ? this.scope?.globalMode : this.currentMode;
         },
 
         appliedText() {
-            const snippet = this.currentMode === GLOBAL
+            const snippet = isGlobalMode(this.currentMode)
                 ? 'adyen.captureConfiguration.appliedGlobal'
                 : 'adyen.captureConfiguration.appliedOwn';
 
