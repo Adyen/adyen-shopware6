@@ -392,6 +392,7 @@ class PaymentRequestService
         $paymentsApi = new PaymentsApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannelId())
         );
+        $request->setApplicationInfo($this->clientService->getApplicationInfo());
 
         try {
             $this->clientService->logRequest(

@@ -484,6 +484,7 @@ class CaptureService
         $request->setMerchantAccount($this->configurationService->getMerchantAccount($salesChannelId));
         $request->setReference($merchantReference);
         $request->setLineItems($lineItems);
+        $request->setApplicationInfo($this->clientService->getApplicationInfo());
 
         return $request;
     }
