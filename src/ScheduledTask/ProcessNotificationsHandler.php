@@ -29,10 +29,13 @@ use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Handlers\ResultHandler;
 use Adyen\Shopware\Models\NotificationProcessingResult;
+use Adyen\Shopware\ScheduledTask\Webhook\AuthorisationWebhookHandler;
 use Adyen\Shopware\ScheduledTask\Webhook\WebhookHandlerFactory;
 use Adyen\Shopware\Service\AdyenPaymentService;
 use Adyen\Shopware\Service\CaptureService;
+use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\NotificationService;
+use Adyen\Shopware\Service\PaymentRequest\PaymentRequestService;
 use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaypalPaymentService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
@@ -51,6 +54,7 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(handles: ProcessNotifications::class)]
@@ -230,9 +234,37 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $logContext['orderId'] = $order->getId();
                 $logContext['orderNumber'] = $order->getOrderNumber();
 
-                $orderTransaction = $this->getOrderTransaction($order, $notification, $logContext);
+                $isLinkedToTransaction = false;
+                $orderTransaction = $this->getOrderTransaction(
+                    $order,
+                    $notification,
+                    $logContext,
+                    $isLinkedToTransaction
+                );
                 if (is_null($orderTransaction)) {
                     continue;
+                }
+
+                // The transaction from the payment metadata can be of another order of this shop with the same order
+                // number, e.g. when sales channels have their own number ranges.
+                $transactionOrderId = $orderTransaction->getOrder()?->getId();
+                if (!is_null($transactionOrderId) && $transactionOrderId !== $order->getId()) {
+                    $order = $this->orderRepository->getOrder(
+                        $transactionOrderId,
+                        $context,
+                        ['transactions', 'currency']
+                    );
+                    if (is_null($order)) {
+                        $errorMessage = 'Skipped: Order of the order transaction from the payment metadata not found.';
+                        $this->logger->error(
+                            $errorMessage,
+                            $logContext + ['transactionOrderId' => $transactionOrderId]
+                        );
+                        $this->logNotificationFailure($notification, $errorMessage);
+                        $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+                        continue;
+                    }
+                    $logContext['orderId'] = $order->getId();
                 }
 
                 $isRecoverable = $this->isRecoverableFailedTransaction($orderTransaction, $notification);
@@ -248,9 +280,18 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                 $customFields = $orderTransaction->getCustomFields();
                 $customFieldsChanged = false;
 
-                if (empty($customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE])) {
-                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] =
-                        $notification->getOriginalReference();
+                // Needed for capture and refund when the shopper did not return to the shop after the payment.
+                // The key is set even without a reference, as the refund only checks that it exists.
+                $paymentPspReference =
+                    $this->getPaymentPspReference($orderTransaction, $notification, $isLinkedToTransaction);
+                $storedPspReference = $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] ?? null;
+                if (empty($storedPspReference) || $this->replacesUnknownPspReference(
+                    $orderTransaction,
+                    $notification,
+                    $storedPspReference,
+                    $paymentPspReference
+                )) {
+                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] = $paymentPspReference;
                     $customFieldsChanged = true;
                 }
 
@@ -437,15 +478,34 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
      * @param OrderEntity $order
      * @param NotificationEntity $notification
      * @param array $logContext
+     * @param bool $isLinkedToTransaction Set to whether the notification is linked to the transaction by the payment
+     *                                    metadata or by a stored payment response, not only by the order number.
      *
      * @return OrderTransactionEntity|null
      */
     private function getOrderTransaction(
         OrderEntity $order,
         NotificationEntity $notification,
-        array $logContext
+        array $logContext,
+        bool &$isLinkedToTransaction
     ): ?OrderTransactionEntity {
         $orderTransaction = null;
+        $isLinkedToTransaction = false;
+
+        // Several shops can use the same merchant account and have orders with the same order number, and Adyen
+        // sends the webhooks of all of them to every shop. The webhooks of a payment carry its metadata.
+        $metadataTransactionId = $this->getMetadataOrderTransactionId($notification);
+        if (!is_null($metadataTransactionId)) {
+            $orderTransaction = $this->getOrderTransactionFromMetadata(
+                $order,
+                $notification,
+                $metadataTransactionId,
+                $logContext
+            );
+            $isLinkedToTransaction = !is_null($orderTransaction);
+
+            return $orderTransaction;
+        }
 
         /* Fetch the related order_transaction entity with the given pspreference.
          * There might be several order transactions if there have been multiple payment attempts. */
@@ -454,6 +514,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $orderTransaction = $this->orderTransactionRepository->getWithId(
                 $adyenPaymentResponse->getOrderTransactionId()
             );
+            $isLinkedToTransaction = !is_null($orderTransaction);
         }
 
         if (is_null($orderTransaction)) {
@@ -487,9 +548,213 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             $this->logNotificationFailure($notification, $errorMessage);
             $this->markAsDone($notification->getId(), $notification->getMerchantReference());
             return null;
-        } else {
+        }
+
+        if ((!$isLinkedToTransaction && $this->isAuthorisationOfAnotherPayment($orderTransaction, $notification)) ||
+            $this->isModificationOfAnotherPayment($orderTransaction, $notification)) {
+            $this->skipNotificationOfAnotherPayment($order, $notification, $logContext);
+
+            return null;
+        }
+
+        return $orderTransaction;
+    }
+
+    /**
+     * Loads the transaction whose ID was sent in the payment request metadata. The notification is skipped if
+     * this shop has no such transaction or its order has another order number, e.g. it is the payment of another
+     * shop with the same order number, or if the transaction cannot take the notification, in the same way as
+     * without the metadata.
+     *
+     * @param OrderEntity $order
+     * @param NotificationEntity $notification
+     * @param string $orderTransactionId
+     * @param array $logContext
+     *
+     * @return OrderTransactionEntity|null
+     */
+    private function getOrderTransactionFromMetadata(
+        OrderEntity $order,
+        NotificationEntity $notification,
+        string $orderTransactionId,
+        array $logContext
+    ): ?OrderTransactionEntity {
+        $orderTransaction = Uuid::isValid($orderTransactionId)
+            ? $this->orderTransactionRepository->getWithId($orderTransactionId)
+            : null;
+
+        if (is_null($orderTransaction) ||
+            $orderTransaction->getOrder()?->getOrderNumber() !== $order->getOrderNumber()) {
+            $this->skipNotificationOfAnotherPayment($order, $notification, $logContext);
+
+            return null;
+        }
+
+        // The payment method of the transaction can be changed to another one in the administration.
+        if ($orderTransaction->getPaymentMethod()?->getPlugin()?->getName() !== ConfigurationService::BUNDLE_NAME) {
+            $errorMessage = sprintf(
+                'Skipped: Order transaction of order %s from the payment metadata is not an Adyen payment.',
+                $order->getOrderNumber()
+            );
+            $this->logger->error($errorMessage, $logContext);
+            $this->logNotificationFailure($notification, $errorMessage);
+            $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+
+            return null;
+        }
+
+        // A stored payment response links the notification to the transaction in any state, as without the metadata,
+        // e.g. the failed AUTHORISATION of a payment that /payments already returned as refused.
+        if ($this->isPaymentResponseOfTransaction($notification->getPspreference(), $orderTransaction)) {
             return $orderTransaction;
         }
+
+        $state = $orderTransaction->getStateMachineState()?->getTechnicalName();
+        $canTakeNotification = in_array($state, self::WEBHOOK_TRANSACTION_STATES, true)
+            ? !$this->belongsToAnotherPaymentAttempt($orderTransaction, $notification)
+            : $this->isRecoverableFailedTransaction($orderTransaction, $notification);
+
+        if (!$canTakeNotification) {
+            $errorMessage = sprintf(
+                'Skipped: Order transaction of order %s from the payment metadata cannot take the notification.',
+                $order->getOrderNumber()
+            );
+            $this->logger->error($errorMessage, $logContext + ['transactionState' => $state]);
+            $this->logNotificationFailure($notification, $errorMessage);
+            $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+
+            return null;
+        }
+
+        return $orderTransaction;
+    }
+
+    /**
+     * An AUTHORISATION without the payment metadata, e.g. from a shop with an older plugin version, belongs to
+     * another payment if it is linked to the transaction only by the order number, while the /payments or
+     * /payments/details call of the transaction returned another PSP reference. A partial payment of an Adyen order
+     * has its own PSP reference. Without a returned PSP reference, the notification is processed as before.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     *
+     * @return bool
+     */
+    private function isAuthorisationOfAnotherPayment(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification
+    ): bool {
+        if ($notification->getEventCode() !== EventCodes::AUTHORISATION ||
+            AuthorisationWebhookHandler::isPartialPayment($notification)) {
+            return false;
+        }
+
+        $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($orderTransaction);
+
+        return !is_null($paymentResponse) && !empty($paymentResponse->getPspreference());
+    }
+
+    /**
+     * A capture, refund or another modification without the payment metadata, e.g. of a payment made before the
+     * metadata was sent, belongs to another payment if it modifies a payment that is not a known payment of the
+     * transaction, while the stored PSP reference of the transaction is one. A reference stored from a modification
+     * is not known, e.g. one of several gift cards, so then the notification is processed as before.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     *
+     * @return bool
+     */
+    private function isModificationOfAnotherPayment(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification
+    ): bool {
+        // An AUTHORISATION has no original reference.
+        if ($notification->getEventCode() === EventCodes::AUTHORISATION) {
+            return false;
+        }
+
+        $originalReference = $notification->getOriginalReference();
+        $paymentPspReference =
+            $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] ?? null;
+
+        if (empty($originalReference) || empty($paymentPspReference) || $originalReference === $paymentPspReference) {
+            return false;
+        }
+
+        return $this->isKnownPaymentOfTransaction($paymentPspReference, $orderTransaction)
+            && !$this->isKnownPaymentOfTransaction($originalReference, $orderTransaction);
+    }
+
+    /**
+     * Whether the PSP reference is a payment of the transaction: a payment of its adyen_payment rows, e.g. a partial
+     * payment of an Adyen order, or one the /payments or /payments/details call returned.
+     *
+     * @param string $pspReference
+     * @param OrderTransactionEntity $orderTransaction
+     *
+     * @return bool
+     */
+    private function isKnownPaymentOfTransaction(string $pspReference, OrderTransactionEntity $orderTransaction): bool
+    {
+        return $this->adyenPaymentService->isPaymentOfOrderTransaction($pspReference, $orderTransaction->getId())
+            || $this->isPaymentResponseOfTransaction($pspReference, $orderTransaction);
+    }
+
+    /**
+     * Whether the /payments or /payments/details call of the transaction returned the PSP reference.
+     *
+     * @param string|null $pspReference
+     * @param OrderTransactionEntity $orderTransaction
+     *
+     * @return bool
+     */
+    private function isPaymentResponseOfTransaction(
+        ?string $pspReference,
+        OrderTransactionEntity $orderTransaction
+    ): bool {
+        if (empty($pspReference)) {
+            return false;
+        }
+
+        $paymentResponse = $this->paymentResponseService->getWithPspreference($pspReference);
+
+        return !is_null($paymentResponse) && $paymentResponse->getOrderTransactionId() === $orderTransaction->getId();
+    }
+
+    /**
+     * @param OrderEntity $order
+     * @param NotificationEntity $notification
+     * @param array $logContext
+     *
+     * @return void
+     */
+    private function skipNotificationOfAnotherPayment(
+        OrderEntity $order,
+        NotificationEntity $notification,
+        array $logContext
+    ): void {
+        $errorMessage = sprintf(
+            'Skipped: Notification belongs to a payment of another shop or transaction with order number %s.',
+            $order->getOrderNumber()
+        );
+        $this->logger->warning($errorMessage, $logContext);
+        $this->logNotificationFailure($notification, $errorMessage);
+        $this->markAsDone($notification->getId(), $notification->getMerchantReference());
+    }
+
+    /**
+     * @param NotificationEntity $notification
+     *
+     * @return string|null Order transaction ID from the metadata of the payment request, null if it was not sent
+     */
+    private function getMetadataOrderTransactionId(NotificationEntity $notification): ?string
+    {
+        $additionalData = json_decode($notification->getAdditionalData() ?? '', true);
+        $orderTransactionId =
+            $additionalData['metadata.' . PaymentRequestService::METADATA_ORDER_TRANSACTION_ID] ?? null;
+
+        return is_string($orderTransactionId) && $orderTransactionId !== '' ? $orderTransactionId : null;
     }
 
     /**
@@ -666,6 +931,65 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $contextWithoutFlows->addState(Context::SKIP_TRIGGER_FLOW);
 
         return $contextWithoutFlows;
+    }
+
+    /**
+     * PSP reference of the payment the notification belongs to. An AUTHORISATION notification carries it in
+     * pspReference and has no original reference, the other events (capture, refund, ...) carry it in
+     * originalReference. A failed authorisation and a partial payment of an Adyen order are not the payment of
+     * the transaction, so they give no reference. A reference is only taken if the notification is linked to the
+     * transaction by the payment metadata or by a stored payment response, or if it is a known payment of the
+     * transaction, as a notification linked only by the order number can be of another shop that uses the same
+     * merchant account.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     * @param bool $isLinkedToTransaction
+     *
+     * @return string|null
+     */
+    private function getPaymentPspReference(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification,
+        bool $isLinkedToTransaction
+    ): ?string {
+        if ($notification->getEventCode() !== EventCodes::AUTHORISATION) {
+            $originalReference = $notification->getOriginalReference();
+            $isPaymentOfTransaction = $isLinkedToTransaction || (!empty($originalReference)
+                && $this->isKnownPaymentOfTransaction($originalReference, $orderTransaction));
+
+            return $isPaymentOfTransaction ? $originalReference : null;
+        }
+
+        if (!$notification->isSuccess() || AuthorisationWebhookHandler::isPartialPayment($notification)) {
+            return null;
+        }
+
+        return $isLinkedToTransaction ? $notification->getPspreference() : null;
+    }
+
+    /**
+     * The PSP reference of an AUTHORISATION linked to the transaction replaces a stored PSP reference that is not a
+     * known payment of the transaction, e.g. one stored before from a capture or refund of another shop that uses
+     * the same merchant account, so capture and refund use the payment of the transaction.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     * @param string $storedPspReference
+     * @param string|null $paymentPspReference From getPaymentPspReference(), only set for a linked payment.
+     *
+     * @return bool
+     */
+    private function replacesUnknownPspReference(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification,
+        string $storedPspReference,
+        ?string $paymentPspReference
+    ): bool {
+        return $notification->getEventCode() === EventCodes::AUTHORISATION
+            && !empty($paymentPspReference)
+            && $paymentPspReference !== $storedPspReference
+            && !$this->isKnownPaymentOfTransaction($storedPspReference, $orderTransaction);
     }
 
     /**
