@@ -27,6 +27,8 @@ namespace Adyen\Shopware\Test\Unit;
 use Adyen\Client;
 use Adyen\Environment;
 use Adyen\HttpClient\ClientInterface;
+use Adyen\Model\Checkout\ApplicationInfo;
+use Adyen\Model\Checkout\CommonField;
 use Adyen\Shopware\Exception\CaptureException;
 use Adyen\Shopware\Handlers\PaymentResponseHandler;
 use Adyen\Shopware\Models\Capture\CaptureConfiguration;
@@ -77,6 +79,9 @@ class CaptureServiceTest extends AdyenTestCase
         $client->setHttpClient($this->httpClient);
         $clientService = $this->getSimpleMock(ClientService::class);
         $clientService->method('getClient')->willReturn($client);
+        $clientService->method('getApplicationInfo')->willReturn(new ApplicationInfo([
+            'merchantApplication' => new CommonField(['name' => 'adyen-shopware6', 'version' => '5.5.0']),
+        ]));
 
         $this->configurationService = $this->getSimpleMock(ConfigurationService::class);
         $this->configurationService->method('getMerchantAccount')->willReturn('TestMerchant');
@@ -265,8 +270,14 @@ class CaptureServiceTest extends AdyenTestCase
                 $this->anything(),
                 $this->stringEndsWith('/payments/PSP123/captures'),
                 $this->callback(
-                    static fn ($body): bool
-                        => json_decode(json_encode($body), true)['amount']['value'] === $amount
+                    static function ($body) use ($amount): bool {
+                        $body = json_decode(json_encode($body), true);
+
+                        return $body['amount']['value'] === $amount
+                            && ($body['applicationInfo'] ?? null) === [
+                                'merchantApplication' => ['name' => 'adyen-shopware6', 'version' => '5.5.0'],
+                            ];
+                    }
                 ),
                 'post'
             )
