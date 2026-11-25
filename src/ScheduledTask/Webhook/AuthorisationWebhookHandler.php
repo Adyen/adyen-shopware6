@@ -148,7 +148,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
             $this->adyenPaymentService->insertAdyenPayment($notification, $orderTransaction, $isDeferredCapture);
         }
 
-        if ($this->isPartialPayment($notification)) {
+        if (self::isPartialPayment($notification)) {
             return;
         }
 
@@ -171,7 +171,8 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
                     $this->captureService->doCapture(
                         $notification->getMerchantReference(),
                         $notification->getAmountValue(),
-                        $context
+                        $context,
+                        orderId: $orderTransaction->getOrder()->getId()
                     );
                 }
             } else {
@@ -188,7 +189,7 @@ class AuthorisationWebhookHandler implements WebhookHandlerInterface
      *
      * @return bool
      */
-    private function isPartialPayment(NotificationEntity $notification): bool
+    public static function isPartialPayment(NotificationEntity $notification): bool
     {
         $additionalData = json_decode($notification->getAdditionalData() ?? '');
         $merchantOrderReference = $additionalData->merchantOrderReference ?? null;

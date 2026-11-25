@@ -83,6 +83,13 @@ class PaymentRequestService
     /** @var string */
     const SHOPPER_INTERACTION_ECOMMERCE = 'Ecommerce';
 
+    /**
+     * Metadata key of the order transaction ID. Adyen returns the metadata in the webhooks of the payment, so they
+     * can be linked to the transaction of this shop and not to an order of another shop that uses the same merchant
+     * account and has the same order number.
+     */
+    public const METADATA_ORDER_TRANSACTION_ID = 'orderTransactionId';
+
     /** @var string[] */
     const ALLOWED_LINE_ITEM_TYPES = [
         'product',
@@ -182,6 +189,7 @@ class PaymentRequestService
      * @param string $paymentMethodHandler
      * @param CaptureConfiguration|null $captureConfiguration Stored by storeCaptureConfiguration(); resolved for the
      *     handler if not given.
+     * @param string|null $orderTransactionId
      *
      * @return IntegrationPaymentRequest
      */
@@ -196,7 +204,8 @@ class PaymentRequestService
         bool $isOpenInvoice = false,
         string $shopperInteraction = self::SHOPPER_INTERACTION_ECOMMERCE,
         string $paymentMethodHandler = AbstractPaymentMethodHandler::class,
-        ?CaptureConfiguration $captureConfiguration = null
+        ?CaptureConfiguration $captureConfiguration = null,
+        ?string $orderTransactionId = null
     ): IntegrationPaymentRequest {
         $paymentRequest = new IntegrationPaymentRequest($stateData);
 
@@ -254,6 +263,12 @@ class PaymentRequestService
             $this->configurationService->getMerchantAccount($salesChannelContext->getSalesChannel()->getId())
         );
         $paymentRequest->setReturnUrl($returnUrl);
+
+        // Only the metadata of the plugin is sent, the state data comes from the storefront and must neither replace
+        // the transaction ID nor exceed the metadata limits of Adyen.
+        $paymentRequest->setMetadata(
+            empty($orderTransactionId) ? null : [self::METADATA_ORDER_TRANSACTION_ID => $orderTransactionId]
+        );
 
         // Set device fingerprint for Ratepay
         if (in_array($paymentMethodType, [
@@ -322,6 +337,8 @@ class PaymentRequestService
         ?CaptureConfiguration $captureConfiguration = null
     ): IntegrationPaymentRequest {
         $paymentRequest = new IntegrationPaymentRequest($stateData);
+        // The state data comes from the storefront, so its metadata is not sent, as for the order request.
+        $paymentRequest->setMetadata(null);
 
         // Validate state.data
         $stateData = $this->checkoutStateDataValidator->getValidatedAdditionalData($stateData);
@@ -392,6 +409,7 @@ class PaymentRequestService
         $paymentsApi = new PaymentsApi(
             $this->clientService->getClient($salesChannelContext->getSalesChannelId())
         );
+        $request->setApplicationInfo($this->clientService->getApplicationInfo());
 
         try {
             $this->clientService->logRequest(
