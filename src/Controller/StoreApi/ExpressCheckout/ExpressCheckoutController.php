@@ -25,6 +25,8 @@
 namespace Adyen\Shopware\Controller\StoreApi\ExpressCheckout;
 
 use Adyen\AdyenException;
+use Adyen\Shopware\Exception\IncompleteExpressCheckoutCustomerDataException;
+use Adyen\Shopware\Exception\MissingExpressCheckoutCustomerDataException;
 use Adyen\Shopware\Exception\ResolveCountryException;
 use Adyen\Shopware\Exception\ResolveShippingMethodException;
 use Adyen\Shopware\Service\ConfigurationService;
@@ -151,6 +153,10 @@ class ExpressCheckoutController
      * @param SalesChannelContext $salesChannelContext The current sales channel context.
      *
      * @return array The cart, shipping methods, selected shipping method, and payment methods.
+     * @throws MissingExpressCheckoutCustomerDataException When a new guest customer would be created without the
+     *                                                     shopper data.
+     * @throws IncompleteExpressCheckoutCustomerDataException When a new guest customer would be created from
+     *                                                        incomplete shopper data.
      * @throws Exception
      */
     public function createCart(
@@ -168,6 +174,10 @@ class ExpressCheckoutController
         $makeNewCustomer = $customer === null;
         $createNewAddress = $customer && $customer->getGuest();
 
+        if ($makeNewCustomer) {
+            $this->validateNewCustomerData($newAddress, (string)$guestEmail);
+        }
+
         return $this->expressCheckoutService
             ->createCart(
                 $productId,
@@ -180,6 +190,38 @@ class ExpressCheckoutController
                 $makeNewCustomer,
                 $createNewAddress
             );
+    }
+
+    /**
+     * Checks that the shopper data a new guest customer is created from is present, so that the customer is never
+     * created from fallback data. Only the presence of the data is checked, not its content.
+     *
+     * @param array $newAddress
+     * @param string $guestEmail
+     *
+     * @return void
+     *
+     * @throws MissingExpressCheckoutCustomerDataException When no shopper data is sent at all. The payment sheet does
+     *                                                     not ask for it when the page was rendered for a logged-in
+     *                                                     customer, so this happens when the session was lost since.
+     * @throws IncompleteExpressCheckoutCustomerDataException When the e-mail, first name, last name or street is
+     *                                                        missing.
+     */
+    private function validateNewCustomerData(array $newAddress, string $guestEmail): void
+    {
+        if ($guestEmail === '' && empty(array_filter($newAddress))) {
+            throw new MissingExpressCheckoutCustomerDataException('No shopper data for a new guest customer.');
+        }
+
+        if ($guestEmail === ''
+            || empty($newAddress['firstName'])
+            || empty($newAddress['lastName'])
+            || empty($newAddress['street'])
+        ) {
+            throw new IncompleteExpressCheckoutCustomerDataException(
+                'Incomplete shopper data for a new guest customer.'
+            );
+        }
     }
 
     /**

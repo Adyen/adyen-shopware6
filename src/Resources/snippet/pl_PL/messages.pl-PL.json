@@ -8,6 +8,9 @@
         "paymentMethodSelectionError": "Niestety wystąpił błąd podczas zapisywania wybranej metody płatności. Proszę wybrać inną metodę płatności.",
         "paypalOrderNotCompleted": "Nie udało się zrealizować zamówienia.",
         "paypalPaymentReversed": "Nie udało się zrealizować zamówienia. Płatność PayPal została wycofana.",
+        "expressCheckoutSessionExpired": "Twoja sesja wygasła. Spróbuj ponownie dokonać płatności.",
+        "expressCheckoutCustomerDataIncomplete": "Brakuje imienia i nazwiska, adresu e-mail lub ulicy. Uzupełnij dane i spróbuj ponownie dokonać płatności.",
+        "applePayNameRequired": "Podaj swoje imię i nazwisko.",
         "giftcard": {
             "addGiftcards": "Dodaj karty podarunkowe",
             "removeGiftcard": "Usuń kartę podarunkową",

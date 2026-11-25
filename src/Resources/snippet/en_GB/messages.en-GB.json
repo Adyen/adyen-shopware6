@@ -8,6 +8,9 @@
         "paymentMethodSelectionError": "Unfortunately, something went wrong saving the payment method selection. Please select a different payment method.",
         "paypalOrderNotCompleted": "Your order could not be completed.",
         "paypalPaymentReversed": "Your order could not be completed. Your PayPal payment has been reversed.",
+        "expressCheckoutSessionExpired": "Your session has expired. Please try the payment again.",
+        "expressCheckoutCustomerDataIncomplete": "Your name, e-mail address or street is missing. Please complete your details and try the payment again.",
+        "applePayNameRequired": "Please enter your first and last name.",
         "giftcard": {
             "addGiftcards": "Add Giftcards",
             "removeGiftcard": "Remove Giftcard",
