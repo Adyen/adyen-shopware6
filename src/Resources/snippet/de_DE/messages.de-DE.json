@@ -8,6 +8,9 @@
         "paymentMethodSelectionError": "Leider ist beim Speichern der Auswahl der Zahlungsmethode ein Fehler aufgetreten. Bitte wählen Sie eine andere Zahlungsmethode.",
         "paypalOrderNotCompleted": "Ihre Bestellung konnte nicht abgeschlossen werden.",
         "paypalPaymentReversed": "Ihre Bestellung konnte nicht abgeschlossen werden. Ihre PayPal-Zahlung wurde rückgängig gemacht.",
+        "expressCheckoutSessionExpired": "Ihre Sitzung ist abgelaufen. Bitte versuchen Sie die Zahlung erneut.",
+        "expressCheckoutCustomerDataIncomplete": "Ihr Name, Ihre E-Mail-Adresse oder Ihre Straße fehlt. Bitte vervollständigen Sie Ihre Angaben und versuchen Sie die Zahlung erneut.",
+        "applePayNameRequired": "Bitte geben Sie Ihren Vor- und Nachnamen ein.",
         "giftcard": {
             "addGiftcards": "Geschenkkarten hinzufügen",
             "removeGiftcard": "Geschenkkarte entfernen",

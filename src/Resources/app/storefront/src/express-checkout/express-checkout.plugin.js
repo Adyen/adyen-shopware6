@@ -576,6 +576,16 @@ export default class ExpressCheckoutPlugin extends Plugin {
             return;
         }
 
+        // The order is not created because the shopper data is missing (the page was rendered for a logged-in
+        // customer whose session is lost since) or incomplete. The reloaded page shows why and requests the data.
+        if (order.reload) {
+            ElementLoadingIndicatorUtil.remove(document.body);
+            actions.reject({});
+            window.location.reload();
+
+            return;
+        }
+
         if (order.url) {
             location.href = order.url;
 
@@ -847,6 +857,18 @@ export default class ExpressCheckoutPlugin extends Plugin {
 
     // Callback for ApplePay payment method
     handleApplePayAuthorization({authorizedEvent, billingAddress, deliveryAddress}, actions) {
+        // A contact from the shopper's contacts can have no first or last name, which the sheet does not prevent.
+        // Rejecting with a name error lets the shopper complete the contact in the sheet and authorize again.
+        if (!(deliveryAddress.firstName || '').trim() || !(deliveryAddress.lastName || '').trim()) {
+            actions.reject(new ApplePayError(
+                'shippingContactInvalid',
+                'name',
+                this.expressCheckoutOptions.applePayNameRequiredMessage
+            ));
+
+            return;
+        }
+
         const shippingAddress = {
             firstName: deliveryAddress.firstName,
             lastName: deliveryAddress.lastName,
