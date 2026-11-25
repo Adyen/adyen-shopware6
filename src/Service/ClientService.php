@@ -27,6 +27,9 @@ namespace Adyen\Shopware\Service;
 use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Environment;
+use Adyen\Model\Checkout\ApplicationInfo;
+use Adyen\Model\Checkout\CommonField;
+use Adyen\Model\Checkout\ExternalPlatform;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -39,6 +42,7 @@ class ClientService
 {
     const MERCHANT_APPLICATION_NAME = 'adyen-shopware6';
     const EXTERNAL_PLATFORM_NAME = 'Shopware6';
+    const EXTERNAL_PLATFORM_INTEGRATOR = 'Logeecom';
     const MODULE_VERSION_CACHE_TAG = 'adyen_module_version';
 
     /**
@@ -123,6 +127,30 @@ class ClientService
                 throw $e;
             }
         }
+    }
+
+    /**
+     * @return ApplicationInfo
+     */
+    public function getApplicationInfo(): ApplicationInfo
+    {
+        $moduleVersion = $this->getModuleVersion();
+
+        return new ApplicationInfo([
+            'adyenLibrary' => new CommonField([
+                'name' => Client::LIB_NAME,
+                'version' => Client::LIB_VERSION,
+            ]),
+            'externalPlatform' => new ExternalPlatform([
+                'name' => self::EXTERNAL_PLATFORM_NAME,
+                'version' => $this->shopwareVersion,
+                'integrator' => self::EXTERNAL_PLATFORM_INTEGRATOR,
+            ]),
+            'merchantApplication' => new CommonField([
+                'name' => self::MERCHANT_APPLICATION_NAME,
+                'version' => $moduleVersion,
+            ]),
+        ]);
     }
 
     /**
