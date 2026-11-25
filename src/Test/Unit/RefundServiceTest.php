@@ -24,6 +24,9 @@
 
 namespace Adyen\Shopware\Test\Unit;
 
+use Adyen\Model\Checkout\ApplicationInfo;
+use Adyen\Model\Checkout\CommonField;
+use Adyen\Model\Checkout\PaymentRefundRequest;
 use Adyen\Shopware\Entity\AdyenPayment\AdyenPaymentEntity;
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\Entity\Refund\RefundEntity;
@@ -317,6 +320,33 @@ class RefundServiceTest extends AdyenTestCase
         $notification->setAmountValue($amountValue);
 
         return $notification;
+    }
+
+    public function testGetRefundRequestAddsApplicationInfoWithoutChangingIdempotencyKey(): void
+    {
+        $applicationInfo = new ApplicationInfo([
+            'merchantApplication' => new CommonField(['name' => 'adyen-shopware6', 'version' => '5.5.0']),
+        ]);
+        $clientService = $this->getSimpleMock(ClientService::class);
+        $clientService->method('getApplicationInfo')->willReturn($applicationInfo);
+        $refundService = $this->createMockedRefundService([
+            ClientService::class => $clientService,
+            Idempotency::class => new Idempotency(),
+        ]);
+
+        $refundRequest = $refundService->getRefundRequest(1000, 'EUR', 'TestMerchant', 'PSP123', '10001');
+
+        /** @var PaymentRefundRequest $request */
+        $request = $refundRequest['requestObject'];
+        $this->assertSame($applicationInfo, $request->getApplicationInfo());
+        $this->assertSame(
+            (new Idempotency())->createKeyFromRequest([
+                'amount' => ['currency' => 'EUR', 'value' => 1000],
+                'merchantAccount' => 'TestMerchant',
+                'reference' => '10001',
+            ]),
+            $refundRequest['requestOptions']['idempotencyKey']
+        );
     }
 
     /**
