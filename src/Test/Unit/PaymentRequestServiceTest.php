@@ -24,6 +24,11 @@
 
 namespace Adyen\Shopware\Test\Unit;
 
+use Adyen\Client;
+use Adyen\Environment;
+use Adyen\HttpClient\ClientInterface;
+use Adyen\Model\Checkout\ApplicationInfo;
+use Adyen\Model\Checkout\CommonField;
 use Adyen\Shopware\Handlers\CardsPaymentMethodHandler;
 use Adyen\Shopware\Handlers\PaypalPaymentMethodHandler;
 use Adyen\Shopware\Models\Capture\CaptureConfiguration;
@@ -44,10 +49,12 @@ use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 class PaymentRequestServiceTest extends AdyenTestCase
 {
+    private MockObject $clientService;
     private MockObject $captureConfigurationResolver;
     private MockObject $orderTransactionRepository;
     private PaymentRequestService $paymentRequestService;
@@ -56,11 +63,12 @@ class PaymentRequestServiceTest extends AdyenTestCase
     {
         parent::setUp();
 
+        $this->clientService = $this->getSimpleMock(ClientService::class);
         $this->captureConfigurationResolver = $this->getSimpleMock(CaptureConfigurationResolver::class);
         $this->orderTransactionRepository = $this->getSimpleMock(OrderTransactionRepository::class);
 
         $this->paymentRequestService = new PaymentRequestService(
-            $this->getSimpleMock(ClientService::class),
+            $this->clientService,
             $this->getSimpleMock(ConfigurationService::class),
             $this->captureConfigurationResolver,
             $this->getSimpleMock(Currency::class),
@@ -215,5 +223,40 @@ class PaymentRequestServiceTest extends AdyenTestCase
             'method without manual capture support' => [CaptureConfiguration::automatic(), false, false, null, null],
             'open invoice without manual capture support' => [CaptureConfiguration::automatic(), false, true, null, 0],
         ];
+    }
+
+    public function testExecutePaymentSendsApplicationInfo(): void
+    {
+        $sentParams = null;
+        $httpClient = $this->createMock(ClientInterface::class);
+        $httpClient->method('requestHttp')->willReturnCallback(
+            function ($service, $url, $params) use (&$sentParams) {
+                $sentParams = json_decode(json_encode($params), true);
+
+                return ['resultCode' => 'Authorised', 'pspReference' => 'PSP123'];
+            }
+        );
+
+        $client = new Client();
+        $client->setEnvironment(Environment::TEST);
+        $client->setHttpClient($httpClient);
+
+        $this->clientService->method('getClient')->willReturn($client);
+        $this->clientService->method('getApplicationInfo')->willReturn(new ApplicationInfo([
+            'merchantApplication' => new CommonField(['name' => 'adyen-shopware6', 'version' => '5.5.0']),
+        ]));
+
+        $salesChannelContext = $this->getSimpleMock(SalesChannelContext::class);
+        $salesChannelContext->method('getSalesChannelId')->willReturn('sales-channel-1');
+
+        $this->paymentRequestService->executePayment(
+            $salesChannelContext,
+            new IntegrationPaymentRequest(['merchantAccount' => 'TestMerchant', 'reference' => '10001'])
+        );
+
+        self::assertSame(
+            ['merchantApplication' => ['name' => 'adyen-shopware6', 'version' => '5.5.0']],
+            $sentParams['applicationInfo'] ?? null
+        );
     }
 }

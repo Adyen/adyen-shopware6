@@ -114,7 +114,8 @@ class DonationService
                 'type' => $paymentMethodCode
             ]),
             'shopperInteraction' => AbstractPaymentMethodHandler::SHOPPER_INTERACTION_CONTAUTH,
-            'returnUrl' => $returnUrl
+            'returnUrl' => $returnUrl,
+            'applicationInfo' => $this->clientService->getApplicationInfo(),
         ]);
 
         $donationsApi = new DonationsApi(
