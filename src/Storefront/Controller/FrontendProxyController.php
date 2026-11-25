@@ -29,6 +29,8 @@ use Adyen\Shopware\Controller\StoreApi\Donate\DonateController;
 use Adyen\Shopware\Controller\StoreApi\ExpressCheckout\ExpressCheckoutController;
 use Adyen\Shopware\Controller\StoreApi\OrderApi\OrderApiController;
 use Adyen\Shopware\Controller\StoreApi\Payment\PaymentController;
+use Adyen\Shopware\Exception\IncompleteExpressCheckoutCustomerDataException;
+use Adyen\Shopware\Exception\MissingExpressCheckoutCustomerDataException;
 use Adyen\Shopware\Exception\PaymentReversedException;
 use Adyen\Shopware\Exception\ValidationException;
 use Adyen\Shopware\Service\AdyenPaymentService;
@@ -259,6 +261,23 @@ class FrontendProxyController extends StorefrontController
             );
 
             return new JsonResponse(['id' => $order->getId()]);
+        } catch (
+            MissingExpressCheckoutCustomerDataException|IncompleteExpressCheckoutCustomerDataException $exception
+        ) {
+            // Missing data: the page was rendered for a logged-in customer whose session is lost since, so the
+            // payment sheet did not ask for the shopper data. The reloaded page is rendered for a guest, whose sheet
+            // asks for it. Incomplete data: the shopper is shown which data to complete.
+            $this->logger->info('Express checkout order is not created. Reason: ' . $exception->getMessage());
+            $this->addFlash(
+                self::DANGER,
+                $this->trans(
+                    $exception instanceof MissingExpressCheckoutCustomerDataException ?
+                        'adyen.expressCheckoutSessionExpired' :
+                        'adyen.expressCheckoutCustomerDataIncomplete'
+                )
+            );
+
+            return new JsonResponse(['reload' => true], 400);
         } catch (InvalidCartException|EmptyCartException|Error|Exception $exception) {
             $this->addCartErrors(
                 $this->cartService->getCart($salesChannelContext->getToken(), $salesChannelContext)
