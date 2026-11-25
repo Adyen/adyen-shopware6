@@ -281,7 +281,13 @@ class AdminController
 
         try {
             $results = $this->captureService
-                ->doCapture($order->getOrderNumber(), $amountInMinorUnit, $context, skipDeliveryCheck: true);
+                ->doCapture(
+                    $order->getOrderNumber(),
+                    $amountInMinorUnit,
+                    $context,
+                    skipDeliveryCheck: true,
+                    orderId: $orderId
+                );
         } catch (CaptureException $e) {
             $this->logger->error($e->getMessage());
 
