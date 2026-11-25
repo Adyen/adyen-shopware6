@@ -109,6 +109,7 @@ class PaymentReversalService
                 $request->toArray(),
                 ['pspReference' => $pspReference]
             );
+            $request->setApplicationInfo($this->clientService->getApplicationInfo());
 
             $this->clientService->logRequest(
                 $request->toArray(),
