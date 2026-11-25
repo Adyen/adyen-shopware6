@@ -603,6 +603,7 @@ class RefundService
             $refundRequestObject->toArray(),
             $idempotencyExtraData
         );
+        $refundRequestObject->setApplicationInfo($this->clientService->getApplicationInfo());
 
         return [
             'pspReference' => $pspReference,

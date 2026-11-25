@@ -664,7 +664,8 @@ abstract class AbstractPaymentMethodHandler extends AbstractPaymentHandler
                     ? PaymentRequestService::SHOPPER_INTERACTION_CONTAUTH
                     : PaymentRequestService::SHOPPER_INTERACTION_ECOMMERCE,
                 paymentMethodHandler: static::class,
-                captureConfiguration: $this->captureConfiguration
+                captureConfiguration: $this->captureConfiguration,
+                orderTransactionId: $transactionId
             );
         } catch (PaymentException $exception) {
             $this->logger->error($exception->getMessage());
