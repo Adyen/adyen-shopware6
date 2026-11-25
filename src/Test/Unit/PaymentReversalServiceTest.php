@@ -28,6 +28,8 @@ use Adyen\AdyenException;
 use Adyen\Client;
 use Adyen\Environment;
 use Adyen\HttpClient\ClientInterface;
+use Adyen\Model\Checkout\ApplicationInfo;
+use Adyen\Model\Checkout\CommonField;
 use Adyen\Shopware\Service\ClientService;
 use Adyen\Shopware\Service\ConfigurationService;
 use Adyen\Shopware\Service\PaymentReversalService;
@@ -55,6 +57,9 @@ class PaymentReversalServiceTest extends AdyenTestCase
 
         $clientService = $this->getSimpleMock(ClientService::class);
         $clientService->method('getClient')->willReturn($client);
+        $clientService->method('getApplicationInfo')->willReturn(new ApplicationInfo([
+            'merchantApplication' => new CommonField(['name' => 'adyen-shopware6', 'version' => '5.5.0']),
+        ]));
 
         $this->configurationService = $this->getSimpleMock(ConfigurationService::class);
         $this->configurationService->method('getMerchantAccount')->willReturnMap([
@@ -84,7 +89,13 @@ class PaymentReversalServiceTest extends AdyenTestCase
             ->with(
                 $this->anything(),
                 $this->stringEndsWith('/payments/PSP123/reversals'),
-                ['merchantAccount' => 'TestMerchant', 'reference' => '10001'],
+                $this->callback(fn($params) => json_decode(json_encode($params), true) === [
+                    'applicationInfo' => [
+                        'merchantApplication' => ['name' => 'adyen-shopware6', 'version' => '5.5.0'],
+                    ],
+                    'merchantAccount' => 'TestMerchant',
+                    'reference' => '10001',
+                ]),
                 'post',
                 ['idempotencyKey' => $expectedIdempotencyKey]
             )
