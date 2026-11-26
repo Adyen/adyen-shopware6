@@ -12,7 +12,8 @@
            {% if payment.formattedHandlerIdentifier is same as('handler_adyen_applepaypaymentmethodhandler') %}
               data-adyen-availability-check="applepay"
            {% endif %}
-           class="{{ formCheckInputClass ?? 'form-check-input' }} payment-method-input {% if 'handler_adyen_' in payment.formattedHandlerIdentifier %}adyen-payment-method-input-radio{% endif %}">
+           class="{{ formCheckInputClass ?? 'form-check-input' }} payment-method-input {% if 'handler_adyen_' in payment.formattedHandlerIdentifier %}adyen-payment-method-input-radio{% endif %}"
+           data-focus-id="{{ payment.id }}">
 {% endblock %}
 
 {% block component_payment_method_description %}
