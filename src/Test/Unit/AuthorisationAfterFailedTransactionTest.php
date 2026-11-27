@@ -53,17 +53,27 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEnti
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\OrderStates;
 use Shopware\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\Plugin\PluginEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
 /**
  * A successful AUTHORISATION or ORDER_CLOSED must settle a transaction that Shopware failed only because the
- * /payments/details call failed on the shopper's return, and must leave any other failed transaction unchanged.
+ * /payments/details call failed on the shopper's return. A successful AUTHORISATION of a new payment, e.g. after the
+ * first payment was refused, must settle the failed transaction if the payment metadata links it to the transaction,
+ * or, without the metadata, if the payment of the transaction was refused and the amount and currency match. The
+ * transaction stays failed if the order was cancelled or another transaction replaced or settled it.
  */
 class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
 {
+    /**
+     * The payment metadata carries a real transaction ID, the handler accepts only a valid UUID there.
+     */
+    private const TRANSACTION_UUIDS = ['tx-1' => '0190a1b2c3d47e8f9a0b1c2d3e4f5a61'];
+
     private MockObject $stateHandler;
     private MockObject $notificationService;
     private ?bool $done = null;
@@ -71,6 +81,9 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
     private array $transitions = [];
     private array $captures = [];
     private array $savedCustomFields = [];
+    private array $insertedPayments = [];
+    private int $insertAttempts = 0;
+    private array $schedules = [];
     /** @var OrderTransactionEntity[] */
     private array $transactions = [];
     /**
@@ -282,6 +295,356 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
         $this->assertTrue($this->done);
     }
 
+    public function testNewPaymentWithMetadataPaysATransactionFailedByARefusedAuthorisation(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+        ]);
+
+        $this->assertSame(['process:tx-1', 'paid:tx-1'], $this->transitions);
+        $this->assertSame('PSP_B', $this->database['tx-1']['customFields']['originalPspReference']);
+        $this->assertSame(['PSP_B'], $this->insertedPayments);
+        $this->assertEmpty($this->database['tx-1']['customFields'][ResultHandler::PAYMENT_DETAILS_CALL_FAILED] ?? null);
+        $this->assertSame([], $this->errors);
+        $this->assertTrue($this->done);
+    }
+
+    public function testNewPaymentWithMetadataPaysAFailedTransactionWithoutAKnownRefusal(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+        ]);
+
+        $this->assertSame(['process:tx-1', 'paid:tx-1'], $this->transitions);
+        $this->assertSame([], $this->errors);
+    }
+
+    public function testManualCaptureNewPaymentWithMetadataAuthorisesAFailedTransaction(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+            'captureMode' => CaptureMode::MANUAL,
+        ]);
+
+        $this->assertSame(['process:tx-1', 'authorize:tx-1'], $this->transitions);
+        $this->assertSame('PSP_B', $this->database['tx-1']['customFields']['originalPspReference']);
+        $this->assertSame([], $this->errors);
+    }
+
+    public function testNewPaymentWithoutMetadataPaysATransactionFailedByARefusedAuthorisation(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'refusedPsp' => 'PSP_A',
+        ]);
+
+        $this->assertSame(['process:tx-1', 'paid:tx-1'], $this->transitions);
+        $this->assertSame('PSP_B', $this->database['tx-1']['customFields']['originalPspReference']);
+        $this->assertSame(['PSP_B'], $this->insertedPayments);
+        $this->assertSame([], $this->errors);
+        $this->assertTrue($this->done);
+    }
+
+    public function testNewPaymentWithoutMetadataIsNotAppliedWhenTheOwnPaymentWasNotRefused(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+        $this->assertTrue($this->done);
+    }
+
+    public function testNewPaymentWithoutMetadataIsNotAppliedForAnotherAmount(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'refusedPsp' => 'PSP_A',
+            'amountValue' => '999',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+    }
+
+    public function testNewPaymentWithoutMetadataIsNotAppliedForAnotherCurrency(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'refusedPsp' => 'PSP_A',
+            'currency' => 'USD',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+    }
+
+    public function testNewPaymentIsNotAppliedToACancelledOrder(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+            'orderState' => OrderStates::STATE_CANCELLED,
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+        $this->assertStringContainsString('refunded', $this->errors[0]);
+        $this->assertTrue($this->done);
+    }
+
+    public function testNewPaymentIsNotAppliedWhenAnotherTransactionOfTheOrderIsPaid(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+            'olderTransactionState' => OrderTransactionStates::STATE_PAID,
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+        $this->assertStringContainsString('refunded', $this->errors[0]);
+    }
+
+    public function testNewPaymentIsNotAppliedWhenANewerTransactionReplacedTheFailedOne(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+            'newerTransactionState' => OrderTransactionStates::STATE_IN_PROGRESS,
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+        $this->assertStringContainsString('refunded', $this->errors[0]);
+    }
+
+    public function testPartialPaymentWithMetadataIsNotAppliedToAFailedTransaction(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+            'merchantOrderReference' => 'adyen-order-1',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertSame([], $this->insertedPayments);
+    }
+
+    public function testNewPaymentWithMetadataForAnotherAmountIsNotApplied(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'amountValue' => '500',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertSame([], $this->insertedPayments);
+        $this->assertCount(1, $this->errors);
+    }
+
+    public function testNewPaymentWithoutMetadataPaysWhenOnlyThePaymentResponseKnowsTheRefusedPayment(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'refusedPsp' => 'PSP_A',
+            'storedPspReference' => false,
+            'paymentResponsePsp' => 'PSP_A',
+        ]);
+
+        $this->assertSame(['process:tx-1', 'paid:tx-1'], $this->transitions);
+        $this->assertSame('PSP_B', $this->database['tx-1']['customFields']['originalPspReference']);
+    }
+
+    public function testNewPaymentWithoutMetadataIsNotAppliedWithoutAKnownPaymentOfTheTransaction(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'refusedPsp' => 'PSP_A',
+            'storedPspReference' => false,
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+    }
+
+    public function testNewPaymentWithoutMetadataComparesTheAmountOfAZeroDecimalCurrency(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'refusedPsp' => 'PSP_A',
+            'orderCurrency' => 'JPY',
+            'currency' => 'JPY',
+            'amountValue' => '10',
+        ]);
+
+        $this->assertSame(['process:tx-1', 'paid:tx-1'], $this->transitions);
+    }
+
+    public function testSuccessfulOrderClosedWithoutMarkerLeavesAFailedTransactionFailed(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'eventCode' => 'ORDER_CLOSED',
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+    }
+
+    public function testFailedAuthorisationOfANewPaymentLeavesAFailedTransactionUnchanged(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'success' => false,
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+        ]);
+
+        $this->assertNotContains('process:tx-1', $this->transitions);
+        $this->assertNotContains('paid:tx-1', $this->transitions);
+        $this->assertSame('PSP_A', $this->database['tx-1']['customFields']['originalPspReference']);
+    }
+
+    public function testTransactionReopenedForANewPaymentIsFailedAgainWithoutMarkerWhenProcessingThrows(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+            'insertThrows' => true,
+        ]);
+
+        $this->assertSame(['process:tx-1', 'fail:tx-1'], $this->transitions);
+        $this->assertEmpty($this->database['tx-1']['customFields'][ResultHandler::PAYMENT_DETAILS_CALL_FAILED] ?? null);
+        $this->assertSame('PSP_A', $this->database['tx-1']['customFields']['originalPspReference']);
+        $this->assertNotTrue($this->done);
+        $this->assertCount(1, $this->errors);
+    }
+
+    public function testNewPaymentWithMetadataIsSettledByTheRetryAfterProcessingThrew(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+            'insertThrowsOnce' => true,
+            'runs' => 2,
+        ]);
+
+        $this->assertSame(['process:tx-1', 'fail:tx-1', 'process:tx-1', 'paid:tx-1'], $this->transitions);
+        $this->assertSame('PSP_B', $this->database['tx-1']['customFields']['originalPspReference']);
+    }
+
+    public function testNewPaymentWithoutMetadataIsSettledByTheRetryAfterProcessingThrew(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'refusedPsp' => 'PSP_A',
+            'insertThrowsOnce' => true,
+            'runs' => 2,
+        ]);
+
+        $this->assertSame(['process:tx-1', 'fail:tx-1', 'process:tx-1', 'paid:tx-1'], $this->transitions);
+        $this->assertSame('PSP_B', $this->database['tx-1']['customFields']['originalPspReference']);
+    }
+
+    public function testNewPaymentIsRescheduledWhileTheRefusalOfThePaymentOfTheTransactionIsPending(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_IN_PROGRESS, [
+            'notificationPsp' => 'PSP_B',
+            'pendingRefusedPsp' => 'PSP_A',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertSame([], $this->errors);
+        $this->assertNotTrue($this->done);
+        $this->assertCount(1, $this->schedules);
+    }
+
+    public function testNewPaymentWithoutMetadataIsSkippedAsAnotherPaymentOfAnInProgressTransactionAsBefore(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_IN_PROGRESS, [
+            'notificationPsp' => 'PSP_B',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+        $this->assertStringContainsString('another shop', $this->errors[0]);
+        $this->assertSame([], $this->schedules);
+        $this->assertTrue($this->done);
+    }
+
+    public function testRetriedAuthorisationOfARecoveredPaymentWithoutMetadataIsCapturedOnShipment(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_AUTHORIZED, [
+            'notificationPsp' => 'PSP_B',
+            'originalPspReference' => 'PSP_B',
+            'adyenPaymentPsps' => ['PSP_B'],
+            'captureMode' => CaptureMode::ON_SHIPMENT,
+        ]);
+
+        $this->assertSame([], $this->errors);
+        $this->assertSame(['10001:1000'], $this->captures);
+    }
+
+    public function testTransactionFailedByThePaymentDetailsCallIsNotReopenedForACancelledOrder(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'paymentDetailsCallFailed' => true,
+            'orderState' => OrderStates::STATE_CANCELLED,
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertStringContainsString('refunded', $this->errors[0]);
+    }
+
+    public function testNewPaymentIsNotAppliedWhenAnotherTransactionOfTheOrderIsAuthorised(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'notificationPsp' => 'PSP_B',
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+            'olderTransactionState' => OrderTransactionStates::STATE_AUTHORIZED,
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertCount(1, $this->errors);
+    }
+
+    public function testSuccessfulAuthorisationPaysAnInProgressTransactionWithMetadataAsBefore(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_IN_PROGRESS, [
+            'metadataTransactionId' => 'tx-1',
+        ]);
+
+        $this->assertSame(['paid:tx-1'], $this->transitions);
+        $this->assertSame([], $this->errors);
+    }
+
+    public function testLateSuccessOfTheRefusedPaymentLeavesTheTransactionFailed(): void
+    {
+        $this->runScenario(OrderTransactionStates::STATE_FAILED, [
+            'metadataTransactionId' => 'tx-1',
+            'refusedPsp' => 'PSP_A',
+        ]);
+
+        $this->assertSame([], $this->transitions);
+        $this->assertTrue($this->done);
+    }
+
     private function runScenario(string $state, array $options = []): void
     {
         $scenario = (object)array_merge([
@@ -292,19 +655,44 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
             'storedPspReference' => true,
             'captureMode' => CaptureMode::IMMEDIATE,
             'newerTransactionState' => null,
+            'olderTransactionState' => null,
             'amountValue' => '1000',
+            'currency' => 'EUR',
+            'notificationPsp' => 'PSP_A',
+            'metadataTransactionId' => null,
+            'refusedPsp' => null,
+            'orderState' => null,
+            'merchantOrderReference' => null,
+            'paymentResponsePsp' => null,
+            'orderCurrency' => 'EUR',
+            'insertThrows' => false,
+            'insertThrowsOnce' => false,
+            'runs' => 1,
+            'originalPspReference' => null,
+            'adyenPaymentPsps' => [],
+            'pendingRefusedPsp' => null,
         ], $options);
+        $responsePsp = $scenario->paymentResponsePsp ?? ($scenario->storedPspReference ? 'PSP_A' : null);
+
+        $additionalData = [];
+        if (!is_null($scenario->metadataTransactionId)) {
+            $additionalData['metadata.orderTransactionId'] =
+                self::TRANSACTION_UUIDS[$scenario->metadataTransactionId];
+        }
+        if (!is_null($scenario->merchantOrderReference)) {
+            $additionalData['merchantOrderReference'] = $scenario->merchantOrderReference;
+        }
 
         $notification = new NotificationEntity();
         $notification->setId('notification-1');
         $notification->setEventCode($scenario->eventCode);
         $notification->setSuccess($scenario->success);
-        $notification->setPspreference('PSP_A');
+        $notification->setPspreference($scenario->notificationPsp);
         $notification->setMerchantReference('10001');
         $notification->setPaymentMethod('ideal');
         $notification->setAmountValue($scenario->amountValue);
-        $notification->setAmountCurrency('EUR');
-        $notification->setAdditionalData('{}');
+        $notification->setAmountCurrency($scenario->currency);
+        $notification->setAdditionalData(json_encode((object)$additionalData));
         $notification->setErrorCount(0);
         $notification->assign(['originalReference' => null]);
         $this->notificationService->method('getScheduledUnprocessedNotifications')
@@ -312,23 +700,42 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
 
         $currency = new CurrencyEntity();
         $currency->setId('currency-eur');
-        $currency->setIsoCode('EUR');
+        $currency->setIsoCode($scenario->orderCurrency);
 
         $order = new OrderEntity();
         $order->setId('order-1');
         $order->setOrderNumber('10001');
         $order->setSalesChannelId('sales-channel-1');
         $order->setCurrency($currency);
+        if (!is_null($scenario->orderState)) {
+            $orderState = new StateMachineStateEntity();
+            $orderState->setId('order-state');
+            $orderState->setTechnicalName($scenario->orderState);
+            $order->setStateMachineState($orderState);
+        }
 
         $transaction = $this->createTransaction('tx-1', $scenario->state, new \DateTimeImmutable('-1 hour'), $order);
-        $customFields = $scenario->storedPspReference ? ['originalPspReference' => 'PSP_A'] : [];
+        $customFields = $scenario->storedPspReference
+            ? ['originalPspReference' => $scenario->originalPspReference ?? 'PSP_A']
+            : [];
         if ($scenario->paymentDetailsCallFailed) {
             $customFields[ResultHandler::PAYMENT_DETAILS_CALL_FAILED] = true;
         }
         $transaction->setCustomFields($customFields);
 
-        $this->transactions = ['tx-1' => $transaction];
-        $this->database = ['tx-1' => ['state' => $scenario->state, 'customFields' => $customFields]];
+        $this->transactions = [];
+        $this->database = [];
+        if (!is_null($scenario->olderTransactionState)) {
+            $this->transactions['tx-0'] = $this->createTransaction(
+                'tx-0',
+                $scenario->olderTransactionState,
+                new \DateTimeImmutable('-2 hours'),
+                $order
+            );
+            $this->database['tx-0'] = ['state' => $scenario->olderTransactionState, 'customFields' => []];
+        }
+        $this->transactions['tx-1'] = $transaction;
+        $this->database['tx-1'] = ['state' => $scenario->state, 'customFields' => $customFields];
         if (!is_null($scenario->newerTransactionState)) {
             $this->transactions['tx-2'] = $this->createTransaction(
                 'tx-2',
@@ -344,17 +751,49 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
         $orderRepository->method('getOrderByOrderNumber')->willReturn($order);
 
         $paymentResponseService = $this->getSimpleMock(PaymentResponseService::class);
-        if ($scenario->storedPspReference) {
+        if (!is_null($responsePsp)) {
             $paymentResponse = $this->getSimpleMock(PaymentResponseEntity::class);
             $paymentResponse->method('getOrderTransactionId')->willReturn('tx-1');
-            $paymentResponseService->method('getWithPspreference')->with('PSP_A')->willReturn($paymentResponse);
+            $paymentResponse->method('getPspreference')->willReturn($responsePsp);
+            $paymentResponseService->method('getWithPspreference')
+                ->willReturnCallback(fn (string $psp) => $psp === $responsePsp ? $paymentResponse : null);
+            $paymentResponseService->method('getWithOrderTransaction')
+                ->willReturnCallback(
+                    fn (OrderTransactionEntity $tx) => $tx->getId() === 'tx-1' ? $paymentResponse : null
+                );
         } else {
             $paymentResponseService->method('getWithPspreference')->willReturn(null);
+            $paymentResponseService->method('getWithOrderTransaction')->willReturn(null);
         }
 
+        $this->notificationService->method('hasProcessedFailedAuthorisation')
+            ->willReturnCallback(fn (string $merchantReference, array $pspReferences) =>
+                !is_null($scenario->refusedPsp) && in_array($scenario->refusedPsp, $pspReferences, true));
+        $this->notificationService->method('getPendingFailedAuthorisation')
+            ->willReturnCallback(function (string $merchantReference, array $pspReferences) use ($scenario) {
+                if (is_null($scenario->pendingRefusedPsp) ||
+                    !in_array($scenario->pendingRefusedPsp, $pspReferences, true)) {
+                    return null;
+                }
+                $pending = new NotificationEntity();
+                $pending->setId('notification-refused');
+                $pending->setPspreference($scenario->pendingRefusedPsp);
+                // Hydrated by the DAL, null until the notification is scheduled.
+                $pending->assign(['scheduledProcessingTime' => null]);
+
+                return $pending;
+            });
+        $this->notificationService->method('calculateScheduledProcessingTime')
+            ->willReturn(new \DateTime('+30 minutes'));
+        $this->notificationService->method('setNotificationSchedule')
+            ->willReturnCallback(function (string $id, \DateTimeInterface $time) {
+                $this->schedules[] = $id;
+            });
+
         $transactionRepository = $this->getSimpleMock(OrderTransactionRepository::class);
-        $transactionRepository->method('getWithId')
-            ->willReturnCallback(fn (string $id) => $this->loadTransaction($id));
+        $transactionRepository->method('getWithId')->willReturnCallback(
+            fn (string $id) => $this->loadTransaction(array_search($id, self::TRANSACTION_UUIDS, true) ?: $id)
+        );
         $transactionRepository->method('getFirstAdyenOrderTransactionByStates')
             ->willReturnCallback(fn (string $orderId, array $states) => $this->getByStates($states)->first());
         $transactionRepository->method('getAdyenOrderTransactionsByStates')
@@ -381,6 +820,16 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
 
         $adyenPaymentService = $this->getSimpleMock(AdyenPaymentService::class);
         $adyenPaymentService->method('getMerchantReferenceFromOrderReference')->willReturn('10001');
+        $adyenPaymentService->method('insertAdyenPayment')
+            ->willReturnCallback(function (NotificationEntity $inserted) use ($scenario) {
+                if ($scenario->insertThrows || ($scenario->insertThrowsOnce && $this->insertAttempts++ === 0)) {
+                    throw new \RuntimeException('The adyen_payment row could not be stored.');
+                }
+                $this->insertedPayments[] = $inserted->getPspreference();
+            });
+        $adyenPaymentService->method('isPaymentOfOrderTransaction')
+            ->willReturnCallback(fn (string $psp, string $transactionId) =>
+                in_array($psp, $scenario->adyenPaymentPsps, true));
         $logger = $this->createMock(LoggerInterface::class);
 
         $factory = new WebhookHandlerFactory(
@@ -408,7 +857,9 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
             $this->stateHandler
         );
         $handler->setLogger($logger);
-        $handler->run();
+        for ($run = 0; $run < $scenario->runs; $run++) {
+            $handler->run();
+        }
     }
 
     /**
@@ -460,6 +911,9 @@ class AuthorisationAfterFailedTransactionTest extends AdyenTestCase
         $paymentMethod = new PaymentMethodEntity();
         $paymentMethod->setId('payment-method-1');
         $paymentMethod->setHandlerIdentifier('Adyen\Shopware\Handlers\IdealPaymentMethodHandler');
+        $plugin = new PluginEntity();
+        $plugin->setName(ConfigurationService::BUNDLE_NAME);
+        $paymentMethod->setPlugin($plugin);
 
         $transaction = new OrderTransactionEntity();
         $transaction->setId($id);

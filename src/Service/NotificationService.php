@@ -26,6 +26,7 @@ namespace Adyen\Shopware\Service;
 
 use Adyen\Shopware\Entity\Notification\NotificationEntity;
 use Adyen\Shopware\ScheduledTask\ProcessNotificationsHandler;
+use Adyen\Webhook\EventCodes;
 use DateInvalidOperationException;
 use DateTimeInterface;
 use Shopware\Core\Framework\Context;
@@ -33,6 +34,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
@@ -183,6 +185,68 @@ class NotificationService
             (new Criteria())->addFilter(new EqualsFilter('merchantReference', $orderNumber)),
             Context::createDefaultContext()
         )->getEntities();
+    }
+
+    /**
+     * Whether a refused AUTHORISATION of one of the given payments of the order was already processed.
+     *
+     * @param string $merchantReference
+     * @param string[] $pspReferences
+     *
+     * @return bool
+     */
+    public function hasProcessedFailedAuthorisation(string $merchantReference, array $pspReferences): bool
+    {
+        $criteria = $this->createFailedAuthorisationCriteria($merchantReference, $pspReferences, true);
+
+        return !is_null($criteria)
+            && $this->notificationRepository->searchIds($criteria, Context::createDefaultContext())->getTotal() > 0;
+    }
+
+    /**
+     * A refused AUTHORISATION of one of the given payments of the order that is not processed yet, e.g. because a
+     * refused AUTHORISATION is processed only after a delay.
+     *
+     * @param string $merchantReference
+     * @param string[] $pspReferences
+     *
+     * @return NotificationEntity|null
+     */
+    public function getPendingFailedAuthorisation(string $merchantReference, array $pspReferences): ?NotificationEntity
+    {
+        $criteria = $this->createFailedAuthorisationCriteria($merchantReference, $pspReferences, false);
+
+        return is_null($criteria)
+            ? null
+            : $this->notificationRepository->search($criteria, Context::createDefaultContext())->first();
+    }
+
+    /**
+     * @param string $merchantReference
+     * @param array $pspReferences
+     * @param bool $done
+     *
+     * @return Criteria|null Null without a PSP reference, then there is nothing to search.
+     */
+    private function createFailedAuthorisationCriteria(
+        string $merchantReference,
+        array $pspReferences,
+        bool $done
+    ): ?Criteria {
+        $pspReferences = array_values(array_filter($pspReferences));
+        if (empty($pspReferences)) {
+            return null;
+        }
+
+        return (new Criteria())
+            ->addFilter(
+                new EqualsFilter('merchantReference', $merchantReference),
+                new EqualsAnyFilter('pspreference', $pspReferences),
+                new EqualsFilter('eventCode', EventCodes::AUTHORISATION),
+                new EqualsFilter('success', false),
+                new EqualsFilter('done', $done)
+            )
+            ->setLimit(1);
     }
 
     /**
