@@ -40,6 +40,7 @@ use Adyen\Shopware\Service\PaymentResponseService;
 use Adyen\Shopware\Service\PaypalPaymentService;
 use Adyen\Shopware\Service\Repository\OrderRepository;
 use Adyen\Shopware\Service\Repository\OrderTransactionRepository;
+use Adyen\Shopware\Util\Currency;
 use Adyen\Webhook\Exception\InvalidDataException;
 use Adyen\Webhook\Notification;
 use Adyen\Webhook\PaymentStates;
@@ -52,6 +53,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEnti
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\OrderStates;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
@@ -255,7 +257,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     $order = $this->orderRepository->getOrder(
                         $transactionOrderId,
                         $context,
-                        ['transactions', 'currency']
+                        ['transactions', 'currency', 'stateMachineState']
                     );
                     if (is_null($order)) {
                         $errorMessage = 'Skipped: Order of the order transaction from the payment metadata not found.';
@@ -270,14 +272,29 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     $logContext['orderId'] = $order->getId();
                 }
 
+                $hadPaymentDetailsCallFailedMarker = $this->hasPaymentDetailsCallFailedMarker($orderTransaction);
+                $isNewPayment = $this->isNewPaymentOfFailedTransaction($orderTransaction, $notification);
                 $isRecoverable = $this->isRecoverableFailedTransaction($orderTransaction, $notification);
-                if ($isRecoverable && !$this->isLatestOrderTransaction($order, $orderTransaction)) {
-                    $errorMessage = 'Skipped: Payment was authorised for a failed transaction that a newer ' .
-                        'transaction of the order has replaced. Check whether the payment has to be refunded.';
-                    $this->logger->warning($errorMessage, $logContext);
+                if ($isRecoverable && !$this->canOrderTakeRecoveredPayment($order, $orderTransaction)) {
+                    $errorMessage = 'Skipped: Payment was authorised for a failed transaction that the order can ' .
+                        'no longer take, because a newer transaction replaced it, another transaction settled the ' .
+                        'order or the order was cancelled. Check whether the payment has to be refunded.';
+                    $this->logger->warning(
+                        $errorMessage,
+                        $logContext + ['pspReference' => $notification->getPspreference()]
+                    );
                     $this->logNotificationFailure($notification, $errorMessage);
                     $this->markAsDone($notification->getId(), $notification->getMerchantReference());
                     continue;
+                }
+
+                if ($isRecoverable && $isNewPayment &&
+                    is_null($this->getMetadataOrderTransactionId($notification))) {
+                    $this->logger->warning(
+                        'Applying a new payment to a failed transaction whose payment was refused. The payment ' .
+                        'has no metadata and is linked to the transaction by the order number, amount and currency.',
+                        $logContext + ['pspReference' => $notification->getPspreference()]
+                    );
                 }
 
                 $customFields = $orderTransaction->getCustomFields();
@@ -298,10 +315,26 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     $customFieldsChanged = true;
                 }
 
+                // Capture and refund must use the new payment, not the refused one of the transaction.
+                if ($isRecoverable && $isNewPayment) {
+                    $customFields[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] = $notification->getPspreference();
+                    $customFieldsChanged = true;
+                }
+
                 // The marker is cleared, so the transaction is reopened only once.
-                if ($isRecoverable) {
+                if ($isRecoverable && $hadPaymentDetailsCallFailedMarker) {
                     $customFields[ResultHandler::PAYMENT_DETAILS_CALL_FAILED] = null;
                     $customFieldsChanged = true;
+                }
+
+                // Restored if the notification does not settle the reopened transaction, so a retry of the
+                // notification can still settle it.
+                $customFieldsToRestore = [];
+                if ($hadPaymentDetailsCallFailedMarker) {
+                    $customFieldsToRestore[ResultHandler::PAYMENT_DETAILS_CALL_FAILED] = true;
+                }
+                if ($isNewPayment) {
+                    $customFieldsToRestore[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] = $storedPspReference;
                 }
 
                 if ($customFieldsChanged) {
@@ -350,7 +383,12 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
                     );
                 } finally {
                     if ($isRecoverable) {
-                        $this->restoreUnsettledTransaction($orderTransaction, $context, $logContext);
+                        $this->restoreUnsettledTransaction(
+                            $orderTransaction,
+                            $context,
+                            $logContext,
+                            $customFieldsToRestore
+                        );
                     }
                 }
             } catch (CaptureException $exception) {
@@ -532,13 +570,17 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             }
         }
 
+        $isNewPaymentOfFailedTransaction = false;
         if (is_null($orderTransaction) && $this->canSettleFailedTransaction($notification)) {
             $orderTransaction = $this->orderTransactionRepository
                 ->getAdyenOrderTransactionsByStates($order->getId(), [OrderTransactionStates::STATE_FAILED])
-                ->filter(fn (OrderTransactionEntity $transaction) => $this->hasPaymentDetailsCallFailedMarker(
-                    $transaction
+                ->filter(fn (OrderTransactionEntity $transaction) => $this->isRecoverableFailedTransaction(
+                    $transaction,
+                    $notification
                 ))
                 ->first();
+            $isNewPaymentOfFailedTransaction = !is_null($orderTransaction)
+                && $this->isNewPaymentOfFailedTransaction($orderTransaction, $notification);
         }
 
         // Skip if orderTransaction not found (non-Adyen)
@@ -553,8 +595,18 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             return null;
         }
 
-        if ((!$isLinkedToTransaction && $this->isAuthorisationOfAnotherPayment($orderTransaction, $notification)) ||
-            $this->isModificationOfAnotherPayment($orderTransaction, $notification)) {
+        // The stored payment of a transaction whose payment was refused cannot be authorised anymore, so a new payment
+        // is not another payment of the transaction.
+        if (!$isLinkedToTransaction && !$isNewPaymentOfFailedTransaction &&
+            $this->isAuthorisationOfAnotherPayment($orderTransaction, $notification)) {
+            if (!$this->rescheduleUntilRefusalIsProcessed($orderTransaction, $notification, $logContext)) {
+                $this->skipNotificationOfAnotherPayment($order, $notification, $logContext);
+            }
+
+            return null;
+        }
+
+        if ($this->isModificationOfAnotherPayment($orderTransaction, $notification)) {
             $this->skipNotificationOfAnotherPayment($order, $notification, $logContext);
 
             return null;
@@ -652,9 +704,71 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             return false;
         }
 
+        // A payment already stored for the transaction, e.g. a new payment that settled the failed transaction and
+        // whose notification is retried for the capture on shipment.
+        if (!empty($notification->getPspreference()) && $this->adyenPaymentService->isPaymentOfOrderTransaction(
+            $notification->getPspreference(),
+            $orderTransaction->getId()
+        )) {
+            return false;
+        }
+
         $paymentResponse = $this->paymentResponseService->getWithOrderTransaction($orderTransaction);
 
         return !is_null($paymentResponse) && !empty($paymentResponse->getPspreference());
+    }
+
+    /**
+     * A refused AUTHORISATION is processed only after a delay, so a new payment, e.g. by link, can arrive while the
+     * transaction still waits for the refusal of its payment. The new payment is then processed after the refusal
+     * failed the transaction, instead of being skipped as another payment.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     * @param array $logContext
+     *
+     * @return bool Whether the notification was rescheduled.
+     */
+    private function rescheduleUntilRefusalIsProcessed(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification,
+        array $logContext
+    ): bool {
+        if (!$notification->isSuccess()) {
+            return false;
+        }
+
+        $pendingRefusal = $this->notificationService->getPendingFailedAuthorisation(
+            (string)$notification->getMerchantReference(),
+            $this->getKnownPaymentPspReferences($orderTransaction)
+        );
+        if (is_null($pendingRefusal)) {
+            return false;
+        }
+
+        $refusalProcessingTime = $pendingRefusal->getScheduledProcessingTime()
+            ?? $this->notificationService->calculateScheduledProcessingTime($pendingRefusal);
+        $processingTime = new \DateTime('@' . ($refusalProcessingTime ?? new \DateTime())->getTimestamp());
+        $processingTime->add(new \DateInterval('PT1M'));
+        $earliestProcessingTime = (new \DateTime())->add(new \DateInterval('PT1M'));
+        if ($processingTime < $earliestProcessingTime) {
+            $processingTime = $earliestProcessingTime;
+        }
+
+        $this->logger->info(
+            'Rescheduled a new payment until the refused payment of the transaction is processed.',
+            $logContext + [
+                'pspReference' => $notification->getPspreference(),
+                'refusedPspReference' => $pendingRefusal->getPspreference(),
+            ]
+        );
+        $this->rescheduleNotification(
+            $notification->getId(),
+            $notification->getMerchantReference(),
+            $processingTime
+        );
+
+        return true;
     }
 
     /**
@@ -761,8 +875,9 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     }
 
     /**
-     * A failed transaction can be settled by a successful AUTHORISATION or ORDER_CLOSED notification only if
-     * it failed because the /payments/details call failed, not because the payment was refused or cancelled.
+     * A failed transaction can be settled by a successful AUTHORISATION or ORDER_CLOSED notification if it failed
+     * because the /payments/details call failed, so the outcome of its payment was unknown, or by a new payment of
+     * the transaction, see isNewPaymentOfFailedTransaction().
      *
      * @param OrderTransactionEntity $orderTransaction
      * @param NotificationEntity $notification
@@ -775,7 +890,116 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     ): bool {
         return $orderTransaction->getStateMachineState()?->getTechnicalName() === OrderTransactionStates::STATE_FAILED
             && $this->canSettleFailedTransaction($notification)
-            && $this->hasPaymentDetailsCallFailedMarker($orderTransaction);
+            && ($this->hasPaymentDetailsCallFailedMarker($orderTransaction)
+                || $this->isNewPaymentOfFailedTransaction($orderTransaction, $notification));
+    }
+
+    /**
+     * A successful AUTHORISATION of another payment than the ones of the failed transaction, for the full amount, e.g.
+     * after the payment of the transaction was refused. It belongs to the transaction if the payment metadata links it
+     * to the transaction. Without the metadata, e.g. a payment by link or of an older plugin version, it is linked only
+     * by the order number, so the refused payment of the transaction must be known: a refused payment cannot be
+     * authorised later, so the new payment is no other payment of an attempt that is still open.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     *
+     * @return bool
+     */
+    private function isNewPaymentOfFailedTransaction(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification
+    ): bool {
+        if ($orderTransaction->getStateMachineState()?->getTechnicalName() !== OrderTransactionStates::STATE_FAILED ||
+            $notification->getEventCode() !== EventCodes::AUTHORISATION ||
+            !$notification->isSuccess() ||
+            AuthorisationWebhookHandler::isPartialPayment($notification)) {
+            return false;
+        }
+
+        $knownPspReferences = $this->getKnownPaymentPspReferences($orderTransaction);
+        if (in_array($notification->getPspreference(), $knownPspReferences, true) ||
+            !$this->isFullAmountOfTransaction($orderTransaction, $notification)) {
+            return false;
+        }
+
+        // A notification with metadata reaches here only for the transaction of its metadata.
+        if (!is_null($this->getMetadataOrderTransactionId($notification))) {
+            return true;
+        }
+
+        return $this->notificationService->hasProcessedFailedAuthorisation(
+            (string)$notification->getMerchantReference(),
+            $knownPspReferences
+        );
+    }
+
+    /**
+     * PSP references of the payment of the transaction: the stored one and the one the /payments or /payments/details
+     * call returned.
+     *
+     * @param OrderTransactionEntity $orderTransaction
+     *
+     * @return string[]
+     */
+    private function getKnownPaymentPspReferences(OrderTransactionEntity $orderTransaction): array
+    {
+        $pspReferences = [
+            $orderTransaction->getCustomFields()[PaymentResponseHandler::ORIGINAL_PSP_REFERENCE] ?? null,
+            $this->paymentResponseService->getWithOrderTransaction($orderTransaction)?->getPspreference(),
+        ];
+
+        return array_values(array_unique(array_filter($pspReferences)));
+    }
+
+    /**
+     * @param OrderTransactionEntity $orderTransaction
+     * @param NotificationEntity $notification
+     *
+     * @return bool
+     */
+    private function isFullAmountOfTransaction(
+        OrderTransactionEntity $orderTransaction,
+        NotificationEntity $notification
+    ): bool {
+        $isoCode = $orderTransaction->getOrder()?->getCurrency()?->getIsoCode();
+        if (is_null($isoCode) || $isoCode !== $notification->getAmountCurrency()) {
+            return false;
+        }
+
+        $transactionAmount = (new Currency())->sanitize($orderTransaction->getAmount()->getTotalPrice(), $isoCode);
+
+        return $transactionAmount === (int)$notification->getAmountValue();
+    }
+
+    /**
+     * A failed transaction can be settled only if it is still the payment of the order: no newer transaction replaced
+     * it, no other transaction settled the order and the order was not cancelled.
+     *
+     * @param OrderEntity $order
+     * @param OrderTransactionEntity $orderTransaction
+     *
+     * @return bool
+     */
+    private function canOrderTakeRecoveredPayment(OrderEntity $order, OrderTransactionEntity $orderTransaction): bool
+    {
+        if ($order->getStateMachineState()?->getTechnicalName() === OrderStates::STATE_CANCELLED ||
+            !$this->isLatestOrderTransaction($order, $orderTransaction)) {
+            return false;
+        }
+
+        $settledTransactions = $this->orderTransactionRepository->getAdyenOrderTransactionsByStates(
+            $order->getId(),
+            [
+                OrderTransactionStates::STATE_PAID,
+                OrderTransactionStates::STATE_PARTIALLY_PAID,
+                OrderTransactionStates::STATE_AUTHORIZED,
+            ]
+        );
+
+        return $settledTransactions->filter(
+            fn (OrderTransactionEntity $transaction) => $transaction->getId() !== $orderTransaction->getId()
+        )->count() === 0;
     }
 
     /**
@@ -828,7 +1052,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
 
     /**
      * Moves the failed transaction back to in progress, so the notification is processed as for a transaction
-     * whose /payments/details call succeeded.
+     * whose payment is still open.
      *
      * @param OrderTransactionEntity $orderTransaction
      * @param Context $context
@@ -842,10 +1066,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         Context $context,
         array $logContext
     ): OrderTransactionEntity {
-        $this->logger->info(
-            'Reopening a transaction that failed because the /payments/details call failed.',
-            $logContext
-        );
+        $this->logger->info('Reopening a failed transaction to settle it with a successful payment.', $logContext);
         $this->orderTransactionStateHandler->process(
             $orderTransaction->getId(),
             $this->createContextWithoutFlows($context)
@@ -855,20 +1076,23 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
     }
 
     /**
-     * Fails a reopened transaction again and restores its marker if the notification did not settle it, e.g. the
-     * amount did not match, it was one part of a split payment, or processing threw. A later notification for the
-     * same payment can then still settle it.
+     * Fails a reopened transaction again and restores its custom fields if the notification did not settle it, e.g.
+     * the amount did not match, it was one part of a split payment, or processing threw. A later notification or a
+     * retry of the same notification can then still settle it: the marker is restored, and for a new payment the
+     * PSP reference of the refused payment, as the new one would otherwise count as a payment of the transaction.
      *
      * @param OrderTransactionEntity $orderTransaction
      * @param Context $context
      * @param array $logContext
+     * @param array $customFieldsToRestore
      *
      * @return void
      */
     private function restoreUnsettledTransaction(
         OrderTransactionEntity $orderTransaction,
         Context $context,
-        array $logContext
+        array $logContext,
+        array $customFieldsToRestore
     ): void {
         $transaction = $this->orderTransactionRepository->getWithId($orderTransaction->getId());
         $state = $transaction?->getStateMachineState()?->getTechnicalName();
@@ -883,9 +1107,11 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
             return;
         }
 
-        $customFields = $transaction->getCustomFields() ?? [];
-        $customFields[ResultHandler::PAYMENT_DETAILS_CALL_FAILED] = true;
-        $transaction->setCustomFields($customFields);
+        if (empty($customFieldsToRestore)) {
+            return;
+        }
+
+        $transaction->setCustomFields(array_merge($transaction->getCustomFields() ?? [], $customFieldsToRestore));
         $this->orderTransactionRepository->updateCustomFields($transaction);
     }
 
@@ -1060,7 +1286,7 @@ class ProcessNotificationsHandler extends ScheduledTaskHandler
         $order = $this->orderRepository->getOrderByOrderNumber(
             $merchantReference,
             $context,
-            ['transactions', 'currency']
+            ['transactions', 'currency', 'stateMachineState']
         );
 
         if (!$order) {
